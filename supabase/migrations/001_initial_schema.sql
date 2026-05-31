@@ -281,32 +281,32 @@ CREATE POLICY "Authenticated users can insert usage"
 -- ============================================================
 -- ADMIN POLICIES (for admin/super_admin roles)
 -- ============================================================
+-- SECURITY DEFINER helper bypasses RLS to avoid infinite recursion
+-- when admin policies on `profiles` need to read the caller's role.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
+  );
+$$;
+
 CREATE POLICY "Admins can view all profiles"
   ON public.profiles FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role IN ('admin', 'super_admin')
-    )
-  );
+  USING (public.is_admin());
 
 CREATE POLICY "Admins can view all stories"
   ON public.stories FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role IN ('admin', 'super_admin')
-    )
-  );
+  USING (public.is_admin());
 
 CREATE POLICY "Admins can update any story status"
   ON public.stories FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role IN ('admin', 'super_admin')
-    )
-  );
+  USING (public.is_admin());
 
 -- ============================================================
 -- FUNCTIONS
