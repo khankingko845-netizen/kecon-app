@@ -19,6 +19,10 @@ import VoiceLegacy from "@/components/screens/VoiceLegacy";
 import Library from "@/components/screens/Library";
 import VoiceProfiles from "@/components/screens/VoiceProfiles";
 import Settings from "@/components/screens/Settings";
+import StoryEditor from "@/components/screens/StoryEditor";
+import UploadStory from "@/components/screens/UploadStory";
+import AdminDashboard from "@/components/screens/AdminDashboard";
+import ComplianceLayer from "@/components/ComplianceLayer";
 
 interface ScreenState {
   screen: Screen;
@@ -88,6 +92,9 @@ function AppContent() {
     current.screen !== "lullaby" &&
     current.screen !== "recording" &&
     current.screen !== "adventure" &&
+    current.screen !== "editor" &&
+    current.screen !== "upload" &&
+    current.screen !== "admin" &&
     current.screen !== "legacy";
 
   if (loading) {
@@ -138,11 +145,25 @@ function AppContent() {
         {current.screen === "settings" && (
           <Settings onNavigate={navigate} />
         )}
+        {current.screen === "editor" && (
+          <StoryEditor
+            storyId={current.data?.storyId}
+            onBack={goBack}
+            onNavigate={navigate}
+          />
+        )}
+        {current.screen === "upload" && (
+          <UploadStory onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "admin" && (
+          <AdminDashboard onBack={goBack} onNavigate={navigate} />
+        )}
       </div>
 
       {showTabBar && (
         <TabBar active={activeTab} onTabChange={handleTabChange} />
       )}
+      {user && <ComplianceLayer />}
     </div>
   );
 }

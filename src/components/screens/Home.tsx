@@ -1,9 +1,16 @@
 "use client";
 
-import { Search, Moon, Play, User, UserRound, Plus, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Search, Moon, Play, User, UserRound, Plus, Sparkles,
+  Upload, LayoutDashboard, TrendingUp, Heart,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
+import { useSettings } from "@/lib/settings-context";
 import { gradientFor, iconForCategory } from "@/lib/db";
+import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
+import type { StoryRow } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface HomeProps {
@@ -32,11 +39,23 @@ function greeting() {
 export default function Home({ onNavigate }: HomeProps) {
   const { profile } = useAuth();
   const { voiceProfiles, stories, loading } = useData();
+  const { settings } = useSettings();
+  const [forYou, setForYou] = useState<ScoredStory[]>([]);
+  const [trending, setTrending] = useState<StoryRow[]>([]);
 
   const familyName = profile?.family_name?.trim() || profile?.display_name || "bạn";
   const initial = (familyName[0] || "K").toUpperCase();
   const g = greeting();
   const recent = stories.slice(0, 3);
+
+  useEffect(() => {
+    getRecommendations({ childAge: settings.childAge })
+      .then((rec) => {
+        setForYou(rec.forYou);
+        setTrending(rec.trending);
+      })
+      .catch(() => {});
+  }, [settings.childAge, stories.length]);
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -105,6 +124,88 @@ export default function Home({ onNavigate }: HomeProps) {
           </button>
         </div>
       </div>
+
+      {/* Quick actions */}
+      <div className="px-5 pt-5 grid grid-cols-2 gap-2.5">
+        <button
+          onClick={() => onNavigate("upload")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <Upload size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Tải truyện</span>
+        </button>
+        <button
+          onClick={() => onNavigate("admin")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+            <LayoutDashboard size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Quản trị</span>
+        </button>
+      </div>
+
+      {/* For You (AI recommendations) */}
+      {forYou.length > 0 && (
+        <div className="px-5 pt-5">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-extrabold tracking-tight flex items-center gap-1.5">
+              <Sparkles size={16} className="text-accent" /> Dành cho bé
+            </h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            {forYou.map(({ story, reason }) => (
+              <button
+                key={story.id}
+                onClick={() => onNavigate("player", { storyId: story.id })}
+                className="shrink-0 w-36 text-left active:scale-[0.98] transition-transform"
+              >
+                <div
+                  className={`w-36 h-24 rounded-2xl bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white mb-1.5`}
+                >
+                  <StoryIcon icon={iconForCategory(story.category, story.id)} />
+                </div>
+                <p className="text-[13px] font-bold truncate">{story.title}</p>
+                <p className="text-[11px] text-accent font-semibold truncate">{reason}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trending */}
+      {trending.length > 0 && (
+        <div className="px-5 pt-5">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-extrabold tracking-tight flex items-center gap-1.5">
+              <TrendingUp size={16} className="text-pink-500" /> Đang thịnh hành
+            </h3>
+          </div>
+          <div className="space-y-2.5">
+            {trending.slice(0, 3).map((story) => (
+              <button
+                key={story.id}
+                onClick={() => onNavigate("player", { storyId: story.id })}
+                className="w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+              >
+                <div
+                  className={`w-12 h-12 rounded-[12px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white shrink-0`}
+                >
+                  <StoryIcon icon={iconForCategory(story.category, story.id)} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[14px] font-bold truncate">{story.title}</p>
+                  <p className="text-[11px] text-txt-secondary flex items-center gap-1">
+                    <Heart size={11} /> {story.like_count} · <Play size={11} /> {story.play_count}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Stories */}
       <div className="px-5 pt-5">

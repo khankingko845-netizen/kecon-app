@@ -11,7 +11,10 @@ export type Screen =
   | "legacy"
   | "library"
   | "profiles"
-  | "settings";
+  | "settings"
+  | "editor"
+  | "upload"
+  | "admin";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 

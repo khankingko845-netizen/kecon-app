@@ -3,14 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft, MoreHorizontal, Play, Pause,
-  SkipBack, SkipForward, Moon, Shuffle, Heart, Share2, Mic,
-  Volume2, Loader2,
+  SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
+  Volume2, Loader2, X,
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { ttsApi } from "@/lib/api-client";
+import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import {
   getStory,
   getStoryPages,
@@ -30,6 +31,28 @@ interface StoryPlayerProps {
 
 // Default ElevenLabs voice (used when the story's voice has no clone yet).
 const DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+
+const AMBIENT_OPTIONS: { type: AmbientType; label: string }[] = [
+  { type: "rain", label: "Mưa" },
+  { type: "waves", label: "Sóng biển" },
+  { type: "wind", label: "Gió" },
+  { type: "fire", label: "Lửa trại" },
+  { type: "forest", label: "Rừng" },
+  { type: "night", label: "Đêm" },
+  { type: "lullaby", label: "Ru ngủ" },
+];
+
+// AI auto-matching: pick an ambient layer from a page's scene description.
+function ambientForScene(text: string): AmbientType | null {
+  const t = text.toLowerCase();
+  if (/mưa|rain|giông|bão/.test(t)) return "rain";
+  if (/biển|sóng|đại dương|sea|ocean|wave/.test(t)) return "waves";
+  if (/gió|wind|bão|đồi|núi/.test(t)) return "wind";
+  if (/lửa|fire|bếp|trại|nến|ấm/.test(t)) return "fire";
+  if (/rừng|cây|chim|forest|vườn|lá/.test(t)) return "forest";
+  if (/đêm|tối|sao|trăng|night|ngủ/.test(t)) return "night";
+  return null;
+}
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
   const { settings } = useSettings();
@@ -61,6 +84,41 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(Date.now());
   const pagesListenedRef = useRef<Set<number>>(new Set());
+
+  // Sound mixer (Web Audio ambient layers).
+  const engineRef = useRef<AmbientEngine | null>(null);
+  const [showMixer, setShowMixer] = useState(false);
+  const [ambientOn, setAmbientOn] = useState<Record<string, boolean>>({});
+  const [ambientVol, setAmbientVol] = useState<Record<string, number>>({});
+  const [autoAmbient, setAutoAmbient] = useState(true);
+
+  const getEngine = useCallback(() => {
+    if (!engineRef.current) engineRef.current = new AmbientEngine();
+    return engineRef.current;
+  }, []);
+
+  const toggleAmbient = useCallback(
+    (type: AmbientType, on: boolean) => {
+      getEngine().toggle(type, on);
+      setAmbientOn((prev) => ({ ...prev, [type]: on }));
+    },
+    [getEngine]
+  );
+
+  const changeAmbientVol = useCallback(
+    (type: AmbientType, v: number) => {
+      getEngine().setVolume(type, v);
+      setAmbientVol((prev) => ({ ...prev, [type]: v }));
+    },
+    [getEngine]
+  );
+
+  useEffect(() => {
+    return () => {
+      engineRef.current?.dispose();
+      engineRef.current = null;
+    };
+  }, []);
 
   // Load real story + pages from DB.
   useEffect(() => {
@@ -132,6 +190,27 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   useEffect(() => {
     pagesListenedRef.current.add(currentPage);
   }, [currentPage]);
+
+  // AI auto-matching: swap ambient layer to match the current page's scene.
+  const sceneDesc = isGenerated
+    ? generatedStory?.pages[currentPage]?.sceneDescription || ""
+    : pages[currentPage]?.scene_description || "";
+  useEffect(() => {
+    if (!autoAmbient || !isPlaying) return;
+    const match = ambientForScene(`${sceneDesc} ${currentText}`);
+    if (!match) return;
+    const engine = getEngine();
+    AMBIENT_OPTIONS.forEach(({ type }) => {
+      if (type !== match && engine.isPlaying(type) && !ambientOn[type]) {
+        engine.stopLayer(type);
+      }
+    });
+    if (!engine.isPlaying(match)) {
+      engine.setVolume(match, 0.4);
+      engine.play(match);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sceneDesc, autoAmbient, isPlaying, currentPage]);
 
   // Fake progress when there is no audio element (no API key configured).
   useEffect(() => {
@@ -233,11 +312,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     likeStory(storyId, next).catch(() => {});
   };
 
+  const anyAmbientOn = AMBIENT_OPTIONS.some((o) => ambientOn[o.type]);
   const actions = [
     { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
     { icon: Shuffle, label: "Rẽ Nhánh", action: () => onNavigate("adventure"), active: false },
     { icon: Heart, label: "Yêu Thích", action: handleLike, active: liked },
-    { icon: Share2, label: "Chia Sẻ", action: () => {}, active: false },
+    { icon: SlidersHorizontal, label: "Âm Nền", action: () => setShowMixer(true), active: anyAmbientOn },
   ];
 
   if (loading) {
@@ -359,6 +439,66 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           </button>
         ))}
       </div>
+
+      {/* Sound Mixer (3-layer: voice TTS + ambient + auto-match) */}
+      {showMixer && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
+                <SlidersHorizontal size={18} className="text-accent-2" /> Trộn Âm Thanh
+              </h3>
+              <button
+                onClick={() => setShowMixer(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setAutoAmbient((v) => !v)}
+              className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
+                autoAmbient
+                  ? "bg-accent-2/20 text-accent-2"
+                  : "bg-white/5 text-white/50"
+              }`}
+            >
+              <Volume2 size={14} />
+              AI tự chọn âm nền theo cảnh: {autoAmbient ? "BẬT" : "TẮT"}
+            </button>
+
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto no-scrollbar">
+              {AMBIENT_OPTIONS.map(({ type, label }) => {
+                const on = ambientOn[type] ?? false;
+                const vol = ambientVol[type] ?? 0.6;
+                return (
+                  <div key={type} className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleAmbient(type, !on)}
+                      className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
+                        on ? "bg-accent text-white" : "bg-white/5 text-white/50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={vol}
+                      disabled={!on}
+                      onChange={(e) => changeAmbientVol(type, Number(e.target.value))}
+                      className="flex-1 accent-accent-2 disabled:opacity-30"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

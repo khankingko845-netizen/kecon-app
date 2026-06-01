@@ -63,6 +63,20 @@ export interface GeneratedStory {
   storyId: string | null;
 }
 
+export async function illustrateApi(
+  prompt: string,
+  apiKey?: string
+): Promise<string> {
+  const res = await fetch("/api/story/illustrate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, apiKey }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Tạo minh hoạ thất bại");
+  return json.url as string;
+}
+
 export async function generateStoryApi(input: {
   provider: string;
   model: string;

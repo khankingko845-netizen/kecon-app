@@ -4,10 +4,13 @@ import { useState } from "react";
 import {
   ChevronRight, Key, Mic, BookOpen, Globe, Bell,
   Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink,
+  Download, Trash2,
 } from "lucide-react";
 import { useSettings } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
+import { useData } from "@/lib/data-context";
 import { PROVIDER_MODELS } from "@/lib/story-ai";
+import { exportUserData, deleteUserData } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface SettingsProps {
@@ -248,11 +251,51 @@ function ApiKeysPanel() {
 export default function Settings({ onNavigate }: SettingsProps) {
   const { settings, isConfigured } = useSettings();
   const { user, signOut } = useAuth();
+  const { refreshAll } = useData();
   const [tab, setTab] = useState<SettingsTab>("main");
+  const [busy, setBusy] = useState<string | null>(null);
 
   async function handleSignOut() {
     await signOut();
     onNavigate("login" as Screen);
+  }
+
+  async function handleExport() {
+    setBusy("export");
+    try {
+      const data = await exportUserData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kecon-data-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        "Xoá toàn bộ truyện, giọng nói và dữ liệu của bạn? Hành động này không thể hoàn tác."
+      )
+    )
+      return;
+    setBusy("delete");
+    try {
+      await deleteUserData();
+      await refreshAll();
+    } catch {
+      /* ignore */
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (tab === "api") {
@@ -346,6 +389,24 @@ export default function Settings({ onNavigate }: SettingsProps) {
           label="Thông Báo"
           value="Bật"
           onClick={() => {}}
+        />
+      </div>
+
+      <SectionHeader title="QUYỀN RIÊNG TƯ & DỮ LIỆU" />
+      <div className="bg-white divide-y divide-gray-100">
+        <SettingsRow
+          icon={Download}
+          label="Xuất Dữ Liệu (GDPR)"
+          value={busy === "export" ? "Đang xuất..." : "JSON"}
+          color="#0EA5E9"
+          onClick={handleExport}
+        />
+        <SettingsRow
+          icon={Trash2}
+          label="Xoá Toàn Bộ Dữ Liệu"
+          value={busy === "delete" ? "Đang xoá..." : undefined}
+          color="#EF4444"
+          onClick={handleDelete}
         />
       </div>
 

@@ -223,6 +223,134 @@ export async function deleteStory(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function updateStory(
+  id: string,
+  patch: Partial<
+    Pick<
+      StoryRow,
+      | "title"
+      | "description"
+      | "category"
+      | "is_published"
+      | "status"
+      | "moral_lesson"
+      | "cover_image_url"
+    >
+  >
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("stories").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function publishStory(
+  id: string,
+  publish: boolean
+): Promise<void> {
+  await updateStory(id, {
+    is_published: publish,
+    status: publish ? "published" : "draft",
+  });
+}
+
+export async function createBlankStory(input: {
+  title: string;
+  category?: string;
+  source?: StoryRow["source"];
+}): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const { data, error } = await supabase
+    .from("stories")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      category: input.category ?? "custom",
+      source: input.source ?? "manual",
+      status: "draft",
+      page_count: 0,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function createStoryPage(
+  storyId: string,
+  pageNumber: number,
+  content = "",
+  sceneDescription = ""
+): Promise<StoryPageRow> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .insert({
+      story_id: storyId,
+      page_number: pageNumber,
+      content,
+      scene_description: sceneDescription,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateStoryPage(
+  pageId: string,
+  patch: Partial<
+    Pick<
+      StoryPageRow,
+      "content" | "scene_description" | "page_number" | "illustration_url"
+    >
+  >
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_pages")
+    .update(patch)
+    .eq("id", pageId);
+  if (error) throw error;
+}
+
+export async function deleteStoryPage(pageId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_pages")
+    .delete()
+    .eq("id", pageId);
+  if (error) throw error;
+}
+
+export async function syncPageOrder(
+  pages: { id: string; page_number: number }[]
+): Promise<void> {
+  const supabase = createClient();
+  await Promise.all(
+    pages.map((p) =>
+      supabase
+        .from("story_pages")
+        .update({ page_number: p.page_number })
+        .eq("id", p.id)
+    )
+  );
+}
+
+export async function setStoryPageCount(
+  storyId: string,
+  count: number
+): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("stories")
+    .update({ page_count: count })
+    .eq("id", storyId);
+}
+
 // ============================================================
 // Family members
 // ============================================================
@@ -288,6 +416,166 @@ export async function likeStory(storyId: string, like: boolean): Promise<void> {
     p_delta: like ? 1 : -1,
   });
   if (like) await logBehavior("like", storyId);
+}
+
+// ============================================================
+// Admin / analytics
+// ============================================================
+export interface AdminStats {
+  totalStories: number;
+  publishedStories: number;
+  draftStories: number;
+  pendingReview: number;
+  totalVoices: number;
+  totalPlays: number;
+  totalLikes: number;
+  categoryBreakdown: { category: string; count: number }[];
+}
+
+export interface ContentGap {
+  category: string;
+  label: string;
+  count: number;
+  priority: "high" | "medium" | "low";
+  suggestion: string;
+}
+
+const ALL_CATEGORIES: { id: string; label: string }[] = [
+  { id: "fairy_tale", label: "Cổ tích" },
+  { id: "adventure", label: "Phiêu lưu" },
+  { id: "bedtime", label: "Ru ngủ" },
+  { id: "animal", label: "Động vật" },
+  { id: "educational", label: "Học chơi" },
+  { id: "custom", label: "Tùy chỉnh" },
+];
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const supabase = createClient();
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("id, category, status, is_published, play_count, like_count");
+  const { count: voiceCount } = await supabase
+    .from("voice_profiles")
+    .select("id", { count: "exact", head: true });
+
+  const rows = stories ?? [];
+  const categoryMap = new Map<string, number>();
+  let totalPlays = 0;
+  let totalLikes = 0;
+  let published = 0;
+  let drafts = 0;
+  let pending = 0;
+  for (const s of rows) {
+    categoryMap.set(s.category, (categoryMap.get(s.category) ?? 0) + 1);
+    totalPlays += s.play_count ?? 0;
+    totalLikes += s.like_count ?? 0;
+    if (s.is_published || s.status === "published") published++;
+    else if (s.status === "pending_review") pending++;
+    else drafts++;
+  }
+
+  return {
+    totalStories: rows.length,
+    publishedStories: published,
+    draftStories: drafts,
+    pendingReview: pending,
+    totalVoices: voiceCount ?? 0,
+    totalPlays,
+    totalLikes,
+    categoryBreakdown: Array.from(categoryMap.entries())
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export function computeContentGaps(
+  breakdown: { category: string; count: number }[]
+): ContentGap[] {
+  const counts = new Map(breakdown.map((b) => [b.category, b.count]));
+  return ALL_CATEGORIES.map((c) => {
+    const count = counts.get(c.id) ?? 0;
+    const priority: ContentGap["priority"] =
+      count === 0 ? "high" : count < 3 ? "medium" : "low";
+    return {
+      category: c.id,
+      label: c.label,
+      count,
+      priority,
+      suggestion:
+        count === 0
+          ? `Chưa có truyện "${c.label}" — nên tạo ngay`
+          : count < 3
+          ? `Chỉ có ${count} truyện "${c.label}" — nên bổ sung`
+          : `Đủ truyện "${c.label}"`,
+    };
+  }).sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2 };
+    return order[a.priority] - order[b.priority];
+  });
+}
+
+export async function getModerationQueue(): Promise<StoryRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .in("status", ["pending_review", "draft"])
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ============================================================
+// GDPR / data portability
+// ============================================================
+export async function exportUserData(): Promise<Record<string, unknown>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const [profile, voices, stories, members, behavior] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("voice_profiles").select("*").eq("user_id", user.id),
+    supabase.from("stories").select("*").eq("user_id", user.id),
+    supabase.from("family_members").select("*").eq("user_id", user.id),
+    supabase.from("user_behavior").select("*").eq("user_id", user.id).limit(500),
+  ]);
+
+  return {
+    exported_at: new Date().toISOString(),
+    account: { id: user.id, email: user.email },
+    profile: profile.data,
+    voice_profiles: voices.data ?? [],
+    stories: stories.data ?? [],
+    family_members: members.data ?? [],
+    behavior: behavior.data ?? [],
+  };
+}
+
+// Deletes all user-generated content (voices, stories, members, behavior).
+// Auth account removal requires a privileged server action and is requested
+// separately; this clears the personal data the client can reach under RLS.
+export async function deleteUserData(): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  await supabase.from("user_behavior").delete().eq("user_id", user.id);
+  await supabase.from("story_pages").delete().in(
+    "story_id",
+    (
+      (await supabase.from("stories").select("id").eq("user_id", user.id)).data ??
+      []
+    ).map((s) => s.id)
+  );
+  await supabase.from("stories").delete().eq("user_id", user.id);
+  await supabase.from("voice_profiles").delete().eq("user_id", user.id);
+  await supabase.from("family_members").delete().eq("user_id", user.id);
 }
 
 // ============================================================

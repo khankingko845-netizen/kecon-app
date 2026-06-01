@@ -1,0 +1,330 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2,
+  Image as ImageIcon, Globe, FileText, Check,
+} from "lucide-react";
+import TopBar from "@/components/ui/TopBar";
+import { useSettings } from "@/lib/settings-context";
+import { useData } from "@/lib/data-context";
+import { illustrateApi } from "@/lib/api-client";
+import {
+  getStory,
+  getStoryPages,
+  updateStory,
+  updateStoryPage,
+  createStoryPage,
+  deleteStoryPage,
+  syncPageOrder,
+  setStoryPageCount,
+  publishStory,
+  type StoryRow,
+  type StoryPageRow,
+} from "@/lib/db";
+import type { Screen } from "@/lib/types";
+
+interface StoryEditorProps {
+  storyId?: string;
+  onBack: () => void;
+  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
+}
+
+export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditorProps) {
+  const { settings } = useSettings();
+  const { refreshStories } = useData();
+  const [story, setStory] = useState<StoryRow | null>(null);
+  const [title, setTitle] = useState("");
+  const [pages, setPages] = useState<StoryPageRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [illustrating, setIllustrating] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!storyId) {
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    Promise.all([getStory(storyId), getStoryPages(storyId)])
+      .then(([s, p]) => {
+        if (!active) return;
+        setStory(s);
+        setTitle(s?.title ?? "");
+        setPages(p);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Lỗi tải truyện"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [storyId]);
+
+  const updatePageLocal = (id: string, patch: Partial<StoryPageRow>) => {
+    setPages((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  };
+
+  const handleAddPage = async () => {
+    if (!storyId) return;
+    try {
+      const newPage = await createStoryPage(storyId, pages.length + 1);
+      setPages((prev) => [...prev, newPage]);
+      await setStoryPageCount(storyId, pages.length + 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không thêm được trang");
+    }
+  };
+
+  const handleDeletePage = async (id: string) => {
+    if (!storyId) return;
+    try {
+      await deleteStoryPage(id);
+      const remaining = pages
+        .filter((p) => p.id !== id)
+        .map((p, i) => ({ ...p, page_number: i + 1 }));
+      setPages(remaining);
+      await syncPageOrder(remaining.map((p) => ({ id: p.id, page_number: p.page_number })));
+      await setStoryPageCount(storyId, remaining.length);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không xoá được trang");
+    }
+  };
+
+  const movePage = async (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= pages.length) return;
+    const reordered = [...pages];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const renumbered = reordered.map((p, i) => ({ ...p, page_number: i + 1 }));
+    setPages(renumbered);
+    await syncPageOrder(renumbered.map((p) => ({ id: p.id, page_number: p.page_number })));
+  };
+
+  const handleSave = useCallback(async () => {
+    if (!storyId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateStory(storyId, { title });
+      await Promise.all(
+        pages.map((p) =>
+          updateStoryPage(p.id, {
+            content: p.content,
+            scene_description: p.scene_description,
+            page_number: p.page_number,
+          })
+        )
+      );
+      await refreshStories();
+      setSavedAt(Date.now());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lưu thất bại");
+    } finally {
+      setSaving(false);
+    }
+  }, [storyId, title, pages, refreshStories]);
+
+  const handleIllustrate = async (page: StoryPageRow) => {
+    const prompt = page.scene_description || page.content;
+    if (!prompt) return;
+    setIllustrating(page.id);
+    setError(null);
+    try {
+      const url = await illustrateApi(prompt, settings.storyApiKey || undefined);
+      updatePageLocal(page.id, { illustration_url: url });
+      await updateStoryPage(page.id, { illustration_url: url });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Tạo minh hoạ thất bại");
+    } finally {
+      setIllustrating(null);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!storyId || !story) return;
+    setSaving(true);
+    try {
+      await handleSave();
+      await publishStory(storyId, !story.is_published);
+      setStory({ ...story, is_published: !story.is_published });
+      await refreshStories();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi xuất bản");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBar title="Soạn Truyện" onBack={onBack} />
+        <div className="flex justify-center pt-20">
+          <Loader2 size={26} className="animate-spin text-accent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!story) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBar title="Soạn Truyện" onBack={onBack} />
+        <p className="px-5 pt-10 text-center text-txt-secondary text-sm">
+          Không tìm thấy truyện.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface pb-32">
+      <TopBar title="Soạn Truyện" onBack={onBack} />
+
+      <div className="px-5 pt-2">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Tiêu đề truyện"
+          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-white text-[17px] font-bold text-txt outline-none focus:border-accent transition-colors mb-2"
+        />
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-100 text-txt-secondary">
+            {pages.length} trang
+          </span>
+          <span
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-md ${
+              story.is_published
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {story.is_published ? "Đã xuất bản" : "Bản nháp"}
+          </span>
+          {savedAt && (
+            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <Check size={12} /> Đã lưu
+            </span>
+          )}
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-[13px] text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Pages */}
+        <div className="space-y-3">
+          {pages.map((page, i) => (
+            <div
+              key={page.id}
+              className="bg-white rounded-2xl border border-gray-100 p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-accent">
+                  Trang {i + 1}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => movePage(i, -1)}
+                    disabled={i === 0}
+                    className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 disabled:opacity-30"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    onClick={() => movePage(i, 1)}
+                    disabled={i === pages.length - 1}
+                    className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 disabled:opacity-30"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDeletePage(page.id)}
+                    className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-500"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                value={page.content}
+                onChange={(e) => updatePageLocal(page.id, { content: e.target.value })}
+                placeholder="Nội dung trang..."
+                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-24 mb-2"
+              />
+              <input
+                value={page.scene_description ?? ""}
+                onChange={(e) => updatePageLocal(page.id, { scene_description: e.target.value })}
+                placeholder="Mô tả cảnh (cho minh hoạ AI)..."
+                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[12px] text-txt-secondary outline-none focus:border-accent transition-colors mb-2"
+              />
+
+              {page.illustration_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={page.illustration_url}
+                  alt={`Minh hoạ trang ${i + 1}`}
+                  className="w-full h-40 object-cover rounded-xl mb-2"
+                />
+              ) : null}
+
+              <button
+                onClick={() => handleIllustrate(page)}
+                disabled={illustrating === page.id}
+                className="inline-flex items-center gap-1.5 text-[12px] font-bold text-accent-2 px-3 py-1.5 rounded-lg bg-accent-2/10 disabled:opacity-50"
+              >
+                {illustrating === page.id ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <ImageIcon size={13} />
+                )}
+                {page.illustration_url ? "Tạo lại minh hoạ" : "Minh hoạ AI"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleAddPage}
+          className="w-full mt-3 py-3.5 rounded-2xl border-2 border-dashed border-gray-300 text-[14px] font-bold text-txt-secondary flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+        >
+          <Plus size={18} /> Thêm trang
+        </button>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => onNavigate("player", { storyId: story.id })}
+            className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-[14px] font-bold text-txt flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          >
+            <FileText size={16} /> Xem thử
+          </button>
+          <button
+            onClick={handlePublish}
+            disabled={saving}
+            className="flex-1 py-3.5 rounded-2xl bg-emerald-500 text-white text-[14px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60"
+          >
+            <Globe size={16} />
+            {story.is_published ? "Gỡ xuất bản" : "Xuất bản"}
+          </button>
+        </div>
+      </div>
+
+      {/* Sticky Save */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-5 py-4 bg-gradient-to-t from-white via-white to-transparent">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-[16px] rounded-[14px] bg-gradient-to-r from-accent to-pink-500 text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-accent/30 active:scale-[0.98] transition-transform disabled:opacity-60"
+        >
+          {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          Lưu truyện
+        </button>
+      </div>
+    </div>
+  );
+}
