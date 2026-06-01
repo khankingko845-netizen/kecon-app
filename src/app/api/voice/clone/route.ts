@@ -12,17 +12,18 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    return Response.json(
-      { error: "ElevenLabs API key not configured" },
-      { status: 500 }
-    );
-  }
-
   const formData = await request.formData();
   const name = formData.get("name") as string;
   const audioFile = formData.get("audio") as File;
+  const userKey = formData.get("apiKey") as string | null;
+
+  const apiKey = userKey || process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) {
+    return Response.json(
+      { error: "Chưa cấu hình ElevenLabs API key" },
+      { status: 400 }
+    );
+  }
 
   if (!name || !audioFile) {
     return Response.json(
