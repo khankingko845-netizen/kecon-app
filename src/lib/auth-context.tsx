@@ -70,39 +70,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mounted) return;
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        await fetchProfile(currentSession.user.id);
-      }
-
       setLoading(false);
-    };
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id);
+      }
+    });
 
-    initAuth();
-
+    // The callback must stay synchronous: awaiting other supabase calls here
+    // deadlocks the client because the callback runs while the auth lock is held.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
-
+      setLoading(false);
       if (newSession?.user) {
-        await fetchProfile(newSession.user.id);
+        setTimeout(() => {
+          if (mounted) fetchProfile(newSession.user.id);
+        }, 0);
       } else {
         setProfile(null);
       }
-
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [supabase, fetchProfile]);
 
   const signOut = useCallback(async () => {
