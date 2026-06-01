@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.id) {
       await fetchProfile(user.id);
     }
-  }, [user?.id, fetchProfile]);
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     const initAuth = async () => {

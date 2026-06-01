@@ -1,0 +1,111 @@
+"use client";
+
+import { useState } from "react";
+import { User, UserRound } from "lucide-react";
+import { stories, voiceProfiles } from "@/lib/data";
+import type { Screen } from "@/lib/types";
+
+interface LibraryProps {
+  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
+}
+
+function StoryIcon({ icon, size = 36 }: { icon: string; size?: number }) {
+  const paths: Record<string, React.ReactNode> = {
+    flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>,
+    rabbit: <><path d="M13 16a3 3 0 0 1 2.24 5"/><path d="M18 12h.01"/><path d="M18 21h-8a4 4 0 0 1-4-4 7 7 0 0 1 7-7h.2L9.6 6.4a1.93 1.93 0 1 1 2.8-2.8L15.8 7h.2c3.3 0 6 2.7 6 6v1a2 2 0 0 1-2 2h-1a3 3 0 0 0-3 3"/><path d="M20 8.54V4a2 2 0 1 0-4 0v3"/><path d="M7.612 12.524a3 3 0 1 0-1.6 4.3"/></>,
+    castle: <><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-6 0v4"/><path d="M3 11V4h2v2h2V4h2v2h2V4h2v2h2V4h2v2h2V4h2v7"/></>,
+    wand: <><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></>,
+    rocket: <><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>,
+    paw: <><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></>,
+  };
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: size, height: size }}>
+      {paths[icon]}
+    </svg>
+  );
+}
+
+const filters = ["Tất Cả", "Cổ Tích VN", "AI Sáng Tạo", "Yêu Thích"];
+
+export default function Library({ onNavigate }: LibraryProps) {
+  const [activeFilter, setActiveFilter] = useState("Tất Cả");
+
+  const filtered =
+    activeFilter === "Tất Cả"
+      ? stories
+      : activeFilter === "Yêu Thích"
+      ? stories.slice(0, 2)
+      : stories.filter((s) =>
+          activeFilter === "AI Sáng Tạo"
+            ? s.category === "AI"
+            : s.category === "Cổ tích"
+        );
+
+  return (
+    <div className="min-h-screen bg-surface pb-24">
+      <div className="px-5 pt-14">
+        <h2 className="text-[28px] font-black tracking-tight mb-3.5">
+          Thư Viện
+        </h2>
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {filters.map((f) => (
+            <button
+              key={f}
+              onClick={() => setActiveFilter(f)}
+              className={`px-4 py-2 rounded-[10px] text-[13px] font-semibold whitespace-nowrap border transition-all ${
+                activeFilter === f
+                  ? "bg-txt text-white border-txt"
+                  : "bg-white text-txt-secondary border-gray-200"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 px-5 pt-4">
+        {filtered.map((story) => {
+          const voice = voiceProfiles.find((v) => v.id === story.voiceId);
+          return (
+            <button
+              key={story.id}
+              onClick={() => onNavigate("player", { storyId: story.id })}
+              className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
+            >
+              <div
+                className={`h-[90px] bg-gradient-to-br ${story.gradient} flex items-center justify-center text-white`}
+              >
+                <StoryIcon icon={story.icon} />
+              </div>
+              <div className="p-3 pb-3.5">
+                <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">
+                  {story.title}
+                </h5>
+                <p className="text-[11px] text-txt-secondary mb-1.5">
+                  {story.duration} · {story.category}
+                </p>
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold"
+                  style={{
+                    background:
+                      voice?.gender === "male" ? "#DBEAFE" : voice?.gender === "female" && voice?.id === "me-lan" ? "#FCE7F3" : "#FEF3C7",
+                    color:
+                      voice?.gender === "male" ? "#1D4ED8" : voice?.gender === "female" && voice?.id === "me-lan" ? "#DB2777" : "#B45309",
+                  }}
+                >
+                  {voice?.gender === "female" ? (
+                    <UserRound size={10} />
+                  ) : (
+                    <User size={10} />
+                  )}
+                  {story.voiceName}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

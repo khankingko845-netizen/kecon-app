@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
-import { login, type AuthState } from "@/app/actions/auth";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   LogIn,
@@ -20,13 +19,37 @@ interface LoginProps {
 }
 
 export default function Login({ onNavigate }: LoginProps) {
-  const [state, formAction, pending] = useActionState<AuthState, FormData>(
-    login,
-    {}
-  );
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  if (state?.success) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    if (!email || !password) {
+      setError("Vui lòng nhập email và mật khẩu");
+      return;
+    }
+    setPending(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setPending(false);
+    if (error) {
+      if (error.message === "Invalid login credentials") {
+        setError("Email hoặc mật khẩu không đúng");
+      } else if (error.message === "Email not confirmed") {
+        setError("Email chưa được xác nhận. Vui lòng kiểm tra hộp thư.");
+      } else {
+        setError(error.message);
+      }
+      return;
+    }
     onNavigate("home");
   }
 
@@ -56,10 +79,10 @@ export default function Login({ onNavigate }: LoginProps) {
       </div>
 
       {/* Form */}
-      <form action={formAction} className="flex-1 px-6 pt-6 pb-10">
-        {state?.error && (
+      <form onSubmit={handleSubmit} className="flex-1 px-6 pt-6 pb-10">
+        {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-red-600 text-sm font-medium">
-            {state.error}
+            {error}
           </div>
         )}
 

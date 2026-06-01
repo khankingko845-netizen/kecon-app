@@ -316,11 +316,13 @@ CREATE POLICY "Admins can update any story status"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, display_name, family_name)
+  INSERT INTO public.profiles (id, display_name, family_name, child_name, child_age)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'family_name', '')
+    COALESCE(NEW.raw_user_meta_data->>'family_name', ''),
+    NULLIF(NEW.raw_user_meta_data->>'child_name', ''),
+    (NEW.raw_user_meta_data->>'child_age')::INTEGER
   );
   RETURN NEW;
 END;

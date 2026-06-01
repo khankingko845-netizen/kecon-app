@@ -45,7 +45,14 @@ function AppContent() {
   const [history, setHistory] = useState<ScreenState[]>([
     { screen: "onboarding" },
   ]);
-  const current = history[history.length - 1];
+  const rawCurrent = history[history.length - 1];
+  const onAuthScreen =
+    rawCurrent.screen === "onboarding" ||
+    rawCurrent.screen === "login" ||
+    rawCurrent.screen === "signup";
+  // Authenticated users should never see auth screens (e.g. on reload).
+  const current: ScreenState =
+    !loading && user && onAuthScreen ? { screen: "home" } : rawCurrent;
   const activeTab: TabId = screenTabMap[current.screen] || "home";
 
   const navigate = useCallback(
@@ -64,12 +71,12 @@ function AppContent() {
     setHistory([{ screen }]);
   }, []);
 
-  const handleOnboardingDone = useCallback(() => {
-    if (user) {
-      setHistory([{ screen: "home" }]);
-    } else {
-      setHistory([{ screen: "login" }]);
-    }
+  const handleGetStarted = useCallback(() => {
+    setHistory([{ screen: user ? "home" : "signup" }]);
+  }, [user]);
+
+  const handleGoToLogin = useCallback(() => {
+    setHistory([{ screen: user ? "home" : "login" }]);
   }, [user]);
 
   const showTabBar =
@@ -99,7 +106,10 @@ function AppContent() {
     <div className="relative max-w-[430px] mx-auto min-h-screen bg-white shadow-2xl shadow-black/10">
       <div className="screen-enter" key={current.screen}>
         {current.screen === "onboarding" && (
-          <Onboarding onGetStarted={handleOnboardingDone} />
+          <Onboarding
+            onGetStarted={handleGetStarted}
+            onLogin={handleGoToLogin}
+          />
         )}
         {current.screen === "login" && <Login onNavigate={navigate} />}
         {current.screen === "signup" && <Signup onNavigate={navigate} />}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useActionState } from "react";
-import { signup, type AuthState } from "@/app/actions/auth";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   Mic,
   Mail,
@@ -20,13 +20,58 @@ interface SignupProps {
 }
 
 export default function Signup({ onNavigate }: SignupProps) {
-  const [state, formAction, pending] = useActionState<AuthState, FormData>(
-    signup,
-    {}
-  );
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  if (state?.success) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    const familyName = String(form.get("familyName") || "").trim();
+    const childName = String(form.get("childName") || "").trim();
+    const childAge = String(form.get("childAge") || "").trim();
+
+    if (!email || !password) {
+      setError("Vui lòng nhập email và mật khẩu");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự");
+      return;
+    }
+
+    setPending(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          family_name: familyName,
+          display_name: familyName || email.split("@")[0],
+          child_name: childName,
+          child_age: childAge ? parseInt(childAge) : null,
+        },
+      },
+    });
+    setPending(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    if (!data.session) {
+      setNotice(
+        "Tài khoản đã tạo! Vui lòng kiểm tra email để xác nhận trước khi đăng nhập."
+      );
+      return;
+    }
     onNavigate("home");
   }
 
@@ -46,10 +91,15 @@ export default function Signup({ onNavigate }: SignupProps) {
       </div>
 
       {/* Form */}
-      <form action={formAction} className="flex-1 px-6 pt-6 pb-10 overflow-y-auto">
-        {state?.error && (
+      <form onSubmit={handleSubmit} className="flex-1 px-6 pt-6 pb-10 overflow-y-auto">
+        {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-red-600 text-sm font-medium">
-            {state.error}
+            {error}
+          </div>
+        )}
+        {notice && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4 text-emerald-700 text-sm font-medium">
+            {notice}
           </div>
         )}
 
