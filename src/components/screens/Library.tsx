@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { User, UserRound } from "lucide-react";
-import { stories, voiceProfiles } from "@/lib/data";
+import { Sparkles, BookOpen, Loader2 } from "lucide-react";
+import { useData } from "@/lib/data-context";
+import { gradientFor, iconForCategory } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface LibraryProps {
@@ -20,26 +21,36 @@ function StoryIcon({ icon, size = 36 }: { icon: string; size?: number }) {
   };
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ width: size, height: size }}>
-      {paths[icon]}
+      {paths[icon] || paths.wand}
     </svg>
   );
 }
 
-const filters = ["Tất Cả", "Cổ Tích VN", "AI Sáng Tạo", "Yêu Thích"];
+const filters = [
+  { id: "all", label: "Tất Cả" },
+  { id: "fairy_tale", label: "Cổ Tích" },
+  { id: "ai", label: "AI Sáng Tạo" },
+  { id: "bedtime", label: "Ru Ngủ" },
+];
+
+const categoryLabels: Record<string, string> = {
+  fairy_tale: "Cổ tích",
+  adventure: "Phiêu lưu",
+  bedtime: "Ru ngủ",
+  animal: "Động vật",
+  educational: "Học chơi",
+  custom: "Tùy chỉnh",
+};
 
 export default function Library({ onNavigate }: LibraryProps) {
-  const [activeFilter, setActiveFilter] = useState("Tất Cả");
+  const { stories, loading } = useData();
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  const filtered =
-    activeFilter === "Tất Cả"
-      ? stories
-      : activeFilter === "Yêu Thích"
-      ? stories.slice(0, 2)
-      : stories.filter((s) =>
-          activeFilter === "AI Sáng Tạo"
-            ? s.category === "AI"
-            : s.category === "Cổ tích"
-        );
+  const filtered = stories.filter((s) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "ai") return s.source === "ai";
+    return s.category === activeFilter;
+  });
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -50,61 +61,72 @@ export default function Library({ onNavigate }: LibraryProps) {
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {filters.map((f) => (
             <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
+              key={f.id}
+              onClick={() => setActiveFilter(f.id)}
               className={`px-4 py-2 rounded-[10px] text-[13px] font-semibold whitespace-nowrap border transition-all ${
-                activeFilter === f
+                activeFilter === f.id
                   ? "bg-txt text-white border-txt"
                   : "bg-white text-txt-secondary border-gray-200"
               }`}
             >
-              {f}
+              {f.label}
             </button>
           ))}
         </div>
       </div>
 
+      {loading && stories.length === 0 && (
+        <div className="flex justify-center py-12">
+          <Loader2 size={24} className="animate-spin text-accent" />
+        </div>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <div className="px-5 pt-12 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-accent mx-auto mb-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <BookOpen size={26} />
+          </div>
+          <p className="text-[15px] font-bold text-txt mb-1">
+            {stories.length === 0 ? "Thư viện trống" : "Không có truyện phù hợp"}
+          </p>
+          <p className="text-[13px] text-txt-secondary mb-4">
+            Tạo truyện AI đầu tiên cho gia đình bạn
+          </p>
+          <button
+            onClick={() => onNavigate("create")}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold active:scale-95 transition-transform"
+          >
+            <Sparkles size={16} /> Tạo Truyện
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2.5 px-5 pt-4">
-        {filtered.map((story) => {
-          const voice = voiceProfiles.find((v) => v.id === story.voiceId);
-          return (
-            <button
-              key={story.id}
-              onClick={() => onNavigate("player", { storyId: story.id })}
-              className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
+        {filtered.map((story) => (
+          <button
+            key={story.id}
+            onClick={() => onNavigate("player", { storyId: story.id })}
+            className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
+          >
+            <div
+              className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white`}
             >
-              <div
-                className={`h-[90px] bg-gradient-to-br ${story.gradient} flex items-center justify-center text-white`}
-              >
-                <StoryIcon icon={story.icon} />
-              </div>
-              <div className="p-3 pb-3.5">
-                <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">
-                  {story.title}
-                </h5>
-                <p className="text-[11px] text-txt-secondary mb-1.5">
-                  {story.duration} · {story.category}
-                </p>
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold"
-                  style={{
-                    background:
-                      voice?.gender === "male" ? "#DBEAFE" : voice?.gender === "female" && voice?.id === "me-lan" ? "#FCE7F3" : "#FEF3C7",
-                    color:
-                      voice?.gender === "male" ? "#1D4ED8" : voice?.gender === "female" && voice?.id === "me-lan" ? "#DB2777" : "#B45309",
-                  }}
-                >
-                  {voice?.gender === "female" ? (
-                    <UserRound size={10} />
-                  ) : (
-                    <User size={10} />
-                  )}
-                  {story.voiceName}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+              <StoryIcon icon={iconForCategory(story.category, story.id)} />
+            </div>
+            <div className="p-3 pb-3.5">
+              <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">
+                {story.title}
+              </h5>
+              <p className="text-[11px] text-txt-secondary mb-1.5">
+                {story.page_count} trang ·{" "}
+                {categoryLabels[story.category] || story.category}
+              </p>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">
+                {story.source === "ai" ? "AI" : "Truyện"}
+              </span>
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );

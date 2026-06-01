@@ -8,9 +8,19 @@ import {
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
-import { stories } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
-import { textToSpeech } from "@/lib/elevenlabs";
+import { useData } from "@/lib/data-context";
+import { ttsApi } from "@/lib/api-client";
+import {
+  getStory,
+  getStoryPages,
+  logPlaySession,
+  logBehavior,
+  likeStory,
+  gradientFor,
+  type StoryRow,
+  type StoryPageRow,
+} from "@/lib/db";
 
 interface StoryPlayerProps {
   storyId?: string;
@@ -18,8 +28,12 @@ interface StoryPlayerProps {
   onNavigate: (screen: Screen) => void;
 }
 
+// Default ElevenLabs voice (used when the story's voice has no clone yet).
+const DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
   const { settings } = useSettings();
+  const { voiceProfiles } = useData();
   const isGenerated = storyId === "__generated__";
 
   const [generatedStory] = useState<GeneratedStory | null>(() => {
@@ -33,28 +47,93 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     }
     return null;
   });
+
+  const [story, setStory] = useState<StoryRow | null>(null);
+  const [pages, setPages] = useState<StoryPageRow[]>([]);
+  const [loading, setLoading] = useState(!isGenerated);
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
+  const [liked, setLiked] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRef = useRef<number>(Date.now());
+  const pagesListenedRef = useRef<Set<number>>(new Set());
 
-  const staticStory = stories.find((s) => s.id === storyId) || stories[0];
+  // Load real story + pages from DB.
+  useEffect(() => {
+    if (isGenerated || !storyId) return;
+    let active = true;
+    setLoading(true);
+    Promise.all([getStory(storyId), getStoryPages(storyId)])
+      .then(([s, p]) => {
+        if (!active) return;
+        setStory(s);
+        setPages(p);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [storyId, isGenerated]);
 
   const title = isGenerated
     ? generatedStory?.title || "Truyện AI"
-    : staticStory.title;
+    : story?.title || "Truyện";
 
   const totalPages = isGenerated
     ? generatedStory?.pages.length || 1
-    : 12;
+    : Math.max(pages.length, 1);
 
   const currentText = isGenerated
     ? generatedStory?.pages[currentPage]?.text || ""
-    : "Lê Lợi cầm thanh gươm báu lên, ánh vàng rực rỡ chiếu sáng cả vùng trời...";
+    : pages[currentPage]?.content || "";
 
+  // Resolve which ElevenLabs voice to use for TTS.
+  const storyVoice = story?.voice_id
+    ? voiceProfiles.find((v) => v.id === story.voice_id)
+    : voiceProfiles.find((v) => v.elevenlabs_voice_id);
+  const elevenVoiceId = storyVoice?.elevenlabs_voice_id || DEFAULT_VOICE_ID;
+  const voiceLabel = storyVoice?.name || "Giọng mẫu";
+
+  const gradient = isGenerated
+    ? "from-accent-2 to-accent"
+    : story
+    ? gradientFor(story.id)
+    : "from-accent-2 to-accent";
+
+  // Log play session on unmount.
+  const flushSession = useCallback(() => {
+    if (isGenerated || !storyId) return;
+    const duration = Math.round((Date.now() - startRef.current) / 1000);
+    if (duration < 2) return;
+    const listened = pagesListenedRef.current.size;
+    logPlaySession({
+      storyId,
+      voiceId: story?.voice_id ?? null,
+      duration,
+      pagesListened: listened,
+      completed: listened >= totalPages,
+    }).catch(() => {});
+  }, [isGenerated, storyId, story, totalPages]);
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    if (storyId && !isGenerated) logBehavior("play", storyId).catch(() => {});
+    return () => {
+      flushSession();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyId]);
+
+  useEffect(() => {
+    pagesListenedRef.current.add(currentPage);
+  }, [currentPage]);
+
+  // Fake progress when there is no audio element (no API key configured).
   useEffect(() => {
     if (isPlaying && !audioRef.current) {
       intervalRef.current = setInterval(() => {
@@ -86,10 +165,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
     setIsTTSLoading(true);
     try {
-      const blob = await textToSpeech(
-        settings.elevenLabsApiKey,
-        "pNInz6obpgDQGcFmaJgB",
+      const blob = await ttsApi(
+        elevenVoiceId,
         currentText,
+        settings.elevenLabsApiKey,
         settings.elevenLabsModelId
       );
 
@@ -107,6 +186,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         if (currentPage < totalPages - 1) {
           setCurrentPage((c) => c + 1);
           setProgress(0);
+        } else {
+          if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
         }
       };
 
@@ -123,7 +204,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     } finally {
       setIsTTSLoading(false);
     }
-  }, [settings.elevenLabsApiKey, settings.elevenLabsModelId, currentText, currentPage, totalPages]);
+  }, [settings.elevenLabsApiKey, settings.elevenLabsModelId, currentText, currentPage, totalPages, elevenVoiceId, storyId, isGenerated]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -141,15 +222,31 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       setProgress(0);
       setIsPlaying(false);
       audioRef.current?.pause();
+      audioRef.current = null;
     }
   };
 
+  const handleLike = () => {
+    if (isGenerated || !storyId) return;
+    const next = !liked;
+    setLiked(next);
+    likeStory(storyId, next).catch(() => {});
+  };
+
   const actions = [
-    { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby") },
-    { icon: Shuffle, label: "Rẽ Nhánh", action: () => onNavigate("adventure") },
-    { icon: Heart, label: "Yêu Thích", action: () => {} },
-    { icon: Share2, label: "Chia Sẻ", action: () => {} },
+    { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
+    { icon: Shuffle, label: "Rẽ Nhánh", action: () => onNavigate("adventure"), active: false },
+    { icon: Heart, label: "Yêu Thích", action: handleLike, active: liked },
+    { icon: Share2, label: "Chia Sẻ", action: () => {}, active: false },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex items-center justify-center text-white">
+        <Loader2 size={28} className="animate-spin text-accent-2" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex flex-col text-white">
@@ -179,9 +276,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       {/* Album Art */}
       <div className="flex-1 flex flex-col items-center px-7 pt-5">
         <div
-          className={`w-64 h-64 rounded-[28px] bg-gradient-to-br ${
-            isGenerated ? "from-accent-2 to-accent" : staticStory.gradient
-          } flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative`}
+          className={`w-64 h-64 rounded-[28px] bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -197,12 +292,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         </h2>
         <p className="text-sm text-white/40 font-medium flex items-center gap-1.5 mb-2">
           <Mic size={14} />
-          {isGenerated ? "AI Generated" : `Giọng đọc: ${staticStory.voiceName}`}
+          {isGenerated ? "AI Generated" : `Giọng đọc: ${voiceLabel}`}
         </p>
 
         {/* Text Preview */}
         <div className="w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar">
-          &ldquo;{currentText}&rdquo;
+          {currentText ? `\u201C${currentText}\u201D` : "..."}
         </div>
 
         {/* Seek Bar */}
@@ -219,7 +314,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           </div>
           <div className="flex justify-between text-xs font-semibold text-white/30 mt-2">
             <span>{currentPage + 1}/{totalPages}</span>
-            <span>{isGenerated ? "AI Story" : staticStory.duration}</span>
+            <span>{isGenerated ? "AI Story" : `${totalPages} trang`}</span>
           </div>
         </div>
 
@@ -253,7 +348,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       <div className="flex justify-around px-5 pt-5 pb-10">
         {actions.map((a) => (
           <button key={a.label} onClick={a.action} className="text-center">
-            <a.icon size={20} className="mx-auto text-white/40" />
+            <a.icon
+              size={20}
+              className={`mx-auto ${a.active ? "text-accent" : "text-white/40"}`}
+              fill={a.active ? "currentColor" : "none"}
+            />
             <span className="text-[10px] font-semibold text-white/30 mt-1 block">
               {a.label}
             </span>

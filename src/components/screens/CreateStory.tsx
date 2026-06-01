@@ -6,9 +6,10 @@ import {
   User, UserRound, Loader2, AlertCircle, Settings,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
-import { voiceProfiles, storyThemes } from "@/lib/data";
+import { storyThemes } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
-import { generateStory } from "@/lib/story-ai";
+import { useData } from "@/lib/data-context";
+import { generateStoryApi } from "@/lib/api-client";
 import type { Screen } from "@/lib/types";
 
 interface CreateStoryProps {
@@ -29,15 +30,18 @@ const ageOptions = ["2-3", "4-6", "7-9", "10+"];
 
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
   const { settings } = useSettings();
+  const { voiceProfiles, refreshStories } = useData();
   const [selectedTheme, setSelectedTheme] = useState("cotich");
   const [selectedAge, setSelectedAge] = useState(settings.childAge || "4-6");
-  const [selectedVoice, setSelectedVoice] = useState("me-lan");
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [childName, setChildName] = useState(settings.childName || "Minh");
   const [extraPrompt, setExtraPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hasStoryKey = Boolean(settings.storyApiKey);
+  const effectiveVoice =
+    selectedVoice ?? (voiceProfiles.length > 0 ? voiceProfiles[0].id : null);
 
   const handleGenerate = async () => {
     if (!hasStoryKey) {
@@ -49,24 +53,29 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
     setError(null);
 
     try {
-      const story = await generateStory(
-        settings.storyProvider,
-        settings.storyApiKey,
-        settings.storyModel,
-        {
-          theme: selectedTheme,
-          childName,
-          age: selectedAge,
-          language: settings.language,
-          extraPrompt: extraPrompt || undefined,
+      const story = await generateStoryApi({
+        provider: settings.storyProvider,
+        model: settings.storyModel,
+        apiKey: settings.storyApiKey,
+        theme: selectedTheme,
+        childName,
+        age: selectedAge,
+        language: settings.language,
+        extraPrompt: extraPrompt || undefined,
+        voiceId: effectiveVoice,
+        persist: true,
+      });
+
+      await refreshStories();
+
+      if (story.storyId) {
+        onNavigate("player", { storyId: story.storyId });
+      } else {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("kecon-generated-story", JSON.stringify(story));
         }
-      );
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("kecon-generated-story", JSON.stringify(story));
+        onNavigate("player", { storyId: "__generated__" });
       }
-
-      onNavigate("player", { storyId: "__generated__" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
     } finally {
@@ -176,40 +185,49 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
           <label className="text-[13px] font-bold text-txt mb-2.5 block">
             Giọng Đọc
           </label>
-          <div className="flex gap-2">
-            {voiceProfiles.map((v) => {
-              const selected = selectedVoice === v.id;
-              return (
-                <button
-                  key={v.id}
-                  onClick={() => setSelectedVoice(v.id)}
-                  className={`flex-1 py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
-                    selected
-                      ? "border-accent bg-orange-50"
-                      : "border-transparent bg-surface"
-                  }`}
-                >
-                  <div className="flex justify-center mb-1">
-                    {v.gender === "female" ? (
-                      <UserRound
-                        size={24}
-                        className={selected ? "text-accent" : "text-gray-500"}
-                      />
-                    ) : (
-                      <User
-                        size={24}
-                        className={selected ? "text-accent" : "text-gray-500"}
-                      />
-                    )}
-                  </div>
-                  <div className="text-xs font-bold">{v.name}</div>
-                  <div className="text-[10px] text-txt-secondary font-medium">
-                    {v.role}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          {voiceProfiles.length === 0 ? (
+            <button
+              onClick={() => onNavigate("recording")}
+              className="w-full py-3.5 rounded-[14px] border-2 border-dashed border-gray-300 text-center text-[13px] font-semibold text-txt-secondary active:scale-[0.98] transition-transform"
+            >
+              Chưa có giọng — Ghi âm giọng đọc trước ›
+            </button>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {voiceProfiles.map((v) => {
+                const selected = effectiveVoice === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVoice(v.id)}
+                    className={`flex-1 min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
+                      selected
+                        ? "border-accent bg-orange-50"
+                        : "border-transparent bg-surface"
+                    }`}
+                  >
+                    <div className="flex justify-center mb-1">
+                      {v.gender === "female" ? (
+                        <UserRound
+                          size={24}
+                          className={selected ? "text-accent" : "text-gray-500"}
+                        />
+                      ) : (
+                        <User
+                          size={24}
+                          className={selected ? "text-accent" : "text-gray-500"}
+                        />
+                      )}
+                    </div>
+                    <div className="text-xs font-bold truncate">{v.name}</div>
+                    <div className="text-[10px] text-txt-secondary font-medium">
+                      {v.elevenlabs_voice_id ? "AI clone" : "Mặc định"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Description */}

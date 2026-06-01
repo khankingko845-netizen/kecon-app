@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import type { Screen, TabId } from "@/lib/types";
 import { SettingsProvider } from "@/lib/settings-context";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { DataProvider } from "@/lib/data-context";
 import TabBar from "@/components/ui/TabBar";
 import Onboarding from "@/components/screens/Onboarding";
 import Login from "@/components/screens/Login";
@@ -150,7 +151,9 @@ export default function AppShell() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <AppContent />
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
       </SettingsProvider>
     </AuthProvider>
   );

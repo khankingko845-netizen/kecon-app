@@ -1,7 +1,8 @@
+import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { listVoices } from "@/lib/elevenlabs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,11 +12,12 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey =
+    request.headers.get("x-elevenlabs-key") || process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "ElevenLabs API key not configured" },
-      { status: 500 }
+      { error: "Chưa cấu hình ElevenLabs API key" },
+      { status: 400 }
     );
   }
 

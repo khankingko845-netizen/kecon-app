@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, Pause, Loader2, Check, AlertCircle, Settings } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
-import { cloneVoice } from "@/lib/elevenlabs";
+import { useData } from "@/lib/data-context";
+import { cloneVoiceApi } from "@/lib/api-client";
+import { uploadRecording, createVoiceProfile } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface VoiceRecordingProps {
@@ -14,10 +16,12 @@ interface VoiceRecordingProps {
 
 export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingProps) {
   const { settings } = useSettings();
+  const { refreshVoices } = useData();
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [voiceName, setVoiceName] = useState("");
+  const [gender, setGender] = useState<"male" | "female">("female");
   const [isCloning, setIsCloning] = useState(false);
   const [cloneResult, setCloneResult] = useState<{ voice_id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -102,11 +106,29 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
     setError(null);
 
     try {
-      const result = await cloneVoice(
-        settings.elevenLabsApiKey,
+      const result = await cloneVoiceApi(
         voiceName.trim(),
-        audioBlob
+        audioBlob,
+        settings.elevenLabsApiKey
       );
+
+      // Persist sample recording + voice profile to Supabase.
+      let sampleUrl: string | null = null;
+      try {
+        sampleUrl = await uploadRecording(audioBlob);
+      } catch {
+        /* storage upload is best-effort */
+      }
+      await createVoiceProfile({
+        name: voiceName.trim(),
+        relation: "parent",
+        gender,
+        elevenlabs_voice_id: result.voice_id,
+        sample_audio_url: sampleUrl,
+        quality_score: 90,
+      });
+      await refreshVoices();
+
       setCloneResult(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Clone thất bại");
@@ -232,6 +254,21 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
               placeholder="Tên giọng nói (VD: Mẹ Lan)"
               className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors"
             />
+            <div className="grid grid-cols-2 gap-2.5">
+              {(["female", "male"] as const).map((gOpt) => (
+                <button
+                  key={gOpt}
+                  onClick={() => setGender(gOpt)}
+                  className={`py-3 rounded-xl text-[14px] font-bold border-[1.5px] transition-colors ${
+                    gender === gOpt
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-gray-200 bg-surface text-txt-secondary"
+                  }`}
+                >
+                  {gOpt === "female" ? "Giọng Nữ" : "Giọng Nam"}
+                </button>
+              ))}
+            </div>
             <button
               onClick={handleClone}
               disabled={isCloning || !voiceName.trim()}

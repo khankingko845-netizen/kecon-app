@@ -1,7 +1,9 @@
 "use client";
 
-import { Search, Moon, Play, User, UserRound, Plus } from "lucide-react";
-import { voiceProfiles, stories } from "@/lib/data";
+import { Search, Moon, Play, User, UserRound, Plus, Sparkles } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useData } from "@/lib/data-context";
+import { gradientFor, iconForCategory } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface HomeProps {
@@ -17,10 +19,25 @@ function StoryIcon({ icon }: { icon: string }) {
     rocket: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>,
     paw: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>,
   };
-  return <>{iconMap[icon] || null}</>;
+  return <>{iconMap[icon] || iconMap.wand}</>;
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 11) return { text: "Chào buổi sáng", showMoon: false };
+  if (h < 18) return { text: "Chào buổi chiều", showMoon: false };
+  return { text: "Chào buổi tối", showMoon: true };
 }
 
 export default function Home({ onNavigate }: HomeProps) {
+  const { profile } = useAuth();
+  const { voiceProfiles, stories, loading } = useData();
+
+  const familyName = profile?.family_name?.trim() || profile?.display_name || "bạn";
+  const initial = (familyName[0] || "K").toUpperCase();
+  const g = greeting();
+  const recent = stories.slice(0, 3);
+
   return (
     <div className="min-h-screen bg-surface pb-24">
       {/* Header */}
@@ -28,30 +45,31 @@ export default function Home({ onNavigate }: HomeProps) {
         <div className="flex justify-between items-center">
           <div>
             <p className="text-sm text-txt-secondary font-medium flex items-center gap-1">
-              Chào buổi tối <Moon size={14} />
+              {g.text} {g.showMoon && <Moon size={14} />}
             </p>
             <h1 className="text-2xl font-extrabold tracking-tight mt-0.5">
-              Gia đình Minh
+              Gia đình {familyName}
             </h1>
           </div>
           <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-accent to-amber-400 flex items-center justify-center text-white text-xl font-bold">
-            M
+            {initial}
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="mx-5 bg-white rounded-[14px] px-4 py-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <button
+        onClick={() => onNavigate("library")}
+        className="mx-5 w-[calc(100%-2.5rem)] bg-white rounded-[14px] px-4 py-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+      >
         <Search size={18} className="text-gray-400" />
         <span className="text-sm text-gray-400">Tìm truyện, chủ đề...</span>
-      </div>
+      </button>
 
       {/* Voice Profiles */}
       <div className="px-5 pt-5">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-extrabold tracking-tight">
-            Giọng Đọc
-          </h3>
+          <h3 className="text-base font-extrabold tracking-tight">Giọng Đọc</h3>
           <button
             onClick={() => onNavigate("profiles")}
             className="text-sm text-accent font-semibold"
@@ -61,34 +79,37 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
         <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-1">
           {voiceProfiles.map((v) => (
-            <div key={v.id} className="text-center shrink-0">
+            <button
+              key={v.id}
+              onClick={() => onNavigate("profiles")}
+              className="text-center shrink-0"
+            >
               <div
-                className={`w-14 h-14 rounded-[18px] bg-gradient-to-br ${v.gradient} flex items-center justify-center text-white mb-1.5`}
+                className={`w-14 h-14 rounded-[18px] bg-gradient-to-br ${gradientFor(v.id)} flex items-center justify-center text-white mb-1.5`}
               >
-                {v.gender === "female" ? (
-                  <UserRound size={24} />
-                ) : (
-                  <User size={24} />
-                )}
+                {v.gender === "female" ? <UserRound size={24} /> : <User size={24} />}
               </div>
-              <span className="text-[11px] font-bold text-txt">{v.name}</span>
-            </div>
+              <span className="text-[11px] font-bold text-txt block max-w-[56px] truncate">
+                {v.name}
+              </span>
+            </button>
           ))}
-          <div className="text-center shrink-0">
+          <button
+            onClick={() => onNavigate("recording")}
+            className="text-center shrink-0"
+          >
             <div className="w-14 h-14 rounded-[18px] border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-1.5">
               <Plus size={20} />
             </div>
             <span className="text-[11px] font-bold text-txt">Thêm</span>
-          </div>
+          </button>
         </div>
       </div>
 
       {/* Recent Stories */}
       <div className="px-5 pt-5">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-extrabold tracking-tight">
-            Nghe Gần Đây
-          </h3>
+          <h3 className="text-base font-extrabold tracking-tight">Nghe Gần Đây</h3>
           <button
             onClick={() => onNavigate("library")}
             className="text-sm text-accent font-semibold"
@@ -96,32 +117,49 @@ export default function Home({ onNavigate }: HomeProps) {
             Xem tất cả ›
           </button>
         </div>
-        <div className="space-y-2.5">
-          {stories.slice(0, 3).map((story) => (
-            <button
-              key={story.id}
-              onClick={() => onNavigate("player", { storyId: story.id })}
-              className="w-full bg-white rounded-2xl p-3.5 flex items-center gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
-            >
-              <div
-                className={`w-14 h-14 rounded-[14px] bg-gradient-to-br ${story.gradient} flex items-center justify-center text-white shrink-0`}
+
+        {recent.length === 0 ? (
+          <button
+            onClick={() => onNavigate("create")}
+            className="w-full bg-white rounded-2xl p-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-pink-500 flex items-center justify-center text-white">
+              <Sparkles size={22} />
+            </div>
+            <p className="text-[14px] font-bold text-txt">
+              {loading ? "Đang tải..." : "Chưa có truyện nào"}
+            </p>
+            <p className="text-[12px] text-txt-secondary">Tạo truyện AI đầu tiên cho bé</p>
+          </button>
+        ) : (
+          <div className="space-y-2.5">
+            {recent.map((story) => (
+              <button
+                key={story.id}
+                onClick={() => onNavigate("player", { storyId: story.id })}
+                className="w-full bg-white rounded-2xl p-3.5 flex items-center gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
               >
-                <StoryIcon icon={story.icon} />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-[15px] font-bold tracking-tight truncate">
-                  {story.title}
+                <div
+                  className={`w-14 h-14 rounded-[14px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white shrink-0`}
+                >
+                  <StoryIcon icon={iconForCategory(story.category, story.id)} />
                 </div>
-                <div className="text-xs text-txt-secondary font-medium mt-0.5">
-                  Giọng {story.voiceName} · {story.duration}
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-[15px] font-bold tracking-tight truncate">
+                    {story.title}
+                  </div>
+                  <div className="text-xs text-txt-secondary font-medium mt-0.5">
+                    {story.page_count} trang
+                    {story.description ? ` · ${story.description.slice(0, 30)}` : ""}
+                  </div>
                 </div>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white shrink-0">
-                <Play size={14} fill="white" />
-              </div>
-            </button>
-          ))}
-        </div>
+                <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white shrink-0">
+                  <Play size={14} fill="white" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
