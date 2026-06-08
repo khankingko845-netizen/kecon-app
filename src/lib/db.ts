@@ -42,8 +42,37 @@ export interface StoryRow {
   like_count: number;
   completion_rate: number;
   status: "draft" | "published" | "archived" | "pending_review" | "rejected";
+  is_platform_content: boolean;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface StoryTemplateRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  pages: {
+    content: string;
+    scene_description?: string | null;
+    particle_effect?: string | null;
+    ambient_sound?: string | null;
+  }[];
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface AdminUserRow {
+  id: string;
+  display_name: string | null;
+  family_name: string | null;
+  role: string;
+  child_name: string | null;
+  child_age: number | null;
+  created_at: string;
+  storyCount: number;
+  voiceCount: number;
 }
 
 export interface PageChoice {
@@ -242,6 +271,10 @@ export async function updateStory(
       | "category"
       | "is_published"
       | "is_branching"
+      | "is_platform_content"
+      | "target_age_min"
+      | "target_age_max"
+      | "tags"
       | "status"
       | "moral_lesson"
       | "cover_image_url"
@@ -267,6 +300,10 @@ export async function createBlankStory(input: {
   title: string;
   category?: string;
   source?: StoryRow["source"];
+  isPlatformContent?: boolean;
+  description?: string;
+  targetAgeMin?: number;
+  targetAgeMax?: number;
 }): Promise<string> {
   const supabase = createClient();
   const {
@@ -280,6 +317,10 @@ export async function createBlankStory(input: {
       title: input.title,
       category: input.category ?? "custom",
       source: input.source ?? "manual",
+      description: input.description ?? null,
+      target_age_min: input.targetAgeMin ?? 3,
+      target_age_max: input.targetAgeMax ?? 8,
+      is_platform_content: input.isPlatformContent ?? false,
       status: "draft",
       page_count: 0,
     })
@@ -569,10 +610,279 @@ export async function getModerationQueue(): Promise<StoryRow[]> {
     .from("stories")
     .select("*")
     .in("status", ["pending_review", "draft"])
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
   return data ?? [];
+}
+
+// ============================================================
+// Admin: story management (Phase C)
+// ============================================================
+export interface AdminStoriesFilter {
+  status?: StoryRow["status"] | "all";
+  category?: string | "all";
+  search?: string;
+  includeDeleted?: boolean;
+}
+
+export async function getAdminStories(
+  filter: AdminStoriesFilter = {}
+): Promise<StoryRow[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from("stories")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (!filter.includeDeleted) query = query.is("deleted_at", null);
+  if (filter.status && filter.status !== "all")
+    query = query.eq("status", filter.status);
+  if (filter.category && filter.category !== "all")
+    query = query.eq("category", filter.category);
+  if (filter.search && filter.search.trim())
+    query = query.ilike("title", `%${filter.search.trim()}%`);
+  const { data, error } = await query.limit(200);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function softDeleteStory(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({ deleted_at: new Date().toISOString(), is_published: false })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function restoreStory(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function bulkPublishStories(
+  ids: string[],
+  publish: boolean
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({
+      is_published: publish,
+      status: publish ? "published" : "draft",
+    })
+    .in("id", ids);
+  if (error) throw error;
+}
+
+export async function bulkSoftDeleteStories(ids: string[]): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({ deleted_at: new Date().toISOString(), is_published: false })
+    .in("id", ids);
+  if (error) throw error;
+}
+
+// ============================================================
+// Admin: story templates (Phase C)
+// ============================================================
+export async function getStoryTemplates(): Promise<StoryTemplateRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_templates")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((t) => ({ ...t, pages: t.pages ?? [] }));
+}
+
+export async function createTemplateFromStory(
+  storyId: string
+): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const story = await getStory(storyId);
+  if (!story) throw new Error("Không tìm thấy truyện");
+  const pages = await getStoryPages(storyId);
+  const { data, error } = await supabase
+    .from("story_templates")
+    .insert({
+      title: story.title,
+      description: story.description,
+      category: story.category,
+      created_by: user.id,
+      pages: pages.map((p) => ({
+        content: p.content,
+        scene_description: p.scene_description,
+        particle_effect: p.particle_effect,
+        ambient_sound: p.ambient_sound,
+      })),
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_templates")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function createStoryFromTemplate(
+  templateId: string
+): Promise<string> {
+  const supabase = createClient();
+  const { data: tpl, error: tErr } = await supabase
+    .from("story_templates")
+    .select("*")
+    .eq("id", templateId)
+    .single();
+  if (tErr) throw tErr;
+  const storyId = await createBlankStory({
+    title: tpl.title,
+    category: tpl.category,
+    source: "template",
+    description: tpl.description ?? undefined,
+    isPlatformContent: true,
+  });
+  const pages = (tpl.pages ?? []) as StoryTemplateRow["pages"];
+  for (let i = 0; i < pages.length; i++) {
+    const page = await createStoryPage(
+      storyId,
+      i + 1,
+      pages[i].content,
+      pages[i].scene_description ?? ""
+    );
+    if (pages[i].particle_effect) {
+      await updateStoryPage(page.id, {
+        particle_effect: pages[i].particle_effect ?? null,
+      });
+    }
+  }
+  await setStoryPageCount(storyId, pages.length);
+  return storyId;
+}
+
+// ============================================================
+// Admin: user management (Phase D)
+// ============================================================
+export async function getAdminUsers(): Promise<AdminUserRow[]> {
+  const supabase = createClient();
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, family_name, role, child_name, child_age, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("user_id")
+    .is("deleted_at", null);
+  const { data: voices } = await supabase
+    .from("voice_profiles")
+    .select("user_id");
+  const storyCounts = new Map<string, number>();
+  for (const s of stories ?? [])
+    storyCounts.set(s.user_id, (storyCounts.get(s.user_id) ?? 0) + 1);
+  const voiceCounts = new Map<string, number>();
+  for (const v of voices ?? [])
+    voiceCounts.set(v.user_id, (voiceCounts.get(v.user_id) ?? 0) + 1);
+  return (profiles ?? []).map((p) => ({
+    ...p,
+    storyCount: storyCounts.get(p.id) ?? 0,
+    voiceCount: voiceCounts.get(p.id) ?? 0,
+  }));
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: "user" | "admin" | "super_admin"
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
+// ============================================================
+// Admin: advanced analytics (Phase D)
+// ============================================================
+export interface AdminAnalytics {
+  topStories: {
+    id: string;
+    title: string;
+    play_count: number;
+    like_count: number;
+    completion_rate: number;
+  }[];
+  avgCompletion: number;
+  totalSessions: number;
+  recentSignups: number;
+  categoryPlays: { category: string; plays: number }[];
+}
+
+export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+  const supabase = createClient();
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("id, title, category, play_count, like_count, completion_rate")
+    .is("deleted_at", null);
+  const rows = stories ?? [];
+  const topStories = [...rows]
+    .sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0))
+    .slice(0, 10)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      play_count: s.play_count ?? 0,
+      like_count: s.like_count ?? 0,
+      completion_rate: s.completion_rate ?? 0,
+    }));
+  const withCompletion = rows.filter((s) => (s.completion_rate ?? 0) > 0);
+  const avgCompletion =
+    withCompletion.length > 0
+      ? withCompletion.reduce((sum, s) => sum + (s.completion_rate ?? 0), 0) /
+        withCompletion.length
+      : 0;
+  const catMap = new Map<string, number>();
+  for (const s of rows)
+    catMap.set(s.category, (catMap.get(s.category) ?? 0) + (s.play_count ?? 0));
+  const categoryPlays = Array.from(catMap.entries())
+    .map(([category, plays]) => ({ category, plays }))
+    .sort((a, b) => b.plays - a.plays);
+
+  const { count: totalSessions } = await supabase
+    .from("play_sessions")
+    .select("id", { count: "exact", head: true });
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const { count: recentSignups } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", weekAgo);
+
+  return {
+    topStories,
+    avgCompletion,
+    totalSessions: totalSessions ?? 0,
+    recentSignups: recentSignups ?? 0,
+    categoryPlays,
+  };
 }
 
 // ============================================================

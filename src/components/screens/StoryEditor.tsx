@@ -28,6 +28,15 @@ import type { Screen } from "@/lib/types";
 
 const EFFECT_NONE = "none";
 
+const CATEGORY_OPTIONS: { id: string; label: string }[] = [
+  { id: "fairy_tale", label: "Cổ tích" },
+  { id: "adventure", label: "Phiêu lưu" },
+  { id: "bedtime", label: "Ru ngủ" },
+  { id: "animal", label: "Động vật" },
+  { id: "educational", label: "Học chơi" },
+  { id: "custom", label: "Tùy chỉnh" },
+];
+
 interface StoryEditorProps {
   storyId?: string;
   onBack: () => void;
@@ -39,6 +48,11 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
   const { refreshStories } = useData();
   const [story, setStory] = useState<StoryRow | null>(null);
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("custom");
+  const [description, setDescription] = useState("");
+  const [ageMin, setAgeMin] = useState(3);
+  const [ageMax, setAgeMax] = useState(8);
+  const [showMeta, setShowMeta] = useState(false);
   const [pages, setPages] = useState<StoryPageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,6 +71,10 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         if (!active) return;
         setStory(s);
         setTitle(s?.title ?? "");
+        setCategory(s?.category ?? "custom");
+        setDescription(s?.description ?? "");
+        setAgeMin(s?.target_age_min ?? 3);
+        setAgeMax(s?.target_age_max ?? 8);
         setPages(p);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Lỗi tải truyện"))
@@ -136,7 +154,14 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     setError(null);
     try {
       const branching = pages.some((p) => (p.choices?.length ?? 0) > 0);
-      await updateStory(storyId, { title, is_branching: branching });
+      await updateStory(storyId, {
+        title,
+        category,
+        description,
+        target_age_min: ageMin,
+        target_age_max: ageMax,
+        is_branching: branching,
+      });
       await Promise.all(
         pages.map((p) =>
           updateStoryPage(p.id, {
@@ -155,7 +180,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     } finally {
       setSaving(false);
     }
-  }, [storyId, title, pages, refreshStories]);
+  }, [storyId, title, category, description, ageMin, ageMax, pages, refreshStories]);
 
   const handleIllustrate = async (page: StoryPageRow) => {
     const prompt = page.scene_description || page.content;
@@ -221,6 +246,72 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           placeholder="Tiêu đề truyện"
           className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-white text-[17px] font-bold text-txt outline-none focus:border-accent transition-colors mb-2"
         />
+
+        {/* Metadata (collapsible) */}
+        <button
+          onClick={() => setShowMeta((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-gray-100 text-[13px] font-bold text-txt-secondary mb-2"
+        >
+          <span>Chi tiết truyện</span>
+          {showMeta ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {showMeta && (
+          <div className="bg-white rounded-xl border border-gray-100 p-3.5 mb-2 space-y-3">
+            <div>
+              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Thể loại</label>
+              <div className="flex flex-wrap gap-1.5">
+                {CATEGORY_OPTIONS.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCategory(c.id)}
+                    className={`px-2.5 py-1.5 rounded-lg text-[12px] font-bold ${
+                      category === c.id
+                        ? "bg-accent text-white"
+                        : "bg-gray-100 text-txt-secondary"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Mô tả ngắn</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Tóm tắt nội dung truyện..."
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent resize-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Tuổi từ</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={18}
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Tuổi đến</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={18}
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mb-4">
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-100 text-txt-secondary">
             {pages.length} trang

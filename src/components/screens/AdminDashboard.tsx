@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   BookOpen, Mic, Play, Heart, Loader2, Lightbulb, Globe,
   FileText, CheckCircle2, AlertTriangle, Sparkles,
+  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
@@ -12,6 +13,7 @@ import {
   getModerationQueue,
   computeContentGaps,
   publishStory,
+  createBlankStory,
   gradientFor,
   type AdminStats,
   type ContentGap,
@@ -40,6 +42,8 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
   const [queue, setQueue] = useState<StoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +77,23 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
     }
   };
 
+  const handleWriteByHand = async () => {
+    setCreating(true);
+    try {
+      const id = await createBlankStory({
+        title: "Truyện mới",
+        source: "manual",
+        isPlatformContent: true,
+      });
+      setShowCreate(false);
+      onNavigate("editor", { storyId: id });
+    } catch {
+      /* ignore */
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const maxCat = stats
     ? Math.max(...stats.categoryBreakdown.map((c) => c.count), 1)
     : 1;
@@ -98,6 +119,39 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
         </div>
       ) : (
         <div className="px-5 pt-2">
+          {/* Create story + management hub */}
+          <button
+            onClick={() => setShowCreate(true)}
+            className="w-full mb-3 rounded-2xl bg-gradient-to-r from-accent to-pink-500 text-white p-4 flex items-center gap-3 shadow-[0_4px_12px_rgba(255,107,61,0.25)] active:scale-[0.99] transition-transform"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <Plus size={20} />
+            </div>
+            <div className="text-left">
+              <div className="text-[15px] font-black">Tạo truyện mới</div>
+              <div className="text-[12px] text-white/85">Viết tay · AI · Upload</div>
+            </div>
+          </button>
+
+          <div className="grid grid-cols-3 gap-2.5 mb-6">
+            {[
+              { icon: LayoutList, label: "Quản lý truyện", screen: "admin-stories" as Screen, color: "text-blue-600 bg-blue-50" },
+              { icon: Users, label: "Người dùng", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
+              { icon: BarChart3, label: "Thống kê", screen: "admin-analytics" as Screen, color: "text-emerald-600 bg-emerald-50" },
+            ].map((m) => (
+              <button
+                key={m.label}
+                onClick={() => onNavigate(m.screen)}
+                className="bg-white rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col items-center gap-1.5 active:scale-[0.97] transition-transform"
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${m.color}`}>
+                  <m.icon size={17} />
+                </div>
+                <span className="text-[11px] font-bold text-txt text-center leading-tight">{m.label}</span>
+              </button>
+            ))}
+          </div>
+
           {/* KPI grid */}
           <div className="grid grid-cols-3 gap-2.5 mb-6">
             {kpis.map((k) => (
@@ -226,6 +280,67 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {showCreate && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
+          onClick={() => !creating && setShowCreate(false)}
+        >
+          <div
+            className="w-full max-w-[430px] bg-white rounded-t-3xl p-5 pb-8 animate-[slideUp_0.2s_ease]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-black tracking-tight">Tạo truyện mới</h3>
+              <button
+                onClick={() => !creating && setShowCreate(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-txt-secondary"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={handleWriteByHand}
+                disabled={creating}
+                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform disabled:opacity-60"
+              >
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                  {creating ? <Loader2 size={18} className="animate-spin" /> : <PenLine size={18} />}
+                </div>
+                <div className="text-left">
+                  <div className="text-[14px] font-bold">Viết tay</div>
+                  <div className="text-[12px] text-txt-secondary">Tạo truyện trống &amp; tự viết từng trang</div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setShowCreate(false); onNavigate("create"); }}
+                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
+              >
+                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600">
+                  <Sparkles size={18} />
+                </div>
+                <div className="text-left">
+                  <div className="text-[14px] font-bold">AI tạo</div>
+                  <div className="text-[12px] text-txt-secondary">AI sinh cốt truyện theo chủ đề</div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setShowCreate(false); onNavigate("upload"); }}
+                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                  <Upload size={18} />
+                </div>
+                <div className="text-left">
+                  <div className="text-[14px] font-bold">Upload file</div>
+                  <div className="text-[12px] text-txt-secondary">Nhập .txt / .docx / .pdf</div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}

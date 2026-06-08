@@ -26,6 +26,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  isAdmin: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   profile: null,
+  isAdmin: false,
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -113,9 +115,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }, [supabase]);
 
+  const isAdmin =
+    profile?.role === "admin" || profile?.role === "super_admin";
+
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, loading, signOut, refreshProfile }}
+      value={{
+        user,
+        session,
+        profile,
+        isAdmin,
+        loading,
+        signOut,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

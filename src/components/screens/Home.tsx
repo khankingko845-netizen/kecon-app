@@ -37,7 +37,7 @@ function greeting() {
 }
 
 export default function Home({ onNavigate }: HomeProps) {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { voiceProfiles, stories, loading } = useData();
   const { settings } = useSettings();
   const [forYou, setForYou] = useState<ScoredStory[]>([]);
@@ -136,15 +136,17 @@ export default function Home({ onNavigate }: HomeProps) {
           </div>
           <span className="text-[13px] font-bold text-txt">Tải truyện</span>
         </button>
-        <button
-          onClick={() => onNavigate("admin")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
-        >
-          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
-            <LayoutDashboard size={17} />
-          </div>
-          <span className="text-[13px] font-bold text-txt">Quản trị</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => onNavigate("admin")}
+            className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          >
+            <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+              <LayoutDashboard size={17} />
+            </div>
+            <span className="text-[13px] font-bold text-txt">Quản trị</span>
+          </button>
+        )}
       </div>
 
       {/* For You (AI recommendations) */}

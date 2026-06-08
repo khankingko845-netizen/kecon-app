@@ -14,7 +14,10 @@ export type Screen =
   | "settings"
   | "editor"
   | "upload"
-  | "admin";
+  | "admin"
+  | "admin-stories"
+  | "admin-users"
+  | "admin-analytics";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 

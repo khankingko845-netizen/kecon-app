@@ -22,6 +22,9 @@ import Settings from "@/components/screens/Settings";
 import StoryEditor from "@/components/screens/StoryEditor";
 import UploadStory from "@/components/screens/UploadStory";
 import AdminDashboard from "@/components/screens/AdminDashboard";
+import AdminStories from "@/components/screens/AdminStories";
+import AdminUsers from "@/components/screens/AdminUsers";
+import AdminAnalytics from "@/components/screens/AdminAnalytics";
 import ComplianceLayer from "@/components/ComplianceLayer";
 
 interface ScreenState {
@@ -45,8 +48,15 @@ const screenTabMap: Partial<Record<Screen, TabId>> = {
   settings: "settings",
 };
 
+const ADMIN_SCREENS: Screen[] = [
+  "admin",
+  "admin-stories",
+  "admin-users",
+  "admin-analytics",
+];
+
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const [history, setHistory] = useState<ScreenState[]>([
     { screen: "onboarding" },
   ]);
@@ -56,8 +66,13 @@ function AppContent() {
     rawCurrent.screen === "login" ||
     rawCurrent.screen === "signup";
   // Authenticated users should never see auth screens (e.g. on reload).
+  // Non-admin users must never reach admin screens (defense in depth on top of RLS).
+  const blockedAdmin =
+    !loading && !isAdmin && ADMIN_SCREENS.includes(rawCurrent.screen);
   const current: ScreenState =
-    !loading && user && onAuthScreen ? { screen: "home" } : rawCurrent;
+    (!loading && user && onAuthScreen) || blockedAdmin
+      ? { screen: "home" }
+      : rawCurrent;
   const activeTab: TabId = screenTabMap[current.screen] || "home";
 
   const navigate = useCallback(
@@ -95,6 +110,9 @@ function AppContent() {
     current.screen !== "editor" &&
     current.screen !== "upload" &&
     current.screen !== "admin" &&
+    current.screen !== "admin-stories" &&
+    current.screen !== "admin-users" &&
+    current.screen !== "admin-analytics" &&
     current.screen !== "legacy";
 
   if (loading) {
@@ -163,6 +181,15 @@ function AppContent() {
         )}
         {current.screen === "admin" && (
           <AdminDashboard onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "admin-stories" && (
+          <AdminStories onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "admin-users" && (
+          <AdminUsers onBack={goBack} />
+        )}
+        {current.screen === "admin-analytics" && (
+          <AdminAnalytics onBack={goBack} />
         )}
       </div>
 
