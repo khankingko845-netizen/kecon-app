@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2,
-  Image as ImageIcon, Globe, FileText, Check,
+  Image as ImageIcon, Globe, FileText, Check, Sparkles, GitBranch, X,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
@@ -21,8 +21,12 @@ import {
   publishStory,
   type StoryRow,
   type StoryPageRow,
+  type PageChoice,
 } from "@/lib/db";
+import { EFFECT_LABELS, type EffectType } from "@/lib/scene-effects";
 import type { Screen } from "@/lib/types";
+
+const EFFECT_NONE = "none";
 
 interface StoryEditorProps {
   storyId?: string;
@@ -66,6 +70,30 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     setPages((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   };
 
+  const addChoice = (page: StoryPageRow) => {
+    const next: PageChoice[] = [
+      ...(page.choices ?? []),
+      { label: "", description: "", target: Math.min(page.page_number + 1, pages.length) },
+    ];
+    updatePageLocal(page.id, { choices: next });
+  };
+
+  const updateChoice = (
+    page: StoryPageRow,
+    idx: number,
+    patch: Partial<PageChoice>
+  ) => {
+    const next = (page.choices ?? []).map((c, i) =>
+      i === idx ? { ...c, ...patch } : c
+    );
+    updatePageLocal(page.id, { choices: next });
+  };
+
+  const removeChoice = (page: StoryPageRow, idx: number) => {
+    const next = (page.choices ?? []).filter((_, i) => i !== idx);
+    updatePageLocal(page.id, { choices: next });
+  };
+
   const handleAddPage = async () => {
     if (!storyId) return;
     try {
@@ -107,13 +135,16 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     setSaving(true);
     setError(null);
     try {
-      await updateStory(storyId, { title });
+      const branching = pages.some((p) => (p.choices?.length ?? 0) > 0);
+      await updateStory(storyId, { title, is_branching: branching });
       await Promise.all(
         pages.map((p) =>
           updateStoryPage(p.id, {
             content: p.content,
             scene_description: p.scene_description,
             page_number: p.page_number,
+            particle_effect: p.particle_effect,
+            choices: p.choices ?? [],
           })
         )
       );
@@ -263,6 +294,84 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                 placeholder="Mô tả cảnh (cho minh hoạ AI)..."
                 className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[12px] text-txt-secondary outline-none focus:border-accent transition-colors mb-2"
               />
+
+              {/* Visual effect for this page */}
+              <label className="text-[11px] font-bold text-txt-secondary mb-1.5 flex items-center gap-1">
+                <Sparkles size={12} className="text-accent-2" /> Hiệu ứng hình ảnh
+              </label>
+              <select
+                value={page.particle_effect ?? EFFECT_NONE}
+                onChange={(e) =>
+                  updatePageLocal(page.id, {
+                    particle_effect:
+                      e.target.value === EFFECT_NONE ? null : e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[12px] text-txt outline-none focus:border-accent transition-colors mb-3"
+              >
+                <option value={EFFECT_NONE}>Tự động theo cảnh</option>
+                {(Object.keys(EFFECT_LABELS) as EffectType[]).map((t) => (
+                  <option key={t} value={t}>
+                    {EFFECT_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+
+              {/* Branching choices for this page */}
+              <div className="mb-2 rounded-xl bg-surface border border-gray-100 p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-txt-secondary flex items-center gap-1">
+                    <GitBranch size={12} className="text-emerald-600" /> Lựa chọn rẽ nhánh
+                  </span>
+                  <button
+                    onClick={() => addChoice(page)}
+                    className="text-[11px] font-bold text-emerald-700 flex items-center gap-0.5"
+                  >
+                    <Plus size={12} /> Thêm
+                  </button>
+                </div>
+                {(page.choices ?? []).length === 0 ? (
+                  <p className="text-[11px] text-txt-secondary/60">
+                    Không có lựa chọn — trang đọc tuần tự.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {(page.choices ?? []).map((choice, ci) => (
+                      <div key={ci} className="flex items-center gap-1.5">
+                        <input
+                          value={choice.label}
+                          onChange={(e) =>
+                            updateChoice(page, ci, { label: e.target.value })
+                          }
+                          placeholder={`Lựa chọn ${ci + 1}`}
+                          className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] text-txt outline-none focus:border-accent"
+                        />
+                        <select
+                          value={choice.target}
+                          onChange={(e) =>
+                            updateChoice(page, ci, {
+                              target: Number(e.target.value),
+                            })
+                          }
+                          className="px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] text-txt outline-none focus:border-accent"
+                        >
+                          {pages.map((_, pi) => (
+                            <option key={pi} value={pi + 1}>
+                              → Trang {pi + 1}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => removeChoice(page, ci)}
+                          className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {page.illustration_url ? (
                 // eslint-disable-next-line @next/next/no-img-element

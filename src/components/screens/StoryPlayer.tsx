@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft, MoreHorizontal, Play, Pause,
   SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
-  Volume2, Loader2, X,
+  Volume2, Loader2, X, Sparkles,
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
@@ -12,6 +12,13 @@ import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { ttsApi } from "@/lib/api-client";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
+import SceneEffects from "@/components/ui/SceneEffects";
+import {
+  effectForScene,
+  asEffectType,
+  EFFECT_LABELS,
+  type EffectType,
+} from "@/lib/scene-effects";
 import {
   getStory,
   getStoryPages,
@@ -26,7 +33,7 @@ import {
 interface StoryPlayerProps {
   storyId?: string;
   onBack: () => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
 
 // Default ElevenLabs voice (used when the story's voice has no clone yet).
@@ -91,6 +98,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [ambientOn, setAmbientOn] = useState<Record<string, boolean>>({});
   const [ambientVol, setAmbientVol] = useState<Record<string, number>>({});
   const [autoAmbient, setAutoAmbient] = useState(true);
+
+  // Visual effects (scene-matched particles). manualEffect overrides auto.
+  const [autoEffect, setAutoEffect] = useState(true);
+  const [manualEffect, setManualEffect] = useState<EffectType | null>(null);
 
   const getEngine = useCallback(() => {
     if (!engineRef.current) engineRef.current = new AmbientEngine();
@@ -195,6 +206,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const sceneDesc = isGenerated
     ? generatedStory?.pages[currentPage]?.sceneDescription || ""
     : pages[currentPage]?.scene_description || "";
+
+  // Resolve the visual effect for this page. Priority:
+  // 1) manual override, 2) effect authored on the page, 3) heuristic match.
+  const authoredEffect = isGenerated
+    ? null
+    : asEffectType(pages[currentPage]?.particle_effect);
+  const autoMatchedEffect =
+    authoredEffect ?? effectForScene(`${sceneDesc} ${currentText}`);
+  const activeEffect: EffectType | null =
+    manualEffect ?? (autoEffect ? autoMatchedEffect : null);
   useEffect(() => {
     if (!autoAmbient || !isPlaying) return;
     const match = ambientForScene(`${sceneDesc} ${currentText}`);
@@ -315,7 +336,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const anyAmbientOn = AMBIENT_OPTIONS.some((o) => ambientOn[o.type]);
   const actions = [
     { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
-    { icon: Shuffle, label: "Rẽ Nhánh", action: () => onNavigate("adventure"), active: false },
+    {
+      icon: Shuffle,
+      label: "Rẽ Nhánh",
+      action: () =>
+        onNavigate(
+          "adventure",
+          story?.is_branching && storyId ? { storyId } : undefined
+        ),
+      active: false,
+    },
     { icon: Heart, label: "Yêu Thích", action: handleLike, active: liked },
     { icon: SlidersHorizontal, label: "Âm Nền", action: () => setShowMixer(true), active: anyAmbientOn },
   ];
@@ -329,9 +359,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex flex-col text-white">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex flex-col text-white">
+      {/* Scene-matched visual effects (particles), behind all content */}
+      <SceneEffects effect={activeEffect} active={isPlaying} />
+
       {/* Top Bar */}
-      <div className="flex justify-between items-center px-5 pt-14 pb-2">
+      <div className="relative z-10 flex justify-between items-center px-5 pt-14 pb-2">
         <button
           onClick={() => {
             audioRef.current?.pause();
@@ -354,9 +387,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       </div>
 
       {/* Album Art */}
-      <div className="flex-1 flex flex-col items-center px-7 pt-5">
+      <div className="relative z-10 flex-1 flex flex-col items-center px-7 pt-5">
         <div
-          className={`w-64 h-64 rounded-[28px] bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative`}
+          key={`art-${currentPage}`}
+          className={`w-64 h-64 rounded-[28px] bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative fx-page-enter`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -375,8 +409,19 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           {isGenerated ? "AI Generated" : `Giọng đọc: ${voiceLabel}`}
         </p>
 
+        {/* Active visual-effect indicator */}
+        {activeEffect && (
+          <span className="mb-3 px-3 py-1 rounded-full bg-white/[0.08] text-[11px] font-bold text-white/70 flex items-center gap-1.5">
+            <Sparkles size={11} className="text-accent-2" />
+            Hiệu ứng: {EFFECT_LABELS[activeEffect]}
+          </span>
+        )}
+
         {/* Text Preview */}
-        <div className="w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar">
+        <div
+          key={`txt-${currentPage}`}
+          className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
+        >
           {currentText ? `\u201C${currentText}\u201D` : "..."}
         </div>
 
@@ -425,7 +470,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       </div>
 
       {/* Bottom Actions */}
-      <div className="flex justify-around px-5 pt-5 pb-10">
+      <div className="relative z-10 flex justify-around px-5 pt-5 pb-10">
         {actions.map((a) => (
           <button key={a.label} onClick={a.action} className="text-center">
             <a.icon
@@ -495,6 +540,61 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                   </div>
                 );
               })}
+            </div>
+
+            {/* Visual effects (scene-matched particles) */}
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <h4 className="text-[13px] font-black tracking-tight flex items-center gap-2 mb-3">
+                <Sparkles size={15} className="text-accent-2" /> Hiệu Ứng Hình Ảnh
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setAutoEffect(true);
+                    setManualEffect(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
+                    autoEffect && !manualEffect
+                      ? "bg-accent-2 text-[#0F0628]"
+                      : "bg-white/5 text-white/50"
+                  }`}
+                >
+                  AI tự chọn
+                </button>
+                <button
+                  onClick={() => {
+                    setAutoEffect(false);
+                    setManualEffect(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
+                    !autoEffect && !manualEffect
+                      ? "bg-accent text-white"
+                      : "bg-white/5 text-white/50"
+                  }`}
+                >
+                  Tắt
+                </button>
+                {(Object.keys(EFFECT_LABELS) as EffectType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setManualEffect(type)}
+                    className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
+                      manualEffect === type
+                        ? "bg-accent text-white"
+                        : "bg-white/5 text-white/50"
+                    }`}
+                  >
+                    {EFFECT_LABELS[type]}
+                  </button>
+                ))}
+              </div>
+              {autoEffect && !manualEffect && (
+                <p className="text-[11px] text-white/30 mt-2">
+                  {autoMatchedEffect
+                    ? `Đang khớp cảnh: ${EFFECT_LABELS[autoMatchedEffect]}`
+                    : "Trang này chưa khớp hiệu ứng nào"}
+                </p>
+              )}
             </div>
           </div>
         </div>

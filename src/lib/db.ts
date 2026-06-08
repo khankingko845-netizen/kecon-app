@@ -34,6 +34,7 @@ export interface StoryRow {
   page_count: number;
   is_published: boolean;
   is_template: boolean;
+  is_branching: boolean;
   source: "ai" | "manual" | "upload" | "template";
   tags: string[];
   moral_lesson: string | null;
@@ -43,6 +44,12 @@ export interface StoryRow {
   status: "draft" | "published" | "archived" | "pending_review" | "rejected";
   created_at: string;
   updated_at: string;
+}
+
+export interface PageChoice {
+  label: string;
+  description?: string;
+  target: number; // page_number to jump to
 }
 
 export interface StoryPageRow {
@@ -58,6 +65,7 @@ export interface StoryPageRow {
   particle_effect: string | null;
   ambient_sound: string | null;
   sfx_sounds: string[];
+  choices: PageChoice[];
 }
 
 export interface FamilyMemberRow {
@@ -214,7 +222,8 @@ export async function getStoryPages(storyId: string): Promise<StoryPageRow[]> {
     .eq("story_id", storyId)
     .order("page_number", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  // Normalize choices (column may be absent on rows created before migration).
+  return (data ?? []).map((p) => ({ ...p, choices: p.choices ?? [] }));
 }
 
 export async function deleteStory(id: string): Promise<void> {
@@ -232,6 +241,7 @@ export async function updateStory(
       | "description"
       | "category"
       | "is_published"
+      | "is_branching"
       | "status"
       | "moral_lesson"
       | "cover_image_url"
@@ -305,7 +315,13 @@ export async function updateStoryPage(
   patch: Partial<
     Pick<
       StoryPageRow,
-      "content" | "scene_description" | "page_number" | "illustration_url"
+      | "content"
+      | "scene_description"
+      | "page_number"
+      | "illustration_url"
+      | "particle_effect"
+      | "transition_effect"
+      | "choices"
     >
   >
 ): Promise<void> {
@@ -362,6 +378,39 @@ export async function getFamilyMembers(): Promise<FamilyMemberRow[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+export async function createFamilyMember(input: {
+  name: string;
+  relation: string;
+  voiceProfileId?: string | null;
+}): Promise<FamilyMemberRow> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const { data, error } = await supabase
+    .from("family_members")
+    .insert({
+      user_id: user.id,
+      name: input.name,
+      relation: input.relation,
+      voice_profile_id: input.voiceProfileId ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as FamilyMemberRow;
+}
+
+export async function deleteFamilyMember(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("family_members")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
 }
 
 // ============================================================

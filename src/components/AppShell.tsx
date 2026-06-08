@@ -136,7 +136,13 @@ function AppContent() {
           />
         )}
         {current.screen === "lullaby" && <Lullaby onBack={goBack} />}
-        {current.screen === "adventure" && <Adventure onBack={goBack} />}
+        {current.screen === "adventure" && (
+          <Adventure
+            storyId={current.data?.storyId}
+            onBack={goBack}
+            onNavigate={navigate}
+          />
+        )}
         {current.screen === "legacy" && <VoiceLegacy onBack={goBack} />}
         {current.screen === "library" && <Library onNavigate={navigate} />}
         {current.screen === "profiles" && (

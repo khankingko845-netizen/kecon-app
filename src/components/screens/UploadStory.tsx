@@ -11,6 +11,7 @@ import {
   createStoryPage,
   setStoryPageCount,
 } from "@/lib/db";
+import { extractTextFromFile, isSupportedStoryFile } from "@/lib/file-parser";
 import type { Screen } from "@/lib/types";
 
 interface UploadStoryProps {
@@ -55,6 +56,7 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pageCount = text.trim() ? splitIntoPages(text).length : 0;
@@ -63,14 +65,25 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     setError(null);
-    if (!file.type.startsWith("text") && !file.name.endsWith(".txt")) {
-      setError("Hiện hỗ trợ tệp văn bản (.txt). DOCX/PDF sẽ bổ sung sau.");
+    if (!isSupportedStoryFile(file)) {
+      setError("Định dạng không hỗ trợ. Dùng .txt, .docx hoặc .pdf");
       return;
     }
-    const content = await file.text();
-    setText(content);
-    setFileName(file.name);
-    if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
+    setParsing(true);
+    try {
+      const content = await extractTextFromFile(file);
+      if (!content.trim()) {
+        setError("Không trích xuất được nội dung từ tệp này.");
+        return;
+      }
+      setText(content);
+      setFileName(file.name);
+      if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đọc tệp thất bại");
+    } finally {
+      setParsing(false);
+    }
   };
 
   const handleImport = async () => {
@@ -106,7 +119,7 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
 
       <div className="px-5 pt-2">
         <p className="text-[13px] text-txt-secondary mb-4">
-          Dán nội dung hoặc tải tệp .txt — hệ thống tự chia trang để bạn chỉnh sửa & minh hoạ.
+          Dán nội dung hoặc tải tệp .txt / .docx / .pdf — hệ thống tự chia trang để bạn chỉnh sửa & minh hoạ.
         </p>
 
         <label className="text-[13px] font-bold text-txt mb-2 block">Tiêu đề</label>
@@ -136,9 +149,23 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
 
         <label className="text-[13px] font-bold text-txt mb-2 block">Nội dung</label>
         <label className="w-full mb-3 p-4 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center gap-2 text-[13px] font-bold text-txt-secondary cursor-pointer active:scale-[0.99] transition-transform">
-          <Upload size={16} />
-          {fileName ? fileName : "Chọn tệp .txt"}
-          <input type="file" accept=".txt,text/plain" onChange={handleFile} className="hidden" />
+          {parsing ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Đang đọc tệp...
+            </>
+          ) : (
+            <>
+              <Upload size={16} />
+              {fileName ? fileName : "Chọn tệp .txt, .docx hoặc .pdf"}
+            </>
+          )}
+          <input
+            type="file"
+            accept=".txt,text/plain,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,application/pdf"
+            onChange={handleFile}
+            disabled={parsing}
+            className="hidden"
+          />
         </label>
 
         <textarea

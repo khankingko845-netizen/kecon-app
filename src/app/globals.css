@@ -62,3 +62,107 @@ body {
   from { opacity: 0; transform: translateY(100%); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Page turn transition for the player */
+@keyframes fx-page-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.fx-page-enter { animation: fx-page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ── Scene visual effects (particles) ── */
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.fx-particle {
+  position: absolute;
+  top: -10%;
+  will-change: transform, opacity;
+}
+
+/* Rain: thin streaks falling fast and straight */
+@keyframes fx-rain {
+  0% { transform: translateY(-10%); opacity: 0; }
+  10% { opacity: 0.7; }
+  100% { transform: translateY(115vh); opacity: 0.7; }
+}
+.fx-rain {
+  width: 1.5px;
+  height: 18px;
+  background: linear-gradient(to bottom, transparent, rgba(180, 210, 255, 0.7));
+  animation: fx-rain linear infinite;
+}
+
+/* Snow: round flakes drifting down with sway */
+@keyframes fx-snow {
+  0% { transform: translate(0, -10%); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translate(var(--sway, 12px), 115vh); opacity: 0.9; }
+}
+.fx-snow {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  animation: fx-snow linear infinite;
+}
+
+/* Falling leaves / petals: rotate while drifting */
+@keyframes fx-leaf {
+  0% { transform: translate(0, -10%) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translate(var(--sway, 40px), 115vh) rotate(540deg); opacity: 0.85; }
+}
+.fx-leaf {
+  border-radius: 0 9999px 0 9999px;
+  animation: fx-leaf linear infinite;
+}
+
+/* Stars: twinkle in place */
+@keyframes fx-star {
+  0%, 100% { opacity: 0.15; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.fx-star {
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.6);
+  animation: fx-star ease-in-out infinite;
+}
+
+/* Fireflies: drift around and glow */
+@keyframes fx-firefly {
+  0% { transform: translate(0, 0); opacity: 0.2; }
+  25% { transform: translate(var(--dx, 20px), var(--dy, -16px)); opacity: 1; }
+  50% { transform: translate(calc(var(--dx, 20px) * -0.6), calc(var(--dy, -16px) * 1.4)); opacity: 0.5; }
+  75% { transform: translate(calc(var(--dx, 20px) * 0.8), calc(var(--dy, -16px) * -0.4)); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 0.2; }
+}
+.fx-firefly {
+  top: auto;
+  border-radius: 9999px;
+  background: #ffe27a;
+  box-shadow: 0 0 6px 2px rgba(255, 226, 122, 0.8);
+  animation: fx-firefly ease-in-out infinite;
+}
+
+/* Bubbles: rise upward */
+@keyframes fx-bubble {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.7; }
+  100% { transform: translate(var(--sway, 14px), -115vh); opacity: 0; }
+}
+.fx-bubble {
+  top: auto;
+  bottom: -5%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(150,200,255,0.15));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  animation: fx-bubble linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-particle { animation: none !important; opacity: 0.4 !important; }
+}
