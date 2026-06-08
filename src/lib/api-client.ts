@@ -87,6 +87,7 @@ export async function generateStoryApi(input: {
   extraPrompt?: string;
   voiceId?: string | null;
   apiKey?: string;
+  baseUrl?: string;
   persist?: boolean;
 }): Promise<GeneratedStory> {
   const res = await fetch("/api/story/generate", {

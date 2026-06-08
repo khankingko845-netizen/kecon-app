@@ -6,7 +6,7 @@ import {
   Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink,
   Download, Trash2,
 } from "lucide-react";
-import { useSettings } from "@/lib/settings-context";
+import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
 import { PROVIDER_MODELS } from "@/lib/story-ai";
@@ -143,17 +143,18 @@ function ApiKeysPanel() {
           <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
             Provider
           </label>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
             {Object.entries(PROVIDER_MODELS).map(([key, val]) => (
               <button
                 key={key}
                 onClick={() => {
                   updateSettings({
-                    storyProvider: key as "openai" | "gemini" | "anthropic",
-                    storyModel: val.models[0].id,
+                    storyProvider: key as StoryProvider,
+                    // Keep model for custom (free text); reset for known providers.
+                    storyModel: val.models[0]?.id ?? settings.storyModel,
                   });
                 }}
-                className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                className={`flex-1 min-w-[72px] py-2.5 rounded-xl text-[13px] font-bold transition-all ${
                   settings.storyProvider === key
                     ? "bg-accent text-white"
                     : "bg-surface text-txt-secondary"
@@ -164,6 +165,28 @@ function ApiKeysPanel() {
             ))}
           </div>
         </div>
+
+        {settings.storyProvider === "custom" && (
+          <div>
+            <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+              Base URL (OpenAI-compatible)
+            </label>
+            <input
+              type="text"
+              value={settings.storyBaseUrl}
+              onChange={(e) =>
+                updateSettings({ storyBaseUrl: e.target.value })
+              }
+              placeholder="https://openrouter.ai/api/v1"
+              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+            />
+            <p className="text-[11px] text-txt-secondary mt-1.5">
+              Endpoint phải hỗ trợ <code>/chat/completions</code> kiểu OpenAI
+              (OpenRouter, Groq, Together, LM Studio, Ollama…). Không thêm
+              <code> /chat/completions</code> vào cuối.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
@@ -181,7 +204,9 @@ function ApiKeysPanel() {
                   ? "sk-..."
                   : settings.storyProvider === "gemini"
                   ? "AIza..."
-                  : "sk-ant-..."
+                  : settings.storyProvider === "anthropic"
+                  ? "sk-ant-..."
+                  : "API key của provider"
               }
               className="flex-1 px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
             />
@@ -198,17 +223,27 @@ function ApiKeysPanel() {
           <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
             Model
           </label>
-          <select
-            value={settings.storyModel}
-            onChange={(e) => updateSettings({ storyModel: e.target.value })}
-            className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none"
-          >
-            {providerInfo.models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+          {settings.storyProvider === "custom" ? (
+            <input
+              type="text"
+              value={settings.storyModel}
+              onChange={(e) => updateSettings({ storyModel: e.target.value })}
+              placeholder="ví dụ: openai/gpt-4o-mini, llama-3.1-70b…"
+              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+            />
+          ) : (
+            <select
+              value={settings.storyModel}
+              onChange={(e) => updateSettings({ storyModel: e.target.value })}
+              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none"
+            >
+              {providerInfo.models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="flex gap-2">

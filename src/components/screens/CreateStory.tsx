@@ -39,7 +39,10 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasStoryKey = Boolean(settings.storyApiKey);
+  const hasStoryKey = Boolean(
+    settings.storyApiKey &&
+      (settings.storyProvider !== "custom" || settings.storyBaseUrl)
+  );
   const effectiveVoice =
     selectedVoice ?? (voiceProfiles.length > 0 ? voiceProfiles[0].id : null);
 
@@ -57,6 +60,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
         provider: settings.storyProvider,
         model: settings.storyModel,
         apiKey: settings.storyApiKey,
+        baseUrl: settings.storyBaseUrl || undefined,
         theme: selectedTheme,
         childName,
         age: selectedAge,
@@ -272,7 +276,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
 
         {hasStoryKey && (
           <p className="text-[11px] text-txt-secondary text-center mt-2.5">
-            Powered by {settings.storyProvider === "openai" ? "OpenAI" : settings.storyProvider === "gemini" ? "Google Gemini" : "Anthropic"} · {settings.storyModel}
+            Powered by {settings.storyProvider === "openai" ? "OpenAI" : settings.storyProvider === "gemini" ? "Google Gemini" : settings.storyProvider === "anthropic" ? "Anthropic" : "Custom"} · {settings.storyModel}
           </p>
         )}
       </div>

@@ -47,13 +47,17 @@ Trả về JSON với format sau (8-12 trang):
 }`;
 }
 
-async function callOpenAI(
+// Works with OpenAI and any OpenAI-compatible endpoint (OpenRouter, Groq,
+// Together, Azure-style gateways, local LM Studio/Ollama, etc.).
+async function callOpenAICompatible(
+  baseUrl: string,
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string
 ): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -71,12 +75,14 @@ async function callOpenAI(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(
-      err.error?.message || `OpenAI error: ${res.status}`
-    );
+    throw new Error(err.error?.message || `Provider error: ${res.status}`);
   }
   const data = await res.json();
-  return data.choices[0].message.content;
+  const content = data.choices?.[0]?.message?.content;
+  if (typeof content !== "string") {
+    throw new Error("Provider trả về định dạng không hợp lệ");
+  }
+  return content;
 }
 
 async function callGemini(
@@ -140,17 +146,34 @@ async function callAnthropic(
 }
 
 export async function generateStory(
-  provider: "openai" | "gemini" | "anthropic",
+  provider: "openai" | "gemini" | "anthropic" | "custom",
   apiKey: string,
   model: string,
-  params: StoryParams
+  params: StoryParams,
+  baseUrl?: string
 ): Promise<GeneratedStory> {
   const userPrompt = buildUserPrompt(params);
 
   let raw: string;
   switch (provider) {
     case "openai":
-      raw = await callOpenAI(apiKey, model, SYSTEM_PROMPT, userPrompt);
+      raw = await callOpenAICompatible(
+        "https://api.openai.com/v1",
+        apiKey,
+        model,
+        SYSTEM_PROMPT,
+        userPrompt
+      );
+      break;
+    case "custom":
+      if (!baseUrl) throw new Error("Thiếu Base URL cho custom provider");
+      raw = await callOpenAICompatible(
+        baseUrl,
+        apiKey,
+        model,
+        SYSTEM_PROMPT,
+        userPrompt
+      );
       break;
     case "gemini":
       raw = await callGemini(apiKey, model, SYSTEM_PROMPT, userPrompt);
@@ -195,5 +218,9 @@ export const PROVIDER_MODELS: Record<string, { label: string; models: { id: stri
       { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
       { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku (nhanh)" },
     ],
+  },
+  custom: {
+    label: "Custom",
+    models: [],
   },
 };

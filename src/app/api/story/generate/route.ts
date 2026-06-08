@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     extraPrompt,
     voiceId,
     apiKey: userKey,
+    baseUrl,
     persist = true,
   } = body;
 
@@ -53,14 +54,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (provider === "custom" && !baseUrl) {
+    return Response.json(
+      { error: "Custom provider cần Base URL (OpenAI-compatible)" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const story = await generateStory(provider, apiKey, model, {
-      theme,
-      childName,
-      age,
-      language: language || "vi",
-      extraPrompt,
-    });
+    const story = await generateStory(
+      provider,
+      apiKey,
+      model,
+      {
+        theme,
+        childName,
+        age,
+        language: language || "vi",
+        extraPrompt,
+      },
+      baseUrl
+    );
 
     let storyId: string | null = null;
 

@@ -2,12 +2,17 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
+export type StoryProvider = "openai" | "gemini" | "anthropic" | "custom";
+
 export interface AppSettings {
   elevenLabsApiKey: string;
   elevenLabsModelId: string;
-  storyProvider: "openai" | "gemini" | "anthropic";
+  storyProvider: StoryProvider;
   storyApiKey: string;
   storyModel: string;
+  // Base URL for an OpenAI-compatible custom provider (only used when
+  // storyProvider === "custom"), e.g. https://openrouter.ai/api/v1
+  storyBaseUrl: string;
   language: string;
   autoPlay: boolean;
   sleepTimerDefault: number;
@@ -21,6 +26,7 @@ const defaultSettings: AppSettings = {
   storyProvider: "openai",
   storyApiKey: "",
   storyModel: "gpt-4o-mini",
+  storyBaseUrl: "",
   language: "vi",
   autoPlay: true,
   sleepTimerDefault: 15,
@@ -65,7 +71,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const isConfigured = Boolean(settings.elevenLabsApiKey && settings.storyApiKey);
+  const storyConfigured = Boolean(
+    settings.storyApiKey &&
+      (settings.storyProvider !== "custom" || settings.storyBaseUrl)
+  );
+  const isConfigured = Boolean(settings.elevenLabsApiKey && storyConfigured);
 
   return (
     <SettingsContext.Provider value={{ settings, updateSettings, isConfigured }}>
