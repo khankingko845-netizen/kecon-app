@@ -221,6 +221,30 @@ function DefaultVoicesManager({
   const [manualName, setManualName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  // Auto-lookup voice info when user enters a voice_id
+  async function handleLookupVoice() {
+    const id = manualVoiceId.trim();
+    if (!id) return;
+    setLookingUp(true);
+    setLookupError(null);
+    try {
+      const res = await fetch(`/api/admin/test-provider?voice_id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.ok && data.voice) {
+        setManualName(data.voice.name || "");
+        // Could auto-detect language from voice info too
+      } else {
+        setLookupError(data.error || "Không tìm thấy voice");
+      }
+    } catch {
+      setLookupError("Lỗi kết nối");
+    } finally {
+      setLookingUp(false);
+    }
+  }
 
   async function handleAddVoice(v: VoiceOption, lang: string) {
     setSubmitting(true);
@@ -414,25 +438,44 @@ function DefaultVoicesManager({
                 </>
               ) : (
                 <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={manualVoiceId}
-                    onChange={(e) => setManualVoiceId(e.target.value)}
-                    placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono outline-none focus:border-accent transition-colors"
-                    autoFocus
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={manualVoiceId}
+                      onChange={(e) => { setManualVoiceId(e.target.value); setLookupError(null); }}
+                      placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB)"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono outline-none focus:border-accent transition-colors"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleLookupVoice}
+                      disabled={lookingUp || !manualVoiceId.trim()}
+                      className="px-3 py-2.5 rounded-xl border border-gray-200 text-accent text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
+                    >
+                      {lookingUp ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Search size={14} />
+                      )}
+                    </button>
+                  </div>
+                  {lookupError && (
+                    <p className="text-[11px] text-red-500 font-medium flex items-center gap-1">
+                      <AlertCircle size={11} /> {lookupError}
+                    </p>
+                  )}
                   <input
                     type="text"
                     value={manualName}
                     onChange={(e) => setManualName(e.target.value)}
-                    placeholder="Tên hiển thị (vd: Giọng nữ Hà Nội)"
+                    placeholder={lookingUp ? "Đang tìm..." : "Tên hiển thị (nhập ID rồi nhấn 🔍)"}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-accent transition-colors"
                   />
                   <div className="flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() => setManualMode(false)}
+                      onClick={() => { setManualMode(false); setLookupError(null); }}
                       className="text-[11px] text-accent font-semibold"
                     >
                       ← Chọn từ danh sách

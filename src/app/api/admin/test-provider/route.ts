@@ -1,5 +1,118 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getSystemSetting } from "@/lib/server-settings";
+
+/**
+ * GET /api/admin/test-provider?voice_id=xxx
+ * Looks up a voice by ID from ElevenLabs. Uses system API key.
+ * Returns: { ok, voice: { voice_id, name, language, category, preview_url } }
+ */
+export async function GET(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Admin check
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return Response.json({ error: "Admin only" }, { status: 403 });
+  }
+
+  const voiceId = request.nextUrl.searchParams.get("voice_id");
+  if (!voiceId) {
+    return Response.json({ error: "voice_id required" }, { status: 400 });
+  }
+
+  // Get ElevenLabs API key from system settings
+  const apiKey = await getSystemSetting("elevenlabs_api_key");
+  if (!apiKey) {
+    return Response.json(
+      { ok: false, error: "ElevenLabs API key chưa được cài đặt" },
+      { status: 200 }
+    );
+  }
+
+  try {
+    // Try fetching the voice directly (works for own voices + added from library)
+    const res = await fetch(`https://api.elevenlabs.io/v1/voices/${voiceId}`, {
+      headers: { "xi-api-key": apiKey },
+    });
+
+    if (res.ok) {
+      const v = await res.json() as {
+        voice_id: string;
+        name: string;
+        category: string;
+        labels?: Record<string, string>;
+        preview_url?: string;
+      };
+      return Response.json({
+        ok: true,
+        voice: {
+          voice_id: v.voice_id,
+          name: v.name,
+          language: v.labels?.language || "",
+          category: v.category,
+          preview_url: v.preview_url || null,
+          gender: v.labels?.gender || null,
+        },
+      });
+    }
+
+    // If not found in own voices, try the shared voice library
+    if (res.status === 404 || res.status === 422) {
+      // Search shared voices by voice_id
+      const sharedRes = await fetch(
+        `https://api.elevenlabs.io/v1/shared-voices?voice_id=${voiceId}&page_size=1`,
+        { headers: { "xi-api-key": apiKey } }
+      );
+      if (sharedRes.ok) {
+        const sharedData = await sharedRes.json();
+        const voices = sharedData.voices as {
+          voice_id: string;
+          name: string;
+          category: string;
+          accent?: string;
+          gender?: string;
+          language?: string;
+          preview_url?: string;
+        }[];
+        if (voices && voices.length > 0) {
+          const sv = voices[0];
+          return Response.json({
+            ok: true,
+            voice: {
+              voice_id: sv.voice_id,
+              name: `${sv.name}${sv.accent ? ` (${sv.accent})` : ""}`,
+              language: sv.language || "",
+              category: sv.category || "library",
+              preview_url: sv.preview_url || null,
+              gender: sv.gender || null,
+            },
+          });
+        }
+      }
+    }
+
+    return Response.json({
+      ok: false,
+      error: `Không tìm thấy voice ID "${voiceId}"`,
+    });
+  } catch (err) {
+    return Response.json({
+      ok: false,
+      error: err instanceof Error ? err.message : "Lookup failed",
+    });
+  }
+}
 
 /**
  * POST /api/admin/test-provider

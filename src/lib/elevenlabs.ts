@@ -110,9 +110,14 @@ export async function textToSpeech(
     },
   };
 
-  // language_code forces the output language for multilingual/v3 models
-  // This prevents the model from guessing wrong language for cloned voices
-  if (resolvedLang && (modelId.includes("multilingual") || modelId.includes("v3"))) {
+  // language_code is only supported by turbo v2.5, flash v2.5, and v3+ models.
+  // eleven_multilingual_v2 does NOT support language_code (will error).
+  const supportsLangCode =
+    modelId.includes("v3") ||
+    modelId.includes("turbo_v2_5") ||
+    modelId.includes("flash_v2_5") ||
+    modelId.includes("flash_v2");
+  if (resolvedLang && supportsLangCode) {
     body.language_code = resolvedLang;
   }
 
