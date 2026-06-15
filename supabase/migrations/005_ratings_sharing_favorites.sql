@@ -141,7 +141,7 @@ CREATE POLICY "Users can update own reviews" ON public.story_reviews
 CREATE POLICY "Users can delete own reviews" ON public.story_reviews
   FOR DELETE USING (auth.uid() = user_id);
 CREATE POLICY "Admins can manage all reviews" ON public.story_reviews
-  FOR ALL USING (is_admin(auth.uid()));
+  FOR ALL USING (is_admin());
 
 -- story_shares: users can CRUD their own, public reads active shares
 ALTER TABLE public.story_shares ENABLE ROW LEVEL SECURITY;
