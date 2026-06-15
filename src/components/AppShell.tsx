@@ -34,6 +34,8 @@ import ParentAnalytics from "@/components/screens/ParentAnalytics";
 import Downloads from "@/components/screens/Downloads";
 import Notifications from "@/components/screens/Notifications";
 import ProfileEdit from "@/components/screens/ProfileEdit";
+import DailyChallenges from "@/components/screens/DailyChallenges";
+import Collections from "@/components/screens/Collections";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider } from "@/lib/audio-player-context";
@@ -231,6 +233,12 @@ function AppContent() {
         )}
         {current.screen === "profile-edit" && (
           <ProfileEdit onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "daily-challenges" && (
+          <DailyChallenges onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "collections" && (
+          <Collections onBack={goBack} onNavigate={navigate} />
         )}
       </div>
 

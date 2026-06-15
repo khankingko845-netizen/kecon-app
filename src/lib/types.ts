@@ -27,7 +27,9 @@ export type Screen =
   | "downloads"
   | "onboarding"
   | "notifications"
-  | "profile-edit";
+  | "profile-edit"
+  | "daily-challenges"
+  | "collections";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 

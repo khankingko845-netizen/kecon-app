@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Search, Moon, Play, User, UserRound, Plus, Sparkles,
-  Upload, LayoutDashboard, TrendingUp, Heart, Bell,
+  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -156,6 +156,24 @@ export default function Home({ onNavigate }: HomeProps) {
             <Heart size={17} />
           </div>
           <span className="text-[13px] font-bold text-txt">Yêu thích</span>
+        </button>
+        <button
+          onClick={() => onNavigate("daily-challenges")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+            <Flame size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Thử thách</span>
+        </button>
+        <button
+          onClick={() => onNavigate("collections")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <FolderOpen size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Bộ sưu tập</span>
         </button>
         {isAdmin && (
           <button
