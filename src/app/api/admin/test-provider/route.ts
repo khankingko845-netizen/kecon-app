@@ -132,15 +132,16 @@ export async function POST(request: NextRequest) {
       }
 
       case "elevenlabs": {
-        const res = await fetch("https://api.elevenlabs.io/v1/voices", {
+        // 1. Fetch user's own voices (cloned + added)
+        const ownRes = await fetch("https://api.elevenlabs.io/v1/voices", {
           headers: { "xi-api-key": apiKey },
         });
-        if (!res.ok) {
-          throw new Error(`ElevenLabs returned ${res.status}`);
+        if (!ownRes.ok) {
+          throw new Error(`ElevenLabs returned ${ownRes.status}`);
         }
-        const data = await res.json();
-        const voices = (
-          data.voices as {
+        const ownData = await ownRes.json();
+        const ownVoices = (
+          ownData.voices as {
             voice_id: string;
             name: string;
             category: string;
@@ -151,8 +152,76 @@ export async function POST(request: NextRequest) {
           name: v.name,
           category: v.category,
           language: v.labels?.language || "",
+          source: "own" as const,
         }));
-        return Response.json({ ok: true, voices });
+
+        // 2. Search shared voice library for each target language
+        const targetLanguages = [
+          { code: "vi", label: "Vietnamese" },
+          { code: "en", label: "English" },
+          { code: "ja", label: "Japanese" },
+        ];
+
+        const libraryVoices: {
+          voice_id: string;
+          name: string;
+          category: string;
+          language: string;
+          source: "library";
+          public_owner_id: string;
+        }[] = [];
+
+        await Promise.all(
+          targetLanguages.map(async ({ code, label }) => {
+            try {
+              const searchUrl = new URL(
+                "https://api.elevenlabs.io/v1/shared-voices"
+              );
+              searchUrl.searchParams.set("language", code);
+              searchUrl.searchParams.set("page_size", "15");
+              searchUrl.searchParams.set("sort", "usage_character_count_1d");
+
+              const libRes = await fetch(searchUrl.toString(), {
+                headers: { "xi-api-key": apiKey },
+              });
+              if (!libRes.ok) return;
+
+              const libData = await libRes.json();
+              const voices = (
+                libData.voices as {
+                  voice_id: string;
+                  public_owner_id: string;
+                  name: string;
+                  category: string;
+                  accent?: string;
+                  gender?: string;
+                  descriptive?: string;
+                }[]
+              ).slice(0, 10);
+
+              for (const v of voices) {
+                libraryVoices.push({
+                  voice_id: v.voice_id,
+                  name: `${v.name}${v.accent ? ` (${v.accent})` : ""}${v.gender ? ` · ${v.gender}` : ""}`,
+                  category: v.category || "library",
+                  language: label,
+                  source: "library",
+                  public_owner_id: v.public_owner_id,
+                });
+              }
+            } catch {
+              // Skip language on error
+            }
+          })
+        );
+
+        // Combine: own voices first, then library voices
+        const allVoices = [
+          ...ownVoices.map((v) => ({ ...v, public_owner_id: "" })),
+          ...libraryVoices,
+        ];
+
+        return Response.json({ ok: true, voices: allVoices });
       }
 
       case "custom": {

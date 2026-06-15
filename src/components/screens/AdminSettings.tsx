@@ -22,6 +22,8 @@ interface VoiceOption {
   name: string;
   category: string;
   language: string;
+  source?: "own" | "library";
+  public_owner_id?: string;
 }
 interface TestResult {
   ok: boolean;
@@ -188,35 +190,94 @@ function VoiceSelect({
   voices,
   filterLanguage,
   label,
+  langCode,
 }: {
   value: string;
   onChange: (v: string) => void;
   voices: VoiceOption[];
   filterLanguage?: string;
   label: string;
+  langCode?: string;
 }) {
-  // Split into: cloned voices, matching-language, and the rest
-  const cloned = voices.filter((v) => v.category === "cloned");
-  const premade = voices.filter((v) => v.category !== "cloned");
+  // Show manual voice_id input toggle
+  const [manualMode, setManualMode] = useState(false);
 
-  // For premade, put matching-language first (if any), then others
-  const matchingPremade = filterLanguage
-    ? premade.filter((v) =>
-        v.language.toLowerCase().includes(filterLanguage.toLowerCase())
-      )
-    : [];
-  const otherPremade = filterLanguage
-    ? premade.filter(
-        (v) =>
-          !v.language.toLowerCase().includes(filterLanguage.toLowerCase())
-      )
-    : premade;
+  // Group voices for this language:
+  // 1. User's cloned voices matching this language
+  const clonedMatching = voices.filter(
+    (v) =>
+      v.source === "own" &&
+      v.category === "cloned" &&
+      filterLanguage &&
+      v.language.toLowerCase().includes(filterLanguage.toLowerCase())
+  );
+  // 2. All other user's own cloned voices
+  const clonedOther = voices.filter(
+    (v) =>
+      v.source === "own" &&
+      v.category === "cloned" &&
+      !clonedMatching.includes(v)
+  );
+  // 3. Library voices for this language (from shared-voices search)
+  const libraryForLang = voices.filter(
+    (v) =>
+      v.source === "library" &&
+      filterLanguage &&
+      v.language.toLowerCase().includes(filterLanguage.toLowerCase())
+  );
+  // 4. User's premade voices (always available, lower priority)
+  const premade = voices.filter(
+    (v) => v.source === "own" && v.category === "premade"
+  );
+
+  if (manualMode) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[12px] font-bold text-txt-secondary">
+            {label}
+          </label>
+          <button
+            type="button"
+            onClick={() => setManualMode(false)}
+            className="text-[11px] text-accent font-semibold"
+          >
+            ← Chọn từ danh sách
+          </button>
+        </div>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Nhập voice_id (vd: pNInz6obpgDQGcFmaJgB)"
+          className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+        />
+        <a
+          href={`https://elevenlabs.io/community?language=${langCode || "vi"}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-accent text-[11px] font-semibold mt-1.5"
+        >
+          Tìm voice trên ElevenLabs Voice Library <ExternalLink size={11} />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
-        {label}
-      </label>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-[12px] font-bold text-txt-secondary">
+          {label}
+        </label>
+        <button
+          type="button"
+          onClick={() => setManualMode(true)}
+          className="text-[11px] text-accent font-semibold"
+        >
+          Nhập voice_id thủ công →
+        </button>
+      </div>
       <div className="relative">
         <select
           value={value}
@@ -224,29 +285,38 @@ function VoiceSelect({
           className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
         >
           <option value="">— Không đặt (dùng voice người dùng) —</option>
-          {cloned.length > 0 && (
-            <optgroup label="🎙️ Voices đã clone">
-              {cloned.map((v) => (
-                <option key={v.voice_id} value={v.voice_id}>
-                  {v.name}{v.language ? ` · ${v.language}` : ""}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {matchingPremade.length > 0 && (
-            <optgroup label={`✨ Gắn nhãn ${filterLanguage}`}>
-              {matchingPremade.map((v) => (
+          {clonedMatching.length > 0 && (
+            <optgroup label={`🎙️ Voice clone (${filterLanguage})`}>
+              {clonedMatching.map((v) => (
                 <option key={v.voice_id} value={v.voice_id}>
                   {v.name} · {v.language}
                 </option>
               ))}
             </optgroup>
           )}
-          {otherPremade.length > 0 && (
-            <optgroup label="🌐 Tất cả (Multilingual v2 đọc được mọi ngôn ngữ)">
-              {otherPremade.map((v) => (
+          {libraryForLang.length > 0 && (
+            <optgroup label={`⭐ Voice chuyên ${filterLanguage}`}>
+              {libraryForLang.map((v) => (
                 <option key={v.voice_id} value={v.voice_id}>
-                  {v.name} ({v.category}){v.language ? ` · ${v.language}` : ""}
+                  {v.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {clonedOther.length > 0 && (
+            <optgroup label="🎙️ Voice clone khác">
+              {clonedOther.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name}{v.language ? ` · ${v.language}` : ""}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {premade.length > 0 && (
+            <optgroup label="🌐 Premade (chất lượng có thể không tối ưu)">
+              {premade.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name} · {v.language || "en"}
                 </option>
               ))}
             </optgroup>
@@ -257,9 +327,6 @@ function VoiceSelect({
           className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary pointer-events-none"
         />
       </div>
-      <p className="text-[11px] text-txt-secondary mt-1">
-        Multilingual v2 cho phép mọi voice đọc tiếng Việt, Anh, Nhật… dù gắn nhãn &quot;en&quot;.
-      </p>
     </div>
   );
 }
@@ -544,6 +611,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
               onChange={(v) => handleChange("elevenlabs_default_voice_vi", v)}
               voices={voices}
               filterLanguage="vietnamese"
+              langCode="vi"
             />
             <VoiceSelect
               label="🇺🇸 English"
@@ -551,6 +619,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
               onChange={(v) => handleChange("elevenlabs_default_voice_en", v)}
               voices={voices}
               filterLanguage="english"
+              langCode="en"
             />
             <VoiceSelect
               label="🇯🇵 日本語"
@@ -558,6 +627,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
               onChange={(v) => handleChange("elevenlabs_default_voice_ja", v)}
               voices={voices}
               filterLanguage="japanese"
+              langCode="ja"
             />
           </div>
         ) : (
