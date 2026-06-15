@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft, MoreHorizontal, Play, Pause,
   SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
-  Volume2, Loader2, X, Sparkles,
+  Volume2, Loader2, X, Sparkles, Share2, Star, MessageSquare, Send,
+  Bookmark,
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
@@ -13,6 +14,8 @@ import { useData } from "@/lib/data-context";
 import { ttsApi } from "@/lib/api-client";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import SceneEffects from "@/components/ui/SceneEffects";
+import RatingStars from "@/components/ui/RatingStars";
+import ShareModal from "@/components/ui/ShareModal";
 import {
   effectForScene,
   asEffectType,
@@ -26,8 +29,16 @@ import {
   logBehavior,
   likeStory,
   gradientFor,
+  getStoryRating,
+  rateStory,
+  getStoryReviews,
+  createReview,
+  isFavorited,
+  toggleFavorite,
+  updateReadingStreak,
   type StoryRow,
   type StoryPageRow,
+  type StoryReviewRow,
 } from "@/lib/db";
 
 interface StoryPlayerProps {
@@ -86,6 +97,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [progress, setProgress] = useState(0);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [liked, setLiked] = useState(false);
+
+  // New state: Rating, Reviews, Share, Favorites
+  const [showRating, setShowRating] = useState(false);
+  const [avgRating, setAvgRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+  const [reviews, setReviews] = useState<StoryReviewRow[]>([]);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -149,6 +172,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     };
   }, [storyId, isGenerated]);
 
+  // Load rating, reviews, and favorite status
+  useEffect(() => {
+    if (isGenerated || !storyId) return;
+    getStoryRating(storyId).then((r) => {
+      setAvgRating(r.avgRating);
+      setRatingCount(r.ratingCount);
+      setUserRating(r.userRating ?? 0);
+    }).catch(() => {});
+    getStoryReviews(storyId).then(setReviews).catch(() => {});
+    isFavorited(storyId).then(setIsFav).catch(() => {});
+  }, [storyId, isGenerated]);
+
   const title = isGenerated
     ? generatedStory?.title || "Truyện AI"
     : story?.title || "Truyện";
@@ -160,6 +195,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const currentText = isGenerated
     ? generatedStory?.pages[currentPage]?.text || ""
     : pages[currentPage]?.content || "";
+
+  // Get illustration URL for the current page
+  const currentIllustration = isGenerated
+    ? null
+    : pages[currentPage]?.illustration_url;
 
   // Resolve which ElevenLabs voice to use for TTS.
   const storyVoice = story?.voice_id
@@ -187,6 +227,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       pagesListened: listened,
       completed: listened >= totalPages,
     }).catch(() => {});
+    // Update reading streak
+    const minutes = Math.round(duration / 60);
+    if (minutes > 0) {
+      updateReadingStreak(minutes).catch(() => {});
+    }
   }, [isGenerated, storyId, story, totalPages]);
 
   useEffect(() => {
@@ -333,6 +378,39 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     likeStory(storyId, next).catch(() => {});
   };
 
+  const handleRate = async (rating: number) => {
+    if (!storyId || isGenerated) return;
+    setUserRating(rating);
+    try {
+      await rateStory(storyId, rating);
+      const r = await getStoryRating(storyId);
+      setAvgRating(r.avgRating);
+      setRatingCount(r.ratingCount);
+    } catch {}
+  };
+
+  const handleSubmitReview = async () => {
+    if (!storyId || !reviewText.trim() || isGenerated) return;
+    setSubmittingReview(true);
+    try {
+      await createReview(storyId, reviewText.trim(), userRating || undefined);
+      setReviewText("");
+      const r = await getStoryReviews(storyId);
+      setReviews(r);
+    } catch {}
+    setSubmittingReview(false);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!storyId || isGenerated) return;
+    setFavLoading(true);
+    try {
+      const result = await toggleFavorite(storyId);
+      setIsFav(result);
+    } catch {}
+    setFavLoading(false);
+  };
+
   const anyAmbientOn = AMBIENT_OPTIONS.some((o) => ambientOn[o.type]);
   const actions = [
     { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
@@ -346,7 +424,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         ),
       active: false,
     },
-    { icon: Heart, label: "Yêu Thích", action: handleLike, active: liked },
+    { icon: Bookmark, label: "Lưu", action: handleToggleFavorite, active: isFav, loading: favLoading },
+    { icon: Share2, label: "Chia Sẻ", action: () => setShowShare(true), active: false },
     { icon: SlidersHorizontal, label: "Âm Nền", action: () => setShowMixer(true), active: anyAmbientOn },
   ];
 
@@ -380,25 +459,59 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               <Volume2 size={10} /> ElevenLabs
             </span>
           )}
-          <button className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center">
+          {/* Rating badge */}
+          {ratingCount > 0 && (
+            <button
+              onClick={() => setShowRating(true)}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-[10px] font-bold text-amber-400 flex items-center gap-1"
+            >
+              <Star size={10} fill="currentColor" /> {avgRating.toFixed(1)}
+            </button>
+          )}
+          <button
+            onClick={() => setShowRating(!showRating)}
+            className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+          >
             <MoreHorizontal size={20} className="text-white/60" />
           </button>
         </div>
       </div>
 
-      {/* Album Art */}
+      {/* Album Art — now shows illustration if available */}
       <div className="relative z-10 flex-1 flex flex-col items-center px-7 pt-5">
         <div
           key={`art-${currentPage}`}
-          className={`w-64 h-64 rounded-[28px] bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative fx-page-enter`}
+          className={`w-64 h-64 rounded-[28px] ${
+            currentIllustration ? "" : `bg-gradient-to-br ${gradient}`
+          } flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative fx-page-enter overflow-hidden`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-          </svg>
+          {currentIllustration ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentIllustration}
+              alt={`Minh hoạ trang ${currentPage + 1}`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          )}
           <span className="absolute bottom-3 right-4 px-3 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white/70">
             Trang {currentPage + 1}/{totalPages}
           </span>
+          {/* Favorite heart overlay */}
+          <button
+            onClick={handleLike}
+            className="absolute top-3 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
+          >
+            <Heart
+              size={16}
+              className={liked ? "text-red-400" : "text-white/60"}
+              fill={liked ? "currentColor" : "none"}
+            />
+          </button>
         </div>
 
         <h2 className="text-2xl font-extrabold tracking-tight mb-1 text-center">
@@ -408,6 +521,19 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           <Mic size={14} />
           {isGenerated ? "AI Generated" : `Giọng đọc: ${voiceLabel}`}
         </p>
+
+        {/* Inline rating stars */}
+        {!isGenerated && storyId && (
+          <button
+            onClick={() => setShowRating(true)}
+            className="mb-2 flex items-center gap-2"
+          >
+            <RatingStars value={userRating || avgRating} size={16} readonly dark />
+            <span className="text-[11px] text-white/40">
+              {ratingCount > 0 ? `(${ratingCount})` : "Đánh giá"}
+            </span>
+          </button>
+        )}
 
         {/* Active visual-effect indicator */}
         {activeEffect && (
@@ -472,7 +598,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       {/* Bottom Actions */}
       <div className="relative z-10 flex justify-around px-5 pt-5 pb-10">
         {actions.map((a) => (
-          <button key={a.label} onClick={a.action} className="text-center">
+          <button key={a.label} onClick={a.action} className="text-center" disabled={"loading" in a && a.loading}>
             <a.icon
               size={20}
               className={`mx-auto ${a.active ? "text-accent" : "text-white/40"}`}
@@ -484,6 +610,114 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           </button>
         ))}
       </div>
+
+      {/* Rating & Reviews Panel */}
+      {showRating && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10 max-h-[80vh] overflow-y-auto no-scrollbar">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
+                <Star size={18} className="text-amber-400" /> Đánh Giá & Nhận Xét
+              </h3>
+              <button
+                onClick={() => setShowRating(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Overall rating */}
+            <div className="text-center mb-5">
+              <p className="text-4xl font-black text-white mb-1">
+                {avgRating > 0 ? avgRating.toFixed(1) : "—"}
+              </p>
+              <RatingStars value={avgRating} size={28} readonly dark />
+              <p className="text-[12px] text-white/40 mt-1">
+                {ratingCount} đánh giá
+              </p>
+            </div>
+
+            {/* User's rating */}
+            <div className="bg-white/5 rounded-2xl p-4 mb-5">
+              <p className="text-[13px] font-bold text-white/70 mb-3">
+                Đánh giá của bạn
+              </p>
+              <div className="flex justify-center">
+                <RatingStars value={userRating} onChange={handleRate} size={32} dark />
+              </div>
+            </div>
+
+            {/* Write review */}
+            <div className="bg-white/5 rounded-2xl p-4 mb-5">
+              <p className="text-[13px] font-bold text-white/70 mb-3 flex items-center gap-1.5">
+                <MessageSquare size={14} /> Viết nhận xét
+              </p>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Chia sẻ cảm nhận của bạn..."
+                rows={3}
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[13px] text-white placeholder-white/30 outline-none focus:border-accent-2/50 resize-none"
+              />
+              <button
+                onClick={handleSubmitReview}
+                disabled={!reviewText.trim() || submittingReview}
+                className="mt-2 w-full py-2.5 rounded-xl bg-accent-2/20 text-accent-2 text-[13px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-40"
+              >
+                {submittingReview ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Send size={14} />
+                )}
+                Gửi nhận xét
+              </button>
+            </div>
+
+            {/* Reviews list */}
+            <div>
+              <p className="text-[13px] font-bold text-white/70 mb-3">
+                Nhận xét ({reviews.length})
+              </p>
+              {reviews.length === 0 ? (
+                <p className="text-[12px] text-white/30 text-center py-4">
+                  Chưa có nhận xét nào. Hãy là người đầu tiên!
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((r) => (
+                    <div key={r.id} className="bg-white/5 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[12px] font-bold text-white/60">
+                          {r.display_name || "Phụ huynh"}
+                        </span>
+                        {r.rating && (
+                          <RatingStars value={r.rating} size={12} readonly dark />
+                        )}
+                        <span className="text-[10px] text-white/30 ml-auto">
+                          {new Date(r.created_at).toLocaleDateString("vi-VN")}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-white/50 leading-relaxed">
+                        {r.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShare && storyId && !isGenerated && (
+        <ShareModal
+          storyId={storyId}
+          storyTitle={title}
+          onClose={() => setShowShare(false)}
+        />
+      )}
 
       {/* Sound Mixer (3-layer: voice TTS + ambient + auto-match) */}
       {showMixer && (

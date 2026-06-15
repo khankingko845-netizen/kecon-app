@@ -44,6 +44,10 @@ export interface StoryRow {
   status: "draft" | "published" | "archived" | "pending_review" | "rejected";
   is_platform_content: boolean;
   deleted_at: string | null;
+  avg_rating: number;
+  rating_count: number;
+  share_count: number;
+  locale: string;
   created_at: string;
   updated_at: string;
 }
@@ -989,4 +993,400 @@ export async function savePageAudio(
     .from("story_pages")
     .update({ audio_url: audioUrl, audio_duration: Math.round(durationSec) })
     .eq("id", storyPageId);
+}
+
+// ============================================================
+// Ratings & Reviews (Migration 005)
+// ============================================================
+export interface StoryRatingRow {
+  id: string;
+  story_id: string;
+  user_id: string;
+  rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryReviewRow {
+  id: string;
+  story_id: string;
+  user_id: string;
+  content: string;
+  rating: number | null;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+  // joined
+  display_name?: string | null;
+}
+
+export async function getStoryRating(storyId: string): Promise<{
+  avgRating: number;
+  ratingCount: number;
+  userRating: number | null;
+}> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: story } = await supabase
+    .from("stories")
+    .select("avg_rating, rating_count")
+    .eq("id", storyId)
+    .maybeSingle();
+
+  let userRating: number | null = null;
+  if (user) {
+    const { data: rating } = await supabase
+      .from("story_ratings")
+      .select("rating")
+      .eq("story_id", storyId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    userRating = rating?.rating ?? null;
+  }
+
+  return {
+    avgRating: story?.avg_rating ?? 0,
+    ratingCount: story?.rating_count ?? 0,
+    userRating,
+  };
+}
+
+export async function rateStory(storyId: string, rating: number): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const { data: existing } = await supabase
+    .from("story_ratings")
+    .select("id")
+    .eq("story_id", storyId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("story_ratings")
+      .update({ rating, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("story_ratings").insert({
+      story_id: storyId,
+      user_id: user.id,
+      rating,
+    });
+  }
+}
+
+export async function getStoryReviews(storyId: string): Promise<StoryReviewRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_reviews")
+    .select("*, profiles!inner(display_name)")
+    .eq("story_id", storyId)
+    .eq("is_visible", true)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    // Fallback without join if profiles join fails
+    const { data: fallback } = await supabase
+      .from("story_reviews")
+      .select("*")
+      .eq("story_id", storyId)
+      .eq("is_visible", true)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    return fallback ?? [];
+  }
+  return (data ?? []).map((r) => ({
+    ...r,
+    display_name: (r as Record<string, unknown>).profiles
+      ? ((r as Record<string, unknown>).profiles as { display_name: string | null }).display_name
+      : null,
+  }));
+}
+
+export async function createReview(storyId: string, content: string, rating?: number): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  await supabase.from("story_reviews").insert({
+    story_id: storyId,
+    user_id: user.id,
+    content,
+    rating: rating ?? null,
+  });
+}
+
+export async function deleteReview(reviewId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_reviews").delete().eq("id", reviewId);
+}
+
+// ============================================================
+// Story Sharing (Migration 005)
+// ============================================================
+export interface StoryShareRow {
+  id: string;
+  story_id: string;
+  user_id: string;
+  share_token: string;
+  is_active: boolean;
+  view_count: number;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export async function createShareLink(storyId: string): Promise<StoryShareRow> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  // Check for existing active share
+  const { data: existing } = await supabase
+    .from("story_shares")
+    .select("*")
+    .eq("story_id", storyId)
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  const { data, error } = await supabase
+    .from("story_shares")
+    .insert({ story_id: storyId, user_id: user.id })
+    .select("*")
+    .single();
+  if (error) throw error;
+
+  // Increment share count (best-effort)
+  try { await supabase.rpc("increment_play_count", { p_story_id: storyId }); } catch {}
+  await logBehavior("share", storyId);
+
+  return data;
+}
+
+export async function getShareByToken(token: string): Promise<{
+  share: StoryShareRow;
+  story: StoryRow;
+  pages: StoryPageRow[];
+} | null> {
+  const supabase = createClient();
+  const { data: share } = await supabase
+    .from("story_shares")
+    .select("*")
+    .eq("share_token", token)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!share) return null;
+
+  // Check expiry
+  if (share.expires_at && new Date(share.expires_at) < new Date()) return null;
+
+  const [story, pages] = await Promise.all([
+    getStory(share.story_id),
+    getStoryPages(share.story_id),
+  ]);
+  if (!story) return null;
+
+  // Increment view count
+  await supabase
+    .from("story_shares")
+    .update({ view_count: (share.view_count || 0) + 1 })
+    .eq("id", share.id);
+
+  return { share, story, pages };
+}
+
+export async function deactivateShare(shareId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_shares").update({ is_active: false }).eq("id", shareId);
+}
+
+// ============================================================
+// User Favorites / Bookmarks (Migration 005)
+// ============================================================
+export async function getUserFavorites(): Promise<StoryRow[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: favs } = await supabase
+    .from("user_favorites")
+    .select("story_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (!favs || favs.length === 0) return [];
+
+  const storyIds = favs.map((f) => f.story_id);
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("*")
+    .in("id", storyIds);
+
+  // Preserve favorites order
+  const storyMap = new Map((stories ?? []).map((s) => [s.id, s]));
+  return storyIds.map((id) => storyMap.get(id)).filter(Boolean) as StoryRow[];
+}
+
+export async function toggleFavorite(storyId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const { data: existing } = await supabase
+    .from("user_favorites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("story_id", storyId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("user_favorites").delete().eq("id", existing.id);
+    return false;
+  } else {
+    await supabase.from("user_favorites").insert({
+      user_id: user.id,
+      story_id: storyId,
+    });
+    return true;
+  }
+}
+
+export async function isFavorited(storyId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("user_favorites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("story_id", storyId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+// ============================================================
+// Reading Streaks (Migration 005)
+// ============================================================
+export interface ReadingStreakRow {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_read_date: string | null;
+  total_stories_read: number;
+  total_listen_minutes: number;
+  updated_at: string;
+}
+
+export async function getReadingStreak(): Promise<ReadingStreakRow | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("reading_streaks")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return data;
+}
+
+export async function updateReadingStreak(listenMinutes: number): Promise<ReadingStreakRow> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const today = new Date().toISOString().split("T")[0];
+  const { data: existing } = await supabase
+    .from("reading_streaks")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    // Create new streak record
+    const { data, error } = await supabase
+      .from("reading_streaks")
+      .insert({
+        user_id: user.id,
+        current_streak: 1,
+        longest_streak: 1,
+        last_read_date: today,
+        total_stories_read: 1,
+        total_listen_minutes: Math.round(listenMinutes),
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // Calculate streak
+  const lastDate = existing.last_read_date;
+  let newStreak = existing.current_streak;
+
+  if (lastDate === today) {
+    // Already read today — just update minutes
+    const { data, error } = await supabase
+      .from("reading_streaks")
+      .update({
+        total_listen_minutes: existing.total_listen_minutes + Math.round(listenMinutes),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  if (lastDate === yesterdayStr) {
+    newStreak = existing.current_streak + 1;
+  } else {
+    newStreak = 1; // streak broken
+  }
+
+  const longestStreak = Math.max(existing.longest_streak, newStreak);
+
+  const { data, error } = await supabase
+    .from("reading_streaks")
+    .update({
+      current_streak: newStreak,
+      longest_streak: longestStreak,
+      last_read_date: today,
+      total_stories_read: existing.total_stories_read + 1,
+      total_listen_minutes: existing.total_listen_minutes + Math.round(listenMinutes),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", existing.id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================
+// Batch TTS Generation
+// ============================================================
+export async function getPagesMissingAudio(storyId: string): Promise<StoryPageRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .select("*")
+    .eq("story_id", storyId)
+    .is("audio_url", null)
+    .order("page_number", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }

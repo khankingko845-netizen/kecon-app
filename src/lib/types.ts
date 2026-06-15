@@ -17,7 +17,8 @@ export type Screen =
   | "admin"
   | "admin-stories"
   | "admin-users"
-  | "admin-analytics";
+  | "admin-analytics"
+  | "favorites";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 

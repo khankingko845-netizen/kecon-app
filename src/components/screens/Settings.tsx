@@ -11,13 +11,14 @@ import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
 import { PROVIDER_MODELS } from "@/lib/story-ai";
 import { exportUserData, deleteUserData } from "@/lib/db";
+import { useI18n, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import type { Screen } from "@/lib/types";
 
 interface SettingsProps {
   onNavigate: (screen: Screen) => void;
 }
 
-type SettingsTab = "main" | "api" | "voice" | "story" | "about";
+type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language";
 
 function SectionHeader({ title }: { title: string }) {
   return (
@@ -283,10 +284,56 @@ function ApiKeysPanel() {
   );
 }
 
+function LanguagePanel({ onBack }: { onBack: () => void }) {
+  const { locale, setLocale } = useI18n();
+
+  const languages: { id: Locale; flag: string }[] = [
+    { id: "vi", flag: "🇻🇳" },
+    { id: "en", flag: "🇺🇸" },
+    { id: "ja", flag: "🇯🇵" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-surface pb-24">
+      <div className="px-5 pt-14 pb-3 flex items-center gap-3">
+        <button onClick={onBack} className="text-accent text-sm font-semibold">
+          ‹ Quay lại
+        </button>
+        <h2 className="text-[22px] font-black tracking-tight flex-1">
+          Ngôn Ngữ
+        </h2>
+      </div>
+      <div className="bg-white divide-y divide-gray-100">
+        {languages.map((lang) => (
+          <button
+            key={lang.id}
+            onClick={() => setLocale(lang.id)}
+            className="w-full flex items-center gap-3 px-5 py-4 active:bg-gray-50 transition-colors"
+          >
+            <span className="text-2xl">{lang.flag}</span>
+            <span className="flex-1 text-left text-[15px] font-semibold text-txt">
+              {LOCALE_LABELS[lang.id]}
+            </span>
+            {locale === lang.id && (
+              <span className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
+                <Check size={14} className="text-white" />
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      <p className="px-5 mt-4 text-[12px] text-txt-secondary">
+        Ngôn ngữ giao diện sẽ thay đổi ngay lập tức. Nội dung truyện giữ nguyên ngôn ngữ gốc.
+      </p>
+    </div>
+  );
+}
+
 export default function Settings({ onNavigate }: SettingsProps) {
   const { settings, isConfigured } = useSettings();
   const { user, signOut } = useAuth();
   const { refreshAll } = useData();
+  const { locale } = useI18n();
   const [tab, setTab] = useState<SettingsTab>("main");
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -331,6 +378,10 @@ export default function Settings({ onNavigate }: SettingsProps) {
     } finally {
       setBusy(null);
     }
+  }
+
+  if (tab === "language") {
+    return <LanguagePanel onBack={() => setTab("main")} />;
   }
 
   if (tab === "api") {
@@ -410,8 +461,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
         <SettingsRow
           icon={Globe}
           label="Ngôn Ngữ"
-          value={settings.language === "vi" ? "Tiếng Việt" : "English"}
-          onClick={() => {}}
+          value={LOCALE_LABELS[locale]}
+          onClick={() => setTab("language")}
         />
         <SettingsRow
           icon={Moon}

@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2,
   Image as ImageIcon, Globe, FileText, Check, Sparkles, GitBranch, X,
+  Headphones, Volume2,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
-import { illustrateApi } from "@/lib/api-client";
+import { illustrateApi, ttsApi } from "@/lib/api-client";
 import {
   getStory,
   getStoryPages,
@@ -19,6 +20,9 @@ import {
   syncPageOrder,
   setStoryPageCount,
   publishStory,
+  uploadTtsAudio,
+  savePageAudio,
+  getPagesMissingAudio,
   type StoryRow,
   type StoryPageRow,
   type PageChoice,
@@ -58,6 +62,11 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [illustrating, setIllustrating] = useState<string | null>(null);
+  const [batchTTS, setBatchTTS] = useState<{ running: boolean; current: number; total: number }>({
+    running: false,
+    current: 0,
+    total: 0,
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -211,6 +220,41 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBatchTTS = async () => {
+    if (!storyId || !settings.elevenLabsApiKey) {
+      setError("Cần cấu hình ElevenLabs API Key trong Cài Đặt");
+      return;
+    }
+    const missing = await getPagesMissingAudio(storyId);
+    if (missing.length === 0) {
+      setError("Tất cả trang đã có audio");
+      return;
+    }
+    setBatchTTS({ running: true, current: 0, total: missing.length });
+    setError(null);
+    const voiceId = "pNInz6obpgDQGcFmaJgB"; // Default voice
+    for (let i = 0; i < missing.length; i++) {
+      setBatchTTS((prev) => ({ ...prev, current: i + 1 }));
+      try {
+        const text = missing[i].content;
+        if (!text) continue;
+        const blob = await ttsApi(
+          voiceId,
+          text,
+          settings.elevenLabsApiKey,
+          settings.elevenLabsModelId
+        );
+        const audioUrl = await uploadTtsAudio(missing[i].id, blob);
+        await savePageAudio(missing[i].id, audioUrl, 0);
+        updatePageLocal(missing[i].id, { audio_url: audioUrl });
+      } catch (e) {
+        setError(`Lỗi trang ${missing[i].page_number}: ${e instanceof Error ? e.message : "?"}`);
+        break;
+      }
+    }
+    setBatchTTS({ running: false, current: 0, total: 0 });
   };
 
   if (loading) {
@@ -496,7 +540,28 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           <Plus size={18} /> Thêm trang
         </button>
 
-        <div className="flex gap-2 mt-4">
+        {/* Batch TTS */}
+        <button
+          onClick={handleBatchTTS}
+          disabled={batchTTS.running}
+          className="w-full mt-3 py-3.5 rounded-2xl bg-violet-50 border border-violet-200 text-[14px] font-bold text-violet-700 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60"
+        >
+          {batchTTS.running ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Đang tạo audio {batchTTS.current}/{batchTTS.total}...
+            </>
+          ) : (
+            <>
+              <Headphones size={16} /> Tạo giọng đọc toàn bộ
+            </>
+          )}
+        </button>
+        <p className="text-[11px] text-txt-secondary text-center mt-1 mb-2">
+          Tự động tạo TTS cho các trang chưa có audio (cần ElevenLabs API Key)
+        </p>
+
+        <div className="flex gap-2 mt-2">
           <button
             onClick={() => onNavigate("player", { storyId: story.id })}
             className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-[14px] font-bold text-txt flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"

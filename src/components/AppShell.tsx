@@ -25,7 +25,9 @@ import AdminDashboard from "@/components/screens/AdminDashboard";
 import AdminStories from "@/components/screens/AdminStories";
 import AdminUsers from "@/components/screens/AdminUsers";
 import AdminAnalytics from "@/components/screens/AdminAnalytics";
+import Favorites from "@/components/screens/Favorites";
 import ComplianceLayer from "@/components/ComplianceLayer";
+import { I18nProvider } from "@/lib/i18n";
 
 interface ScreenState {
   screen: Screen;
@@ -191,6 +193,9 @@ function AppContent() {
         {current.screen === "admin-analytics" && (
           <AdminAnalytics onBack={goBack} />
         )}
+        {current.screen === "favorites" && (
+          <Favorites onBack={goBack} onNavigate={navigate} />
+        )}
       </div>
 
       {showTabBar && (
@@ -206,7 +211,9 @@ export default function AppShell() {
     <AuthProvider>
       <SettingsProvider>
         <DataProvider>
-          <AppContent />
+          <I18nProvider>
+            <AppContent />
+          </I18nProvider>
         </DataProvider>
       </SettingsProvider>
     </AuthProvider>

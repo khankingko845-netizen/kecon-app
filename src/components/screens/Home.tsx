@@ -11,6 +11,7 @@ import { useSettings } from "@/lib/settings-context";
 import { gradientFor, iconForCategory } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
 import type { StoryRow } from "@/lib/db";
+import ReadingStreakCard from "@/components/ui/ReadingStreakCard";
 import type { Screen } from "@/lib/types";
 
 interface HomeProps {
@@ -136,6 +137,15 @@ export default function Home({ onNavigate }: HomeProps) {
           </div>
           <span className="text-[13px] font-bold text-txt">Tải truyện</span>
         </button>
+        <button
+          onClick={() => onNavigate("favorites")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-600">
+            <Heart size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Yêu thích</span>
+        </button>
         {isAdmin && (
           <button
             onClick={() => onNavigate("admin")}
@@ -208,6 +218,11 @@ export default function Home({ onNavigate }: HomeProps) {
           </div>
         </div>
       )}
+
+      {/* Reading Streak */}
+      <div className="px-5 pt-5">
+        <ReadingStreakCard />
+      </div>
 
       {/* Recent Stories */}
       <div className="px-5 pt-5">
