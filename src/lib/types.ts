@@ -23,7 +23,8 @@ export type Screen =
   | "subscription"
   | "achievements"
   | "parental-controls"
-  | "parent-analytics";
+  | "parent-analytics"
+  | "downloads";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 

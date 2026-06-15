@@ -31,6 +31,7 @@ import Subscription from "@/components/screens/Subscription";
 import Achievements from "@/components/screens/Achievements";
 import ParentalControls from "@/components/screens/ParentalControls";
 import ParentAnalytics from "@/components/screens/ParentAnalytics";
+import Downloads from "@/components/screens/Downloads";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider } from "@/lib/audio-player-context";
@@ -219,6 +220,9 @@ function AppContent() {
         )}
         {current.screen === "parent-analytics" && (
           <ParentAnalytics onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "downloads" && (
+          <Downloads onBack={goBack} onNavigate={navigate} />
         )}
       </div>
 

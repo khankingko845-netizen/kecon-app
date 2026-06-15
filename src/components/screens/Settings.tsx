@@ -545,6 +545,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
         <SettingsRow icon={Trophy} label="Thành Tích & Huy Hiệu" color="#F59E0B" onClick={() => onNavigate("achievements")} />
         <SettingsRow icon={Shield} label="Kiểm Soát Phụ Huynh" color="#8B5CF6" onClick={() => onNavigate("parental-controls")} />
         <SettingsRow icon={BarChart3} label="Thống Kê Bé" color="#10B981" onClick={() => onNavigate("parent-analytics")} />
+        <SettingsRow icon={Download} label="Tải Về / Offline" color="#3B82F6" onClick={() => onNavigate("downloads")} />
       </div>
 
       <SectionHeader title="KHÁC" />
