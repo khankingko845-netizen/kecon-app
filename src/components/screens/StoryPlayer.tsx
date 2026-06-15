@@ -224,17 +224,20 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     : pages[currentPage]?.illustration_url;
 
   // Resolve which ElevenLabs voice to use for TTS.
-  // Priority: 1) user-selected voice  2) story's voice profile  3) first default for locale  4) fallback
+  // Priority: 1) user-selected voice  2) story narrator_voice_id  3) story voice profile  4) first default for locale  5) fallback
   const storyVoice = story?.voice_id
     ? voiceProfiles.find((v) => v.id === story.voice_id)
     : voiceProfiles.find((v) => v.elevenlabs_voice_id);
 
   const storyLocale = story?.locale || "vi";
+  const narratorVoiceId = story?.narrator_voice_id ?? null;
+  const narratorVoiceName = story?.narrator_voice_name ?? null;
   const defaultsForLocale = defaultVoices.filter((v) => v.language === storyLocale);
   const allDefaults = defaultVoices.length > 0 ? defaultVoices : [];
 
   // Determine active voice
   const resolvedVoiceId = selectedVoiceId
+    || narratorVoiceId
     || storyVoice?.elevenlabs_voice_id
     || defaultsForLocale[0]?.voice_id
     || allDefaults[0]?.voice_id
@@ -245,6 +248,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const selectedDefault = defaultVoices.find((v) => v.voice_id === resolvedVoiceId);
   const voiceLabel = selectedVoiceId
     ? (selectedDefault?.name || "Giọng đã chọn")
+    : narratorVoiceId
+    ? (narratorVoiceName || "Narrator")
     : storyVoice?.name
     ? storyVoice.name
     : selectedDefault?.name || "Giọng mẫu";

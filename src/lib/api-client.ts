@@ -89,6 +89,8 @@ export async function generateStoryApi(input: {
   language?: string;
   extraPrompt?: string;
   voiceId?: string | null;
+  narratorVoiceId?: string;
+  narratorVoiceName?: string;
   apiKey?: string;
   baseUrl?: string;
   persist?: boolean;

@@ -149,3 +149,164 @@ export async function deleteVoice(
   });
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
+
+// ============================================================
+// Voice Markup Parser (Multi-voice storytelling)
+// ============================================================
+
+export interface ParsedSegment {
+  speaker: string;       // "narrator" or character name
+  text: string;
+  voiceId: string;       // Resolved ElevenLabs voice_id
+  voiceName?: string;
+}
+
+interface CharacterVoiceMap {
+  [characterName: string]: { voiceId: string; voiceName?: string };
+}
+
+/**
+ * Parse voice markup in story content.
+ *
+ * Supported markup:
+ *   [narrator]Text here[/narrator]
+ *   [character:Name]Dialogue here[/character]
+ *
+ * Text without markup is treated as narrator.
+ */
+export function parseVoiceMarkup(
+  content: string,
+  characters: CharacterVoiceMap,
+  narratorVoiceId: string,
+  narratorVoiceName?: string
+): ParsedSegment[] {
+  const segments: ParsedSegment[] = [];
+  // Match [narrator]...[/narrator] and [character:Name]...[/character]
+  const tagRegex = /\[(narrator|character:([^\]]+))\]([\s\S]*?)\[\/(?:narrator|character)\]/g;
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRegex.exec(content)) !== null) {
+    // Any text before this tag = narrator
+    const before = content.slice(lastIndex, match.index).trim();
+    if (before) {
+      segments.push({
+        speaker: "narrator",
+        text: before,
+        voiceId: narratorVoiceId,
+        voiceName: narratorVoiceName,
+      });
+    }
+
+    const fullTag = match[1]; // "narrator" or "character:Name"
+    const characterName = match[2]; // Name (if character tag)
+    const innerText = match[3].trim();
+
+    if (!innerText) {
+      lastIndex = match.index + match[0].length;
+      continue;
+    }
+
+    if (fullTag === "narrator") {
+      segments.push({
+        speaker: "narrator",
+        text: innerText,
+        voiceId: narratorVoiceId,
+        voiceName: narratorVoiceName,
+      });
+    } else if (characterName) {
+      const charVoice = characters[characterName];
+      segments.push({
+        speaker: characterName,
+        text: innerText,
+        voiceId: charVoice?.voiceId || narratorVoiceId,
+        voiceName: charVoice?.voiceName || characterName,
+      });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining text after last tag = narrator
+  const remaining = content.slice(lastIndex).trim();
+  if (remaining) {
+    segments.push({
+      speaker: "narrator",
+      text: remaining,
+      voiceId: narratorVoiceId,
+      voiceName: narratorVoiceName,
+    });
+  }
+
+  // If no markup was found at all, treat entire content as narrator
+  if (segments.length === 0 && content.trim()) {
+    segments.push({
+      speaker: "narrator",
+      text: content.trim(),
+      voiceId: narratorVoiceId,
+      voiceName: narratorVoiceName,
+    });
+  }
+
+  return segments;
+}
+
+/**
+ * Generate multi-voice audio for a page.
+ * Calls TTS for each segment with the appropriate voice,
+ * then concatenates the audio blobs.
+ */
+export async function generateMultiVoiceAudio(
+  apiKey: string,
+  segments: ParsedSegment[],
+  modelId: string,
+  languageCode?: string
+): Promise<Blob> {
+  if (segments.length === 0) {
+    throw new Error("No segments to generate audio for");
+  }
+
+  // Optimize: merge adjacent segments with same voiceId
+  const merged: ParsedSegment[] = [];
+  for (const seg of segments) {
+    const last = merged[merged.length - 1];
+    if (last && last.voiceId === seg.voiceId) {
+      last.text += "\n" + seg.text;
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  // Generate TTS for each segment
+  const audioBlobs: Blob[] = [];
+  for (const seg of merged) {
+    const blob = await textToSpeech(
+      apiKey,
+      seg.voiceId,
+      seg.text,
+      modelId,
+      languageCode
+    );
+    audioBlobs.push(blob);
+  }
+
+  // If only 1 segment, return directly
+  if (audioBlobs.length === 1) return audioBlobs[0];
+
+  // Concatenate blobs (simple binary concat for mp3 streams)
+  const parts: ArrayBuffer[] = [];
+  for (const blob of audioBlobs) {
+    parts.push(await blob.arrayBuffer());
+  }
+
+  const totalLength = parts.reduce((sum, p) => sum + p.byteLength, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const part of parts) {
+    combined.set(new Uint8Array(part), offset);
+    offset += part.byteLength;
+  }
+
+  return new Blob([combined], { type: "audio/mpeg" });
+}

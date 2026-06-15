@@ -48,6 +48,22 @@ export interface StoryRow {
   rating_count: number;
   share_count: number;
   locale: string;
+  narrator_voice_id: string | null;
+  narrator_voice_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryCharacterRow {
+  id: string;
+  story_id: string;
+  name: string;
+  voice_id: string | null;
+  voice_name: string | null;
+  color: string;
+  emoji: string | null;
+  description: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +115,14 @@ export interface StoryPageRow {
   ambient_sound: string | null;
   sfx_sounds: string[];
   choices: PageChoice[];
+  voice_segments: VoiceSegment[] | null;
+}
+
+export interface VoiceSegment {
+  speaker: string;       // "narrator" or character name
+  text: string;
+  voiceId: string;       // ElevenLabs voice_id
+  voiceName?: string;    // Display name
 }
 
 export interface FamilyMemberRow {
@@ -1538,5 +1562,108 @@ export async function removeDefaultVoice(id: string): Promise<void> {
     .from("default_voices")
     .delete()
     .eq("id", id);
+  if (error) throw error;
+}
+
+// ============================================================
+// Story Characters (multi-voice)
+// ============================================================
+
+/** Get characters for a story, ordered by sort_order. */
+export async function getStoryCharacters(storyId: string): Promise<StoryCharacterRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_characters")
+    .select("*")
+    .eq("story_id", storyId)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Add a character to a story. */
+export async function addStoryCharacter(input: {
+  storyId: string;
+  name: string;
+  voiceId?: string;
+  voiceName?: string;
+  color?: string;
+  emoji?: string;
+  description?: string;
+}): Promise<StoryCharacterRow> {
+  const supabase = createClient();
+
+  // Get max sort_order
+  const { data: existing } = await supabase
+    .from("story_characters")
+    .select("sort_order")
+    .eq("story_id", input.storyId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+  const nextOrder = (existing?.[0]?.sort_order ?? -1) + 1;
+
+  const { data, error } = await supabase
+    .from("story_characters")
+    .insert({
+      story_id: input.storyId,
+      name: input.name,
+      voice_id: input.voiceId || null,
+      voice_name: input.voiceName || null,
+      color: input.color || "#6B7280",
+      emoji: input.emoji || null,
+      description: input.description || null,
+      sort_order: nextOrder,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Update a character. */
+export async function updateStoryCharacter(
+  id: string,
+  updates: Partial<{
+    name: string;
+    voice_id: string | null;
+    voice_name: string | null;
+    color: string;
+    emoji: string | null;
+    description: string | null;
+    sort_order: number;
+  }>
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_characters")
+    .update(updates)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Delete a character. */
+export async function deleteStoryCharacter(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_characters")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Update story narrator voice. */
+export async function updateStoryNarrator(
+  storyId: string,
+  narratorVoiceId: string | null,
+  narratorVoiceName: string | null
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({
+      narrator_voice_id: narratorVoiceId,
+      narrator_voice_name: narratorVoiceName,
+    })
+    .eq("id", storyId);
   if (error) throw error;
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sparkles, Castle, Rocket, Moon, PawPrint, Blocks, Pencil,
-  User, UserRound, Loader2, AlertCircle, Settings,
+  User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { storyThemes } from "@/lib/data";
@@ -11,6 +11,19 @@ import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { generateStoryApi } from "@/lib/api-client";
 import type { Screen } from "@/lib/types";
+
+interface DefaultVoice {
+  id: string;
+  voice_id: string;
+  name: string;
+  language: string;
+}
+
+const LANGUAGES = [
+  { code: "vi", label: "🇻🇳 Tiếng Việt" },
+  { code: "en", label: "🇺🇸 English" },
+  { code: "ja", label: "🇯🇵 日本語" },
+] as const;
 
 interface CreateStoryProps {
   onBack: () => void;
@@ -39,6 +52,31 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Language & narrator voice
+  const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
+  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
+  const [narratorVoiceId, setNarratorVoiceId] = useState<string | null>(null);
+
+  // Fetch default voices
+  useEffect(() => {
+    fetch("/api/voice/defaults")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.voices) setDefaultVoices(data.voices);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Auto-select first default voice for locale when locale changes
+  useEffect(() => {
+    const forLocale = defaultVoices.filter((v) => v.language === storyLocale);
+    if (forLocale.length > 0 && !narratorVoiceId) {
+      setNarratorVoiceId(forLocale[0].voice_id);
+    }
+  }, [storyLocale, defaultVoices, narratorVoiceId]);
+
+  const defaultVoicesForLocale = defaultVoices.filter((v) => v.language === storyLocale);
+
   const hasStoryKey = Boolean(
     settings.storyApiKey &&
       (settings.storyProvider !== "custom" || settings.storyBaseUrl)
@@ -64,9 +102,13 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
         theme: selectedTheme,
         childName,
         age: selectedAge,
-        language: settings.language,
+        language: storyLocale,
         extraPrompt: extraPrompt || undefined,
         voiceId: effectiveVoice,
+        narratorVoiceId: narratorVoiceId || undefined,
+        narratorVoiceName: narratorVoiceId
+          ? defaultVoices.find((v) => v.voice_id === narratorVoiceId)?.name
+          : undefined,
         persist: true,
       });
 
@@ -184,27 +226,69 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
           </div>
         </div>
 
-        {/* Voice */}
+        {/* Language */}
         <div className="mb-5">
-          <label className="text-[13px] font-bold text-txt mb-2.5 block">
-            Giọng Đọc
+          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-1.5">
+            <Globe size={14} /> Ngôn Ngữ Truyện
           </label>
-          {voiceProfiles.length === 0 ? (
-            <button
-              onClick={() => onNavigate("recording")}
-              className="w-full py-3.5 rounded-[14px] border-2 border-dashed border-gray-300 text-center text-[13px] font-semibold text-txt-secondary active:scale-[0.98] transition-transform"
-            >
-              Chưa có giọng — Ghi âm giọng đọc trước ›
-            </button>
-          ) : (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {voiceProfiles.map((v) => {
-                const selected = effectiveVoice === v.id;
+          <div className="flex gap-2">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => { setStoryLocale(lang.code); setNarratorVoiceId(null); }}
+                className={`flex-1 py-3 rounded-xl border-[1.5px] text-sm font-bold text-center transition-all ${
+                  storyLocale === lang.code
+                    ? "border-accent bg-orange-50 text-accent"
+                    : "border-gray-200 bg-surface text-txt-secondary"
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Narrator Voice */}
+        <div className="mb-5">
+          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-1.5">
+            <Mic size={14} /> Giọng Người Kể
+          </label>
+
+          {/* Default voices for this language */}
+          {defaultVoicesForLocale.length > 0 || voiceProfiles.filter(v => v.elevenlabs_voice_id).length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {/* Default voices from admin */}
+              {defaultVoicesForLocale.map((v) => {
+                const selected = narratorVoiceId === v.voice_id;
                 return (
                   <button
                     key={v.id}
-                    onClick={() => setSelectedVoice(v.id)}
-                    className={`flex-1 min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
+                    onClick={() => { setNarratorVoiceId(v.voice_id); setSelectedVoice(null); }}
+                    className={`min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
+                      selected
+                        ? "border-accent bg-orange-50"
+                        : "border-transparent bg-surface"
+                    }`}
+                  >
+                    <div className="flex justify-center mb-1">
+                      <Mic
+                        size={20}
+                        className={selected ? "text-accent" : "text-gray-500"}
+                      />
+                    </div>
+                    <div className="text-xs font-bold truncate">{v.name}</div>
+                    <div className="text-[10px] text-txt-secondary font-medium">⭐ Mặc định</div>
+                  </button>
+                );
+              })}
+              {/* User's cloned voices */}
+              {voiceProfiles.filter(v => v.elevenlabs_voice_id).map((v) => {
+                const selected = selectedVoice === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => { setSelectedVoice(v.id); setNarratorVoiceId(null); }}
+                    className={`min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
                       selected
                         ? "border-accent bg-orange-50"
                         : "border-transparent bg-surface"
@@ -213,23 +297,33 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
                     <div className="flex justify-center mb-1">
                       {v.gender === "female" ? (
                         <UserRound
-                          size={24}
+                          size={20}
                           className={selected ? "text-accent" : "text-gray-500"}
                         />
                       ) : (
                         <User
-                          size={24}
+                          size={20}
                           className={selected ? "text-accent" : "text-gray-500"}
                         />
                       )}
                     </div>
                     <div className="text-xs font-bold truncate">{v.name}</div>
-                    <div className="text-[10px] text-txt-secondary font-medium">
-                      {v.elevenlabs_voice_id ? "AI clone" : "Mặc định"}
-                    </div>
+                    <div className="text-[10px] text-txt-secondary font-medium">🎙️ Clone</div>
                   </button>
                 );
               })}
+            </div>
+          ) : (
+            <div className="py-3 px-3.5 rounded-[14px] bg-surface text-center">
+              <p className="text-[12px] text-txt-secondary">
+                Chưa có giọng nào cho ngôn ngữ này.
+              </p>
+              <button
+                onClick={() => onNavigate("recording")}
+                className="mt-1 text-[12px] text-accent font-bold"
+              >
+                Ghi âm giọng đọc ›
+              </button>
             </div>
           )}
         </div>
