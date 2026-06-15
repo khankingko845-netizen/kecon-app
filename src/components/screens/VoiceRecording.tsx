@@ -1,13 +1,41 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Mic, Pause, Loader2, Check, AlertCircle, Settings } from "lucide-react";
+import { Mic, Pause, Loader2, Check, AlertCircle, Settings, Play, Square, Volume2 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { cloneVoiceApi } from "@/lib/api-client";
 import { uploadRecording, createVoiceProfile } from "@/lib/db";
 import type { Screen } from "@/lib/types";
+
+const SAMPLE_SCRIPTS = [
+  {
+    id: "cotich",
+    label: "🧚 Cổ tích",
+    text: "Ngày xửa ngày xưa, ở một vương quốc xa xôi, có một nàng công chúa xinh đẹp sống trong lâu đài tráng lệ. Mỗi đêm, nàng nhìn lên bầu trời đếm sao và mơ ước được bay xa.",
+  },
+  {
+    id: "rungủ",
+    label: "🌙 Ru ngủ",
+    text: "Đêm đã khuya, trăng lên cao trên bầu trời trong vắt. Gió mang theo hương hoa nhài thoang thoảng. Bé nhắm mắt lại, nghe tiếng dế kêu rỉ rả ngoài vườn, rồi từ từ chìm vào giấc ngủ êm đềm.",
+  },
+  {
+    id: "vuinhon",
+    label: "🐻 Vui nhộn",
+    text: "Gấu Bông thích ăn mật ong nhất! Một hôm, Gấu thấy tổ ong trên cây cao. Gấu trèo lên, trượt chân rơi bịch xuống đất! Các bạn thỏ cười lăn lộn, còn Gấu xoa đầu cười theo.",
+  },
+  {
+    id: "giaoduc",
+    label: "📚 Giáo dục",
+    text: "Các con biết không, Trái Đất của chúng ta rất đặc biệt! Đây là hành tinh duy nhất có nước, có cây xanh và có cả hàng triệu loài động vật sinh sống. Chúng ta phải bảo vệ ngôi nhà chung này nhé!",
+  },
+  {
+    id: "thoai",
+    label: "🎭 Thoại",
+    text: "Mẹ ơi, con muốn nghe chuyện! Được rồi con ngồi đây nha. Hôm nay mẹ kể cho con câu chuyện về chú Rùa thông minh. Rùa ơi rùa, bạn đi đâu thế? Mình đi tìm kho báu!",
+  },
+] as const;
 
 interface VoiceRecordingProps {
   onBack: () => void;
@@ -26,10 +54,16 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
   const [isCloning, setIsCloning] = useState(false);
   const [cloneResult, setCloneResult] = useState<{ voice_id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedScript, setSelectedScript] = useState<string>(SAMPLE_SCRIPTS[0].id);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isRecordingPlaying, setIsRecordingPlaying] = useState(false);
 
   const hasElevenKey = Boolean(settings.elevenLabsApiKey) || hasSystemElevenLabs;
 
@@ -139,6 +173,55 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
     }
   };
 
+  // Play recording preview
+  const toggleRecordingPlayback = useCallback(() => {
+    if (!audioBlob) return;
+    if (isRecordingPlaying && recordingAudioRef.current) {
+      recordingAudioRef.current.pause();
+      setIsRecordingPlaying(false);
+      return;
+    }
+    const url = URL.createObjectURL(audioBlob);
+    const audio = new Audio(url);
+    recordingAudioRef.current = audio;
+    audio.onended = () => { setIsRecordingPlaying(false); URL.revokeObjectURL(url); };
+    audio.play();
+    setIsRecordingPlaying(true);
+  }, [audioBlob, isRecordingPlaying]);
+
+  // Play cloned voice preview via TTS
+  const playVoicePreview = useCallback(async () => {
+    if (!cloneResult) return;
+    if (isPreviewPlaying && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+      return;
+    }
+    setIsLoadingPreview(true);
+    try {
+      const res = await fetch("/api/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceId: cloneResult.voice_id,
+          text: "Xin chào! Đây là giọng nói của tôi trên KểCon. Mỗi tối, tôi sẽ kể cho con nghe những câu chuyện thật hay!",
+          language: voiceLang,
+        }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      previewAudioRef.current = audio;
+      audio.onended = () => { setIsPreviewPlaying(false); URL.revokeObjectURL(url); };
+      audio.play();
+      setIsPreviewPlaying(true);
+    } catch {
+      setError("Không thể phát giọng mẫu");
+    }
+    setIsLoadingPreview(false);
+  }, [cloneResult, isPreviewPlaying, voiceLang]);
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -200,15 +283,32 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
             : "AI sẽ học giọng bạn từ đoạn ghi âm này. Đọc to, rõ ràng, tự nhiên."}
         </p>
 
+        {/* Script Selector */}
+        <div className="w-full mb-2">
+          <div className="text-[11px] font-bold tracking-widest uppercase text-accent-2 mb-2">
+            Chọn đoạn đọc mẫu
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {SAMPLE_SCRIPTS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedScript(s.id)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all ${
+                  selectedScript === s.id
+                    ? "border-accent bg-orange-50 text-accent"
+                    : "border-gray-200 bg-white text-txt-secondary"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Script Card */}
         <div className="w-full bg-surface rounded-2xl p-[18px] border border-gray-200 mb-5">
-          <div className="text-[11px] font-bold tracking-widest uppercase text-accent-2 mb-2">
-            Đoạn đọc mẫu
-          </div>
           <p className="text-[15px] leading-relaxed italic text-txt">
-            &ldquo;Ngày xưa, ở một ngôi làng nhỏ bên dòng sông, có một em bé
-            rất thông minh. Em yêu thích những câu chuyện cổ tích mà bà
-            thường kể mỗi đêm trước khi đi ngủ.&rdquo;
+            &ldquo;{SAMPLE_SCRIPTS.find((s) => s.id === selectedScript)?.text}&rdquo;
           </p>
         </div>
 
@@ -244,6 +344,17 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
           <p className="text-xs text-txt-secondary mt-2 font-medium">
             {isRecording ? "Nhấn để dừng" : "Nhấn để bắt đầu ghi âm"}
           </p>
+        )}
+
+        {/* Recording playback */}
+        {audioBlob && !cloneResult && (
+          <button
+            onClick={toggleRecordingPlayback}
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[13px] font-bold active:scale-95 transition-transform"
+          >
+            {isRecordingPlaying ? <Square size={14} /> : <Play size={14} />}
+            {isRecordingPlaying ? "Dừng phát" : "Nghe lại bản ghi"}
+          </button>
         )}
 
         {/* Clone Section */}
@@ -326,12 +437,28 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
             <p className="text-[12px] text-emerald-600 mt-1">
               Giọng nói đã sẵn sàng để kể chuyện
             </p>
-            <button
-              onClick={onBack}
-              className="mt-3 px-6 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold active:scale-95 transition-transform"
-            >
-              Hoàn Tất
-            </button>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <button
+                onClick={playVoicePreview}
+                disabled={isLoadingPreview}
+                className="px-5 py-2.5 rounded-xl bg-violet-500 text-white text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {isLoadingPreview ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : isPreviewPlaying ? (
+                  <Square size={14} />
+                ) : (
+                  <Volume2 size={14} />
+                )}
+                {isPreviewPlaying ? "Dừng" : "Nghe thử giọng"}
+              </button>
+              <button
+                onClick={onBack}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold active:scale-95 transition-transform"
+              >
+                Hoàn Tất
+              </button>
+            </div>
           </div>
         )}
 

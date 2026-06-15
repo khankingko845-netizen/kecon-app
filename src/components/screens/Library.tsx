@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, BookOpen, Loader2 } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Sparkles, BookOpen, Loader2, Volume2, Square } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { gradientFor, iconForCategory } from "@/lib/db";
+import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface LibraryProps {
@@ -45,6 +45,49 @@ const categoryLabels: Record<string, string> = {
 export default function Library({ onNavigate }: LibraryProps) {
   const { stories, loading } = useData();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
+  const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePreview = useCallback(async (storyId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't navigate to player
+
+    // If already playing this story, stop
+    if (playingStoryId === storyId && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+      setPlayingStoryId(null);
+      return;
+    }
+
+    // Stop any current playback
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+      setPlayingStoryId(null);
+    }
+
+    setLoadingAudio(storyId);
+    try {
+      const pages = await getStoryPages(storyId);
+      const firstPageWithAudio = pages.find((p) => p.audio_url);
+      if (!firstPageWithAudio?.audio_url) {
+        setLoadingAudio(null);
+        return;
+      }
+      const audio = new Audio(firstPageWithAudio.audio_url);
+      previewAudioRef.current = audio;
+      audio.onended = () => {
+        setPlayingStoryId(null);
+        previewAudioRef.current = null;
+      };
+      await audio.play();
+      setPlayingStoryId(storyId);
+    } catch {
+      // No audio available
+    }
+    setLoadingAudio(null);
+  }, [playingStoryId]);
 
   const filtered = stories.filter((s) => {
     if (activeFilter === "all") return true;
@@ -109,9 +152,22 @@ export default function Library({ onNavigate }: LibraryProps) {
             className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
           >
             <div
-              className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white`}
+              className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}
             >
               <StoryIcon icon={iconForCategory(story.category, story.id)} />
+              {/* Audio Preview Button */}
+              <button
+                onClick={(e) => togglePreview(story.id, e)}
+                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 active:scale-90 transition-all"
+              >
+                {loadingAudio === story.id ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : playingStoryId === story.id ? (
+                  <Square size={12} />
+                ) : (
+                  <Volume2 size={14} />
+                )}
+              </button>
             </div>
             <div className="p-3 pb-3.5">
               <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">

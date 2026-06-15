@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Sparkles, Castle, Rocket, Moon, PawPrint, Blocks, Pencil,
-  User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic,
+  User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic, Volume2, Square,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { storyThemes } from "@/lib/data";
@@ -56,6 +56,45 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
   const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
   const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
   const [narratorVoiceId, setNarratorVoiceId] = useState<string | null>(null);
+
+  // Voice preview
+  const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playVoicePreview = useCallback(async (voiceId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (previewVoiceId === voiceId && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+      setPreviewVoiceId(null);
+      return;
+    }
+    if (previewAudioRef.current) { previewAudioRef.current.pause(); previewAudioRef.current = null; }
+    setLoadingPreview(true);
+    setPreviewVoiceId(voiceId);
+    try {
+      const res = await fetch("/api/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceId,
+          text: "Xin chào! Đây là giọng kể chuyện dành cho bé yêu của bạn.",
+          language: storyLocale,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      previewAudioRef.current = audio;
+      audio.onended = () => { setPreviewVoiceId(null); URL.revokeObjectURL(url); };
+      audio.play();
+    } catch {
+      setPreviewVoiceId(null);
+    }
+    setLoadingPreview(false);
+  }, [previewVoiceId, storyLocale]);
 
   // Fetch default voices
   useEffect(() => {
@@ -278,6 +317,18 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
                     </div>
                     <div className="text-xs font-bold truncate">{v.name}</div>
                     <div className="text-[10px] text-txt-secondary font-medium">⭐ Mặc định</div>
+                    <button
+                      onClick={(e) => playVoicePreview(v.voice_id, e)}
+                      className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
+                    >
+                      {loadingPreview && previewVoiceId === v.voice_id ? (
+                        <Loader2 size={10} className="animate-spin" />
+                      ) : previewVoiceId === v.voice_id ? (
+                        <Square size={9} />
+                      ) : (
+                        <Volume2 size={11} />
+                      )}
+                    </button>
                   </button>
                 );
               })}
@@ -309,6 +360,20 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
                     </div>
                     <div className="text-xs font-bold truncate">{v.name}</div>
                     <div className="text-[10px] text-txt-secondary font-medium">🎙️ Clone</div>
+                    {v.elevenlabs_voice_id && (
+                      <button
+                        onClick={(e) => playVoicePreview(v.elevenlabs_voice_id!, e)}
+                        className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
+                      >
+                        {loadingPreview && previewVoiceId === v.elevenlabs_voice_id ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : previewVoiceId === v.elevenlabs_voice_id ? (
+                          <Square size={9} />
+                        ) : (
+                          <Volume2 size={11} />
+                        )}
+                      </button>
+                    )}
                   </button>
                 );
               })}

@@ -7,6 +7,8 @@ import {
   Headphones, Volume2, Users, Mic, Search,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
+import ExpertPanel from "@/components/ui/ExpertPanel";
+import { AMBIENT_CATEGORIES, matchAmbientCategory } from "@/lib/ambient-sounds";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { illustrateApi, ttsApi } from "@/lib/api-client";
@@ -760,11 +762,50 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                 </div>
               </div>
 
+              {/* Markdown toolbar */}
+              <div className="flex items-center gap-0.5 mb-1">
+                {[
+                  { label: "B", wrap: "**", title: "In đậm" },
+                  { label: "I", wrap: "*", title: "In nghiêng" },
+                  { label: "—", wrap: "\n---\n", title: "Ngắt cảnh", single: true },
+                  { label: "❝", wrap: "> ", title: "Trích dẫn", prefix: true },
+                ].map((btn) => (
+                  <button
+                    key={btn.label}
+                    title={btn.title}
+                    onClick={() => {
+                      const ta = document.querySelector(`textarea[data-page-id="${page.id}"]`) as HTMLTextAreaElement;
+                      if (!ta) return;
+                      const start = ta.selectionStart;
+                      const end = ta.selectionEnd;
+                      const sel = ta.value.substring(start, end);
+                      let newVal: string;
+                      let cursor: number;
+                      if (btn.single) {
+                        newVal = ta.value.substring(0, start) + btn.wrap + ta.value.substring(end);
+                        cursor = start + btn.wrap.length;
+                      } else if (btn.prefix) {
+                        newVal = ta.value.substring(0, start) + btn.wrap + sel + ta.value.substring(end);
+                        cursor = start + btn.wrap.length + sel.length;
+                      } else {
+                        newVal = ta.value.substring(0, start) + btn.wrap + sel + btn.wrap + ta.value.substring(end);
+                        cursor = start + btn.wrap.length + sel.length + btn.wrap.length;
+                      }
+                      updatePageLocal(page.id, { content: newVal });
+                      requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(cursor, cursor); });
+                    }}
+                    className="w-7 h-7 rounded-md text-[12px] font-black text-txt-secondary bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center justify-center"
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 data-page-id={page.id}
                 value={page.content}
                 onChange={(e) => updatePageLocal(page.id, { content: e.target.value })}
-                placeholder="Nội dung trang... Dùng [narrator]...[/narrator] hoặc [character:Tên]...[/character] để phân giọng"
+                placeholder="Nội dung trang... Dùng **đậm**, *nghiêng*, --- ngắt cảnh"
                 className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-24 mb-1 font-mono"
               />
               {/* Voice markup toolbar */}
@@ -816,6 +857,36 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   </option>
                 ))}
               </select>
+
+              {/* Ambient Sound */}
+              <label className="text-[11px] font-bold text-txt-secondary mb-1.5 flex items-center gap-1">
+                🔊 Âm thanh nền
+              </label>
+              <div className="flex flex-wrap gap-1 mb-3">
+                <button
+                  onClick={() => updatePageLocal(page.id, { ambient_sound: null })}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                    !page.ambient_sound
+                      ? "border-accent bg-orange-50 text-accent"
+                      : "border-gray-200 bg-white text-txt-secondary"
+                  }`}
+                >
+                  🤖 Tự động
+                </button>
+                {AMBIENT_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => updatePageLocal(page.id, { ambient_sound: cat.id })}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                      page.ambient_sound === cat.id
+                        ? "border-accent bg-orange-50 text-accent"
+                        : "border-gray-200 bg-white text-txt-secondary"
+                    }`}
+                  >
+                    {cat.emoji} {cat.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Branching choices for this page */}
               <div className="mb-2 rounded-xl bg-surface border border-gray-100 p-2.5">
@@ -961,6 +1032,14 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         <p className="text-[11px] text-txt-secondary text-center mt-1 mb-2">
           Tự động tạo TTS cho các trang chưa có audio (cần ElevenLabs API Key)
         </p>
+
+        {/* AI Expert Panel */}
+        <ExpertPanel
+          storyContent={pages.map((p, i) => `Trang ${i + 1}: ${p.content}`).join("\n\n")}
+          storyTitle={story?.title}
+          targetAge={story?.target_age_min ? `${story.target_age_min}-${story.target_age_max}` : "4-6"}
+          language={story?.locale || "vi"}
+        />
 
         <div className="flex gap-2 mt-2">
           <button

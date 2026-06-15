@@ -69,8 +69,28 @@ const AMBIENT_OPTIONS: { type: AmbientType; label: string }[] = [
   { type: "lullaby", label: "Ru ngủ" },
 ];
 
+// Map ambient category IDs (from editor) to AmbientType (audio engine)
+const CATEGORY_TO_AMBIENT: Record<string, AmbientType> = {
+  forest: "forest",
+  night: "night",
+  ocean: "waves",
+  rain: "rain",
+  castle: "fire",      // fireplace crackling for castles
+  adventure: "wind",
+  home: "fire",         // cozy fireplace
+  suspense: "wind",
+  lullaby: "lullaby",
+  magic: "lullaby",     // gentle chimes similar to lullaby
+  underwater: "waves",
+  playful: "forest",    // lightest background
+};
+
 // AI auto-matching: pick an ambient layer from a page's scene description.
-function ambientForScene(text: string): AmbientType | null {
+function ambientForScene(text: string, pageAmbient?: string | null): AmbientType | null {
+  // Priority: editor-set category > heuristic match
+  if (pageAmbient && CATEGORY_TO_AMBIENT[pageAmbient]) {
+    return CATEGORY_TO_AMBIENT[pageAmbient];
+  }
   const t = text.toLowerCase();
   if (/mưa|rain|giông|bão/.test(t)) return "rain";
   if (/biển|sóng|đại dương|sea|ocean|wave/.test(t)) return "waves";
@@ -78,6 +98,7 @@ function ambientForScene(text: string): AmbientType | null {
   if (/lửa|fire|bếp|trại|nến|ấm/.test(t)) return "fire";
   if (/rừng|cây|chim|forest|vườn|lá/.test(t)) return "forest";
   if (/đêm|tối|sao|trăng|night|ngủ/.test(t)) return "night";
+  if (/ngủ|ru|lullaby|giấc mơ/.test(t)) return "lullaby";
   return null;
 }
 
@@ -238,6 +259,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     .replace(/\[\/(narrator|character)\]/g, "")
     .trim();
 
+  // Simple markdown → HTML for story display
+  const renderMarkdown = (text: string): string => {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^---$/gm, '<hr class="my-2 border-white/10">')
+      .replace(/^> (.+)$/gm, '<span class="opacity-70 pl-2 border-l-2 border-white/20">$1</span>')
+      .replace(/\n/g, '<br>');
+  };
+
   // Get illustration URL for the current page
   const currentIllustration = isGenerated
     ? null
@@ -329,7 +360,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     manualEffect ?? (autoEffect ? autoMatchedEffect : null);
   useEffect(() => {
     if (!autoAmbient || !isPlaying) return;
-    const match = ambientForScene(`${sceneDesc} ${currentText}`);
+    const pageAmbient = isGenerated ? null : pages[currentPage]?.ambient_sound;
+    const match = ambientForScene(`${sceneDesc} ${currentText}`, pageAmbient);
     if (!match) return;
     const engine = getEngine();
     AMBIENT_OPTIONS.forEach(({ type }) => {
@@ -772,7 +804,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           key={`txt-${currentPage}`}
           className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
         >
-          {displayText ? `\u201C${displayText}\u201D` : "..."}
+          {displayText ? (
+            <span dangerouslySetInnerHTML={{ __html: `\u201C${renderMarkdown(displayText)}\u201D` }} />
+          ) : "..."}
         </div>
 
         {/* Seek Bar */}
