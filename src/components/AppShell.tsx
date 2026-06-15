@@ -29,6 +29,8 @@ import AdminSettings from "@/components/screens/AdminSettings";
 import Favorites from "@/components/screens/Favorites";
 import Subscription from "@/components/screens/Subscription";
 import ComplianceLayer from "@/components/ComplianceLayer";
+import MiniPlayer from "@/components/ui/MiniPlayer";
+import { AudioPlayerProvider } from "@/lib/audio-player-context";
 import { I18nProvider } from "@/lib/i18n";
 
 interface ScreenState {
@@ -212,6 +214,7 @@ function AppContent() {
         <TabBar active={activeTab} onTabChange={handleTabChange} />
       )}
       {user && <ComplianceLayer />}
+      <MiniPlayer />
     </div>
   );
 }
@@ -221,9 +224,11 @@ export default function AppShell() {
     <AuthProvider>
       <SettingsProvider>
         <DataProvider>
-          <I18nProvider>
-            <AppContent />
-          </I18nProvider>
+          <AudioPlayerProvider>
+            <I18nProvider>
+              <AppContent />
+            </I18nProvider>
+          </AudioPlayerProvider>
         </DataProvider>
       </SettingsProvider>
     </AuthProvider>

@@ -217,6 +217,18 @@ export async function createVoiceProfile(input: {
   return data;
 }
 
+export async function updateVoiceProfile(
+  id: string,
+  updates: Partial<Pick<VoiceProfileRow, "name" | "relation" | "gender">>
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("voice_profiles")
+    .update(updates)
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteVoiceProfile(id: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("voice_profiles").delete().eq("id", id);

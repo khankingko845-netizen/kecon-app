@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, User, UserRound, Trash2, Loader2, Mic } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Plus, User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { deleteVoiceProfile, gradientFor } from "@/lib/db";
+import { deleteVoiceProfile, updateVoiceProfile, gradientFor } from "@/lib/db";
+import { useSettings } from "@/lib/settings-context";
 import type { Screen } from "@/lib/types";
 
 interface VoiceProfilesProps {
@@ -23,7 +24,18 @@ function relationLabel(relation: string): string {
 
 export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
   const { voiceProfiles, loading, refreshVoices } = useData();
+  const { settings } = useSettings();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Edit name state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Voice preview state
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState<string | null>(null);
+  const previewRef = useRef<HTMLAudioElement | null>(null);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -34,6 +46,74 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
       setDeletingId(null);
     }
   };
+
+  const startEdit = (id: string, currentName: string) => {
+    setEditingId(id);
+    setEditName(currentName);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editName.trim()) return;
+    setSavingEdit(true);
+    try {
+      await updateVoiceProfile(editingId, { name: editName.trim() });
+      await refreshVoices();
+      setEditingId(null);
+      setEditName("");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const playPreview = useCallback(async (voiceId: string, elevenLabsId: string) => {
+    // Toggle off
+    if (playingId === voiceId && previewRef.current) {
+      previewRef.current.pause();
+      previewRef.current = null;
+      setPlayingId(null);
+      return;
+    }
+    // Stop current
+    if (previewRef.current) {
+      previewRef.current.pause();
+      previewRef.current = null;
+    }
+
+    setLoadingPreview(voiceId);
+    setPlayingId(voiceId);
+    try {
+      const res = await fetch("/api/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: "Xin chào! Đây là giọng đọc của tôi. Tôi sẽ kể cho bé nghe những câu chuyện thật hay.",
+          voiceId: elevenLabsId,
+          apiKey: settings.elevenLabsApiKey || undefined,
+          modelId: settings.elevenLabsModelId || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      previewRef.current = audio;
+      audio.onended = () => {
+        setPlayingId(null);
+        previewRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.play();
+    } catch {
+      setPlayingId(null);
+    } finally {
+      setLoadingPreview(null);
+    }
+  }, [playingId, settings.elevenLabsApiKey, settings.elevenLabsModelId]);
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -53,52 +133,115 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
 
         {voiceProfiles.map((v) => {
           const quality = Math.round(v.quality_score);
+          const isEditing = editingId === v.id;
+          const isPlaying = playingId === v.id;
+          const isLoadingPrev = loadingPreview === v.id;
+
           return (
             <div
               key={v.id}
-              className="bg-white rounded-2xl p-4 flex items-center gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+              className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
             >
-              <div
-                className={`w-[50px] h-[50px] rounded-2xl bg-gradient-to-br ${gradientFor(v.id)} flex items-center justify-center text-white shrink-0`}
-              >
-                {v.gender === "female" ? <UserRound size={24} /> : <User size={24} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h5 className="text-base font-bold mb-0.5 truncate">{v.name}</h5>
-                <p className="text-[11px] text-txt-secondary mb-1.5">
-                  {relationLabel(v.relation)}
-                  {v.elevenlabs_voice_id ? " · Đã clone" : " · Chưa clone"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${quality}%`,
-                        background: quality >= 80 ? "#22C55E" : "#FBBF24",
-                      }}
-                    />
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`w-[50px] h-[50px] rounded-2xl bg-gradient-to-br ${gradientFor(v.id)} flex items-center justify-center text-white shrink-0`}
+                >
+                  {v.gender === "female" ? <UserRound size={24} /> : <User size={24} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                        autoFocus
+                        className="flex-1 px-2 py-1 text-base font-bold rounded-lg border border-accent outline-none min-w-0"
+                      />
+                      <button
+                        onClick={saveEdit}
+                        disabled={savingEdit || !editName.trim()}
+                        className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"
+                      >
+                        {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <h5 className="text-base font-bold truncate">{v.name}</h5>
+                      <button
+                        onClick={() => startEdit(v.id, v.name)}
+                        className="w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-400 shrink-0"
+                        title="Sửa tên"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-txt-secondary mb-1.5">
+                    {relationLabel(v.relation)}
+                    {v.elevenlabs_voice_id ? " · Đã clone" : " · Chưa clone"}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${quality}%`,
+                          background: quality >= 80 ? "#22C55E" : "#FBBF24",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-[13px] font-bold"
+                      style={{ color: quality >= 80 ? "#16A34A" : "#D97706" }}
+                    >
+                      {quality}%
+                    </span>
                   </div>
-                  <span
-                    className="text-[13px] font-bold"
-                    style={{ color: quality >= 80 ? "#16A34A" : "#D97706" }}
+                </div>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  {v.elevenlabs_voice_id && (
+                    <button
+                      onClick={() => playPreview(v.id, v.elevenlabs_voice_id!)}
+                      disabled={isLoadingPrev}
+                      className={`w-[38px] h-[38px] rounded-xl border flex items-center justify-center active:scale-95 transition-all ${
+                        isPlaying
+                          ? "bg-violet-500 border-violet-500 text-white"
+                          : "bg-surface border-gray-200 text-violet-500"
+                      }`}
+                      title="Nghe giọng"
+                    >
+                      {isLoadingPrev ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : isPlaying ? (
+                        <Square size={16} />
+                      ) : (
+                        <Volume2 size={16} />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(v.id)}
+                    disabled={deletingId === v.id}
+                    className="w-[38px] h-[38px] rounded-xl bg-surface border border-gray-200 flex items-center justify-center text-red-400 active:scale-95 transition-transform"
+                    aria-label="Xóa giọng"
                   >
-                    {quality}%
-                  </span>
+                    {deletingId === v.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={() => handleDelete(v.id)}
-                disabled={deletingId === v.id}
-                className="w-[38px] h-[38px] rounded-xl bg-surface border border-gray-200 flex items-center justify-center text-red-400 shrink-0 active:scale-95 transition-transform"
-                aria-label="Xóa giọng"
-              >
-                {deletingId === v.id ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-              </button>
             </div>
           );
         })}

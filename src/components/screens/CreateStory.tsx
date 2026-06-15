@@ -47,7 +47,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
   const [selectedTheme, setSelectedTheme] = useState("cotich");
   const [selectedAge, setSelectedAge] = useState(settings.childAge || "4-6");
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
-  const [childName, setChildName] = useState(settings.childName || "Minh");
+  const [childName, setChildName] = useState(settings.childName || "");
   const [extraPrompt, setExtraPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,11 +135,13 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
         provider: settings.storyApiKey
           ? settings.storyProvider
           : (systemStatus.defaultStoryProvider || settings.storyProvider) as import("@/lib/settings-context").StoryProvider,
-        model: settings.storyModel,
+        model: settings.storyApiKey
+          ? settings.storyModel
+          : (systemStatus.defaultStoryModel || settings.storyModel),
         apiKey: settings.storyApiKey || undefined,
         baseUrl: settings.storyBaseUrl || undefined,
         theme: selectedTheme,
-        childName,
+        childName: childName || undefined,
         age: selectedAge,
         language: storyLocale,
         extraPrompt: extraPrompt || undefined,
@@ -230,15 +232,17 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
           </div>
         </div>
 
-        {/* Child Name */}
+        {/* Child Name (optional) */}
         <div className="mb-5">
-          <label className="text-[13px] font-bold text-txt mb-2.5 block">
-            Tên Con
+          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+            Tên Bé
+            <span className="text-[11px] font-normal text-txt-secondary">(tuỳ chọn — để trống nếu không cần)</span>
           </label>
           <input
             type="text"
             value={childName}
             onChange={(e) => setChildName(e.target.value)}
+            placeholder="VD: Minh, Bảo, Hà..."
             className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors"
           />
         </div>
@@ -393,17 +397,38 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
           )}
         </div>
 
-        {/* Description */}
+        {/* Description with suggestions */}
         <div className="mb-6">
           <label className="text-[13px] font-bold text-txt mb-2.5 block">
-            Mô Tả Thêm
+            💡 Mô Tả Truyện
           </label>
           <textarea
             value={extraPrompt}
             onChange={(e) => setExtraPrompt(e.target.value)}
-            placeholder="VD: Con thích khủng long, phép thuật..."
-            className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-sm text-txt outline-none focus:border-accent transition-colors resize-none h-[72px]"
+            placeholder={"Mô tả chi tiết hơn để AI tạo truyện hay hơn:\n• Nhân vật yêu thích (khủng long, công chúa, siêu nhân...)\n• Bối cảnh (rừng xanh, vũ trụ, đáy biển...)\n• Bài học mong muốn (chia sẻ, dũng cảm, yêu thiên nhiên...)"}
+            className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-sm text-txt outline-none focus:border-accent transition-colors resize-none h-[88px]"
           />
+          {/* Quick suggestion chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {[
+              "🦕 Có khủng long",
+              "🧚 Có phép thuật",
+              "🌊 Dưới đáy biển",
+              "🚀 Trên vũ trụ",
+              "🤝 Bài học chia sẻ",
+              "💪 Bài học dũng cảm",
+              "🌿 Yêu thiên nhiên",
+              "👨‍👩‍👧 Gia đình",
+            ].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => setExtraPrompt((prev) => prev ? `${prev}, ${chip}` : chip)}
+                className="px-2.5 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-[11px] font-bold text-orange-700 active:scale-95 transition-transform"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Error */}

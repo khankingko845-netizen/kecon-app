@@ -59,7 +59,10 @@ function buildUserPrompt(params: StoryParams): string {
     ja: "日本語 (Japanese)",
   };
 
-  return `Viết một câu chuyện cho bé ${params.childName}, ${params.age} tuổi.
+  const forChild = params.childName
+    ? `cho bé ${params.childName}, ${params.age} tuổi`
+    : `cho trẻ ${params.age} tuổi`;
+  return `Viết một câu chuyện ${forChild}.
 Chủ đề: ${themeMap[params.theme] || params.theme}
 Ngôn ngữ: ${langMap[params.language] || params.language}
 ${params.extraPrompt ? `Yêu cầu thêm: ${params.extraPrompt}` : ""}

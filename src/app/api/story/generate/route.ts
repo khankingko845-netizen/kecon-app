@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
-import { resolveApiKey, resolveCustomBaseUrl } from "@/lib/server-settings";
+import { resolveApiKey, resolveCustomBaseUrl, getSystemSetting } from "@/lib/server-settings";
 
 const CATEGORY_MAP: Record<string, string> = {
   cotich: "fairy_tale",
@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
     persist = true,
   } = body;
 
-  if (!provider || !model || !theme || !childName || !age) {
+  // Resolve model: user BYO → admin DB → provider default
+  const resolvedModel = model || await getSystemSetting("default_ai_model") || "gpt-4o-mini";
+
+  if (!provider || !resolvedModel || !theme || !age) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -68,10 +71,10 @@ export async function POST(request: NextRequest) {
     const story = await generateStory(
       provider,
       apiKey,
-      model,
+      resolvedModel,
       {
         theme,
-        childName,
+        childName: childName || "",
         age,
         language: language || "vi",
         extraPrompt,

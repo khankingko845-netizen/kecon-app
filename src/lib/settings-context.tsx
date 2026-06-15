@@ -32,6 +32,7 @@ export interface SystemStatus {
   hasElevenLabs: boolean;
   hasStoryProvider: boolean;
   defaultStoryProvider: string;
+  defaultStoryModel: string;
   hasCustomUrl: boolean;
   elevenLabsModel: string;
 }
@@ -41,12 +42,12 @@ const defaultSettings: AppSettings = {
   elevenLabsModelId: "",
   storyProvider: "openai",
   storyApiKey: "",
-  storyModel: "gpt-4o-mini",
+  storyModel: "",
   storyBaseUrl: "",
   language: "vi",
   autoPlay: true,
   sleepTimerDefault: 15,
-  childName: "Minh",
+  childName: "",
   childAge: "4-6",
 };
 
@@ -54,6 +55,7 @@ const defaultSystemStatus: SystemStatus = {
   hasElevenLabs: false,
   hasStoryProvider: false,
   defaultStoryProvider: "",
+  defaultStoryModel: "",
   hasCustomUrl: false,
   elevenLabsModel: "",
 };

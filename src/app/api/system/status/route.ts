@@ -7,7 +7,7 @@ import { getSystemSetting } from "@/lib/server-settings";
 
 export async function GET() {
   try {
-    const [elevenLabsKey, storyKey, geminiKey, anthropicKey, customKey, customUrl, elevenModel] =
+    const [elevenLabsKey, storyKey, geminiKey, anthropicKey, customKey, customUrl, elevenModel, defaultModel] =
       await Promise.all([
         getSystemSetting("elevenlabs_api_key"),
         getSystemSetting("openai_api_key"),
@@ -16,6 +16,7 @@ export async function GET() {
         getSystemSetting("custom_provider_key"),
         getSystemSetting("custom_provider_url"),
         getSystemSetting("elevenlabs_model_id"),
+        getSystemSetting("default_ai_model"),
       ]);
 
     // Determine if at least one story AI provider is configured
@@ -31,6 +32,7 @@ export async function GET() {
       hasElevenLabs: Boolean(elevenLabsKey),
       hasStoryProvider,
       defaultStoryProvider,
+      defaultStoryModel: defaultModel || "",
       hasCustomUrl: Boolean(customUrl),
       elevenLabsModel: elevenModel || "",
     });
@@ -39,6 +41,7 @@ export async function GET() {
       hasElevenLabs: false,
       hasStoryProvider: false,
       defaultStoryProvider: "",
+      defaultStoryModel: "",
       hasCustomUrl: false,
       elevenLabsModel: "",
     });
