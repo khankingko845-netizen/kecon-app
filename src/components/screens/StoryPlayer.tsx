@@ -12,6 +12,7 @@ import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { useAudioPlayer } from "@/lib/audio-player-context";
+import { mergeAudioBlobs, getPageAtTime, type MergeResult } from "@/lib/audio-merger";
 import { ttsApi } from "@/lib/api-client";
 import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
 import { parseVoiceMarkup, type ParsedSegment } from "@/lib/elevenlabs";
@@ -161,6 +162,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const pagesListenedRef = useRef<Set<number>>(new Set());
   // Audio prefetch cache: pageIndex → objectURL or remote URL
   const prefetchCache = useRef<Map<number, string>>(new Map());
+
+  // Continuous playback: merged audio for gapless background play
+  const [mergeStatus, setMergeStatus] = useState<"idle" | "generating" | "merging" | "ready" | "playing">("idle");
+  const [mergeProgress, setMergeProgress] = useState("");
+  const mergedRef = useRef<MergeResult | null>(null);
+  const mergeAbortRef = useRef(false);
 
   // Sound mixer (Web Audio ambient layers).
   const engineRef = useRef<AmbientEngine | null>(null);
@@ -528,6 +535,128 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     }).catch(() => {});
   }, [totalPages, hasElevenLabs, pages, generatePageAudio]);
 
+  // Background merge: generate TTS for all pages and merge into single audio
+  const startBackgroundMerge = useCallback(async () => {
+    if (mergeStatus !== "idle" || isGenerated || !hasElevenLabs) return;
+    if (totalPages <= 1) return; // no need to merge single page
+
+    setMergeStatus("generating");
+    mergeAbortRef.current = false;
+
+    try {
+      const blobs: Blob[] = [];
+
+      for (let i = 0; i < totalPages; i++) {
+        if (mergeAbortRef.current) return;
+        setMergeProgress(`Chuẩn bị audio ${i + 1}/${totalPages}`);
+
+        const pageRow = pages[i];
+        if (!pageRow?.content) continue;
+
+        let blob: Blob;
+        // Check if page already has saved audio
+        if (pageRow.audio_url) {
+          try {
+            const res = await fetch(pageRow.audio_url);
+            blob = await res.blob();
+          } catch {
+            blob = await ttsApi(
+              elevenVoiceId, pageRow.content,
+              settings.elevenLabsApiKey || undefined,
+              settings.elevenLabsModelId || undefined,
+              story?.locale || "vi"
+            );
+          }
+        } else {
+          blob = await ttsApi(
+            elevenVoiceId, pageRow.content,
+            settings.elevenLabsApiKey || undefined,
+            settings.elevenLabsModelId || undefined,
+            story?.locale || "vi"
+          );
+          // Save to DB for future reuse
+          uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
+            savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
+            setPages((prev) =>
+              prev.map((p) => (p.id === pageRow.id ? { ...p, audio_url: remoteUrl } : p))
+            );
+          }).catch(() => {});
+        }
+        blobs.push(blob);
+      }
+
+      if (mergeAbortRef.current || blobs.length === 0) return;
+
+      // Merge all blobs
+      setMergeStatus("merging");
+      setMergeProgress("Đang ghép audio liên tục...");
+
+      const result = await mergeAudioBlobs(blobs, (p) => {
+        if (p.phase === "decoding") {
+          setMergeProgress(`Xử lý ${p.current}/${p.total}`);
+        }
+      });
+
+      if (mergeAbortRef.current) {
+        URL.revokeObjectURL(result.blobUrl);
+        return;
+      }
+
+      mergedRef.current = result;
+      setMergeStatus("ready");
+      setMergeProgress("🎧 Audio liên tục sẵn sàng");
+    } catch {
+      setMergeStatus("idle"); // allow retry
+      setMergeProgress("");
+    }
+  }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, story?.locale]);
+
+  // Switch to merged audio playback
+  const switchToMerged = useCallback(() => {
+    const merged = mergedRef.current;
+    if (!merged) return;
+
+    // Stop current per-page audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      if (audioRef.current.src.startsWith("blob:")) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+    }
+
+    const audio = new Audio(merged.blobUrl);
+    audioRef.current = audio;
+
+    // Seek to current page position
+    const seekTime = merged.pageMarkers[currentPage] || 0;
+
+    audio.onloadedmetadata = () => {
+      audio.currentTime = seekTime;
+    };
+
+    audio.ontimeupdate = () => {
+      if (audio.duration) {
+        // Update overall progress
+        setProgress((audio.currentTime / audio.duration) * 100);
+        // Update current page based on time markers
+        const pageIdx = getPageAtTime(audio.currentTime, merged.pageMarkers);
+        setCurrentPage(pageIdx);
+      }
+    };
+
+    audio.onended = () => {
+      audioRef.current = null;
+      setIsPlaying(false);
+      setProgress(100);
+      setMergeStatus("ready");
+      if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
+    };
+
+    audio.play().catch(() => {});
+    setIsPlaying(true);
+    setMergeStatus("playing");
+  }, [currentPage, storyId, isGenerated]);
+
   const playWithTTS = useCallback(async () => {
     if (!hasElevenLabs || !currentText) {
       setIsPlaying(true);
@@ -589,17 +718,29 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
       // Start prefetching next page while this one plays
       prefetchNextPage(currentPage);
+
+      // Start background merge for continuous playback (only once)
+      if (mergeStatus === "idle" && totalPages > 1) {
+        startBackgroundMerge();
+      }
     } catch {
       setIsPlaying(true);
     } finally {
       setIsTTSLoading(false);
     }
-  }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage]);
+  }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge]);
 
   const togglePlay = () => {
     if (isPlaying) {
       setIsPlaying(false);
       audioRef.current?.pause();
+    } else if (mergeStatus === "ready") {
+      // Merged audio ready — use continuous playback
+      switchToMerged();
+    } else if (mergeStatus === "playing" && audioRef.current) {
+      // Resume merged playback
+      audioRef.current.play().catch(() => {});
+      setIsPlaying(true);
     } else {
       playWithTTS();
     }
@@ -693,21 +834,27 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           onClick={() => {
             // Hand off playing audio to MiniPlayer for background playback
             if (audioRef.current && !audioRef.current.paused && story) {
-              const allPageAudios = pages
-                .filter((p) => p.audio_url)
-                .map((p) => ({ pageNumber: p.page_number, audioUrl: p.audio_url! }));
+              // If merged audio is playing, it's a single continuous track
+              const isMerged = mergeStatus === "playing";
+              const allPageAudios = isMerged
+                ? undefined // merged = single track, no page switching needed
+                : pages
+                    .filter((p) => p.audio_url)
+                    .map((p) => ({ pageNumber: p.page_number, audioUrl: p.audio_url! }));
               globalPlayer.adoptAudio(audioRef.current, {
                 storyId: story.id,
                 storyTitle: story.title,
                 pageNumber: currentPage + 1,
                 totalPages,
                 audioUrl: audioRef.current.src,
-                allPages: allPageAudios.length > 0 ? allPageAudios : undefined,
+                allPages: allPageAudios && allPageAudios.length > 0 ? allPageAudios : undefined,
               });
               audioRef.current = null; // Don't pause — MiniPlayer owns it now
             } else {
               audioRef.current?.pause();
             }
+            // Clean up merge refs but don't revoke blob (MiniPlayer may use it)
+            mergeAbortRef.current = true;
             onBack();
           }}
           className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
@@ -864,6 +1011,29 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               </div>
             )}
           </div>
+        )}
+
+        {/* Continuous playback indicator */}
+        {mergeStatus !== "idle" && mergeStatus !== "playing" && (
+          <div className="mb-2">
+            {mergeStatus === "ready" ? (
+              <button
+                onClick={switchToMerged}
+                className="text-[11px] font-bold text-accent-2 bg-accent-2/15 px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform"
+              >
+                🎧 Bật phát liên tục
+              </button>
+            ) : (
+              <span className="text-[10px] text-white/30 flex items-center gap-1.5">
+                <Loader2 size={10} className="animate-spin" /> {mergeProgress}
+              </span>
+            )}
+          </div>
+        )}
+        {mergeStatus === "playing" && (
+          <span className="text-[10px] font-bold text-accent-2 bg-accent-2/10 px-2.5 py-0.5 rounded-full mb-2 inline-flex items-center gap-1">
+            🎧 Phát liên tục
+          </span>
         )}
 
         {/* Inline rating stars */}
