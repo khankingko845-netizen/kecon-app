@@ -22,7 +22,7 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
   elevenLabsApiKey: "",
-  elevenLabsModelId: "eleven_multilingual_v2",
+  elevenLabsModelId: "",
   storyProvider: "openai",
   storyApiKey: "",
   storyModel: "gpt-4o-mini",
