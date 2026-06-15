@@ -82,7 +82,7 @@ function ambientForScene(text: string): AmbientType | null {
 }
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
-  const { settings } = useSettings();
+  const { settings, hasElevenLabs } = useSettings();
   const { voiceProfiles } = useData();
   const isGenerated = storyId === "__generated__";
 
@@ -123,6 +123,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [showVoicePicker, setShowVoicePicker] = useState(false);
+  // Auto-advance: when audio ends, go to next page and auto-play
+  const [pendingAutoPlay, setPendingAutoPlay] = useState(false);
 
   // Multi-voice: characters + current speaker indicator
   const [storyCharacters, setStoryCharacters] = useState<StoryCharacterRow[]>([]);
@@ -342,6 +344,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneDesc, autoAmbient, isPlaying, currentPage]);
 
+  // Auto-play next page when audio ends and advances
+  useEffect(() => {
+    if (pendingAutoPlay) {
+      setPendingAutoPlay(false);
+      playWithTTS();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAutoPlay, currentPage]);
+
   // Fake progress when there is no audio element (no API key configured).
   useEffect(() => {
     if (isPlaying && !audioRef.current) {
@@ -367,7 +378,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   }, [isPlaying, currentPage, totalPages]);
 
   const playWithTTS = useCallback(async () => {
-    if (!settings.elevenLabsApiKey || !currentText) {
+    if (!hasElevenLabs || !currentText) {
       setIsPlaying(true);
       return;
     }
@@ -403,8 +414,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           const segBlob = await ttsApi(
             seg.voiceId,
             seg.text,
-            settings.elevenLabsApiKey,
-            settings.elevenLabsModelId,
+            settings.elevenLabsApiKey || undefined,
+            settings.elevenLabsModelId || undefined,
             story?.locale || "vi"
           );
           audioBlobs.push(segBlob);
@@ -433,8 +444,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         blob = await ttsApi(
           elevenVoiceId,
           currentText,
-          settings.elevenLabsApiKey,
-          settings.elevenLabsModelId,
+          settings.elevenLabsApiKey || undefined,
+          settings.elevenLabsModelId || undefined,
           story?.locale || "vi"
         );
       }
@@ -449,11 +460,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       audioRef.current = audio;
 
       audio.onended = () => {
-        setIsPlaying(false);
+        audioRef.current = null;
         if (currentPage < totalPages - 1) {
+          // Auto-advance to next page and continue playing
           setCurrentPage((c) => c + 1);
           setProgress(0);
+          setPendingAutoPlay(true);
         } else {
+          // Last page — stop playing
+          setIsPlaying(false);
+          setProgress(100);
           if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
         }
       };
@@ -471,7 +487,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     } finally {
       setIsTTSLoading(false);
     }
-  }, [settings.elevenLabsApiKey, settings.elevenLabsModelId, currentText, currentPage, totalPages, elevenVoiceId, storyId, isGenerated]);
+  }, [hasElevenLabs, settings.elevenLabsApiKey, settings.elevenLabsModelId, currentText, currentPage, totalPages, elevenVoiceId, storyId, isGenerated, storyCharacters, story?.locale, narratorVoiceName]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -576,7 +592,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           <ChevronLeft size={20} className="text-white/60" />
         </button>
         <div className="flex items-center gap-2">
-          {settings.elevenLabsApiKey && (
+          {hasElevenLabs && (
             <span className="px-2.5 py-1 rounded-lg bg-accent-2/20 text-[10px] font-bold text-accent-2 flex items-center gap-1">
               <Volume2 size={10} /> ElevenLabs
             </span>

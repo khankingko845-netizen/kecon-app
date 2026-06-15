@@ -15,7 +15,7 @@ interface VoiceRecordingProps {
 }
 
 export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingProps) {
-  const { settings } = useSettings();
+  const { settings, hasElevenLabs: hasSystemElevenLabs } = useSettings();
   const { refreshVoices } = useData();
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -31,7 +31,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const hasElevenKey = Boolean(settings.elevenLabsApiKey);
+  const hasElevenKey = Boolean(settings.elevenLabsApiKey) || hasSystemElevenLabs;
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === "recording") {
@@ -110,7 +110,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
       const result = await cloneVoiceApi(
         voiceName.trim(),
         audioBlob,
-        settings.elevenLabsApiKey,
+        settings.elevenLabsApiKey || undefined,
         voiceLang
       );
 

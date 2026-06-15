@@ -54,7 +54,7 @@ interface StoryEditorProps {
 }
 
 export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditorProps) {
-  const { settings } = useSettings();
+  const { settings, hasElevenLabs } = useSettings();
   const { refreshStories } = useData();
   const [story, setStory] = useState<StoryRow | null>(null);
   const [title, setTitle] = useState("");
@@ -339,7 +339,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
   };
 
   const handleBatchTTS = async () => {
-    if (!storyId || !settings.elevenLabsApiKey) {
+    if (!storyId || !hasElevenLabs) {
       setError("Cần cấu hình ElevenLabs API Key trong Cài Đặt");
       return;
     }
@@ -370,8 +370,8 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         const blob = await ttsApi(
           voiceId,
           text,
-          settings.elevenLabsApiKey,
-          settings.elevenLabsModelId,
+          settings.elevenLabsApiKey || undefined,
+          settings.elevenLabsModelId || undefined,
           story?.locale || "vi"
         );
         const audioUrl = await uploadTtsAudio(missing[i].id, blob);
@@ -383,6 +383,43 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
       }
     }
     setBatchTTS({ running: false, current: 0, total: 0 });
+  };
+
+  // Per-page TTS generation / regeneration
+  const [pageGenerating, setPageGenerating] = useState<string | null>(null);
+
+  const handlePageTTS = async (pageId: string, forceRegenerate = false) => {
+    if (!storyId || !hasElevenLabs) return;
+    const page = pages.find((p) => p.id === pageId);
+    if (!page?.content) return;
+    if (page.audio_url && !forceRegenerate) return; // Already has audio
+
+    setPageGenerating(pageId);
+    try {
+      // Resolve voice same as batch TTS
+      const storyNarratorId = story?.narrator_voice_id ?? null;
+      let voiceId = storyNarratorId || "pNInz6obpgDQGcFmaJgB";
+      if (!storyNarratorId) {
+        try {
+          const dvRes = await fetch(`/api/voice/defaults?language=${story?.locale || "vi"}`);
+          const dvData = await dvRes.json();
+          if (dvData.voices?.length > 0) voiceId = dvData.voices[0].voice_id;
+        } catch { /* use fallback */ }
+      }
+      const blob = await ttsApi(
+        voiceId,
+        page.content,
+        settings.elevenLabsApiKey || undefined,
+        settings.elevenLabsModelId || undefined,
+        story?.locale || "vi"
+      );
+      const audioUrl = await uploadTtsAudio(pageId, blob);
+      await savePageAudio(pageId, audioUrl, 0);
+      updatePageLocal(pageId, { audio_url: audioUrl });
+    } catch {
+      setError("Lỗi tạo audio cho trang");
+    }
+    setPageGenerating(null);
   };
 
   if (loading) {
@@ -857,6 +894,42 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                 )}
                 {page.illustration_url ? "Tạo lại minh hoạ" : "Minh hoạ AI"}
               </button>
+
+              {/* Per-page TTS generate / regenerate */}
+              {hasElevenLabs && (
+                <div className="inline-flex items-center gap-1.5 ml-2">
+                  <button
+                    onClick={() => handlePageTTS(page.id, !page.audio_url)}
+                    disabled={pageGenerating === page.id}
+                    className={`inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg disabled:opacity-50 ${
+                      page.audio_url
+                        ? "text-emerald-700 bg-emerald-50"
+                        : "text-violet-700 bg-violet-50"
+                    }`}
+                  >
+                    {pageGenerating === page.id ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Volume2 size={13} />
+                    )}
+                    {page.audio_url ? "✓ Có audio" : "Tạo audio"}
+                  </button>
+                  {page.audio_url && (
+                    <button
+                      onClick={() => handlePageTTS(page.id, true)}
+                      disabled={pageGenerating === page.id}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 px-2 py-1.5 rounded-lg bg-orange-50 disabled:opacity-50"
+                    >
+                      {pageGenerating === page.id ? (
+                        <Loader2 size={11} className="animate-spin" />
+                      ) : (
+                        <Headphones size={11} />
+                      )}
+                      Tạo lại
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

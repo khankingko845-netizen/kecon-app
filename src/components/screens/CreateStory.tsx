@@ -42,7 +42,7 @@ const iconMap: Record<string, typeof Castle> = {
 const ageOptions = ["2-3", "4-6", "7-9", "10+"];
 
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
-  const { settings } = useSettings();
+  const { settings, systemStatus } = useSettings();
   const { voiceProfiles, refreshStories } = useData();
   const [selectedTheme, setSelectedTheme] = useState("cotich");
   const [selectedAge, setSelectedAge] = useState(settings.childAge || "4-6");
@@ -77,10 +77,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
 
   const defaultVoicesForLocale = defaultVoices.filter((v) => v.language === storyLocale);
 
-  const hasStoryKey = Boolean(
-    settings.storyApiKey &&
-      (settings.storyProvider !== "custom" || settings.storyBaseUrl)
-  );
+  const { hasStoryProvider } = useSettings();
+  const hasStoryKey = hasStoryProvider;
   const effectiveVoice =
     selectedVoice ?? (voiceProfiles.length > 0 ? voiceProfiles[0].id : null);
 
@@ -95,9 +93,11 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
 
     try {
       const story = await generateStoryApi({
-        provider: settings.storyProvider,
+        provider: settings.storyApiKey
+          ? settings.storyProvider
+          : (systemStatus.defaultStoryProvider || settings.storyProvider) as import("@/lib/settings-context").StoryProvider,
         model: settings.storyModel,
-        apiKey: settings.storyApiKey,
+        apiKey: settings.storyApiKey || undefined,
         baseUrl: settings.storyBaseUrl || undefined,
         theme: selectedTheme,
         childName,

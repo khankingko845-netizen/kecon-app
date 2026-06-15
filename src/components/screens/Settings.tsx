@@ -336,7 +336,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 }
 
 export default function Settings({ onNavigate }: SettingsProps) {
-  const { settings, isConfigured } = useSettings();
+  const { settings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
   const { user, signOut, isAdmin } = useAuth();
   const { refreshAll } = useData();
   const { locale } = useI18n();
@@ -426,10 +426,14 @@ export default function Settings({ onNavigate }: SettingsProps) {
           <AlertCircle size={18} className="text-amber-500 mt-0.5 shrink-0" />
           <div>
             <p className="text-[13px] font-bold text-amber-800">
-              Chưa cấu hình API
+              {systemStatus.hasElevenLabs || systemStatus.hasStoryProvider
+                ? "Hệ thống đã sẵn sàng"
+                : "Chưa cấu hình API"}
             </p>
             <p className="text-[12px] text-amber-700 mt-0.5">
-              Thêm API keys để sử dụng tạo truyện AI và giọng nói.
+              {systemStatus.hasElevenLabs && systemStatus.hasStoryProvider
+                ? "Admin đã cấu hình API. Bạn có thể sử dụng ngay!"
+                : "Thêm API keys hoặc liên hệ admin để cấu hình."}
             </p>
           </div>
         </div>
@@ -447,10 +451,10 @@ export default function Settings({ onNavigate }: SettingsProps) {
         <SettingsRow
           icon={Mic}
           label="ElevenLabs Voice"
-          value={settings.elevenLabsApiKey ? "Đã kết nối" : "Chưa cấu hình"}
+          value={hasElevenLabs ? "Đã kết nối" : "Chưa cấu hình"}
           color="#7B61FF"
           onClick={() => setTab("api")}
-          badge={settings.elevenLabsApiKey ? "ok" : "warn"}
+          badge={hasElevenLabs ? "ok" : "warn"}
         />
         <SettingsRow
           icon={BookOpen}
@@ -458,7 +462,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
           value={PROVIDER_MODELS[settings.storyProvider]?.label}
           color="#00D68F"
           onClick={() => setTab("api")}
-          badge={settings.storyApiKey ? "ok" : "warn"}
+          badge={hasStoryProvider ? "ok" : "warn"}
         />
       </div>
 
