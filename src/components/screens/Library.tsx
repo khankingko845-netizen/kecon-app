@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil } from "lucide-react";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc } from "lucide-react";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import type { Screen } from "@/lib/types";
@@ -27,10 +27,14 @@ function StoryIcon({ icon, size = 36 }: { icon: string; size?: number }) {
 }
 
 const filters = [
-  { id: "all", label: "Tất Cả" },
-  { id: "fairy_tale", label: "Cổ Tích" },
-  { id: "ai", label: "AI Sáng Tạo" },
-  { id: "bedtime", label: "Ru Ngủ" },
+  { id: "all", label: "Tất Cả", emoji: "📚" },
+  { id: "fairy_tale", label: "Cổ Tích", emoji: "🏰" },
+  { id: "adventure", label: "Phiêu Lưu", emoji: "🚀" },
+  { id: "bedtime", label: "Ru Ngủ", emoji: "🌙" },
+  { id: "animal", label: "Động Vật", emoji: "🐰" },
+  { id: "educational", label: "Học Chơi", emoji: "📖" },
+  { id: "ai", label: "AI Tạo", emoji: "✨" },
+  { id: "custom", label: "Tùy Chỉnh", emoji: "🎨" },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -42,80 +46,148 @@ const categoryLabels: Record<string, string> = {
   custom: "Tùy chỉnh",
 };
 
+type SortBy = "newest" | "oldest" | "name" | "popular";
+
 export default function Library({ onNavigate }: LibraryProps) {
   const { stories, loading } = useData();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
   const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const togglePreview = useCallback(async (storyId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Don't navigate to player
-
-    // If already playing this story, stop
+    e.stopPropagation();
     if (playingStoryId === storyId && previewAudioRef.current) {
       previewAudioRef.current.pause();
       previewAudioRef.current = null;
       setPlayingStoryId(null);
       return;
     }
-
-    // Stop any current playback
     if (previewAudioRef.current) {
       previewAudioRef.current.pause();
       previewAudioRef.current = null;
       setPlayingStoryId(null);
     }
-
     setLoadingAudio(storyId);
     try {
       const pages = await getStoryPages(storyId);
       const firstPageWithAudio = pages.find((p) => p.audio_url);
-      if (!firstPageWithAudio?.audio_url) {
-        setLoadingAudio(null);
-        return;
-      }
+      if (!firstPageWithAudio?.audio_url) { setLoadingAudio(null); return; }
       const audio = new Audio(firstPageWithAudio.audio_url);
       previewAudioRef.current = audio;
-      audio.onended = () => {
-        setPlayingStoryId(null);
-        previewAudioRef.current = null;
-      };
+      audio.onended = () => { setPlayingStoryId(null); previewAudioRef.current = null; };
       await audio.play();
       setPlayingStoryId(storyId);
-    } catch {
-      // No audio available
-    }
+    } catch { /* no audio */ }
     setLoadingAudio(null);
   }, [playingStoryId]);
 
-  const filtered = stories.filter((s) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "ai") return s.source === "ai";
-    return s.category === activeFilter;
-  });
+  const filtered = useMemo(() => {
+    let result = stories.filter((s) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "ai") return s.source === "ai";
+      return s.category === activeFilter;
+    });
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          (s.description || "").toLowerCase().includes(q) ||
+          (s.category || "").toLowerCase().includes(q)
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "oldest":
+        result = [...result].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case "name":
+        result = [...result].sort((a, b) => a.title.localeCompare(b.title, "vi"));
+        break;
+      case "popular":
+        result = [...result].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+        break;
+      default: // newest — already default from DB
+        break;
+    }
+
+    return result;
+  }, [stories, activeFilter, searchQuery, sortBy]);
 
   return (
     <div className="min-h-screen bg-surface pb-24">
       <div className="px-5 pt-14">
-        <h2 className="text-[28px] font-black tracking-tight mb-3.5">
-          Thư Viện
-        </h2>
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {filters.map((f) => (
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3.5">
+          <h2 className="text-[28px] font-black tracking-tight">Thư Viện</h2>
+          <div className="flex items-center gap-2">
             <button
-              key={f.id}
-              onClick={() => setActiveFilter(f.id)}
-              className={`px-4 py-2 rounded-[10px] text-[13px] font-semibold whitespace-nowrap border transition-all ${
-                activeFilter === f.id
-                  ? "bg-txt text-white border-txt"
-                  : "bg-white text-txt-secondary border-gray-200"
-              }`}
+              onClick={() => { setShowSearch(!showSearch); if (!showSearch) setTimeout(() => searchRef.current?.focus(), 100); }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${showSearch ? "bg-accent text-white" : "bg-white shadow-sm text-txt"}`}
             >
-              {f.label}
+              <Search size={16} />
             </button>
-          ))}
+            <button
+              onClick={() => setSortBy((s) => s === "newest" ? "oldest" : s === "oldest" ? "name" : s === "name" ? "popular" : "newest")}
+              className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm"
+              title={`Sắp xếp: ${sortBy}`}
+            >
+              {sortBy === "oldest" ? <SortAsc size={16} /> : <SortDesc size={16} />}
+            </button>
+          </div>
         </div>
+
+        {/* Search Bar */}
+        {showSearch && (
+          <div className="relative mb-3">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm theo tên, mô tả, thể loại..."
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-gray-200 text-[14px] font-medium outline-none focus:border-accent transition-colors"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Sort label */}
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar flex-1">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className={`px-3 py-2 rounded-[10px] text-[12px] font-semibold whitespace-nowrap border transition-all flex items-center gap-1 ${
+                  activeFilter === f.id
+                    ? "bg-txt text-white border-txt"
+                    : "bg-white text-txt-secondary border-gray-200"
+                }`}
+              >
+                <span>{f.emoji}</span> {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-[11px] text-txt-secondary mb-2">
+          {filtered.length} truyện
+          {sortBy !== "newest" && ` · ${sortBy === "oldest" ? "Cũ nhất" : sortBy === "name" ? "A→Z" : "Phổ biến"}`}
+        </p>
       </div>
 
       {loading && stories.length === 0 && (
@@ -125,37 +197,36 @@ export default function Library({ onNavigate }: LibraryProps) {
       )}
 
       {!loading && filtered.length === 0 && (
-        <div className="px-5 pt-12 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-accent mx-auto mb-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="px-5 pt-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-accent mx-auto mb-3 shadow-sm">
             <BookOpen size={26} />
           </div>
           <p className="text-[15px] font-bold text-txt mb-1">
-            {stories.length === 0 ? "Thư viện trống" : "Không có truyện phù hợp"}
+            {searchQuery ? "Không tìm thấy" : stories.length === 0 ? "Thư viện trống" : "Không có truyện phù hợp"}
           </p>
           <p className="text-[13px] text-txt-secondary mb-4">
-            Tạo truyện AI đầu tiên cho gia đình bạn
+            {searchQuery ? `Không có kết quả cho "${searchQuery}"` : "Tạo truyện AI đầu tiên cho gia đình bạn"}
           </p>
-          <button
-            onClick={() => onNavigate("create")}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold active:scale-95 transition-transform"
-          >
-            <Sparkles size={16} /> Tạo Truyện
-          </button>
+          {!searchQuery && (
+            <button
+              onClick={() => onNavigate("create")}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold active:scale-95 transition-transform"
+            >
+              <Sparkles size={16} /> Tạo Truyện
+            </button>
+          )}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2.5 px-5 pt-4">
+      <div className="grid grid-cols-2 gap-2.5 px-5 pt-2">
         {filtered.map((story) => (
           <button
             key={story.id}
             onClick={() => onNavigate("player", { storyId: story.id })}
             className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
           >
-            <div
-              className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}
-            >
+            <div className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}>
               <StoryIcon icon={iconForCategory(story.category, story.id)} />
-              {/* Edit Button */}
               <button
                 onClick={(e) => { e.stopPropagation(); onNavigate("editor", { storyId: story.id }); }}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 active:scale-90 transition-all"
@@ -163,7 +234,6 @@ export default function Library({ onNavigate }: LibraryProps) {
               >
                 <Pencil size={13} />
               </button>
-              {/* Audio Preview Button */}
               <button
                 onClick={(e) => togglePreview(story.id, e)}
                 className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 active:scale-90 transition-all"
@@ -178,16 +248,18 @@ export default function Library({ onNavigate }: LibraryProps) {
               </button>
             </div>
             <div className="p-3 pb-3.5">
-              <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">
-                {story.title}
-              </h5>
+              <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">{story.title}</h5>
               <p className="text-[11px] text-txt-secondary mb-1.5">
-                {story.page_count} trang ·{" "}
-                {categoryLabels[story.category] || story.category}
+                {story.page_count} trang · {categoryLabels[story.category] || story.category}
               </p>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">
-                {story.source === "ai" ? "AI" : "Truyện"}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700">
+                  {story.source === "ai" ? "AI" : "Truyện"}
+                </span>
+                {(story.play_count || 0) > 0 && (
+                  <span className="text-[10px] text-txt-secondary">▶ {story.play_count}</span>
+                )}
+              </div>
             </div>
           </button>
         ))}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Search, Moon, Play, User, UserRound, Plus, Sparkles,
-  Upload, LayoutDashboard, TrendingUp, Heart,
+  Upload, LayoutDashboard, TrendingUp, Heart, Bell,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -71,8 +71,19 @@ export default function Home({ onNavigate }: HomeProps) {
               Gia đình {familyName}
             </h1>
           </div>
-          <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-accent to-amber-400 flex items-center justify-center text-white text-xl font-bold">
-            {initial}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigate("notifications")}
+              className="w-10 h-10 rounded-[14px] bg-white flex items-center justify-center shadow-sm relative"
+            >
+              <Bell size={18} className="text-txt" />
+            </button>
+            <button
+              onClick={() => onNavigate("profile-edit")}
+              className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-accent to-amber-400 flex items-center justify-center text-white text-xl font-bold"
+            >
+              {initial}
+            </button>
           </div>
         </div>
       </div>

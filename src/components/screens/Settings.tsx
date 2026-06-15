@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   ChevronRight, Key, Mic, BookOpen, Globe, Bell,
   Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3,
-  Download, Trash2, Crown, LayoutDashboard,
+  Download, Trash2, Crown, LayoutDashboard, User,
 } from "lucide-react";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
@@ -544,8 +544,10 @@ export default function Settings({ onNavigate }: SettingsProps) {
       <div className="bg-white divide-y divide-gray-100">
         <SettingsRow icon={Trophy} label="Thành Tích & Huy Hiệu" color="#F59E0B" onClick={() => onNavigate("achievements")} />
         <SettingsRow icon={Shield} label="Kiểm Soát Phụ Huynh" color="#8B5CF6" onClick={() => onNavigate("parental-controls")} />
+        <SettingsRow icon={User} label="Hồ Sơ Gia Đình" color="#6366F1" onClick={() => onNavigate("profile-edit")} />
         <SettingsRow icon={BarChart3} label="Thống Kê Bé" color="#10B981" onClick={() => onNavigate("parent-analytics")} />
         <SettingsRow icon={Download} label="Tải Về / Offline" color="#3B82F6" onClick={() => onNavigate("downloads")} />
+        <SettingsRow icon={Bell} label="Thông Báo" color="#F59E0B" onClick={() => onNavigate("notifications")} />
       </div>
 
       <SectionHeader title="KHÁC" />

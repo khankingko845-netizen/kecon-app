@@ -32,6 +32,8 @@ import Achievements from "@/components/screens/Achievements";
 import ParentalControls from "@/components/screens/ParentalControls";
 import ParentAnalytics from "@/components/screens/ParentAnalytics";
 import Downloads from "@/components/screens/Downloads";
+import Notifications from "@/components/screens/Notifications";
+import ProfileEdit from "@/components/screens/ProfileEdit";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider } from "@/lib/audio-player-context";
@@ -223,6 +225,12 @@ function AppContent() {
         )}
         {current.screen === "downloads" && (
           <Downloads onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "notifications" && (
+          <Notifications onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "profile-edit" && (
+          <ProfileEdit onBack={goBack} onNavigate={navigate} />
         )}
       </div>
 

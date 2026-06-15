@@ -24,7 +24,10 @@ export type Screen =
   | "achievements"
   | "parental-controls"
   | "parent-analytics"
-  | "downloads";
+  | "downloads"
+  | "onboarding"
+  | "notifications"
+  | "profile-edit";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 
