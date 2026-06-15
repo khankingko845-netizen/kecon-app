@@ -38,6 +38,8 @@ import {
   isFavorited,
   toggleFavorite,
   updateReadingStreak,
+  uploadTtsAudio,
+  savePageAudio,
   type StoryRow,
   type StoryPageRow,
   type StoryReviewRow,
@@ -155,6 +157,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(Date.now());
   const pagesListenedRef = useRef<Set<number>>(new Set());
+  // Audio prefetch cache: pageIndex → objectURL or remote URL
+  const prefetchCache = useRef<Map<number, string>>(new Map());
 
   // Sound mixer (Web Audio ambient layers).
   const engineRef = useRef<AmbientEngine | null>(null);
@@ -409,6 +413,95 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     };
   }, [isPlaying, currentPage, totalPages]);
 
+  // Helper: generate TTS for a page text and return an audio URL (objectURL or remote)
+  const generatePageAudio = useCallback(async (
+    text: string,
+    pageIdx: number,
+  ): Promise<string> => {
+    const hasMarkup = /\[(narrator|character:[^\]]+)\]/.test(text);
+    let blob: Blob;
+
+    if (hasMarkup && storyCharacters.length > 0) {
+      const charVoiceMap: Record<string, { voiceId: string; voiceName?: string }> = {};
+      for (const c of storyCharacters) {
+        if (c.voice_id) {
+          charVoiceMap[c.name] = { voiceId: c.voice_id, voiceName: c.voice_name || c.name };
+        }
+      }
+      const segments = parseVoiceMarkup(text, charVoiceMap, elevenVoiceId, narratorVoiceName || "Narrator");
+      const audioBlobs: Blob[] = [];
+      for (const seg of segments) {
+        if (pageIdx === currentPage) {
+          setCurrentSpeaker(seg.speaker === "narrator" ? null : seg.speaker);
+        }
+        const segBlob = await ttsApi(
+          seg.voiceId, seg.text,
+          settings.elevenLabsApiKey || undefined,
+          settings.elevenLabsModelId || undefined,
+          story?.locale || "vi"
+        );
+        audioBlobs.push(segBlob);
+      }
+      if (audioBlobs.length === 1) {
+        blob = audioBlobs[0];
+      } else {
+        const parts: ArrayBuffer[] = [];
+        for (const b of audioBlobs) parts.push(await b.arrayBuffer());
+        const totalLength = parts.reduce((s, p) => s + p.byteLength, 0);
+        const combined = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const part of parts) { combined.set(new Uint8Array(part), offset); offset += part.byteLength; }
+        blob = new Blob([combined], { type: "audio/mpeg" });
+      }
+      if (pageIdx === currentPage) setCurrentSpeaker(null);
+    } else {
+      blob = await ttsApi(
+        elevenVoiceId, text,
+        settings.elevenLabsApiKey || undefined,
+        settings.elevenLabsModelId || undefined,
+        story?.locale || "vi"
+      );
+    }
+
+    // Save audio to Supabase for future reuse (fire-and-forget)
+    const pageRow = pages[pageIdx];
+    if (pageRow && !pageRow.audio_url) {
+      uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
+        savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
+        // Update local pages state so we don't regenerate
+        setPages((prev) =>
+          prev.map((p) => (p.id === pageRow.id ? { ...p, audio_url: remoteUrl } : p))
+        );
+      }).catch(() => {});
+    }
+
+    return URL.createObjectURL(blob);
+  }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, story?.locale, currentPage, pages]);
+
+  // Prefetch next page audio in background
+  const prefetchNextPage = useCallback((fromPageIdx: number) => {
+    const nextIdx = fromPageIdx + 1;
+    if (nextIdx >= totalPages || !hasElevenLabs) return;
+    if (prefetchCache.current.has(nextIdx)) return; // already prefetched
+    const nextPageRow = pages[nextIdx];
+    if (!nextPageRow) return;
+    // If it already has a saved audio_url, preload that
+    if (nextPageRow.audio_url) {
+      prefetchCache.current.set(nextIdx, nextPageRow.audio_url);
+      // Preload into browser cache
+      const preloadAudio = new Audio(nextPageRow.audio_url);
+      preloadAudio.preload = "auto";
+      preloadAudio.load();
+      return;
+    }
+    // Otherwise generate TTS in background
+    const nextText = nextPageRow.content;
+    if (!nextText) return;
+    generatePageAudio(nextText, nextIdx).then((url) => {
+      prefetchCache.current.set(nextIdx, url);
+    }).catch(() => {});
+  }, [totalPages, hasElevenLabs, pages, generatePageAudio]);
+
   const playWithTTS = useCallback(async () => {
     if (!hasElevenLabs || !currentText) {
       setIsPlaying(true);
@@ -418,74 +511,29 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     setIsTTSLoading(true);
     setCurrentSpeaker(null);
     try {
-      // Check if content has voice markup
-      const hasMarkup = /\[(narrator|character:[^\]]+)\]/.test(currentText);
-      let blob: Blob;
+      let url: string;
+      const pageRow = !isGenerated ? pages[currentPage] : null;
 
-      if (hasMarkup && storyCharacters.length > 0) {
-        // Multi-voice: parse markup and generate segment by segment
-        const charVoiceMap: Record<string, { voiceId: string; voiceName?: string }> = {};
-        for (const c of storyCharacters) {
-          if (c.voice_id) {
-            charVoiceMap[c.name] = { voiceId: c.voice_id, voiceName: c.voice_name || c.name };
-          }
-        }
-
-        const segments = parseVoiceMarkup(
-          currentText,
-          charVoiceMap,
-          elevenVoiceId,
-          narratorVoiceName || "Narrator"
-        );
-
-        // Generate TTS per segment and concatenate
-        const audioBlobs: Blob[] = [];
-        for (const seg of segments) {
-          // Show which character is speaking
-          setCurrentSpeaker(seg.speaker === "narrator" ? null : seg.speaker);
-          const segBlob = await ttsApi(
-            seg.voiceId,
-            seg.text,
-            settings.elevenLabsApiKey || undefined,
-            settings.elevenLabsModelId || undefined,
-            story?.locale || "vi"
-          );
-          audioBlobs.push(segBlob);
-        }
-
-        // Merge audio blobs
-        if (audioBlobs.length === 1) {
-          blob = audioBlobs[0];
-        } else {
-          const parts: ArrayBuffer[] = [];
-          for (const b of audioBlobs) {
-            parts.push(await b.arrayBuffer());
-          }
-          const totalLength = parts.reduce((sum, p) => sum + p.byteLength, 0);
-          const combined = new Uint8Array(totalLength);
-          let offset = 0;
-          for (const part of parts) {
-            combined.set(new Uint8Array(part), offset);
-            offset += part.byteLength;
-          }
-          blob = new Blob([combined], { type: "audio/mpeg" });
-        }
-        setCurrentSpeaker(null);
-      } else {
-        // Single voice TTS
-        blob = await ttsApi(
-          elevenVoiceId,
-          currentText,
-          settings.elevenLabsApiKey || undefined,
-          settings.elevenLabsModelId || undefined,
-          story?.locale || "vi"
-        );
+      // 1. Check if page already has saved audio_url in DB
+      if (pageRow?.audio_url) {
+        url = pageRow.audio_url;
+      }
+      // 2. Check prefetch cache
+      else if (prefetchCache.current.has(currentPage)) {
+        url = prefetchCache.current.get(currentPage)!;
+        prefetchCache.current.delete(currentPage);
+      }
+      // 3. Generate new TTS
+      else {
+        url = await generatePageAudio(currentText, currentPage);
       }
 
-      const url = URL.createObjectURL(blob);
       if (audioRef.current) {
         audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
+        // Only revoke blob URLs, not remote URLs
+        if (audioRef.current.src.startsWith("blob:")) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
       }
 
       const audio = new Audio(url);
@@ -494,12 +542,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       audio.onended = () => {
         audioRef.current = null;
         if (currentPage < totalPages - 1) {
-          // Auto-advance to next page and continue playing
           setCurrentPage((c) => c + 1);
           setProgress(0);
           setPendingAutoPlay(true);
         } else {
-          // Last page — stop playing
           setIsPlaying(false);
           setProgress(100);
           if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
@@ -514,12 +560,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
       await audio.play();
       setIsPlaying(true);
+
+      // Start prefetching next page while this one plays
+      prefetchNextPage(currentPage);
     } catch {
       setIsPlaying(true);
     } finally {
       setIsTTSLoading(false);
     }
-  }, [hasElevenLabs, settings.elevenLabsApiKey, settings.elevenLabsModelId, currentText, currentPage, totalPages, elevenVoiceId, storyId, isGenerated, storyCharacters, story?.locale, narratorVoiceName]);
+  }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage]);
 
   const togglePlay = () => {
     if (isPlaying) {
