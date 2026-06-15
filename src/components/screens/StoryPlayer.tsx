@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronDown, MoreHorizontal, Play, Pause,
   SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
   Volume2, Loader2, X, Sparkles, Share2, Star, MessageSquare, Send,
-  Bookmark,
+  Bookmark, Pencil,
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
@@ -685,6 +685,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-[10px] font-bold text-amber-400 flex items-center gap-1"
             >
               <Star size={10} fill="currentColor" /> {avgRating.toFixed(1)}
+            </button>
+          )}
+          {!isGenerated && storyId && (
+            <button
+              onClick={() => {
+                audioRef.current?.pause();
+                onNavigate("editor", { storyId });
+              }}
+              className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+              title="Chỉnh sửa truyện"
+            >
+              <Pencil size={16} className="text-white/60" />
             </button>
           )}
           <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, BookOpen, Loader2, Volume2, Square } from "lucide-react";
+import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil } from "lucide-react";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import type { Screen } from "@/lib/types";
@@ -155,6 +155,14 @@ export default function Library({ onNavigate }: LibraryProps) {
               className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}
             >
               <StoryIcon icon={iconForCategory(story.category, story.id)} />
+              {/* Edit Button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate("editor", { storyId: story.id }); }}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 active:scale-90 transition-all"
+                title="Chỉnh sửa"
+              >
+                <Pencil size={13} />
+              </button>
               {/* Audio Preview Button */}
               <button
                 onClick={(e) => togglePreview(story.id, e)}
