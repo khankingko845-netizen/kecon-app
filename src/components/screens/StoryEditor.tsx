@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2,
   Image as ImageIcon, Globe, FileText, Check, Sparkles, GitBranch, X,
-  Headphones, Volume2,
+  Headphones, Volume2, Users, Mic, Search,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
@@ -26,6 +26,12 @@ import {
   type StoryRow,
   type StoryPageRow,
   type PageChoice,
+  type StoryCharacterRow,
+  getStoryCharacters,
+  addStoryCharacter,
+  updateStoryCharacter,
+  deleteStoryCharacter,
+  updateStoryNarrator,
 } from "@/lib/db";
 import { EFFECT_LABELS, type EffectType } from "@/lib/scene-effects";
 import type { Screen } from "@/lib/types";
@@ -69,14 +75,30 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
   });
   const [error, setError] = useState<string | null>(null);
 
+  // Character management
+  const [characters, setCharacters] = useState<StoryCharacterRow[]>([]);
+  const [showCharacters, setShowCharacters] = useState(false);
+  const [addingChar, setAddingChar] = useState(false);
+  const [newCharName, setNewCharName] = useState("");
+  const [newCharEmoji, setNewCharEmoji] = useState("");
+  const [newCharVoiceId, setNewCharVoiceId] = useState("");
+  const [newCharVoiceName, setNewCharVoiceName] = useState("");
+  const [newCharColor, setNewCharColor] = useState("#6B7280");
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  // Default voices for voice picker
+  const [defaultVoices, setDefaultVoices] = useState<{ id: string; voice_id: string; name: string; language: string }[]>([]);
+
+  const CHARACTER_COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#6B7280", "#0EA5E9"];
+
   useEffect(() => {
     if (!storyId) {
       setLoading(false);
       return;
     }
     let active = true;
-    Promise.all([getStory(storyId), getStoryPages(storyId)])
-      .then(([s, p]) => {
+    Promise.all([getStory(storyId), getStoryPages(storyId), getStoryCharacters(storyId)])
+      .then(([s, p, c]) => {
         if (!active) return;
         setStory(s);
         setTitle(s?.title ?? "");
@@ -85,6 +107,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         setAgeMin(s?.target_age_min ?? 3);
         setAgeMax(s?.target_age_max ?? 8);
         setPages(p);
+        setCharacters(c);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Lỗi tải truyện"))
       .finally(() => active && setLoading(false));
@@ -92,6 +115,99 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
       active = false;
     };
   }, [storyId]);
+
+  // Fetch default voices for voice picker
+  useEffect(() => {
+    fetch("/api/voice/defaults")
+      .then((r) => r.json())
+      .then((data) => { if (data.voices) setDefaultVoices(data.voices); })
+      .catch(() => {});
+  }, []);
+
+  const storyLocale = story?.locale || "vi";
+
+  const handleAddCharacter = async () => {
+    if (!storyId || !newCharName.trim()) return;
+    try {
+      const char = await addStoryCharacter({
+        storyId,
+        name: newCharName.trim(),
+        voiceId: newCharVoiceId || undefined,
+        voiceName: newCharVoiceName || undefined,
+        emoji: newCharEmoji || undefined,
+        color: newCharColor,
+      });
+      setCharacters((prev) => [...prev, char]);
+      setNewCharName("");
+      setNewCharEmoji("");
+      setNewCharVoiceId("");
+      setNewCharVoiceName("");
+      setNewCharColor("#6B7280");
+      setAddingChar(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi thêm nhân vật");
+    }
+  };
+
+  const handleDeleteCharacter = async (id: string) => {
+    try {
+      await deleteStoryCharacter(id);
+      setCharacters((prev) => prev.filter((c) => c.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi xóa nhân vật");
+    }
+  };
+
+  const handleCharVoiceChange = async (charId: string, voiceId: string, voiceName: string) => {
+    try {
+      await updateStoryCharacter(charId, { voice_id: voiceId, voice_name: voiceName });
+      setCharacters((prev) =>
+        prev.map((c) => (c.id === charId ? { ...c, voice_id: voiceId, voice_name: voiceName } : c))
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi cập nhật giọng");
+    }
+  };
+
+  const handleNarratorChange = async (voiceId: string, voiceName: string) => {
+    if (!storyId) return;
+    try {
+      await updateStoryNarrator(storyId, voiceId || null, voiceName || null);
+      setStory((prev) => prev ? { ...prev, narrator_voice_id: voiceId || null, narrator_voice_name: voiceName || null } : prev);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi cập nhật giọng narrator");
+    }
+  };
+
+  const lookupVoiceId = async (voiceId: string): Promise<{ name: string } | null> => {
+    try {
+      setLookupLoading(true);
+      const res = await fetch(`/api/admin/test-provider?voice_id=${encodeURIComponent(voiceId)}`);
+      const data = await res.json();
+      if (data.name) return { name: data.name };
+      return null;
+    } catch { return null; } finally { setLookupLoading(false); }
+  };
+
+  // Insert voice markup at cursor position in a textarea
+  const insertMarkup = (pageId: string, speaker: string) => {
+    const textarea = document.querySelector(`textarea[data-page-id="${pageId}"]`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const tag = speaker === "narrator"
+      ? `[narrator]${selectedText || ""}[/narrator]`
+      : `[character:${speaker}]${selectedText || ""}[/character]`;
+    const newValue = textarea.value.substring(0, start) + tag + textarea.value.substring(end);
+    updatePageLocal(pageId, { content: newValue });
+    // Restore cursor position after React re-render
+    setTimeout(() => {
+      textarea.focus();
+      const cursorPos = start + tag.length - (speaker === "narrator" ? "[/narrator]".length : "[/character]".length);
+      textarea.setSelectionRange(cursorPos, cursorPos);
+    }, 0);
+  };
 
   const updatePageLocal = (id: string, patch: Partial<StoryPageRow>) => {
     setPages((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -368,6 +484,184 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           </div>
         )}
 
+        {/* Characters (collapsible) */}
+        <button
+          onClick={() => setShowCharacters((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-gray-100 text-[13px] font-bold text-txt-secondary mb-2"
+        >
+          <span className="flex items-center gap-1.5">
+            <Users size={14} className="text-violet-600" /> Nhân vật & Giọng đọc
+            {characters.length > 0 && (
+              <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full">
+                {characters.length}
+              </span>
+            )}
+          </span>
+          {showCharacters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {showCharacters && (
+          <div className="bg-white rounded-xl border border-gray-100 p-3.5 mb-2 space-y-3">
+            {/* Narrator voice */}
+            <div>
+              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5 flex items-center gap-1">
+                <Mic size={12} className="text-accent" /> Giọng Người Kể (Narrator)
+              </label>
+              <select
+                value={story?.narrator_voice_id || ""}
+                onChange={(e) => {
+                  const v = defaultVoices.find((d) => d.voice_id === e.target.value);
+                  handleNarratorChange(e.target.value, v?.name || "");
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[12px] outline-none focus:border-accent"
+              >
+                <option value="">— Mặc định (theo ngôn ngữ) —</option>
+                {defaultVoices
+                  .filter((v) => v.language === storyLocale)
+                  .map((v) => (
+                    <option key={v.id} value={v.voice_id}>
+                      ⭐ {v.name}
+                    </option>
+                  ))}
+                {defaultVoices
+                  .filter((v) => v.language !== storyLocale)
+                  .map((v) => (
+                    <option key={v.id} value={v.voice_id}>
+                      {v.name} ({v.language})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Characters list */}
+            {characters.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 p-2 rounded-lg bg-surface border border-gray-100">
+                <span className="text-lg shrink-0">{c.emoji || "👤"}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] font-bold text-txt truncate">{c.name}</div>
+                  <div className="text-[10px] text-txt-secondary truncate">
+                    {c.voice_name || "Chưa gắn giọng"}
+                  </div>
+                </div>
+                <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                <select
+                  value={c.voice_id || ""}
+                  onChange={(e) => {
+                    const v = defaultVoices.find((d) => d.voice_id === e.target.value);
+                    handleCharVoiceChange(c.id, e.target.value, v?.name || "");
+                  }}
+                  className="w-24 px-1.5 py-1 rounded-lg border border-gray-200 text-[10px] outline-none"
+                >
+                  <option value="">— Giọng —</option>
+                  {defaultVoices
+                    .filter((v) => v.language === storyLocale)
+                    .map((v) => (
+                      <option key={v.id} value={v.voice_id}>{v.name}</option>
+                    ))}
+                </select>
+                <button
+                  onClick={() => handleDeleteCharacter(c.id)}
+                  className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+
+            {/* Add character form */}
+            {addingChar ? (
+              <div className="space-y-2 p-2.5 rounded-lg bg-violet-50 border border-violet-100">
+                <div className="flex gap-2">
+                  <input
+                    value={newCharEmoji}
+                    onChange={(e) => setNewCharEmoji(e.target.value)}
+                    placeholder="🐿️"
+                    className="w-12 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-center text-[14px] outline-none focus:border-accent"
+                  />
+                  <input
+                    value={newCharName}
+                    onChange={(e) => setNewCharName(e.target.value)}
+                    placeholder="Tên nhân vật"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] outline-none focus:border-accent"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    value={newCharVoiceId}
+                    onChange={(e) => setNewCharVoiceId(e.target.value)}
+                    placeholder="Voice ID hoặc chọn bên dưới"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] outline-none focus:border-accent"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newCharVoiceId) return;
+                      const result = await lookupVoiceId(newCharVoiceId);
+                      if (result) setNewCharVoiceName(result.name);
+                    }}
+                    disabled={lookupLoading || !newCharVoiceId}
+                    className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent disabled:opacity-30"
+                  >
+                    {lookupLoading ? <Loader2 size={12} className="animate-spin" /> : <Search size={12} />}
+                  </button>
+                </div>
+                {newCharVoiceName && (
+                  <p className="text-[10px] text-emerald-600 font-medium">✓ {newCharVoiceName}</p>
+                )}
+                <select
+                  value={newCharVoiceId}
+                  onChange={(e) => {
+                    const v = defaultVoices.find((d) => d.voice_id === e.target.value);
+                    setNewCharVoiceId(e.target.value);
+                    setNewCharVoiceName(v?.name || "");
+                  }}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] outline-none focus:border-accent"
+                >
+                  <option value="">— Chọn giọng mặc định —</option>
+                  {defaultVoices
+                    .filter((v) => v.language === storyLocale)
+                    .map((v) => (
+                      <option key={v.id} value={v.voice_id}>⭐ {v.name}</option>
+                    ))}
+                </select>
+                <div className="flex gap-1.5 items-center">
+                  <span className="text-[10px] text-txt-secondary font-medium">Màu:</span>
+                  {CHARACTER_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setNewCharColor(color)}
+                      className={`w-5 h-5 rounded-full border-2 transition-all ${
+                        newCharColor === color ? "border-txt scale-110" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={handleAddCharacter}
+                    disabled={!newCharName.trim()}
+                    className="flex-1 py-1.5 rounded-lg bg-violet-600 text-white text-[12px] font-bold disabled:opacity-50"
+                  >
+                    Thêm
+                  </button>
+                  <button
+                    onClick={() => setAddingChar(false)}
+                    className="flex-1 py-1.5 rounded-lg bg-gray-200 text-txt-secondary text-[12px] font-bold"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setAddingChar(true)}
+                className="w-full py-2 rounded-lg border border-dashed border-violet-300 text-[12px] font-bold text-violet-600 flex items-center justify-center gap-1"
+              >
+                <Plus size={14} /> Thêm nhân vật
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mb-4">
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-100 text-txt-secondary">
             {pages.length} trang
@@ -430,11 +724,33 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
               </div>
 
               <textarea
+                data-page-id={page.id}
                 value={page.content}
                 onChange={(e) => updatePageLocal(page.id, { content: e.target.value })}
-                placeholder="Nội dung trang..."
-                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-24 mb-2"
+                placeholder="Nội dung trang... Dùng [narrator]...[/narrator] hoặc [character:Tên]...[/character] để phân giọng"
+                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-24 mb-1 font-mono"
               />
+              {/* Voice markup toolbar */}
+              {characters.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  <button
+                    onClick={() => insertMarkup(page.id, "narrator")}
+                    className="px-2 py-1 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                  >
+                    🎤 Người kể
+                  </button>
+                  {characters.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => insertMarkup(page.id, c.name)}
+                      className="px-2 py-1 rounded-lg text-[10px] font-bold text-white hover:opacity-80 transition-opacity"
+                      style={{ backgroundColor: c.color }}
+                    >
+                      {c.emoji || "👤"} {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <input
                 value={page.scene_description ?? ""}
                 onChange={(e) => updatePageLocal(page.id, { scene_description: e.target.value })}
