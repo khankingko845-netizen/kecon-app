@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Save, Loader2, Check, Eye, EyeOff, ExternalLink,
   Mic, Brain, Image, RefreshCw, Plug, AlertCircle, ChevronDown,
+  Plus, Trash2, X, Search,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import {
@@ -25,6 +26,19 @@ interface VoiceOption {
   source?: "own" | "library";
   public_owner_id?: string;
 }
+
+interface DefaultVoiceRow {
+  id: string;
+  voice_id: string;
+  name: string;
+  language: string;
+  description: string | null;
+  preview_url: string | null;
+  gender: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
 interface TestResult {
   ok: boolean;
   models?: string[];
@@ -33,16 +47,18 @@ interface TestResult {
 }
 
 /* ──────────────── tiny helpers ──────────────── */
-const SECRET_KEYS = new Set([
-  "elevenlabs_api_key", "openai_api_key", "gemini_api_key",
-  "anthropic_api_key", "custom_provider_key", "dalle_api_key",
-]);
 
 const AI_PROVIDERS = [
   { id: "openai", label: "OpenAI", color: "#10A37F" },
   { id: "gemini", label: "Gemini", color: "#4285F4" },
   { id: "anthropic", label: "Claude", color: "#D97706" },
   { id: "custom", label: "Custom", color: "#6B7280" },
+] as const;
+
+const LANGUAGES = [
+  { code: "vi", label: "🇻🇳 Tiếng Việt", filter: "vietnamese" },
+  { code: "en", label: "🇺🇸 English", filter: "english" },
+  { code: "ja", label: "🇯🇵 日本語", filter: "japanese" },
 ] as const;
 
 function SectionIcon({ icon: Icon, color }: { icon: typeof Mic; color: string }) {
@@ -184,149 +200,382 @@ function ModelSelect({
   );
 }
 
-function VoiceSelect({
-  value,
-  onChange,
-  voices,
-  filterLanguage,
-  label,
-  langCode,
+/* ──────────────── Default Voices Manager ──────────────── */
+function DefaultVoicesManager({
+  availableVoices,
+  defaultVoices,
+  onAdd,
+  onRemove,
+  loading,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  voices: VoiceOption[];
-  filterLanguage?: string;
-  label: string;
-  langCode?: string;
+  availableVoices: VoiceOption[];
+  defaultVoices: DefaultVoiceRow[];
+  onAdd: (voice: { voice_id: string; name: string; language: string; gender?: string }) => Promise<void>;
+  onRemove: (id: string) => Promise<void>;
+  loading: boolean;
 }) {
-  // Show manual voice_id input toggle
+  const [addingForLang, setAddingForLang] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [manualMode, setManualMode] = useState(false);
+  const [manualVoiceId, setManualVoiceId] = useState("");
+  const [manualName, setManualName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
-  // Group voices for this language:
-  // 1. User's cloned voices matching this language
-  const clonedMatching = voices.filter(
-    (v) =>
-      v.source === "own" &&
-      v.category === "cloned" &&
-      filterLanguage &&
-      v.language.toLowerCase().includes(filterLanguage.toLowerCase())
-  );
-  // 2. All other user's own cloned voices
-  const clonedOther = voices.filter(
-    (v) =>
-      v.source === "own" &&
-      v.category === "cloned" &&
-      !clonedMatching.includes(v)
-  );
-  // 3. Library voices for this language (from shared-voices search)
-  const libraryForLang = voices.filter(
+  async function handleAddVoice(v: VoiceOption, lang: string) {
+    setSubmitting(true);
+    try {
+      await onAdd({
+        voice_id: v.voice_id,
+        name: v.name,
+        language: lang,
+      });
+      setAddingForLang(null);
+      setSearchQuery("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleAddManual(lang: string) {
+    if (!manualVoiceId.trim() || !manualName.trim()) return;
+    setSubmitting(true);
+    try {
+      await onAdd({
+        voice_id: manualVoiceId.trim(),
+        name: manualName.trim(),
+        language: lang,
+      });
+      setAddingForLang(null);
+      setManualVoiceId("");
+      setManualName("");
+      setManualMode(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRemove(id: string) {
+    setRemovingId(id);
+    try {
+      await onRemove(id);
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  // Filter available voices for the add modal
+  const filteredVoices = availableVoices.filter((v) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return v.name.toLowerCase().includes(q) || v.voice_id.toLowerCase().includes(q);
+  });
+
+  // Group available voices by source
+  const currentLangFilter = LANGUAGES.find((l) => l.code === addingForLang)?.filter || "";
+  const libraryForLang = filteredVoices.filter(
     (v) =>
       v.source === "library" &&
-      filterLanguage &&
-      v.language.toLowerCase().includes(filterLanguage.toLowerCase())
+      v.language.toLowerCase().includes(currentLangFilter.toLowerCase())
   );
-  // 4. User's premade voices (always available, lower priority)
-  const premade = voices.filter(
+  const ownCloned = filteredVoices.filter(
+    (v) => v.source === "own" && v.category === "cloned"
+  );
+  const ownPremade = filteredVoices.filter(
     (v) => v.source === "own" && v.category === "premade"
   );
 
-  if (manualMode) {
-    return (
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="text-[12px] font-bold text-txt-secondary">
-            {label}
-          </label>
-          <button
-            type="button"
-            onClick={() => setManualMode(false)}
-            className="text-[11px] text-accent font-semibold"
-          >
-            ← Chọn từ danh sách
-          </button>
-        </div>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Nhập voice_id (vd: pNInz6obpgDQGcFmaJgB)"
-          className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
-        />
-        <a
-          href={`https://elevenlabs.io/community?language=${langCode || "vi"}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-accent text-[11px] font-semibold mt-1.5"
-        >
-          Tìm voice trên ElevenLabs Voice Library <ExternalLink size={11} />
-        </a>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-[12px] font-bold text-txt-secondary">
-          {label}
-        </label>
+    <div className="space-y-4 pt-1">
+      <p className="text-[12px] font-bold text-txt-secondary uppercase tracking-widest">
+        Giọng mặc định cho người dùng
+      </p>
+      <p className="text-[11px] text-txt-secondary -mt-2 leading-relaxed">
+        Người dùng không clone voice sẽ chọn từ danh sách này.
+        Thêm nhiều giọng cho mỗi ngôn ngữ.
+      </p>
+
+      {LANGUAGES.map((lang) => {
+        const voicesForLang = defaultVoices.filter((v) => v.language === lang.code);
+
+        return (
+          <div key={lang.code} className="rounded-xl border border-gray-200 overflow-hidden">
+            {/* Language header */}
+            <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50">
+              <span className="text-[13px] font-bold">{lang.label}</span>
+              <span className="text-[11px] text-txt-secondary font-semibold">
+                {voicesForLang.length} giọng
+              </span>
+            </div>
+
+            {/* Voice list */}
+            {voicesForLang.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {voicesForLang.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center gap-3 px-3.5 py-2.5"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold truncate">{v.name}</p>
+                      <p className="text-[11px] text-txt-secondary font-mono truncate">
+                        {v.voice_id}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(v.id)}
+                      disabled={removingId === v.id}
+                      className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+                    >
+                      {removingId === v.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-3.5 py-3 text-[12px] text-txt-secondary italic">
+                Chưa có giọng mặc định nào
+              </div>
+            )}
+
+            {/* Add button */}
+            <div className="px-3.5 py-2.5 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingForLang(lang.code);
+                  setSearchQuery("");
+                  setManualMode(false);
+                }}
+                disabled={loading || availableVoices.length === 0}
+                className="inline-flex items-center gap-1.5 text-accent text-[12px] font-bold hover:underline disabled:opacity-50"
+              >
+                <Plus size={13} />
+                Thêm giọng
+              </button>
+              {availableVoices.length === 0 && (
+                <span className="text-[11px] text-txt-secondary ml-2">
+                  (Test Kết Nối ElevenLabs trước)
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* ─── Add Voice Modal ─── */}
+      {addingForLang && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+          <div className="bg-white w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h4 className="text-[15px] font-bold">
+                Thêm giọng · {LANGUAGES.find((l) => l.code === addingForLang)?.label}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setAddingForLang(null)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Search / Manual toggle */}
+            <div className="px-4 py-3 border-b space-y-2">
+              {!manualMode ? (
+                <>
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Tìm voice theo tên hoặc ID..."
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-accent transition-colors"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setManualMode(true)}
+                    className="text-[11px] text-accent font-semibold"
+                  >
+                    Nhập voice_id thủ công →
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={manualVoiceId}
+                    onChange={(e) => setManualVoiceId(e.target.value)}
+                    placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono outline-none focus:border-accent transition-colors"
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="Tên hiển thị (vd: Giọng nữ Hà Nội)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-accent transition-colors"
+                  />
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setManualMode(false)}
+                      className="text-[11px] text-accent font-semibold"
+                    >
+                      ← Chọn từ danh sách
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddManual(addingForLang)}
+                      disabled={submitting || !manualVoiceId.trim() || !manualName.trim()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-[12px] font-bold disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Plus size={12} />
+                      )}
+                      Thêm
+                    </button>
+                  </div>
+                  <a
+                    href={`https://elevenlabs.io/community?language=${addingForLang}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-accent text-[11px] font-semibold"
+                  >
+                    Tìm voice trên ElevenLabs <ExternalLink size={11} />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Voice list (scrollable) */}
+            {!manualMode && (
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+                {/* Library voices for this language */}
+                {libraryForLang.length > 0 && (
+                  <div>
+                    <div className="px-4 py-2 bg-amber-50 text-[11px] font-bold text-amber-700 uppercase tracking-wider sticky top-0">
+                      ⭐ Chuyên {LANGUAGES.find((l) => l.code === addingForLang)?.label}
+                    </div>
+                    {libraryForLang.map((v) => (
+                      <VoiceRow
+                        key={v.voice_id}
+                        voice={v}
+                        onAdd={() => handleAddVoice(v, addingForLang)}
+                        submitting={submitting}
+                        alreadyAdded={defaultVoices.some(
+                          (d) => d.voice_id === v.voice_id && d.language === addingForLang
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* User's cloned voices */}
+                {ownCloned.length > 0 && (
+                  <div>
+                    <div className="px-4 py-2 bg-purple-50 text-[11px] font-bold text-purple-700 uppercase tracking-wider sticky top-0">
+                      🎙️ Voice clone
+                    </div>
+                    {ownCloned.map((v) => (
+                      <VoiceRow
+                        key={v.voice_id}
+                        voice={v}
+                        onAdd={() => handleAddVoice(v, addingForLang)}
+                        submitting={submitting}
+                        alreadyAdded={defaultVoices.some(
+                          (d) => d.voice_id === v.voice_id && d.language === addingForLang
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Premade voices */}
+                {ownPremade.length > 0 && (
+                  <div>
+                    <div className="px-4 py-2 bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider sticky top-0">
+                      🌐 Premade
+                    </div>
+                    {ownPremade.map((v) => (
+                      <VoiceRow
+                        key={v.voice_id}
+                        voice={v}
+                        onAdd={() => handleAddVoice(v, addingForLang)}
+                        submitting={submitting}
+                        alreadyAdded={defaultVoices.some(
+                          (d) => d.voice_id === v.voice_id && d.language === addingForLang
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {filteredVoices.length === 0 && (
+                  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary">
+                    Không tìm thấy voice nào
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VoiceRow({
+  voice,
+  onAdd,
+  submitting,
+  alreadyAdded,
+}: {
+  voice: VoiceOption;
+  onAdd: () => void;
+  submitting: boolean;
+  alreadyAdded: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold truncate">{voice.name}</p>
+        <p className="text-[11px] text-txt-secondary">
+          {voice.category}{voice.language ? ` · ${voice.language}` : ""}
+        </p>
+      </div>
+      {alreadyAdded ? (
+        <span className="text-[11px] text-emerald-600 font-semibold">✓ Đã thêm</span>
+      ) : (
         <button
           type="button"
-          onClick={() => setManualMode(true)}
-          className="text-[11px] text-accent font-semibold"
+          onClick={onAdd}
+          disabled={submitting}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-colors disabled:opacity-50"
         >
-          Nhập voice_id thủ công →
+          {submitting ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : (
+            <Plus size={11} />
+          )}
+          Thêm
         </button>
-      </div>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
-        >
-          <option value="">— Không đặt (dùng voice người dùng) —</option>
-          {clonedMatching.length > 0 && (
-            <optgroup label={`🎙️ Voice clone (${filterLanguage})`}>
-              {clonedMatching.map((v) => (
-                <option key={v.voice_id} value={v.voice_id}>
-                  {v.name} · {v.language}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {libraryForLang.length > 0 && (
-            <optgroup label={`⭐ Voice chuyên ${filterLanguage}`}>
-              {libraryForLang.map((v) => (
-                <option key={v.voice_id} value={v.voice_id}>
-                  {v.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {clonedOther.length > 0 && (
-            <optgroup label="🎙️ Voice clone khác">
-              {clonedOther.map((v) => (
-                <option key={v.voice_id} value={v.voice_id}>
-                  {v.name}{v.language ? ` · ${v.language}` : ""}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {premade.length > 0 && (
-            <optgroup label="🌐 Premade (chất lượng có thể không tối ưu)">
-              {premade.map((v) => (
-                <option key={v.voice_id} value={v.voice_id}>
-                  {v.name} · {v.language || "en"}
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </select>
-        <ChevronDown
-          size={16}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary pointer-events-none"
-        />
-      </div>
+      )}
     </div>
   );
 }
@@ -345,6 +594,9 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
   const [elevenTesting, setElevenTesting] = useState(false);
   const [voices, setVoices] = useState<VoiceOption[]>([]);
 
+  // Default voices from DB
+  const [defaultVoices, setDefaultVoices] = useState<DefaultVoiceRow[]>([]);
+
   const [aiTest, setAiTest] = useState<TestResult | null>(null);
   const [aiTesting, setAiTesting] = useState(false);
   const [aiModels, setAiModels] = useState<string[]>([]);
@@ -354,17 +606,23 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
 
   const selectedProvider = settings["default_ai_provider"] || "openai";
 
-  // ── load settings ──
+  // ── load settings + default voices ──
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await getAppSettings();
+      const [rows, dvRes] = await Promise.all([
+        getAppSettings(),
+        fetch("/api/voice/defaults").then((r) => r.json()),
+      ]);
       const map: Record<string, string> = {};
       rows.forEach((r: AppSettingRow) => {
         map[r.key] = r.value;
       });
       setSettings(map);
       setOriginal(map);
+      if (dvRes.voices) {
+        setDefaultVoices(dvRes.voices);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải cài đặt");
     } finally {
@@ -384,6 +642,36 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
   const hasChanges = Object.keys(settings).some(
     (k) => settings[k] !== (original[k] ?? "")
   );
+
+  // ── Default Voice CRUD ──
+  async function handleAddDefaultVoice(voice: {
+    voice_id: string;
+    name: string;
+    language: string;
+    gender?: string;
+  }) {
+    const res = await fetch("/api/voice/defaults", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(voice),
+    });
+    const data = await res.json();
+    if (data.voice) {
+      setDefaultVoices((prev) => [...prev, data.voice]);
+    } else if (data.error) {
+      throw new Error(data.error);
+    }
+  }
+
+  async function handleRemoveDefaultVoice(id: string) {
+    const res = await fetch(`/api/voice/defaults?id=${id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setDefaultVoices((prev) => prev.filter((v) => v.id !== id));
+    }
+  }
 
   // ── test provider ──
   async function testProvider(
@@ -599,45 +887,14 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
           </div>
         </div>
 
-        {/* Default Voice per language */}
-        {voices.length > 0 ? (
-          <div className="space-y-3 pt-1">
-            <p className="text-[12px] font-bold text-txt-secondary uppercase tracking-widest">
-              Giọng mặc định theo ngôn ngữ
-            </p>
-            <VoiceSelect
-              label="🇻🇳 Tiếng Việt"
-              value={settings["elevenlabs_default_voice_vi"] ?? ""}
-              onChange={(v) => handleChange("elevenlabs_default_voice_vi", v)}
-              voices={voices}
-              filterLanguage="vietnamese"
-              langCode="vi"
-            />
-            <VoiceSelect
-              label="🇺🇸 English"
-              value={settings["elevenlabs_default_voice_en"] ?? ""}
-              onChange={(v) => handleChange("elevenlabs_default_voice_en", v)}
-              voices={voices}
-              filterLanguage="english"
-              langCode="en"
-            />
-            <VoiceSelect
-              label="🇯🇵 日本語"
-              value={settings["elevenlabs_default_voice_ja"] ?? ""}
-              onChange={(v) => handleChange("elevenlabs_default_voice_ja", v)}
-              voices={voices}
-              filterLanguage="japanese"
-              langCode="ja"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200">
-            <AlertCircle size={14} className="text-gray-400" />
-            <span className="text-[12px] text-txt-secondary">
-              Nhấn &quot;Test Kết Nối&quot; để tải danh sách voices và chọn giọng mặc định
-            </span>
-          </div>
-        )}
+        {/* Default voices per language (multi-select) */}
+        <DefaultVoicesManager
+          availableVoices={voices}
+          defaultVoices={defaultVoices}
+          onAdd={handleAddDefaultVoice}
+          onRemove={handleRemoveDefaultVoice}
+          loading={elevenTesting}
+        />
       </div>
 
       {/* ═══════════ AI STORY PROVIDER ═══════════ */}
@@ -660,7 +917,6 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
                 type="button"
                 onClick={() => {
                   handleChange("default_ai_provider", p.id);
-                  // Reset test results when switching provider
                   setAiTest(null);
                   setAiModels([]);
                 }}
@@ -724,7 +980,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
           onClick={handleTestAI}
         />
 
-        {/* Model selector (auto-fetched or free text) */}
+        {/* Model selector */}
         <div>
           <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
             Model Mặc Định

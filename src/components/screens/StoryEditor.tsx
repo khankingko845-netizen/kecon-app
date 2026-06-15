@@ -234,7 +234,15 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     }
     setBatchTTS({ running: true, current: 0, total: missing.length });
     setError(null);
-    const voiceId = "pNInz6obpgDQGcFmaJgB"; // Default voice
+    // Resolve voice: first default voice for this locale, then hardcoded fallback
+    let voiceId = "pNInz6obpgDQGcFmaJgB";
+    try {
+      const dvRes = await fetch(`/api/voice/defaults?language=${story?.locale || "vi"}`);
+      const dvData = await dvRes.json();
+      if (dvData.voices?.length > 0) {
+        voiceId = dvData.voices[0].voice_id;
+      }
+    } catch { /* use fallback */ }
     for (let i = 0; i < missing.length; i++) {
       setBatchTTS((prev) => ({ ...prev, current: i + 1 }));
       try {

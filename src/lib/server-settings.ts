@@ -80,15 +80,25 @@ export async function resolveElevenLabsModel(userModel?: string): Promise<string
   return dbModel || "eleven_multilingual_v2";
 }
 
-/** Resolve default voice ID for a language. */
+/** Resolve default voice ID for a language from default_voices table. */
 export async function resolveDefaultVoice(language?: string): Promise<string> {
   if (!language) return "";
-  const langMap: Record<string, string> = {
-    vi: "elevenlabs_default_voice_vi",
-    en: "elevenlabs_default_voice_en",
-    ja: "elevenlabs_default_voice_ja",
-  };
-  const key = langMap[language];
-  if (!key) return "";
-  return await getSystemSetting(key);
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("default_voices")
+      .select("voice_id")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .limit(1);
+
+    if (language) {
+      query = query.eq("language", language);
+    }
+
+    const { data } = await query;
+    return data?.[0]?.voice_id ?? "";
+  } catch {
+    return "";
+  }
 }

@@ -1451,3 +1451,92 @@ export async function getPagesMissingAudio(storyId: string): Promise<StoryPageRo
   if (error) throw error;
   return data ?? [];
 }
+
+// ============================================================
+// Default Voices (system-curated voices per language)
+// ============================================================
+
+export interface DefaultVoiceRow {
+  id: string;
+  voice_id: string;
+  name: string;
+  language: string;
+  description: string | null;
+  preview_url: string | null;
+  gender: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+/** Get all active default voices, optionally filtered by language. */
+export async function getDefaultVoices(language?: string): Promise<DefaultVoiceRow[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from("default_voices")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (language) {
+    query = query.eq("language", language);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Admin: Add a default voice. */
+export async function addDefaultVoice(voice: {
+  voice_id: string;
+  name: string;
+  language: string;
+  description?: string;
+  preview_url?: string;
+  gender?: string;
+}): Promise<DefaultVoiceRow> {
+  const supabase = createClient();
+
+  // Get the max sort_order for this language
+  const { data: existing } = await supabase
+    .from("default_voices")
+    .select("sort_order")
+    .eq("language", voice.language)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = (existing?.[0]?.sort_order ?? -1) + 1;
+
+  const { data, error } = await supabase
+    .from("default_voices")
+    .upsert(
+      {
+        voice_id: voice.voice_id,
+        name: voice.name,
+        language: voice.language,
+        description: voice.description || null,
+        preview_url: voice.preview_url || null,
+        gender: voice.gender || null,
+        sort_order: nextOrder,
+        is_active: true,
+      },
+      { onConflict: "voice_id,language" }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/** Admin: Remove a default voice. */
+export async function removeDefaultVoice(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("default_voices")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}

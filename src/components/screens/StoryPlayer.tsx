@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ChevronLeft, MoreHorizontal, Play, Pause,
+  ChevronLeft, ChevronDown, MoreHorizontal, Play, Pause,
   SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
   Volume2, Loader2, X, Sparkles, Share2, Star, MessageSquare, Send,
   Bookmark,
@@ -47,8 +47,15 @@ interface StoryPlayerProps {
   onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
 
-// Default ElevenLabs voice (used when the story's voice has no clone yet).
-const DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+// Hardcoded fallback if no default voices configured.
+const FALLBACK_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+
+interface DefaultVoice {
+  id: string;
+  voice_id: string;
+  name: string;
+  language: string;
+}
 
 const AMBIENT_OPTIONS: { type: AmbientType; label: string }[] = [
   { type: "rain", label: "Mưa" },
@@ -109,6 +116,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [showShare, setShowShare] = useState(false);
   const [isFav, setIsFav] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
+
+  // Default voices from admin + user voice selection
+  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -172,6 +184,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     };
   }, [storyId, isGenerated]);
 
+  // Load default voices from admin settings
+  useEffect(() => {
+    fetch("/api/voice/defaults")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.voices) setDefaultVoices(data.voices);
+      })
+      .catch(() => {});
+  }, []);
+
   // Load rating, reviews, and favorite status
   useEffect(() => {
     if (isGenerated || !storyId) return;
@@ -202,11 +224,30 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     : pages[currentPage]?.illustration_url;
 
   // Resolve which ElevenLabs voice to use for TTS.
+  // Priority: 1) user-selected voice  2) story's voice profile  3) first default for locale  4) fallback
   const storyVoice = story?.voice_id
     ? voiceProfiles.find((v) => v.id === story.voice_id)
     : voiceProfiles.find((v) => v.elevenlabs_voice_id);
-  const elevenVoiceId = storyVoice?.elevenlabs_voice_id || DEFAULT_VOICE_ID;
-  const voiceLabel = storyVoice?.name || "Giọng mẫu";
+
+  const storyLocale = story?.locale || "vi";
+  const defaultsForLocale = defaultVoices.filter((v) => v.language === storyLocale);
+  const allDefaults = defaultVoices.length > 0 ? defaultVoices : [];
+
+  // Determine active voice
+  const resolvedVoiceId = selectedVoiceId
+    || storyVoice?.elevenlabs_voice_id
+    || defaultsForLocale[0]?.voice_id
+    || allDefaults[0]?.voice_id
+    || FALLBACK_VOICE_ID;
+  const elevenVoiceId = resolvedVoiceId;
+
+  // Label for display
+  const selectedDefault = defaultVoices.find((v) => v.voice_id === resolvedVoiceId);
+  const voiceLabel = selectedVoiceId
+    ? (selectedDefault?.name || "Giọng đã chọn")
+    : storyVoice?.name
+    ? storyVoice.name
+    : selectedDefault?.name || "Giọng mẫu";
 
   const gradient = isGenerated
     ? "from-accent-2 to-accent"
@@ -518,10 +559,81 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         <h2 className="text-2xl font-extrabold tracking-tight mb-1 text-center">
           {title}
         </h2>
-        <p className="text-sm text-white/40 font-medium flex items-center gap-1.5 mb-2">
-          <Mic size={14} />
-          {isGenerated ? "AI Generated" : `Giọng đọc: ${voiceLabel}`}
-        </p>
+        {isGenerated ? (
+          <p className="text-sm text-white/40 font-medium flex items-center gap-1.5 mb-2">
+            <Mic size={14} /> AI Generated
+          </p>
+        ) : (
+          <div className="relative mb-2">
+            <button
+              onClick={() => setShowVoicePicker(!showVoicePicker)}
+              className="text-sm text-white/50 font-medium flex items-center gap-1.5 hover:text-white/70 transition-colors"
+            >
+              <Mic size={14} />
+              Giọng đọc: {voiceLabel}
+              {(defaultVoices.length > 0 || voiceProfiles.length > 0) && (
+                <ChevronDown size={12} className={`transition-transform ${showVoicePicker ? "rotate-180" : ""}`} />
+              )}
+            </button>
+            {showVoicePicker && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
+                {/* User's cloned voices */}
+                {voiceProfiles.filter((v) => v.elevenlabs_voice_id).length > 0 && (
+                  <>
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">Giọng của bạn</div>
+                    {voiceProfiles.filter((v) => v.elevenlabs_voice_id).map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => { setSelectedVoiceId(v.elevenlabs_voice_id); setShowVoicePicker(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                          resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-white/70"
+                        }`}
+                      >
+                        🎙️ {v.name}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {/* Default voices for this locale */}
+                {defaultsForLocale.length > 0 && (
+                  <>
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">
+                      Giọng {storyLocale === "vi" ? "Tiếng Việt" : storyLocale === "ja" ? "日本語" : "English"}
+                    </div>
+                    {defaultsForLocale.map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => { setSelectedVoiceId(v.voice_id); setShowVoicePicker(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                          resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
+                        }`}
+                      >
+                        ⭐ {v.name}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {/* Default voices for other languages */}
+                {defaultVoices.filter((v) => v.language !== storyLocale).length > 0 && (
+                  <>
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">Ngôn ngữ khác</div>
+                    {defaultVoices.filter((v) => v.language !== storyLocale).map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => { setSelectedVoiceId(v.voice_id); setShowVoicePicker(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                          resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
+                        }`}
+                      >
+                        {v.language === "vi" ? "🇻🇳" : v.language === "ja" ? "🇯🇵" : "🇺🇸"} {v.name}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Inline rating stars */}
         {!isGenerated && storyId && (
