@@ -26,6 +26,8 @@ import AdminStories from "@/components/screens/AdminStories";
 import AdminUsers from "@/components/screens/AdminUsers";
 import AdminAnalytics from "@/components/screens/AdminAnalytics";
 import AdminSettings from "@/components/screens/AdminSettings";
+import AdminCategories from "@/components/screens/AdminCategories";
+import AdminTemplates from "@/components/screens/AdminTemplates";
 import Favorites from "@/components/screens/Favorites";
 import Subscription from "@/components/screens/Subscription";
 import Achievements from "@/components/screens/Achievements";
@@ -69,6 +71,8 @@ const ADMIN_SCREENS: Screen[] = [
   "admin-users",
   "admin-analytics",
   "admin-settings",
+  "admin-categories",
+  "admin-templates",
 ];
 
 function AppContent() {
@@ -210,6 +214,12 @@ function AppContent() {
         )}
         {current.screen === "admin-settings" && (
           <AdminSettings onBack={goBack} />
+        )}
+        {current.screen === "admin-categories" && (
+          <AdminCategories onBack={goBack} />
+        )}
+        {current.screen === "admin-templates" && (
+          <AdminTemplates onBack={goBack} onNavigate={navigate} />
         )}
         {current.screen === "favorites" && (
           <Favorites onBack={goBack} onNavigate={navigate} />

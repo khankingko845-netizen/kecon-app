@@ -70,11 +70,30 @@ export interface StoryCharacterRow {
   updated_at: string;
 }
 
+export interface StoryCategoryRow {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  parent_id: string | null;
+  created_at: string;
+}
+
 export interface StoryTemplateRow {
   id: string;
   title: string;
   description: string | null;
   category: string;
+  emoji?: string;
+  age_min?: number;
+  age_max?: number;
+  moral_lesson?: string | null;
+  tags?: string[];
+  locale?: string;
+  is_active?: boolean;
+  sort_order?: number;
   pages: {
     content: string;
     scene_description?: string | null;
@@ -1972,4 +1991,56 @@ export async function removeDownloadedStory(userId: string, storyId: string): Pr
     .delete()
     .eq("user_id", userId)
     .eq("story_id", storyId);
+}
+
+// ============================================================
+// STORY CATEGORIES CRUD
+// ============================================================
+
+export async function getStoryCategories(): Promise<StoryCategoryRow[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("story_categories")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  return (data as StoryCategoryRow[]) || [];
+}
+
+export async function upsertStoryCategory(cat: Partial<StoryCategoryRow> & { id: string; label: string }): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_categories").upsert(cat, { onConflict: "id" });
+}
+
+export async function deleteStoryCategory(id: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_categories").delete().eq("id", id);
+}
+
+// ============================================================
+// STORY TEMPLATES CRUD (admin)
+// ============================================================
+
+export async function getAllStoryTemplates(): Promise<StoryTemplateRow[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("story_templates")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  return (data as StoryTemplateRow[]) || [];
+}
+
+export async function upsertStoryTemplate(tpl: Partial<StoryTemplateRow> & { title: string; category: string; pages: StoryTemplateRow["pages"] }): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_templates").upsert(tpl as Record<string, unknown>);
+}
+
+export async function deleteStoryTemplate(id: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_templates").delete().eq("id", id);
+}
+
+export async function toggleStoryTemplateActive(id: string, isActive: boolean): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_templates").update({ is_active: isActive }).eq("id", id);
 }

@@ -5,6 +5,7 @@ import {
   BookOpen, Mic, Play, Heart, Loader2, Lightbulb, Globe,
   FileText, CheckCircle2, AlertTriangle, Sparkles,
   PenLine, Upload, LayoutList, Users, BarChart3, Plus, X, Settings,
+  FolderOpen, BookTemplate,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
@@ -133,9 +134,11 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
             </div>
           </button>
 
-          <div className="grid grid-cols-4 gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             {[
               { icon: LayoutList, label: "Truyện", screen: "admin-stories" as Screen, color: "text-blue-600 bg-blue-50" },
+              { icon: FolderOpen, label: "Danh mục", screen: "admin-categories" as Screen, color: "text-teal-600 bg-teal-50" },
+              { icon: BookOpen, label: "Mẫu", screen: "admin-templates" as Screen, color: "text-pink-600 bg-pink-50" },
               { icon: Users, label: "Users", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
               { icon: BarChart3, label: "Thống kê", screen: "admin-analytics" as Screen, color: "text-emerald-600 bg-emerald-50" },
               { icon: Settings, label: "Cài Đặt", screen: "admin-settings" as Screen, color: "text-orange-600 bg-orange-50" },

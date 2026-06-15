@@ -19,6 +19,8 @@ export type Screen =
   | "admin-users"
   | "admin-analytics"
   | "admin-settings"
+  | "admin-categories"
+  | "admin-templates"
   | "favorites"
   | "subscription"
   | "achievements"
