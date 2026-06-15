@@ -110,9 +110,9 @@ export async function textToSpeech(
     },
   };
 
-  // language_code forces the output language for multilingual models
+  // language_code forces the output language for multilingual/v3 models
   // This prevents the model from guessing wrong language for cloned voices
-  if (resolvedLang && modelId.includes("multilingual")) {
+  if (resolvedLang && (modelId.includes("multilingual") || modelId.includes("v3"))) {
     body.language_code = resolvedLang;
   }
 

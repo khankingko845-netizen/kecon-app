@@ -874,8 +874,11 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
               onChange={(e) => handleChange("elevenlabs_model_id", e.target.value)}
               className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
             >
+              <option value="eleven_v3">
+                Eleven v3 (mới nhất, chất lượng cao nhất)
+              </option>
               <option value="eleven_multilingual_v2">
-                Multilingual v2 (tốt nhất cho tiếng Việt)
+                Multilingual v2 (ổn định)
               </option>
               <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh)</option>
               <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất)</option>
