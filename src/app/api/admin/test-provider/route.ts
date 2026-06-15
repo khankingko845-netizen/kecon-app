@@ -68,10 +68,10 @@ export async function GET(request: NextRequest) {
     }
 
     // If not found in own voices, try the shared voice library
-    if (res.status === 404 || res.status === 422) {
-      // Search shared voices by voice_id
+    if (res.status === 400 || res.status === 404 || res.status === 422) {
+      // Search shared voices by voice_id (use search= not voice_id= param)
       const sharedRes = await fetch(
-        `https://api.elevenlabs.io/v1/shared-voices?voice_id=${voiceId}&page_size=1`,
+        `https://api.elevenlabs.io/v1/shared-voices?search=${voiceId}&page_size=5`,
         { headers: { "xi-api-key": apiKey } }
       );
       if (sharedRes.ok) {
@@ -85,8 +85,10 @@ export async function GET(request: NextRequest) {
           language?: string;
           preview_url?: string;
         }[];
-        if (voices && voices.length > 0) {
-          const sv = voices[0];
+        // Find exact match by voice_id (search can return partial matches)
+        const exactMatch = voices?.find((v: { voice_id: string }) => v.voice_id === voiceId);
+        if (exactMatch) {
+          const sv = exactMatch;
           return Response.json({
             ok: true,
             voice: {
