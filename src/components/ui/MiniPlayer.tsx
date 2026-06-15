@@ -13,17 +13,45 @@ export default function MiniPlayer() {
     stop,
     nextPage,
     prevPage,
+    seekTo,
   } = useAudioPlayer();
 
   if (!currentTrack) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto">
-      {/* Progress bar */}
-      <div className="w-full h-[3px] bg-black/10">
+      {/* Seekable progress bar */}
+      <div
+        className="w-full h-[5px] bg-black/10 cursor-pointer group relative"
+        onPointerDown={(e) => {
+          const bar = e.currentTarget;
+          const rect = bar.getBoundingClientRect();
+
+          const doSeek = (clientX: number) => {
+            const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+            seekTo(pct);
+          };
+
+          doSeek(e.clientX);
+          bar.setPointerCapture(e.pointerId);
+
+          const onMove = (ev: PointerEvent) => doSeek(ev.clientX);
+          const onUp = () => {
+            bar.removeEventListener("pointermove", onMove);
+            bar.removeEventListener("pointerup", onUp);
+          };
+          bar.addEventListener("pointermove", onMove);
+          bar.addEventListener("pointerup", onUp);
+        }}
+      >
         <div
-          className="h-full bg-gradient-to-r from-[#FF6B3D] to-[#FF3D77] transition-all duration-300"
+          className="h-full bg-gradient-to-r from-[#FF6B3D] to-[#FF3D77] transition-[width] duration-150"
           style={{ width: `${progress}%` }}
+        />
+        {/* Seek thumb — visible on hover/drag */}
+        <div
+          className="absolute top-[-3px] w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity"
+          style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
         />
       </div>
 

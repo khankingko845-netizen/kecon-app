@@ -1082,21 +1082,83 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           ) : "..."}
         </div>
 
-        {/* Seek Bar */}
+        {/* Seek Bar — draggable */}
         <div className="w-full mb-1">
-          <div className="w-full h-1 bg-white/[0.08] rounded-full relative">
+          <div
+            className="w-full h-2.5 bg-white/[0.08] rounded-full relative cursor-pointer group"
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
+            onPointerDown={(e) => {
+              const bar = e.currentTarget;
+              const rect = bar.getBoundingClientRect();
+
+              const seekTo = (clientX: number) => {
+                const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+                setProgress(pct);
+
+                // Seek in audio
+                if (audioRef.current && audioRef.current.duration) {
+                  audioRef.current.currentTime = (pct / 100) * audioRef.current.duration;
+
+                  // Update current page from merged markers
+                  if (mergeStatus === "playing" && mergedRef.current) {
+                    const pageIdx = getPageAtTime(audioRef.current.currentTime, mergedRef.current.pageMarkers);
+                    setCurrentPage(pageIdx);
+                  }
+                } else if (!audioRef.current && mergeStatus !== "playing") {
+                  // Per-page mode with no audio: jump to page by %
+                  const targetPage = Math.floor((pct / 100) * totalPages);
+                  setCurrentPage(Math.min(targetPage, totalPages - 1));
+                }
+              };
+
+              seekTo(e.clientX);
+              bar.setPointerCapture(e.pointerId);
+
+              const onMove = (ev: PointerEvent) => seekTo(ev.clientX);
+              const onUp = () => {
+                bar.removeEventListener("pointermove", onMove);
+                bar.removeEventListener("pointerup", onUp);
+              };
+              bar.addEventListener("pointermove", onMove);
+              bar.addEventListener("pointerup", onUp);
+            }}
+          >
+            {/* Page markers (tick marks) for merged mode */}
+            {mergeStatus === "playing" && mergedRef.current && mergedRef.current.pageMarkers.length > 1 && (
+              mergedRef.current.pageMarkers.slice(1).map((marker, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 w-0.5 h-full bg-white/20 rounded-full"
+                  style={{ left: `${(marker / mergedRef.current!.totalDuration) * 100}%` }}
+                />
+              ))
+            )}
             <div
-              className="h-full bg-gradient-to-r from-accent-2 to-accent rounded-full transition-all"
+              className="h-full bg-gradient-to-r from-accent-2 to-accent rounded-full transition-[width] duration-150"
               style={{ width: `${progress}%` }}
             />
             <div
-              className="absolute top-[-5px] w-3.5 h-3.5 rounded-full bg-white shadow-md"
-              style={{ left: `${Math.max(0, Math.min(progress, 98))}%` }}
+              className="absolute top-[-3px] w-4 h-4 rounded-full bg-white shadow-md shadow-black/30 group-active:scale-125 transition-transform"
+              style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
             />
           </div>
+          {/* Time display */}
           <div className="flex justify-between text-xs font-semibold text-white/30 mt-2">
-            <span>{currentPage + 1}/{totalPages}</span>
-            <span>{isGenerated ? "AI Story" : `${totalPages} trang`}</span>
+            <span>
+              {audioRef.current && audioRef.current.duration
+                ? `${Math.floor(audioRef.current.currentTime / 60)}:${String(Math.floor(audioRef.current.currentTime % 60)).padStart(2, "0")}`
+                : `${currentPage + 1}/${totalPages}`
+              }
+            </span>
+            <span>
+              {audioRef.current && audioRef.current.duration
+                ? `${Math.floor(audioRef.current.duration / 60)}:${String(Math.floor(audioRef.current.duration % 60)).padStart(2, "0")}`
+                : isGenerated ? "AI Story" : `${totalPages} trang`
+              }
+            </span>
           </div>
         </div>
 
