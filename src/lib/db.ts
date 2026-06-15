@@ -1679,3 +1679,293 @@ export async function updateStoryNarrator(
     .eq("id", storyId);
   if (error) throw error;
 }
+
+// ============================================================
+// GAMIFICATION — Badges, XP, Challenges
+// ============================================================
+
+export interface BadgeDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  xp_reward: number;
+  sort_order: number;
+  requirement_type: string;
+  requirement_value: number;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  earned_at: string;
+  badge?: BadgeDefinition;
+}
+
+export interface DailyChallenge {
+  id: string;
+  challenge_date: string;
+  title: string;
+  description: string;
+  icon: string;
+  xp_reward: number;
+  challenge_type: string;
+  target_value: number;
+}
+
+export interface UserChallengeProgress {
+  id: string;
+  user_id: string;
+  challenge_id: string;
+  progress: number;
+  completed: boolean;
+  completed_at: string | null;
+}
+
+export async function getAllBadges(): Promise<BadgeDefinition[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("badge_definitions")
+    .select("*")
+    .order("sort_order");
+  return (data as BadgeDefinition[]) || [];
+}
+
+export async function getUserBadges(userId: string): Promise<UserBadge[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("user_badges")
+    .select("*, badge:badge_definitions(*)")
+    .eq("user_id", userId)
+    .order("earned_at", { ascending: false });
+  return (data as UserBadge[]) || [];
+}
+
+export async function awardBadge(userId: string, badgeId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("user_badges")
+    .upsert({ user_id: userId, badge_id: badgeId }, { onConflict: "user_id,badge_id" });
+  if (error) return false;
+  // Award XP
+  await supabase.rpc("award_xp", { p_user_id: userId, p_amount: 0 }); // XP awarded by trigger
+  return true;
+}
+
+export async function checkAndAwardBadges(userId: string): Promise<string[]> {
+  const supabase = createClient();
+  const [badges, userBadges, stories, voices, sessions] = await Promise.all([
+    getAllBadges(),
+    getUserBadges(userId),
+    supabase.from("stories").select("id, category").eq("user_id", userId),
+    supabase.from("voice_profiles").select("id").eq("user_id", userId),
+    supabase.from("play_sessions").select("id, story_id").eq("user_id", userId).gte("completion_percentage", 80),
+  ]);
+
+  const earned = new Set(userBadges.map((b) => b.badge_id));
+  const newBadges: string[] = [];
+
+  const storyCount = stories.data?.length || 0;
+  const voiceCount = voices.data?.length || 0;
+  const listenCount = sessions.data?.length || 0;
+  const categories = new Set(stories.data?.map((s: { category: string }) => s.category) || []);
+
+  for (const badge of badges) {
+    if (earned.has(badge.id)) continue;
+
+    let shouldAward = false;
+    switch (badge.id) {
+      case "first_story": shouldAward = storyCount >= 1; break;
+      case "storyteller_10": shouldAward = storyCount >= 10; break;
+      case "storyteller_50": shouldAward = storyCount >= 50; break;
+      case "first_voice": shouldAward = voiceCount >= 1; break;
+      case "voice_collector": shouldAward = voiceCount >= 5; break;
+      case "first_listen": shouldAward = listenCount >= 1; break;
+      case "bookworm": shouldAward = listenCount >= 25; break;
+      case "explorer": shouldAward = categories.size >= 5; break;
+      default: break;
+    }
+
+    if (shouldAward) {
+      const { error } = await supabase
+        .from("user_badges")
+        .upsert({ user_id: userId, badge_id: badge.id }, { onConflict: "user_id,badge_id" });
+      if (!error) {
+        newBadges.push(badge.id);
+        await supabase.rpc("award_xp", { p_user_id: userId, p_amount: badge.xp_reward });
+      }
+    }
+  }
+  return newBadges;
+}
+
+export async function getProfileXP(userId: string): Promise<{ xp: number; level: number }> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("xp, level")
+    .eq("id", userId)
+    .single();
+  return { xp: data?.xp || 0, level: data?.level || 1 };
+}
+
+export async function getTodayChallenges(): Promise<DailyChallenge[]> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("daily_challenges")
+    .select("*")
+    .eq("challenge_date", today);
+  return (data as DailyChallenge[]) || [];
+}
+
+export async function getUserChallengeProgress(userId: string): Promise<UserChallengeProgress[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("user_challenge_progress")
+    .select("*")
+    .eq("user_id", userId);
+  return (data as UserChallengeProgress[]) || [];
+}
+
+// ============================================================
+// PARENTAL CONTROLS
+// ============================================================
+
+export interface ParentalControls {
+  id: string;
+  user_id: string;
+  pin_hash: string | null;
+  daily_limit_minutes: number;
+  bedtime_start: string | null;
+  bedtime_end: string | null;
+  allowed_categories: string[];
+  blocked_categories: string[];
+  max_age_rating: number;
+  is_enabled: boolean;
+}
+
+export async function getParentalControls(userId: string): Promise<ParentalControls | null> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("parental_controls")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  return data as ParentalControls | null;
+}
+
+export async function upsertParentalControls(
+  userId: string,
+  controls: Partial<ParentalControls>
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("parental_controls")
+    .upsert({ user_id: userId, ...controls }, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+// ============================================================
+// DAILY USAGE (for parental time limits)
+// ============================================================
+
+export interface DailyUsage {
+  user_id: string;
+  usage_date: string;
+  listening_minutes: number;
+  stories_played: number;
+  stories_created: number;
+}
+
+export async function getTodayUsage(userId: string): Promise<DailyUsage | null> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .single();
+  return data as DailyUsage | null;
+}
+
+export async function incrementUsage(
+  userId: string,
+  field: "listening_minutes" | "stories_played" | "stories_created",
+  amount: number = 1
+): Promise<void> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+
+  // Upsert with increment
+  const { data: existing } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .single();
+
+  if (existing) {
+    const update: Record<string, number> = {};
+    update[field] = (existing[field] || 0) + amount;
+    await supabase.from("daily_usage").update(update).eq("user_id", userId).eq("usage_date", today);
+  } else {
+    const row: Record<string, unknown> = { user_id: userId, usage_date: today };
+    row[field] = amount;
+    await supabase.from("daily_usage").insert(row);
+  }
+}
+
+export async function getUsageHistory(userId: string, days: number = 30): Promise<DailyUsage[]> {
+  const supabase = createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("usage_date", since.toISOString().split("T")[0])
+    .order("usage_date", { ascending: false });
+  return (data as DailyUsage[]) || [];
+}
+
+// ============================================================
+// OFFLINE DOWNLOADS
+// ============================================================
+
+export interface DownloadedStory {
+  id: string;
+  user_id: string;
+  story_id: string;
+  downloaded_at: string;
+  size_bytes: number;
+}
+
+export async function getDownloadedStories(userId: string): Promise<DownloadedStory[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("downloaded_stories")
+    .select("*")
+    .eq("user_id", userId)
+    .order("downloaded_at", { ascending: false });
+  return (data as DownloadedStory[]) || [];
+}
+
+export async function markStoryDownloaded(userId: string, storyId: string, sizeBytes: number): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("downloaded_stories")
+    .upsert({ user_id: userId, story_id: storyId, size_bytes: sizeBytes }, { onConflict: "user_id,story_id" });
+}
+
+export async function removeDownloadedStory(userId: string, storyId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("downloaded_stories")
+    .delete()
+    .eq("user_id", userId)
+    .eq("story_id", storyId);
+}

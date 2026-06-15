@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   ChevronRight, Key, Mic, BookOpen, Globe, Bell,
-  Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink,
+  Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3,
   Download, Trash2, Crown, LayoutDashboard,
 } from "lucide-react";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
@@ -539,6 +539,13 @@ export default function Settings({ onNavigate }: SettingsProps) {
           </div>
         </>
       )}
+
+      <SectionHeader title="GIA ĐÌNH" />
+      <div className="bg-white divide-y divide-gray-100">
+        <SettingsRow icon={Trophy} label="Thành Tích & Huy Hiệu" color="#F59E0B" onClick={() => onNavigate("achievements")} />
+        <SettingsRow icon={Shield} label="Kiểm Soát Phụ Huynh" color="#8B5CF6" onClick={() => onNavigate("parental-controls")} />
+        <SettingsRow icon={BarChart3} label="Thống Kê Bé" color="#10B981" onClick={() => onNavigate("parent-analytics")} />
+      </div>
 
       <SectionHeader title="KHÁC" />
       <div className="bg-white divide-y divide-gray-100">

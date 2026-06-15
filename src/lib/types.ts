@@ -20,7 +20,10 @@ export type Screen =
   | "admin-analytics"
   | "admin-settings"
   | "favorites"
-  | "subscription";
+  | "subscription"
+  | "achievements"
+  | "parental-controls"
+  | "parent-analytics";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 
