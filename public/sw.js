@@ -1,8 +1,9 @@
-// KểCon offline app-shell service worker.
-// Cache-first for static build assets; network-first for navigations with an
-// offline fallback. Never intercepts API/auth requests so live data stays fresh.
-const CACHE = "kecon-shell-v1";
+// KểCon Service Worker — offline shell + push notifications.
+const CACHE = "kecon-shell-v2";
 
+// ============================================================
+// INSTALL / ACTIVATE
+// ============================================================
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE));
@@ -17,6 +18,9 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// ============================================================
+// FETCH — cache strategy
+// ============================================================
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -56,5 +60,89 @@ self.addEventListener("fetch", (event) => {
         return res;
       })
       .catch(() => caches.match(request))
+  );
+});
+
+// ============================================================
+// PUSH NOTIFICATIONS
+// ============================================================
+self.addEventListener("push", (event) => {
+  let data = { title: "KểCon 🌙", body: "Có truyện mới cho bé!" };
+
+  try {
+    if (event.data) {
+      const payload = event.data.json();
+      data = {
+        title: payload.title || data.title,
+        body: payload.body || data.body,
+        ...payload,
+      };
+    }
+  } catch {
+    // plain text fallback
+    if (event.data) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/badge-72.png",
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || "/",
+      storyId: data.storyId || null,
+    },
+    actions: [
+      { action: "open", title: "Mở truyện" },
+      { action: "dismiss", title: "Để sau" },
+    ],
+    tag: data.tag || "kecon-notification",
+    renotify: true,
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Handle notification click
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "dismiss") return;
+
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      // Focus existing window if available
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.postMessage({
+            type: "NOTIFICATION_CLICK",
+            url: targetUrl,
+            storyId: event.notification.data?.storyId,
+          });
+          return client.focus();
+        }
+      }
+      // Otherwise open new window
+      return self.clients.openWindow(targetUrl);
+    })
+  );
+});
+
+// Handle subscription change (browser may revoke and re-issue)
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription?.options ?? { userVisibleOnly: true })
+      .then((subscription) => {
+        return fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(subscription),
+        });
+      })
   );
 });

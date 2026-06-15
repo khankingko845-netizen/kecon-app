@@ -26,6 +26,7 @@ import AdminStories from "@/components/screens/AdminStories";
 import AdminUsers from "@/components/screens/AdminUsers";
 import AdminAnalytics from "@/components/screens/AdminAnalytics";
 import Favorites from "@/components/screens/Favorites";
+import Subscription from "@/components/screens/Subscription";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import { I18nProvider } from "@/lib/i18n";
 
@@ -195,6 +196,9 @@ function AppContent() {
         )}
         {current.screen === "favorites" && (
           <Favorites onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "subscription" && (
+          <Subscription onNavigate={navigate} />
         )}
       </div>
 

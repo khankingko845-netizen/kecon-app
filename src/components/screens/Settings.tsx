@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   ChevronRight, Key, Mic, BookOpen, Globe, Bell,
   Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink,
-  Download, Trash2,
+  Download, Trash2, Crown,
 } from "lucide-react";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
@@ -12,6 +12,12 @@ import { useData } from "@/lib/data-context";
 import { PROVIDER_MODELS } from "@/lib/story-ai";
 import { exportUserData, deleteUserData } from "@/lib/db";
 import { useI18n, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import {
+  isPushSupported,
+  getPermissionState,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-notifications";
 import type { Screen } from "@/lib/types";
 
 interface SettingsProps {
@@ -473,8 +479,28 @@ export default function Settings({ onNavigate }: SettingsProps) {
         <SettingsRow
           icon={Bell}
           label="Thông Báo"
-          value="Bật"
-          onClick={() => {}}
+          value={
+            !isPushSupported()
+              ? "Không hỗ trợ"
+              : getPermissionState() === "granted"
+                ? "Đã bật"
+                : "Tắt"
+          }
+          onClick={async () => {
+            if (!isPushSupported()) return;
+            if (getPermissionState() === "granted") {
+              await unsubscribeFromPush();
+            } else {
+              await subscribeToPush();
+            }
+          }}
+        />
+        <SettingsRow
+          icon={Crown}
+          label="Gói Cước"
+          value="Xem chi tiết"
+          color="#F59E0B"
+          onClick={() => onNavigate("subscription")}
         />
       </div>
 
