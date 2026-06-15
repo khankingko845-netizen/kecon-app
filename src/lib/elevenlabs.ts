@@ -76,12 +76,75 @@ export async function cloneVoice(
   return res.json();
 }
 
+// ============================================================
+// Emotion Detection & Voice Settings
+// ============================================================
+
+export type EmotionType = "neutral" | "whisper" | "excited" | "sad" | "scared" | "angry" | "happy" | "gentle" | "dramatic";
+
+interface EmotionSettings {
+  stability: number;
+  similarity_boost: number;
+  style: number;
+  use_speaker_boost: boolean;
+}
+
+const EMOTION_PRESETS: Record<EmotionType, EmotionSettings> = {
+  neutral:   { stability: 0.5, similarity_boost: 0.75, style: 0.4, use_speaker_boost: true },
+  whisper:   { stability: 0.8, similarity_boost: 0.9,  style: 0.1, use_speaker_boost: false },
+  excited:   { stability: 0.3, similarity_boost: 0.6,  style: 0.8, use_speaker_boost: true },
+  happy:     { stability: 0.4, similarity_boost: 0.7,  style: 0.7, use_speaker_boost: true },
+  sad:       { stability: 0.7, similarity_boost: 0.85, style: 0.3, use_speaker_boost: false },
+  scared:    { stability: 0.6, similarity_boost: 0.7,  style: 0.5, use_speaker_boost: true },
+  angry:     { stability: 0.3, similarity_boost: 0.6,  style: 0.9, use_speaker_boost: true },
+  gentle:    { stability: 0.75, similarity_boost: 0.85, style: 0.2, use_speaker_boost: false },
+  dramatic:  { stability: 0.35, similarity_boost: 0.65, style: 0.85, use_speaker_boost: true },
+};
+
+/**
+ * Auto-detect emotion from text content.
+ * Returns the most likely emotion based on keywords and context.
+ */
+export function detectEmotion(text: string): EmotionType {
+  const t = text.toLowerCase();
+
+  // Check for explicit emotion tags first
+  if (/\[thì thầm\]|\[whisper\]/i.test(text)) return "whisper";
+  if (/\[hét\]|\[shout\]|\[la\]/i.test(text)) return "excited";
+  if (/\[cười\]|\[laugh\]|\[vui\]/i.test(text)) return "happy";
+  if (/\[buồn\]|\[sad\]|\[khóc\]/i.test(text)) return "sad";
+  if (/\[sợ\]|\[scared\]|\[run\]/i.test(text)) return "scared";
+  if (/\[giận\]|\[angry\]/i.test(text)) return "angry";
+  if (/\[nhẹ nhàng\]|\[gentle\]|\[dịu\]/i.test(text)) return "gentle";
+  if (/\[kịch tính\]|\[dramatic\]/i.test(text)) return "dramatic";
+
+  // Auto-detect from context
+  if (/thì thầm|nhỏ giọng|rì rầm|whisper|thầm thì|lẩm bẩm/.test(t)) return "whisper";
+  if (/hét|la lớn|kêu lên|wow|hoan hô|tuyệt vời|haha|oà/.test(t)) return "excited";
+  if (/buồn|khóc|nước mắt|nhớ|thương|đau|mất|chia ly/.test(t)) return "sad";
+  if (/sợ|run|rùng mình|kinh|hãi|đáng sợ|bóng tối/.test(t)) return "scared";
+  if (/giận|tức|nổi điên|bực|la mắng/.test(t)) return "angry";
+  if (/cười|vui|hạnh phúc|sung sướng|mừng|yêu|xinh|đẹp/.test(t)) return "happy";
+  if (/ru ngủ|dịu dàng|nhẹ nhàng|ấm áp|âu yếm|ôm/.test(t)) return "gentle";
+  if (/bất ngờ|bí ẩn|kịch tính|nguy hiểm|phiêu lưu|mạo hiểm/.test(t)) return "dramatic";
+
+  return "neutral";
+}
+
+/**
+ * Strip emotion tags from text before sending to TTS.
+ */
+export function stripEmotionTags(text: string): string {
+  return text.replace(/\[(thì thầm|whisper|hét|shout|la|cười|laugh|vui|buồn|sad|khóc|sợ|scared|run|giận|angry|nhẹ nhàng|gentle|dịu|kịch tính|dramatic)\]/gi, "").trim();
+}
+
 export async function textToSpeech(
   apiKey: string,
   voiceId: string,
   text: string,
   modelId: string = "eleven_multilingual_v2",
-  languageCode?: string
+  languageCode?: string,
+  emotion?: EmotionType
 ): Promise<Blob> {
   // Map short codes to ElevenLabs language_code format
   const langCodeMap: Record<string, string> = {
@@ -99,15 +162,17 @@ export async function textToSpeech(
     ? langCodeMap[languageCode] || languageCode
     : undefined;
 
+  // Auto-detect emotion if not provided
+  const detectedEmotion = emotion || detectEmotion(text);
+  const emotionSettings = EMOTION_PRESETS[detectedEmotion] || EMOTION_PRESETS.neutral;
+
+  // Strip emotion tags from text before sending to TTS
+  const cleanText = stripEmotionTags(text);
+
   const body: Record<string, unknown> = {
-    text,
+    text: cleanText,
     model_id: modelId,
-    voice_settings: {
-      stability: 0.5,
-      similarity_boost: 0.75,
-      style: 0.4,
-      use_speaker_boost: true,
-    },
+    voice_settings: emotionSettings,
   };
 
   // language_code is only supported by turbo v2.5, flash v2.5, and v3+ models.
@@ -278,15 +343,17 @@ export async function generateMultiVoiceAudio(
     }
   }
 
-  // Generate TTS for each segment
+  // Generate TTS for each segment (with emotion detection)
   const audioBlobs: Blob[] = [];
   for (const seg of merged) {
+    const emotion = detectEmotion(seg.text);
     const blob = await textToSpeech(
       apiKey,
       seg.voiceId,
       seg.text,
       modelId,
-      languageCode
+      languageCode,
+      emotion
     );
     audioBlobs.push(blob);
   }

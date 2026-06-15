@@ -798,6 +798,86 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   };
 
   const anyAmbientOn = AMBIENT_OPTIONS.some((o) => ambientOn[o.type]);
+  // --- AI Feature States ---
+  const [isIllustrating, setIsIllustrating] = useState(false);
+  const [showAIMenu, setShowAIMenu] = useState(false);
+  const [isPersonalizing, setIsPersonalizing] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [aiMessage, setAiMessage] = useState<string | null>(null);
+
+  const handleAutoIllustrate = async () => {
+    if (!storyId || isIllustrating) return;
+    setIsIllustrating(true);
+    setAiMessage("Đang tạo minh hoạ AI...");
+    try {
+      const res = await fetch("/api/story/illustrate-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyId, style: "watercolor" }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const successCount = data.results?.filter((r: { url?: string }) => r.url).length || 0;
+      setAiMessage(`✅ Đã tạo ${successCount} minh hoạ!`);
+      // Reload pages to show illustrations
+      const freshPages = await getStoryPages(storyId);
+      if (freshPages) setPages(freshPages);
+    } catch (err) {
+      setAiMessage(`❌ ${err instanceof Error ? err.message : "Lỗi tạo minh hoạ"}`);
+    }
+    setIsIllustrating(false);
+    setTimeout(() => setAiMessage(null), 3000);
+  };
+
+  const handlePersonalize = async () => {
+    if (!storyId || isPersonalizing) return;
+    const childName = prompt("Tên bé:");
+    if (!childName) return;
+    const interests = prompt("Sở thích bé (tuỳ chọn):");
+    setIsPersonalizing(true);
+    setAiMessage("Đang cá nhân hoá truyện...");
+    try {
+      const res = await fetch("/api/story/personalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyId, childName, interests }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiMessage(`✅ Truyện cho ${childName} đã tạo!`);
+      setTimeout(() => {
+        onNavigate("player", { storyId: data.storyId });
+      }, 1500);
+    } catch (err) {
+      setAiMessage(`❌ ${err instanceof Error ? err.message : "Lỗi"}`);
+    }
+    setIsPersonalizing(false);
+    setTimeout(() => setAiMessage(null), 4000);
+  };
+
+  const handleTranslate = async (targetLang: string, bilingual: boolean) => {
+    if (!storyId || isTranslating) return;
+    setIsTranslating(true);
+    setAiMessage("Đang dịch truyện...");
+    try {
+      const res = await fetch("/api/story/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyId, targetLanguage: targetLang, bilingual }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiMessage(`✅ Đã dịch xong!`);
+      setTimeout(() => {
+        onNavigate("player", { storyId: data.storyId });
+      }, 1500);
+    } catch (err) {
+      setAiMessage(`❌ ${err instanceof Error ? err.message : "Lỗi"}`);
+    }
+    setIsTranslating(false);
+    setTimeout(() => setAiMessage(null), 4000);
+  };
+
   const actions = [
     { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
     {
@@ -812,7 +892,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     },
     { icon: Bookmark, label: "Lưu", action: handleToggleFavorite, active: isFav, loading: favLoading },
     { icon: Share2, label: "Chia Sẻ", action: () => setShowShare(true), active: false },
-    { icon: SlidersHorizontal, label: "Âm Nền", action: () => setShowMixer(true), active: anyAmbientOn },
+    { icon: Sparkles, label: "AI ✨", action: () => setShowAIMenu(true), active: false },
   ];
 
   if (loading) {
@@ -1421,6 +1501,117 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     ? `Đang khớp cảnh: ${EFFECT_LABELS[autoMatchedEffect]}`
                     : "Trang này chưa khớp hiệu ứng nào"}
                 </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* AI Feature Toast */}
+      {aiMessage && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl bg-violet-600/95 backdrop-blur-sm text-white text-sm font-bold shadow-xl shadow-violet-900/50 max-w-[380px] text-center animate-[slideDown_0.3s_ease]">
+          {(isIllustrating || isPersonalizing || isTranslating) && (
+            <Loader2 size={14} className="inline animate-spin mr-2" />
+          )}
+          {aiMessage}
+        </div>
+      )}
+
+      {/* AI Menu */}
+      {showAIMenu && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
+                <Sparkles size={18} className="text-violet-400" /> Tính Năng AI
+              </h3>
+              <button
+                onClick={() => setShowAIMenu(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Auto-Illustrate */}
+              <button
+                onClick={() => { setShowAIMenu(false); handleAutoIllustrate(); }}
+                disabled={isIllustrating}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+              >
+                <div className="text-2xl mb-2">🎨</div>
+                <div className="text-sm font-bold text-white">Tạo Minh Hoạ</div>
+                <div className="text-[11px] text-white/50 mt-0.5">AI vẽ hình cho mỗi trang</div>
+              </button>
+
+              {/* Personalize */}
+              <button
+                onClick={() => { setShowAIMenu(false); handlePersonalize(); }}
+                disabled={isPersonalizing}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+              >
+                <div className="text-2xl mb-2">🧒</div>
+                <div className="text-sm font-bold text-white">Cá Nhân Hoá</div>
+                <div className="text-[11px] text-white/50 mt-0.5">Đưa tên bé vào truyện</div>
+              </button>
+
+              {/* Vocabulary & Quiz */}
+              <button
+                onClick={() => {
+                  setShowAIMenu(false);
+                  if (storyId) {
+                    onNavigate("vocab-quiz", { storyId, storyTitle: story?.title || "" });
+                  }
+                }}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+              >
+                <div className="text-2xl mb-2">📚</div>
+                <div className="text-sm font-bold text-white">Từ Vựng & Quiz</div>
+                <div className="text-[11px] text-white/50 mt-0.5">Học từ mới + trả lời quiz</div>
+              </button>
+
+              {/* Translate */}
+              <button
+                onClick={() => {
+                  setShowAIMenu(false);
+                  const locale = story?.locale || "vi";
+                  const targetLang = locale === "vi" ? "en" : "vi";
+                  const bilingual = confirm(
+                    `Dịch sang ${targetLang === "en" ? "English" : "Tiếng Việt"}?\n\n[OK] = Song ngữ\n[Cancel] = Chỉ ngôn ngữ đích`
+                  );
+                  handleTranslate(targetLang, bilingual);
+                }}
+                disabled={isTranslating}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+              >
+                <div className="text-2xl mb-2">🌍</div>
+                <div className="text-sm font-bold text-white">Dịch Truyện</div>
+                <div className="text-[11px] text-white/50 mt-0.5">Dịch sang ngôn ngữ khác</div>
+              </button>
+
+              {/* Ambient Sounds */}
+              <button
+                onClick={() => { setShowAIMenu(false); setShowMixer(true); }}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+              >
+                <div className="text-2xl mb-2">🎵</div>
+                <div className="text-sm font-bold text-white">Âm Nền</div>
+                <div className="text-[11px] text-white/50 mt-0.5">Nhạc + âm thanh môi trường</div>
+              </button>
+
+              {/* Edit Story */}
+              {storyId && !isGenerated && (
+                <button
+                  onClick={() => {
+                    setShowAIMenu(false);
+                    onNavigate("editor", { storyId });
+                  }}
+                  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+                >
+                  <div className="text-2xl mb-2">✏️</div>
+                  <div className="text-sm font-bold text-white">Chỉnh Sửa</div>
+                  <div className="text-[11px] text-white/50 mt-0.5">Sửa nội dung truyện</div>
+                </button>
               )}
             </div>
           </div>

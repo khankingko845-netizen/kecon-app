@@ -39,6 +39,8 @@ import ProfileEdit from "@/components/screens/ProfileEdit";
 import DailyChallenges from "@/components/screens/DailyChallenges";
 import Collections from "@/components/screens/Collections";
 import ScanBook from "@/components/screens/ScanBook";
+import DrawStory from "@/components/screens/DrawStory";
+import VocabQuiz from "@/components/screens/VocabQuiz";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider } from "@/lib/audio-player-context";
@@ -134,7 +136,11 @@ function AppContent() {
     current.screen !== "admin-users" &&
     current.screen !== "admin-analytics" &&
     current.screen !== "admin-settings" &&
-    current.screen !== "legacy";
+    current.screen !== "admin-categories" &&
+    current.screen !== "admin-templates" &&
+    current.screen !== "legacy" &&
+    current.screen !== "draw-story" &&
+    current.screen !== "vocab-quiz";
 
   if (loading) {
     return (
@@ -253,6 +259,17 @@ function AppContent() {
         )}
         {current.screen === "scan-book" && (
           <ScanBook onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "draw-story" && (
+          <DrawStory onBack={goBack} onNavigate={navigate} />
+        )}
+        {current.screen === "vocab-quiz" && (
+          <VocabQuiz
+            storyId={current.data?.storyId}
+            storyTitle={current.data?.storyTitle}
+            onBack={goBack}
+            onNavigate={navigate}
+          />
         )}
       </div>
 

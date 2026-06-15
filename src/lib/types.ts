@@ -32,7 +32,9 @@ export type Screen =
   | "profile-edit"
   | "daily-challenges"
   | "collections"
-  | "scan-book";
+  | "scan-book"
+  | "draw-story"
+  | "vocab-quiz";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 
