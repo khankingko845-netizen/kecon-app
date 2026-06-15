@@ -195,13 +195,22 @@ function VoiceSelect({
   filterLanguage?: string;
   label: string;
 }) {
-  const filtered = filterLanguage
-    ? voices.filter(
-        (v) =>
-          v.language.toLowerCase().includes(filterLanguage.toLowerCase()) ||
-          !filterLanguage
+  // Split into: cloned voices, matching-language, and the rest
+  const cloned = voices.filter((v) => v.category === "cloned");
+  const premade = voices.filter((v) => v.category !== "cloned");
+
+  // For premade, put matching-language first (if any), then others
+  const matchingPremade = filterLanguage
+    ? premade.filter((v) =>
+        v.language.toLowerCase().includes(filterLanguage.toLowerCase())
       )
-    : voices;
+    : [];
+  const otherPremade = filterLanguage
+    ? premade.filter(
+        (v) =>
+          !v.language.toLowerCase().includes(filterLanguage.toLowerCase())
+      )
+    : premade;
 
   return (
     <div>
@@ -215,29 +224,31 @@ function VoiceSelect({
           className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
         >
           <option value="">— Không đặt (dùng voice người dùng) —</option>
-          {filtered.length > 0 && (
-            <optgroup label={`Phù hợp ${filterLanguage || "tất cả"}`}>
-              {filtered.map((v) => (
+          {cloned.length > 0 && (
+            <optgroup label="🎙️ Voices đã clone">
+              {cloned.map((v) => (
                 <option key={v.voice_id} value={v.voice_id}>
-                  {v.name} ({v.category}){v.language ? ` · ${v.language}` : ""}
+                  {v.name}{v.language ? ` · ${v.language}` : ""}
                 </option>
               ))}
             </optgroup>
           )}
-          {filterLanguage && voices.length > filtered.length && (
-            <optgroup label="Tất cả voices">
-              {voices
-                .filter(
-                  (v) =>
-                    !v.language
-                      .toLowerCase()
-                      .includes(filterLanguage.toLowerCase())
-                )
-                .map((v) => (
-                  <option key={v.voice_id} value={v.voice_id}>
-                    {v.name} ({v.category}){v.language ? ` · ${v.language}` : ""}
-                  </option>
-                ))}
+          {matchingPremade.length > 0 && (
+            <optgroup label={`✨ Gắn nhãn ${filterLanguage}`}>
+              {matchingPremade.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name} · {v.language}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {otherPremade.length > 0 && (
+            <optgroup label="🌐 Tất cả (Multilingual v2 đọc được mọi ngôn ngữ)">
+              {otherPremade.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name} ({v.category}){v.language ? ` · ${v.language}` : ""}
+                </option>
+              ))}
             </optgroup>
           )}
         </select>
@@ -246,6 +257,9 @@ function VoiceSelect({
           className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary pointer-events-none"
         />
       </div>
+      <p className="text-[11px] text-txt-secondary mt-1">
+        Multilingual v2 cho phép mọi voice đọc tiếng Việt, Anh, Nhật… dù gắn nhãn &quot;en&quot;.
+      </p>
     </div>
   );
 }
