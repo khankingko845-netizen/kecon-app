@@ -244,7 +244,8 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           voiceId,
           text,
           settings.elevenLabsApiKey,
-          settings.elevenLabsModelId
+          settings.elevenLabsModelId,
+          story?.locale || "vi"
         );
         const audioUrl = await uploadTtsAudio(missing[i].id, blob);
         await savePageAudio(missing[i].id, audioUrl, 0);

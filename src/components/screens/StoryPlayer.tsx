@@ -314,7 +314,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         elevenVoiceId,
         currentText,
         settings.elevenLabsApiKey,
-        settings.elevenLabsModelId
+        settings.elevenLabsModelId,
+        story?.locale || "vi"
       );
 
       const url = URL.createObjectURL(blob);

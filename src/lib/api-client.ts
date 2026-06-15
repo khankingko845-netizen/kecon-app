@@ -33,12 +33,13 @@ export async function ttsApi(
   voiceId: string,
   text: string,
   apiKey?: string,
-  modelId?: string
+  modelId?: string,
+  language?: string
 ): Promise<Blob> {
   const res = await fetch("/api/voice/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voiceId, text, modelId, apiKey }),
+    body: JSON.stringify({ voiceId, text, modelId, apiKey, language }),
   });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));

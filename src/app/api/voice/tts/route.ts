@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { voiceId, text, modelId: userModelId, apiKey: userKey } = body;
+  const { voiceId, text, modelId: userModelId, apiKey: userKey, language } = body;
 
   // Resolve API key: user BYO → admin DB → env variable
   const apiKey = await resolveApiKey("elevenlabs", userKey);
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const modelId = await resolveElevenLabsModel(userModelId);
 
   try {
-    const audioBlob = await textToSpeech(apiKey, voiceId, text, modelId);
+    const audioBlob = await textToSpeech(apiKey, voiceId, text, modelId, language);
     const arrayBuffer = await audioBlob.arrayBuffer();
 
     return new Response(arrayBuffer, {

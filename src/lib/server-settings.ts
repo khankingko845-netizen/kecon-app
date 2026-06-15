@@ -79,3 +79,16 @@ export async function resolveElevenLabsModel(userModel?: string): Promise<string
   const dbModel = await getSystemSetting("elevenlabs_model_id");
   return dbModel || "eleven_multilingual_v2";
 }
+
+/** Resolve default voice ID for a language. */
+export async function resolveDefaultVoice(language?: string): Promise<string> {
+  if (!language) return "";
+  const langMap: Record<string, string> = {
+    vi: "elevenlabs_default_voice_vi",
+    en: "elevenlabs_default_voice_en",
+    ja: "elevenlabs_default_voice_ja",
+  };
+  const key = langMap[language];
+  if (!key) return "";
+  return await getSystemSetting(key);
+}

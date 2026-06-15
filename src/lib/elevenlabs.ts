@@ -80,8 +80,42 @@ export async function textToSpeech(
   apiKey: string,
   voiceId: string,
   text: string,
-  modelId: string = "eleven_multilingual_v2"
+  modelId: string = "eleven_multilingual_v2",
+  languageCode?: string
 ): Promise<Blob> {
+  // Map short codes to ElevenLabs language_code format
+  const langCodeMap: Record<string, string> = {
+    vi: "vi",
+    en: "en",
+    ja: "ja",
+    ko: "ko",
+    zh: "zh",
+    fr: "fr",
+    de: "de",
+    es: "es",
+    th: "th",
+  };
+  const resolvedLang = languageCode
+    ? langCodeMap[languageCode] || languageCode
+    : undefined;
+
+  const body: Record<string, unknown> = {
+    text,
+    model_id: modelId,
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.75,
+      style: 0.4,
+      use_speaker_boost: true,
+    },
+  };
+
+  // language_code forces the output language for multilingual models
+  // This prevents the model from guessing wrong language for cloned voices
+  if (resolvedLang && modelId.includes("multilingual")) {
+    body.language_code = resolvedLang;
+  }
+
   const res = await fetch(
     `${ELEVENLABS_BASE}/text-to-speech/${voiceId}/stream`,
     {
@@ -90,16 +124,7 @@ export async function textToSpeech(
         "xi-api-key": apiKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        text,
-        model_id: modelId,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.4,
-          use_speaker_boost: true,
-        },
-      }),
+      body: JSON.stringify(body),
     }
   );
   if (!res.ok) {
