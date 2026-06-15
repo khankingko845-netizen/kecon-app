@@ -118,6 +118,20 @@ export async function POST(request: NextRequest) {
         .insert(pageRows);
       if (pagesErr) throw new Error(pagesErr.message);
 
+      // Auto-create characters from AI response
+      if (story.characters && Array.isArray(story.characters) && story.characters.length > 0) {
+        const CHARACTER_COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"];
+        const charRows = story.characters.map((c: { name: string; description?: string; emoji?: string }, i: number) => ({
+          story_id: storyId,
+          name: c.name,
+          description: c.description || null,
+          emoji: c.emoji || null,
+          color: CHARACTER_COLORS[i % CHARACTER_COLORS.length],
+          sort_order: i,
+        }));
+        await supabase.from("story_characters").insert(charRows);
+      }
+
       await supabase.from("user_behavior").insert({
         user_id: user.id,
         action_type: "create",

@@ -12,6 +12,8 @@ import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { ttsApi } from "@/lib/api-client";
+import { getStoryCharacters, type StoryCharacterRow } from "@/lib/db";
+import { parseVoiceMarkup, type ParsedSegment } from "@/lib/elevenlabs";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
@@ -122,6 +124,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [showVoicePicker, setShowVoicePicker] = useState(false);
 
+  // Multi-voice: characters + current speaker indicator
+  const [storyCharacters, setStoryCharacters] = useState<StoryCharacterRow[]>([]);
+  const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(Date.now());
@@ -194,6 +200,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       .catch(() => {});
   }, []);
 
+  // Load story characters for multi-voice
+  useEffect(() => {
+    if (isGenerated || !storyId) return;
+    getStoryCharacters(storyId).then(setStoryCharacters).catch(() => {});
+  }, [storyId, isGenerated]);
+
   // Load rating, reviews, and favorite status
   useEffect(() => {
     if (isGenerated || !storyId) return;
@@ -217,6 +229,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const currentText = isGenerated
     ? generatedStory?.pages[currentPage]?.text || ""
     : pages[currentPage]?.content || "";
+
+  // Strip voice markup for display — show clean text
+  const displayText = currentText
+    .replace(/\[(narrator|character:[^\]]*)\]/g, "")
+    .replace(/\[\/(narrator|character)\]/g, "")
+    .trim();
 
   // Get illustration URL for the current page
   const currentIllustration = isGenerated
@@ -355,14 +373,71 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     }
 
     setIsTTSLoading(true);
+    setCurrentSpeaker(null);
     try {
-      const blob = await ttsApi(
-        elevenVoiceId,
-        currentText,
-        settings.elevenLabsApiKey,
-        settings.elevenLabsModelId,
-        story?.locale || "vi"
-      );
+      // Check if content has voice markup
+      const hasMarkup = /\[(narrator|character:[^\]]+)\]/.test(currentText);
+      let blob: Blob;
+
+      if (hasMarkup && storyCharacters.length > 0) {
+        // Multi-voice: parse markup and generate segment by segment
+        const charVoiceMap: Record<string, { voiceId: string; voiceName?: string }> = {};
+        for (const c of storyCharacters) {
+          if (c.voice_id) {
+            charVoiceMap[c.name] = { voiceId: c.voice_id, voiceName: c.voice_name || c.name };
+          }
+        }
+
+        const segments = parseVoiceMarkup(
+          currentText,
+          charVoiceMap,
+          elevenVoiceId,
+          narratorVoiceName || "Narrator"
+        );
+
+        // Generate TTS per segment and concatenate
+        const audioBlobs: Blob[] = [];
+        for (const seg of segments) {
+          // Show which character is speaking
+          setCurrentSpeaker(seg.speaker === "narrator" ? null : seg.speaker);
+          const segBlob = await ttsApi(
+            seg.voiceId,
+            seg.text,
+            settings.elevenLabsApiKey,
+            settings.elevenLabsModelId,
+            story?.locale || "vi"
+          );
+          audioBlobs.push(segBlob);
+        }
+
+        // Merge audio blobs
+        if (audioBlobs.length === 1) {
+          blob = audioBlobs[0];
+        } else {
+          const parts: ArrayBuffer[] = [];
+          for (const b of audioBlobs) {
+            parts.push(await b.arrayBuffer());
+          }
+          const totalLength = parts.reduce((sum, p) => sum + p.byteLength, 0);
+          const combined = new Uint8Array(totalLength);
+          let offset = 0;
+          for (const part of parts) {
+            combined.set(new Uint8Array(part), offset);
+            offset += part.byteLength;
+          }
+          blob = new Blob([combined], { type: "audio/mpeg" });
+        }
+        setCurrentSpeaker(null);
+      } else {
+        // Single voice TTS
+        blob = await ttsApi(
+          elevenVoiceId,
+          currentText,
+          settings.elevenLabsApiKey,
+          settings.elevenLabsModelId,
+          story?.locale || "vi"
+        );
+      }
 
       const url = URL.createObjectURL(blob);
       if (audioRef.current) {
@@ -661,12 +736,27 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           </span>
         )}
 
+        {/* Current speaker indicator */}
+        {currentSpeaker && (
+          <div className="flex items-center gap-1.5 mb-1.5">
+            {(() => {
+              const char = storyCharacters.find((c) => c.name === currentSpeaker);
+              return (
+                <>
+                  <span className="text-sm">{char?.emoji || "💬"}</span>
+                  <span className="text-[11px] font-bold text-white/60">{currentSpeaker}</span>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
         {/* Text Preview */}
         <div
           key={`txt-${currentPage}`}
           className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
         >
-          {currentText ? `\u201C${currentText}\u201D` : "..."}
+          {displayText ? `\u201C${displayText}\u201D` : "..."}
         </div>
 
         {/* Seek Bar */}

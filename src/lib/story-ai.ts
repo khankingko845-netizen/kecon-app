@@ -1,7 +1,15 @@
+export interface GeneratedCharacter {
+  name: string;
+  description: string;
+  personality: string;
+  emoji?: string;
+}
+
 export interface GeneratedStory {
   title: string;
   pages: StoryPage[];
   summary: string;
+  characters?: GeneratedCharacter[];
 }
 
 export interface StoryPage {
@@ -20,6 +28,19 @@ interface StoryParams {
 const SYSTEM_PROMPT = `Bạn là một tác giả truyện thiếu nhi chuyên nghiệp. 
 Viết truyện bằng ngôn ngữ phù hợp với độ tuổi của bé, dùng câu đơn giản, từ vựng dễ hiểu.
 Truyện phải có bài học đạo đức, nhân vật dễ thương, và kết thúc có hậu.
+
+QUAN TRỌNG — Voice Markup:
+- Dùng [narrator]...[/narrator] cho lời kể chuyện
+- Dùng [character:Tên Nhân Vật]...[/character] cho lời thoại của nhân vật
+- Mỗi nhân vật có giọng riêng, giúp bé phân biệt ai đang nói
+- Luôn bao bọc TOÀN BỘ text trong markup tags
+
+Ví dụ:
+[narrator]Ngày xưa, trong khu rừng xanh có một chú Sóc nhỏ rất tinh nghịch.[/narrator]
+[character:Sóc Nhỏ]Hôm nay mình sẽ đi tìm quả hạch ngon nhất![/character]
+[narrator]Sóc Nhỏ gặp bạn Thỏ trên đường đi.[/narrator]
+[character:Thỏ Trắng]Chào cậu! Cậu đi đâu sớm thế?[/character]
+
 Trả về JSON hợp lệ theo đúng format yêu cầu, KHÔNG thêm markdown hay text ngoài JSON.`;
 
 function buildUserPrompt(params: StoryParams): string {
@@ -32,19 +53,34 @@ function buildUserPrompt(params: StoryParams): string {
     tuviet: "Truyện sáng tạo tự do",
   };
 
+  const langMap: Record<string, string> = {
+    vi: "Tiếng Việt",
+    en: "English",
+    ja: "日本語 (Japanese)",
+  };
+
   return `Viết một câu chuyện cho bé ${params.childName}, ${params.age} tuổi.
 Chủ đề: ${themeMap[params.theme] || params.theme}
-Ngôn ngữ: ${params.language === "vi" ? "Tiếng Việt" : "English"}
+Ngôn ngữ: ${langMap[params.language] || params.language}
 ${params.extraPrompt ? `Yêu cầu thêm: ${params.extraPrompt}` : ""}
 
 Trả về JSON với format sau (8-12 trang):
 {
   "title": "Tên truyện",
   "summary": "Tóm tắt ngắn 1-2 câu",
+  "characters": [
+    { "name": "Sóc Nhỏ", "description": "Chú sóc tinh nghịch", "personality": "vui tươi, năng động", "emoji": "🐿️" }
+  ],
   "pages": [
-    { "text": "Nội dung trang (2-4 câu phù hợp tuổi)", "sceneDescription": "Mô tả cảnh ngắn gọn cho minh họa" }
+    { "text": "[narrator]Lời kể...[/narrator]\\n[character:Sóc Nhỏ]Lời thoại...[/character]", "sceneDescription": "Mô tả cảnh ngắn gọn cho minh họa" }
   ]
-}`;
+}
+
+Yêu cầu:
+- Phải dùng voice markup [narrator]...[/narrator] và [character:Tên]...[/character] cho TOÀN BỘ text
+- Liệt kê TẤT CẢ nhân vật trong mảng "characters" (2-4 nhân vật)
+- Mỗi nhân vật cần emoji phù hợp
+- Lời kể bao bọc trong [narrator], lời thoại trong [character:Tên]`;
 }
 
 // Works with OpenAI and any OpenAI-compatible endpoint (OpenRouter, Groq,
