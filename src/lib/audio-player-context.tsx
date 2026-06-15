@@ -28,6 +28,8 @@ interface AudioPlayerContextType extends AudioPlayerState {
   seekTo: (pct: number) => void;
   nextPage: () => void;
   prevPage: () => void;
+  /** Take over an existing Audio element (e.g. from StoryPlayer leaving) */
+  adoptAudio: (audio: HTMLAudioElement, track: AudioTrack) => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType>({
@@ -43,7 +45,34 @@ const AudioPlayerContext = createContext<AudioPlayerContextType>({
   seekTo: () => {},
   nextPage: () => {},
   prevPage: () => {},
+  adoptAudio: () => {},
 });
+
+/** Update MediaSession metadata + action handlers for lock screen / background control */
+function updateMediaSession(track: AudioTrack | null, handlers: {
+  onPlay?: () => void;
+  onPause?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+  onStop?: () => void;
+}) {
+  if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  if (!track) {
+    navigator.mediaSession.metadata = null;
+    navigator.mediaSession.playbackState = "none";
+    return;
+  }
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.storyTitle,
+    artist: `Trang ${track.pageNumber}/${track.totalPages}`,
+    album: "KểCon",
+  });
+  navigator.mediaSession.setActionHandler("play", handlers.onPlay || null);
+  navigator.mediaSession.setActionHandler("pause", handlers.onPause || null);
+  navigator.mediaSession.setActionHandler("nexttrack", handlers.onNext || null);
+  navigator.mediaSession.setActionHandler("previoustrack", handlers.onPrev || null);
+  navigator.mediaSession.setActionHandler("stop", handlers.onStop || null);
+}
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -65,16 +94,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  const play = useCallback((track: AudioTrack) => {
-    // Stop existing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    const audio = new Audio(track.audioUrl);
-    audioRef.current = audio;
-
+  const wireAudioEvents = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
     audio.onloadedmetadata = () => {
       setState((s) => ({ ...s, duration: audio.duration }));
     };
@@ -90,7 +110,6 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     };
 
     audio.onended = () => {
-      // Try next page
       setState((prev) => {
         const t = prev.currentTrack;
         if (!t?.allPages) {
@@ -99,7 +118,6 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         const nextIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber) + 1;
         if (nextIdx < t.allPages.length) {
           const nextPage = t.allPages[nextIdx];
-          // Schedule next page play
           setTimeout(() => {
             play({
               ...t,
@@ -112,6 +130,18 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         return { ...prev, isPlaying: false, progress: 100 };
       });
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const play = useCallback((track: AudioTrack) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const audio = new Audio(track.audioUrl);
+    audioRef.current = audio;
+    wireAudioEvents(audio, track);
 
     audio.play().catch(() => {});
     setState({
@@ -121,7 +151,25 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       currentTime: 0,
       duration: 0,
     });
-  }, []);
+  }, [wireAudioEvents]);
+
+  /** Adopt an already-playing Audio element from StoryPlayer so it keeps playing in MiniPlayer */
+  const adoptAudio = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
+    if (audioRef.current && audioRef.current !== audio) {
+      audioRef.current.pause();
+    }
+    audioRef.current = audio;
+    wireAudioEvents(audio, track);
+
+    const isCurrentlyPlaying = !audio.paused && !audio.ended;
+    setState({
+      currentTrack: track,
+      isPlaying: isCurrentlyPlaying,
+      progress: audio.duration ? (audio.currentTime / audio.duration) * 100 : 0,
+      currentTime: audio.currentTime,
+      duration: audio.duration || 0,
+    });
+  }, [wireAudioEvents]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -145,6 +193,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       currentTime: 0,
       duration: 0,
     });
+    updateMediaSession(null, {});
   }, []);
 
   const seekTo = useCallback((pct: number) => {
@@ -181,6 +230,20 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     });
   }, [play]);
 
+  // Update MediaSession whenever track or playing state changes
+  useEffect(() => {
+    updateMediaSession(state.currentTrack, {
+      onPlay: resume,
+      onPause: pause,
+      onNext: nextPage,
+      onPrev: prevPage,
+      onStop: stop,
+    });
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = state.isPlaying ? "playing" : "paused";
+    }
+  }, [state.currentTrack, state.isPlaying, resume, pause, nextPage, prevPage, stop]);
+
   return (
     <AudioPlayerContext.Provider
       value={{
@@ -192,6 +255,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         seekTo,
         nextPage,
         prevPage,
+        adoptAudio,
       }}
     >
       {children}

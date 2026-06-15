@@ -11,8 +11,9 @@ import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
+import { useAudioPlayer } from "@/lib/audio-player-context";
 import { ttsApi } from "@/lib/api-client";
-import { getStoryCharacters, type StoryCharacterRow } from "@/lib/db";
+import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
 import { parseVoiceMarkup, type ParsedSegment } from "@/lib/elevenlabs";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import SceneEffects from "@/components/ui/SceneEffects";
@@ -107,6 +108,7 @@ function ambientForScene(text: string, pageAmbient?: string | null): AmbientType
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
   const { settings, hasElevenLabs } = useSettings();
   const { voiceProfiles } = useData();
+  const globalPlayer = useAudioPlayer();
   const isGenerated = storyId === "__generated__";
 
   const [generatedStory] = useState<GeneratedStory | null>(() => {
@@ -279,7 +281,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     : pages[currentPage]?.illustration_url;
 
   // Resolve which ElevenLabs voice to use for TTS.
-  // Priority: 1) user-selected voice  2) story narrator_voice_id  3) story voice profile  4) first default for locale  5) fallback
+  // Priority: 1) user-selected  2) remembered (last used for this story)  3) family cloned voices  4) narrator  5) defaults  6) fallback
   const storyVoice = story?.voice_id
     ? voiceProfiles.find((v) => v.id === story.voice_id)
     : voiceProfiles.find((v) => v.elevenlabs_voice_id);
@@ -287,11 +289,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const storyLocale = story?.locale || "vi";
   const narratorVoiceId = story?.narrator_voice_id ?? null;
   const narratorVoiceName = story?.narrator_voice_name ?? null;
+  const rememberedVoiceId = story?.last_voice_id ?? null;
+  const rememberedVoiceName = story?.last_voice_name ?? null;
   const defaultsForLocale = defaultVoices.filter((v) => v.language === storyLocale);
   const allDefaults = defaultVoices.length > 0 ? defaultVoices : [];
+  // First family cloned voice (prioritized over system defaults)
+  const firstClonedVoice = voiceProfiles.find((v) => v.elevenlabs_voice_id);
 
   // Determine active voice
   const resolvedVoiceId = selectedVoiceId
+    || rememberedVoiceId
+    || firstClonedVoice?.elevenlabs_voice_id
     || narratorVoiceId
     || storyVoice?.elevenlabs_voice_id
     || defaultsForLocale[0]?.voice_id
@@ -299,10 +307,28 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     || FALLBACK_VOICE_ID;
   const elevenVoiceId = resolvedVoiceId;
 
+  // Save voice choice to story when user manually picks
+  const handleVoiceSelect = useCallback((voiceId: string, voiceName: string) => {
+    setSelectedVoiceId(voiceId);
+    setShowVoicePicker(false);
+    // Persist to DB
+    if (storyId && !isGenerated) {
+      updateStory(storyId, {
+        last_voice_id: voiceId,
+        last_voice_name: voiceName,
+      }).catch(() => {});
+    }
+  }, [storyId, isGenerated]);
+
   // Label for display
   const selectedDefault = defaultVoices.find((v) => v.voice_id === resolvedVoiceId);
+  const selectedClone = voiceProfiles.find((v) => v.elevenlabs_voice_id === resolvedVoiceId);
   const voiceLabel = selectedVoiceId
-    ? (selectedDefault?.name || "Giọng đã chọn")
+    ? (selectedClone?.name || selectedDefault?.name || "Giọng đã chọn")
+    : rememberedVoiceId
+    ? (rememberedVoiceName || "Giọng đã dùng")
+    : selectedClone?.name
+    ? `🎙️ ${selectedClone.name}`
     : narratorVoiceId
     ? (narratorVoiceName || "Narrator")
     : storyVoice?.name
@@ -665,7 +691,23 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       <div className="relative z-10 flex justify-between items-center px-5 pt-14 pb-2">
         <button
           onClick={() => {
-            audioRef.current?.pause();
+            // Hand off playing audio to MiniPlayer for background playback
+            if (audioRef.current && !audioRef.current.paused && story) {
+              const allPageAudios = pages
+                .filter((p) => p.audio_url)
+                .map((p) => ({ pageNumber: p.page_number, audioUrl: p.audio_url! }));
+              globalPlayer.adoptAudio(audioRef.current, {
+                storyId: story.id,
+                storyTitle: story.title,
+                pageNumber: currentPage + 1,
+                totalPages,
+                audioUrl: audioRef.current.src,
+                allPages: allPageAudios.length > 0 ? allPageAudios : undefined,
+              });
+              audioRef.current = null; // Don't pause — MiniPlayer owns it now
+            } else {
+              audioRef.current?.pause();
+            }
             onBack();
           }}
           className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
@@ -773,7 +815,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     {voiceProfiles.filter((v) => v.elevenlabs_voice_id).map((v) => (
                       <button
                         key={v.id}
-                        onClick={() => { setSelectedVoiceId(v.elevenlabs_voice_id); setShowVoicePicker(false); }}
+                        onClick={() => handleVoiceSelect(v.elevenlabs_voice_id!, v.name)}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
                           resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}
@@ -792,7 +834,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     {defaultsForLocale.map((v) => (
                       <button
                         key={v.id}
-                        onClick={() => { setSelectedVoiceId(v.voice_id); setShowVoicePicker(false); }}
+                        onClick={() => handleVoiceSelect(v.voice_id, v.name)}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
                           resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}
@@ -809,7 +851,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     {defaultVoices.filter((v) => v.language !== storyLocale).map((v) => (
                       <button
                         key={v.id}
-                        onClick={() => { setSelectedVoiceId(v.voice_id); setShowVoicePicker(false); }}
+                        onClick={() => handleVoiceSelect(v.voice_id, v.name)}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
                           resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}

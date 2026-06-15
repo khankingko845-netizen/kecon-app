@@ -50,6 +50,8 @@ export interface StoryRow {
   locale: string;
   narrator_voice_id: string | null;
   narrator_voice_name: string | null;
+  last_voice_id: string | null;
+  last_voice_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -318,6 +320,8 @@ export async function updateStory(
       | "status"
       | "moral_lesson"
       | "cover_image_url"
+      | "last_voice_id"
+      | "last_voice_name"
     >
   >
 ): Promise<void> {
