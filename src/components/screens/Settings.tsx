@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   ChevronRight, Key, Mic, BookOpen, Globe, Bell,
   Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink,
-  Download, Trash2, Crown,
+  Download, Trash2, Crown, LayoutDashboard,
 } from "lucide-react";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
@@ -337,7 +337,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 
 export default function Settings({ onNavigate }: SettingsProps) {
   const { settings, isConfigured } = useSettings();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { refreshAll } = useData();
   const { locale } = useI18n();
   const [tab, setTab] = useState<SettingsTab>("main");
@@ -521,6 +521,20 @@ export default function Settings({ onNavigate }: SettingsProps) {
           onClick={handleDelete}
         />
       </div>
+
+      {isAdmin && (
+        <>
+          <SectionHeader title="QUẢN TRỊ" />
+          <div className="bg-white divide-y divide-gray-100">
+            <SettingsRow
+              icon={LayoutDashboard}
+              label="Admin Dashboard"
+              color="#7C3AED"
+              onClick={() => onNavigate("admin")}
+            />
+          </div>
+        </>
+      )}
 
       <SectionHeader title="KHÁC" />
       <div className="bg-white divide-y divide-gray-100">
