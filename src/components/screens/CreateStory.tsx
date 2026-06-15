@@ -463,6 +463,19 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
             Powered by {settings.storyProvider === "openai" ? "OpenAI" : settings.storyProvider === "gemini" ? "Google Gemini" : settings.storyProvider === "anthropic" ? "Anthropic" : "Custom"} · {settings.storyModel}
           </p>
         )}
+
+        {/* Scan from book */}
+        <div className="mt-5 pt-4 border-t border-gray-100">
+          <button
+            onClick={() => onNavigate("scan-book")}
+            className="w-full py-3.5 rounded-[14px] bg-white border-2 border-dashed border-accent/30 text-accent font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          >
+            📸 Chụp Truyện Từ Sách
+          </button>
+          <p className="text-[11px] text-txt-secondary text-center mt-1.5">
+            Chụp ảnh trang sách → AI tự động nhận dạng nội dung
+          </p>
+        </div>
       </div>
     </div>
   );

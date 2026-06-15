@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Search, Moon, Play, User, UserRound, Plus, Sparkles,
-  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen,
+  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -156,6 +156,15 @@ export default function Home({ onNavigate }: HomeProps) {
             <Heart size={17} />
           </div>
           <span className="text-[13px] font-bold text-txt">Yêu thích</span>
+        </button>
+        <button
+          onClick={() => onNavigate("scan-book")}
+          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <Camera size={17} />
+          </div>
+          <span className="text-[13px] font-bold text-txt">Chụp sách</span>
         </button>
         <button
           onClick={() => onNavigate("daily-challenges")}
