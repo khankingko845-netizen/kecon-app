@@ -411,23 +411,23 @@ Tất cả external API calls đi qua Next.js API Routes để giữ key an toà
 
 ### Ngắn hạn (1-3 tháng)
 
-- [ ] **Push notifications** — nhắc bé nghe truyện trước giờ ngủ, truyện mới từ admin
-- [ ] **Multi-language** — hỗ trợ tiếng Anh, tiếng Nhật (cho gia đình Việt kiều)
-- [ ] **Chia sẻ truyện** — chia sẻ truyện giữa các gia đình, link public
-- [ ] **Rating & review** — bố mẹ đánh giá truyện, comment
-- [ ] **AI illustration thật** — DALL·E 3 / Midjourney API tạo ảnh minh hoạ cho từng trang
-- [ ] **Subscription model** — gói miễn phí (5 truyện/tháng) + premium (không giới hạn)
-- [ ] **Batch voice generation** — pre-generate TTS cho toàn bộ truyện, không cần chờ khi đọc
+- [x] **Push notifications** — nhắc bé nghe truyện trước giờ ngủ, truyện mới từ admin ✅
+- [x] **Multi-language** — hỗ trợ tiếng Anh, tiếng Nhật (cho gia đình Việt kiều) ✅
+- [x] **Chia sẻ truyện** — chia sẻ truyện giữa các gia đình, link public ✅
+- [x] **Rating & review** — bố mẹ đánh giá truyện, comment ✅
+- [x] **AI illustration thật** — DALL·E 3 tạo ảnh minh hoạ cho từng trang ✅
+- [x] **Subscription model** — gói miễn phí (5 truyện/tháng) + premium (không giới hạn) ✅
+- [x] **Batch voice generation** — pre-generate TTS cho toàn bộ truyện, không cần chờ khi đọc ✅
 
 ### Trung hạn (3-6 tháng)
 
 - [ ] **Mobile app** — wrap React thành native app bằng Capacitor / React Native
-- [ ] **Offline mode nâng cao** — download truyện + audio để đọc không cần Internet
+- [x] **Offline mode nâng cao** — download truyện + audio để đọc không cần Internet ✅
 - [ ] **Collaborative stories** — nhiều user cùng viết 1 truyện
 - [ ] **Story marketplace** — admin/creator đăng truyện, user mua bằng xu
-- [ ] **Gamification** — huy hiệu, streak nghe truyện hàng ngày, thử thách đọc
-- [ ] **Parental controls nâng cao** — giới hạn thời gian, chọn chủ đề cho phép
-- [ ] **Analytics cho phụ huynh** — dashboard theo dõi thói quen nghe của bé
+- [x] **Gamification** — huy hiệu (12), streak, XP/Level, thử thách đọc ✅
+- [x] **Parental controls nâng cao** — PIN, giới hạn thời gian, giờ ngủ, chặn thể loại, độ tuổi ✅
+- [x] **Analytics cho phụ huynh** — dashboard theo dõi thói quen nghe của bé ✅
 - [ ] **AI voice enhancement** — cải thiện chất lượng giọng clone (noise reduction, emotion tuning)
 
 ### Dài hạn (6-12 tháng)
