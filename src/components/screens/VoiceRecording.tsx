@@ -22,6 +22,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [voiceName, setVoiceName] = useState("");
   const [gender, setGender] = useState<"male" | "female">("female");
+  const [voiceLang, setVoiceLang] = useState<string>("vi");
   const [isCloning, setIsCloning] = useState(false);
   const [cloneResult, setCloneResult] = useState<{ voice_id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +110,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
       const result = await cloneVoiceApi(
         voiceName.trim(),
         audioBlob,
-        settings.elevenLabsApiKey
+        settings.elevenLabsApiKey,
+        voiceLang
       );
 
       // Persist sample recording + voice profile to Supabase.
@@ -268,6 +270,31 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
                   {gOpt === "female" ? "Giọng Nữ" : "Giọng Nam"}
                 </button>
               ))}
+            </div>
+            {/* Language selector for voice clone */}
+            <div>
+              <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+                Ngôn ngữ giọng nói
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { id: "vi", label: "🇻🇳 Tiếng Việt" },
+                  { id: "en", label: "🇺🇸 English" },
+                  { id: "ja", label: "🇯🇵 日本語" },
+                ] as const).map((lang) => (
+                  <button
+                    key={lang.id}
+                    onClick={() => setVoiceLang(lang.id)}
+                    className={`py-2.5 rounded-xl text-[12px] font-bold border-[1.5px] transition-colors ${
+                      voiceLang === lang.id
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-gray-200 bg-surface text-txt-secondary"
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               onClick={handleClone}

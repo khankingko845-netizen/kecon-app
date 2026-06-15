@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveApiKey } from "@/lib/server-settings";
 
 // Generates an illustration for a story page using OpenAI Images (DALL·E 3).
-// BYO-key: uses the user's OpenAI key, falling back to the server env var.
+// Key resolution: user BYO → admin "dalle_api_key" → admin "openai_api_key" → env.
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -18,10 +19,14 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Thiếu mô tả cảnh" }, { status: 400 });
   }
 
-  const apiKey = userKey || process.env.OPENAI_API_KEY;
+  // Try DALL-E specific key first, then fall back to OpenAI key
+  let apiKey = await resolveApiKey("dalle", userKey);
+  if (!apiKey) {
+    apiKey = await resolveApiKey("openai", userKey);
+  }
   if (!apiKey) {
     return Response.json(
-      { error: "Chưa cấu hình OpenAI API key để tạo minh hoạ" },
+      { error: "Chưa cấu hình OpenAI API key để tạo minh hoạ. Admin cần thêm key trong Cài Đặt Hệ Thống." },
       { status: 400 }
     );
   }

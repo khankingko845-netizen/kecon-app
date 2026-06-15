@@ -21,15 +21,48 @@ export async function listVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
   return data.voices;
 }
 
+/**
+ * Clone a voice with proper language labeling.
+ * The `language` param tells ElevenLabs which language the voice speaks
+ * so TTS output matches the source recording language.
+ */
 export async function cloneVoice(
   apiKey: string,
   name: string,
-  audioBlob: Blob
+  audioBlob: Blob,
+  language: string = "vi"
 ): Promise<CloneVoiceResult> {
+  // Map short codes to ElevenLabs language labels
+  const langMap: Record<string, string> = {
+    vi: "Vietnamese",
+    en: "English",
+    ja: "Japanese",
+    ko: "Korean",
+    zh: "Chinese",
+    fr: "French",
+    de: "German",
+    es: "Spanish",
+    th: "Thai",
+  };
+
+  const languageLabel = langMap[language] || language;
+
   const form = new FormData();
   form.append("name", name);
   form.append("files", audioBlob, "recording.wav");
-  form.append("description", `KểCon voice clone: ${name}`);
+  form.append("description", `KểCon voice clone: ${name} (${languageLabel})`);
+  // Labels help ElevenLabs understand the voice characteristics
+  form.append(
+    "labels",
+    JSON.stringify({
+      language: languageLabel,
+      accent: languageLabel,
+      use_case: "storytelling",
+      age: "adult",
+    })
+  );
+  // Remove the default accent detection — force the language
+  form.append("remove_background_noise", "true");
 
   const res = await fetch(`${ELEVENLABS_BASE}/voices/add`, {
     method: "POST",

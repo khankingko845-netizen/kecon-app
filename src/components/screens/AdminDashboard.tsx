@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   BookOpen, Mic, Play, Heart, Loader2, Lightbulb, Globe,
   FileText, CheckCircle2, AlertTriangle, Sparkles,
-  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X,
+  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X, Settings,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
@@ -133,11 +133,12 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
             </div>
           </button>
 
-          <div className="grid grid-cols-3 gap-2.5 mb-6">
+          <div className="grid grid-cols-4 gap-2 mb-6">
             {[
-              { icon: LayoutList, label: "Quản lý truyện", screen: "admin-stories" as Screen, color: "text-blue-600 bg-blue-50" },
-              { icon: Users, label: "Người dùng", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
+              { icon: LayoutList, label: "Truyện", screen: "admin-stories" as Screen, color: "text-blue-600 bg-blue-50" },
+              { icon: Users, label: "Users", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
               { icon: BarChart3, label: "Thống kê", screen: "admin-analytics" as Screen, color: "text-emerald-600 bg-emerald-50" },
+              { icon: Settings, label: "Cài Đặt", screen: "admin-settings" as Screen, color: "text-orange-600 bg-orange-50" },
             ].map((m) => (
               <button
                 key={m.label}

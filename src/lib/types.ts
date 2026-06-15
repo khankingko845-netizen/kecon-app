@@ -18,6 +18,7 @@ export type Screen =
   | "admin-stories"
   | "admin-users"
   | "admin-analytics"
+  | "admin-settings"
   | "favorites"
   | "subscription";
 

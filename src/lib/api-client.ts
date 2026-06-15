@@ -14,11 +14,13 @@ export interface CloneVoiceResult {
 export async function cloneVoiceApi(
   name: string,
   audio: Blob,
-  apiKey?: string
+  apiKey?: string,
+  language: string = "vi"
 ): Promise<CloneVoiceResult> {
   const form = new FormData();
   form.append("name", name);
   form.append("audio", audio, "recording.webm");
+  form.append("language", language);
   if (apiKey) form.append("apiKey", apiKey);
 
   const res = await fetch("/api/voice/clone", { method: "POST", body: form });

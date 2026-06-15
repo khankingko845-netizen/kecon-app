@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
+import { resolveApiKey, resolveCustomBaseUrl } from "@/lib/server-settings";
 
 const CATEGORY_MAP: Record<string, string> = {
   cotich: "fairy_tale",
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     extraPrompt,
     voiceId,
     apiKey: userKey,
-    baseUrl,
+    baseUrl: userBaseUrl,
     persist = true,
   } = body;
 
@@ -40,19 +41,19 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // BYO-key: prefer the user's own key (their account), fall back to server env.
-  const envKeyMap: Record<string, string | undefined> = {
-    openai: process.env.OPENAI_API_KEY,
-    gemini: process.env.GEMINI_API_KEY,
-    anthropic: process.env.ANTHROPIC_API_KEY,
-  };
-  const apiKey = userKey || envKeyMap[provider];
+  // Resolve API key: user BYO → admin DB → env variable
+  const apiKey = await resolveApiKey(provider, userKey);
   if (!apiKey) {
     return Response.json(
-      { error: `Chưa cấu hình API key cho ${provider}` },
+      { error: `Chưa cấu hình API key cho ${provider}. Admin cần thêm key trong Cài Đặt Hệ Thống.` },
       { status: 400 }
     );
   }
+
+  // Resolve base URL for custom provider
+  const baseUrl = provider === "custom"
+    ? await resolveCustomBaseUrl(userBaseUrl)
+    : undefined;
 
   if (provider === "custom" && !baseUrl) {
     return Response.json(

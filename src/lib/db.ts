@@ -1377,6 +1377,67 @@ export async function updateReadingStreak(listenMinutes: number): Promise<Readin
 }
 
 // ============================================================
+// App Settings (admin-managed system config)
+// ============================================================
+export interface AppSettingRow {
+  key: string;
+  value: string;
+  label: string | null;
+  category: string;
+  is_secret: boolean;
+  updated_at: string;
+}
+
+/** Fetch all app settings (admin sees secrets, regular users see non-secret only via RLS). */
+export async function getAppSettings(): Promise<AppSettingRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("*")
+    .order("category", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Fetch a single setting by key. */
+export async function getAppSetting(key: string): Promise<string> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", key)
+    .single();
+  if (error) return "";
+  return data?.value ?? "";
+}
+
+/** Update a setting (admin only). */
+export async function updateAppSetting(key: string, value: string): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("app_settings")
+    .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
+    .eq("key", key);
+  if (error) throw error;
+}
+
+/** Bulk update settings (admin only). */
+export async function updateAppSettings(settings: Record<string, string>): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const promises = Object.entries(settings).map(([key, value]) =>
+    supabase
+      .from("app_settings")
+      .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
+      .eq("key", key)
+  );
+  const results = await Promise.all(promises);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
+// ============================================================
 // Batch TTS Generation
 // ============================================================
 export async function getPagesMissingAudio(storyId: string): Promise<StoryPageRow[]> {

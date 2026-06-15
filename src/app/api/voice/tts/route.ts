@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { textToSpeech } from "@/lib/elevenlabs";
+import { resolveApiKey, resolveElevenLabsModel } from "@/lib/server-settings";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -13,12 +14,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { voiceId, text, modelId, apiKey: userKey } = body;
+  const { voiceId, text, modelId: userModelId, apiKey: userKey } = body;
 
-  const apiKey = userKey || process.env.ELEVENLABS_API_KEY;
+  // Resolve API key: user BYO → admin DB → env variable
+  const apiKey = await resolveApiKey("elevenlabs", userKey);
   if (!apiKey) {
     return Response.json(
-      { error: "Chưa cấu hình ElevenLabs API key" },
+      { error: "Chưa cấu hình ElevenLabs API key. Admin cần thêm key trong Cài Đặt Hệ Thống." },
       { status: 400 }
     );
   }
@@ -29,6 +31,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  // Resolve model: user preference → admin DB → default
+  const modelId = await resolveElevenLabsModel(userModelId);
 
   try {
     const audioBlob = await textToSpeech(apiKey, voiceId, text, modelId);

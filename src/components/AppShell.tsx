@@ -25,6 +25,7 @@ import AdminDashboard from "@/components/screens/AdminDashboard";
 import AdminStories from "@/components/screens/AdminStories";
 import AdminUsers from "@/components/screens/AdminUsers";
 import AdminAnalytics from "@/components/screens/AdminAnalytics";
+import AdminSettings from "@/components/screens/AdminSettings";
 import Favorites from "@/components/screens/Favorites";
 import Subscription from "@/components/screens/Subscription";
 import ComplianceLayer from "@/components/ComplianceLayer";
@@ -56,6 +57,7 @@ const ADMIN_SCREENS: Screen[] = [
   "admin-stories",
   "admin-users",
   "admin-analytics",
+  "admin-settings",
 ];
 
 function AppContent() {
@@ -116,6 +118,7 @@ function AppContent() {
     current.screen !== "admin-stories" &&
     current.screen !== "admin-users" &&
     current.screen !== "admin-analytics" &&
+    current.screen !== "admin-settings" &&
     current.screen !== "legacy";
 
   if (loading) {
@@ -193,6 +196,9 @@ function AppContent() {
         )}
         {current.screen === "admin-analytics" && (
           <AdminAnalytics onBack={goBack} />
+        )}
+        {current.screen === "admin-settings" && (
+          <AdminSettings onBack={goBack} />
         )}
         {current.screen === "favorites" && (
           <Favorites onBack={goBack} onNavigate={navigate} />
