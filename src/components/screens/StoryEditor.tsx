@@ -57,7 +57,7 @@ interface StoryEditorProps {
 
 export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditorProps) {
  const { settings, hasElevenLabs } = useSettings();
- const { refreshStories } = useData();
+ const { refreshStories, voiceProfiles } = useData();
  const [story, setStory] = useState<StoryRow | null>(null);
  const [title, setTitle] = useState("");
  const [category, setCategory] = useState("custom");
@@ -546,28 +546,44 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  <Mic size={12} className="text-accent" /> Giọng Người Kể (Narrator)
  </label>
  <select
- value={story?.narrator_voice_id || ""}
- onChange={(e) => {
- const v = defaultVoices.find((d) => d.voice_id === e.target.value);
- handleNarratorChange(e.target.value, v?.name || "");
- }}
- className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[12px] outline-none focus:border-accent"
+  value={story?.narrator_voice_id || ""}
+  onChange={(e) => {
+   const vp = voiceProfiles.find((p) => p.elevenlabs_voice_id === e.target.value);
+   const dv = defaultVoices.find((d) => d.voice_id === e.target.value);
+   handleNarratorChange(e.target.value, vp?.name || dv?.name || "");
+  }}
+  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[12px] outline-none focus:border-accent dark:bg-[#0A0A0F] dark:text-white"
  >
- <option value="">— Mặc định (theo ngôn ngữ) —</option>
- {defaultVoices
- .filter((v) => v.language === storyLocale)
- .map((v) => (
- <option key={v.id} value={v.voice_id}>
- ⭐ {v.name}
- </option>
- ))}
- {defaultVoices
- .filter((v) => v.language !== storyLocale)
- .map((v) => (
- <option key={v.id} value={v.voice_id}>
- {v.name} ({v.language})
- </option>
- ))}
+  <option value="">— Mặc định (theo ngôn ngữ) —</option>
+  {voiceProfiles.filter((p) => p.elevenlabs_voice_id && p.is_active).length > 0 && (
+   <optgroup label="🏠 Giọng gia đình">
+    {voiceProfiles
+     .filter((p) => p.elevenlabs_voice_id && p.is_active)
+     .map((p) => (
+      <option key={p.id} value={p.elevenlabs_voice_id!}>
+       🏠 {p.name} ({p.relation})
+      </option>
+     ))}
+   </optgroup>
+  )}
+  {defaultVoices.filter((v) => v.language === storyLocale).length > 0 && (
+   <optgroup label="⭐ Giọng mặc định">
+    {defaultVoices
+     .filter((v) => v.language === storyLocale)
+     .map((v) => (
+      <option key={v.id} value={v.voice_id}>
+       ⭐ {v.name}
+      </option>
+     ))}
+   </optgroup>
+  )}
+  {defaultVoices
+   .filter((v) => v.language !== storyLocale)
+   .map((v) => (
+    <option key={v.id} value={v.voice_id}>
+     {v.name} ({v.language})
+    </option>
+   ))}
  </select>
  </div>
 
@@ -583,19 +599,25 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  </div>
  <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
  <select
- value={c.voice_id || ""}
- onChange={(e) => {
- const v = defaultVoices.find((d) => d.voice_id === e.target.value);
- handleCharVoiceChange(c.id, e.target.value, v?.name || "");
- }}
- className="w-24 px-1.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-[10px] outline-none"
+  value={c.voice_id || ""}
+  onChange={(e) => {
+   const vp = voiceProfiles.find((p) => p.elevenlabs_voice_id === e.target.value);
+   const dv = defaultVoices.find((d) => d.voice_id === e.target.value);
+   handleCharVoiceChange(c.id, e.target.value, vp?.name || dv?.name || "");
+  }}
+  className="w-28 px-1.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-[10px] outline-none dark:bg-[#0A0A0F] dark:text-white"
  >
- <option value="">— Giọng —</option>
- {defaultVoices
- .filter((v) => v.language === storyLocale)
- .map((v) => (
- <option key={v.id} value={v.voice_id}>{v.name}</option>
- ))}
+  <option value="">— Giọng —</option>
+  {voiceProfiles
+   .filter((p) => p.elevenlabs_voice_id && p.is_active)
+   .map((p) => (
+    <option key={p.id} value={p.elevenlabs_voice_id!}>🏠 {p.name}</option>
+   ))}
+  {defaultVoices
+   .filter((v) => v.language === storyLocale)
+   .map((v) => (
+    <option key={v.id} value={v.voice_id}>⭐ {v.name}</option>
+   ))}
  </select>
  <button
  onClick={() => handleDeleteCharacter(c.id)}
