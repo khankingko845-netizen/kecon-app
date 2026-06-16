@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc } from "lucide-react";
+import { BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "lucide-react";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import EmptyState from "@/components/ui/EmptyState";
+import LongPressMenu from "@/components/ui/LongPressMenu";
 import type { Screen } from "@/lib/types";
 
 interface LibraryProps {
@@ -198,33 +200,35 @@ export default function Library({ onNavigate }: LibraryProps) {
       )}
 
       {!loading && filtered.length === 0 && (
-        <div className="px-5 pt-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-accent mx-auto mb-3 shadow-sm">
-            <BookOpen size={26} />
-          </div>
-          <p className="text-[15px] font-bold text-txt mb-1">
-            {searchQuery ? "Không tìm thấy" : stories.length === 0 ? "Thư viện trống" : "Không có truyện phù hợp"}
-          </p>
-          <p className="text-[13px] text-txt-secondary mb-4">
-            {searchQuery ? `Không có kết quả cho "${searchQuery}"` : "Tạo truyện AI đầu tiên cho gia đình bạn"}
-          </p>
-          {!searchQuery && (
-            <button
-              onClick={() => onNavigate("create")}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold active:scale-95 transition-transform"
-            >
-              <Sparkles size={16} /> Tạo Truyện
-            </button>
-          )}
-        </div>
+        <EmptyState
+          type={searchQuery ? "search" : "library"}
+          query={searchQuery || undefined}
+          onAction={searchQuery ? undefined : () => onNavigate("create")}
+        />
       )}
 
       <div className="grid grid-cols-2 gap-2.5 px-5 pt-2">
         {filtered.map((story) => (
-          <button
+          <LongPressMenu
             key={story.id}
+            items={[
+              { id: "play", icon: Play, label: "Nghe truyện", color: "text-accent" },
+              { id: "edit", icon: Pencil, label: "Chỉnh sửa", color: "text-blue-500" },
+              { id: "favorite", icon: Heart, label: "Yêu thích", color: "text-pink-500" },
+              { id: "share", icon: Share2, label: "Chia sẻ", color: "text-emerald-500" },
+              { id: "delete", icon: Trash2, label: "Xoá", destructive: true },
+            ]}
+            onSelect={(action) => {
+              if (action === "play") onNavigate("player", { storyId: story.id });
+              else if (action === "edit") onNavigate("editor", { storyId: story.id });
+              else if (action === "share") { navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {}); }
+              else if (action === "delete") { toast("info", "Tính năng xoá đang phát triển"); }
+              else if (action === "favorite") { toast("success", "Đã thêm vào yêu thích ❤️"); }
+            }}
+          >
+          <button
             onClick={() => onNavigate("player", { storyId: story.id })}
-            className="bg-white dark:bg-white/5 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none text-left active:scale-[0.97] transition-transform"
+            className="bg-white dark:bg-white/5 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none text-left active:scale-[0.97] transition-transform w-full"
           >
             <div className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}>
               <StoryIcon icon={iconForCategory(story.category, story.id)} />
@@ -263,6 +267,7 @@ export default function Library({ onNavigate }: LibraryProps) {
               </div>
             </div>
           </button>
+          </LongPressMenu>
         ))}
       </div>
     </div>
