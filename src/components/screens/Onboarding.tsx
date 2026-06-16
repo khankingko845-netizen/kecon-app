@@ -126,7 +126,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
       <div className="px-5 pt-14 flex justify-end relative z-10">
         <button
           onClick={onGetStarted}
-          className="text-[13px] text-white/70 font-semibold px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"
+          className="text-[13px] text-white/70 font-semibold px-3 py-1.5 rounded-full bg-white dark:bg-white/[0.04]/10 backdrop-blur-sm"
         >
           Bỏ qua
         </button>
@@ -144,7 +144,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
         }`}
       >
         {/* Icon container */}
-        <div className={`w-32 h-32 rounded-[36px] bg-gradient-to-br ${current.iconBg} flex items-center justify-center mb-8 shadow-2xl shadow-black/10 text-gray-800`}>
+        <div className={`w-32 h-32 rounded-[36px] bg-gradient-to-br ${current.iconBg} flex items-center justify-center mb-8 shadow-2xl shadow-black/10 text-gray-800 dark:text-white/80`}>
           <div className="animate-[scaleIn_0.5s_ease]">
             {current.icon}
           </div>
@@ -172,7 +172,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
               key={i}
               onClick={() => transition(i)}
               className={`h-2.5 rounded-full transition-all duration-300 ${
-                i === step ? "w-8 bg-white" : "w-2.5 bg-white/30"
+                i === step ? "w-8 bg-white dark:bg-white/[0.04]" : "w-2.5 bg-white dark:bg-white/[0.04]/30"
               }`}
             />
           ))}
@@ -183,13 +183,13 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
           <div className="space-y-2.5">
             <button
               onClick={onGetStarted}
-              className="w-full py-4 rounded-2xl bg-white text-gray-900 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
+              className="w-full py-4 rounded-2xl bg-white dark:bg-white/[0.04] text-gray-900 dark:text-white/90 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
             >
               <Sparkles size={18} /> Bắt Đầu Ngay
             </button>
             <button
               onClick={onLogin}
-              className="w-full py-4 rounded-2xl bg-white/15 backdrop-blur-sm text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform border border-white/20"
+              className="w-full py-4 rounded-2xl bg-white dark:bg-white/[0.04]/15 backdrop-blur-sm text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform border border-white/20"
             >
               Đã có tài khoản? Đăng nhập
             </button>
@@ -197,7 +197,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
         ) : (
           <button
             onClick={handleNext}
-            className="w-full py-4 rounded-2xl bg-white text-gray-900 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
+            className="w-full py-4 rounded-2xl bg-white dark:bg-white/[0.04] text-gray-900 dark:text-white/90 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
           >
             Tiếp tục <ChevronRight size={18} />
           </button>

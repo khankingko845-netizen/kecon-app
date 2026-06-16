@@ -65,11 +65,11 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
   const maxMinutes = Math.max(1, ...chartDays.map((d) => d.minutes));
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-[24px] font-black tracking-tight">Thống Kê Bé</h2>
@@ -83,7 +83,7 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
               key={p}
               onClick={() => setPeriod(p)}
               className={`flex-1 py-2 rounded-xl text-[12px] font-bold transition-all ${
-                period === p ? "bg-accent text-white" : "bg-white text-txt-secondary shadow-sm"
+                period === p ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50 shadow-sm"
               }`}
             >
               {p} ngày
@@ -99,44 +99,44 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock size={16} className="text-blue-500" />
-                  <span className="text-[11px] font-bold text-txt-secondary">Tổng thời gian</span>
+                  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50">Tổng thời gian</span>
                 </div>
                 <p className="text-[22px] font-black">{totalMinutes}</p>
-                <p className="text-[11px] text-txt-secondary">phút nghe</p>
+                <p className="text-[11px] text-txt-secondary dark:text-white/50">phút nghe</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <Headphones size={16} className="text-purple-500" />
-                  <span className="text-[11px] font-bold text-txt-secondary">Truyện đã nghe</span>
+                  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50">Truyện đã nghe</span>
                 </div>
                 <p className="text-[22px] font-black">{totalStories}</p>
-                <p className="text-[11px] text-txt-secondary">lượt nghe</p>
+                <p className="text-[11px] text-txt-secondary dark:text-white/50">lượt nghe</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp size={16} className="text-green-500" />
-                  <span className="text-[11px] font-bold text-txt-secondary">Trung bình / ngày</span>
+                  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50">Trung bình / ngày</span>
                 </div>
                 <p className="text-[22px] font-black">{avgMinutes}</p>
-                <p className="text-[11px] text-txt-secondary">phút / ngày</p>
+                <p className="text-[11px] text-txt-secondary dark:text-white/50">phút / ngày</p>
               </div>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <Flame size={16} className="text-orange-500" />
-                  <span className="text-[11px] font-bold text-txt-secondary">Streak hiện tại</span>
+                  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50">Streak hiện tại</span>
                 </div>
                 <p className="text-[22px] font-black">{streak.current}</p>
-                <p className="text-[11px] text-txt-secondary">ngày liên tục (kỷ lục: {streak.longest})</p>
+                <p className="text-[11px] text-txt-secondary dark:text-white/50">ngày liên tục (kỷ lục: {streak.longest})</p>
               </div>
             </div>
 
             {/* Activity Chart */}
-            <div className="bg-white rounded-2xl p-4 mb-5 shadow-sm">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Calendar size={16} className="text-txt-secondary" />
+                <Calendar size={16} className="text-txt-secondary dark:text-white/50" />
                 <p className="text-[13px] font-bold">Thời gian nghe ({period} ngày)</p>
               </div>
               <div className="flex items-end gap-1 h-32">
@@ -151,12 +151,12 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
                         )}
                         <div
                           className={`w-full rounded-t-md transition-all ${
-                            day.minutes > 0 ? "bg-accent" : "bg-gray-100"
+                            day.minutes > 0 ? "bg-accent" : "bg-gray-100 dark:bg-white/[0.06]"
                           }`}
                           style={{ height: `${height}%`, minHeight: 4 }}
                         />
                       </div>
-                      <span className="text-[8px] text-txt-secondary">{dayLabel}</span>
+                      <span className="text-[8px] text-txt-secondary dark:text-white/50">{dayLabel}</span>
                     </div>
                   );
                 })}
@@ -164,22 +164,22 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
             </div>
 
             {/* Summary */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen size={16} className="text-txt-secondary" />
+                <BookOpen size={16} className="text-txt-secondary dark:text-white/50" />
                 <p className="text-[13px] font-bold">Tổng quan</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-txt-secondary">Ngày hoạt động</span>
+                  <span className="text-txt-secondary dark:text-white/50">Ngày hoạt động</span>
                   <span className="font-bold">{activeDays}/{period} ngày</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-txt-secondary">Truyện đã tạo</span>
+                  <span className="text-txt-secondary dark:text-white/50">Truyện đã tạo</span>
                   <span className="font-bold">{totalCreated} truyện</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-txt-secondary">Streak dài nhất</span>
+                  <span className="text-txt-secondary dark:text-white/50">Streak dài nhất</span>
                   <span className="font-bold">{streak.longest} ngày</span>
                 </div>
               </div>

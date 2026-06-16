@@ -101,7 +101,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
       ].map((star, i) => (
         <div
           key={i}
-          className="absolute w-0.5 h-0.5 rounded-full bg-white/50"
+          className="absolute w-0.5 h-0.5 rounded-full bg-white dark:bg-white/[0.04]/50"
           style={{
             ...star,
             animation: `twinkle 3s ease-in-out infinite ${star.delay}`,
@@ -113,11 +113,11 @@ export default function Lullaby({ onBack }: LullabyProps) {
       <div className="w-full flex justify-between items-center px-5 pt-14 pb-2 z-10">
         <button
           onClick={onBack}
-          className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+          className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04]/5 flex items-center justify-center"
         >
           <ChevronLeft size={20} className="text-white/50" />
         </button>
-        <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/5 text-xs font-bold text-white/40">
+        <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white dark:bg-white/[0.04]/5 text-xs font-bold text-white/40">
           <Clock size={14} /> {remaining !== null ? fmt(remaining) : "Hẹn giờ"}
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                 active
                   ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-200"
-                  : "bg-white/[0.04] border border-white/[0.06] text-white/35"
+                  : "bg-white dark:bg-white/[0.04]/[0.04] border border-white/[0.06] text-white/35"
               }`}
             >
               <Icon size={14} /> {s.name}
@@ -175,7 +175,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
           max={100}
           value={voiceVol}
           onChange={(e) => setVoiceVol(Number(e.target.value))}
-          className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-indigo-400"
+          className="w-full h-1 bg-white dark:bg-white/[0.04]/[0.06] rounded-full appearance-none accent-indigo-400"
         />
       </div>
 
@@ -192,7 +192,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
           max={100}
           value={bgVol}
           onChange={(e) => setBgVol(Number(e.target.value))}
-          className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-indigo-400"
+          className="w-full h-1 bg-white dark:bg-white/[0.04]/[0.06] rounded-full appearance-none accent-indigo-400"
         />
       </div>
 
@@ -205,7 +205,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
             className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTimer === t
                 ? "bg-gradient-to-br from-indigo-500 to-violet-400 text-white shadow-lg shadow-indigo-500/35"
-                : "bg-white/[0.04] text-white/30"
+                : "bg-white dark:bg-white/[0.04]/[0.04] text-white/30"
             }`}
           >
             {t}

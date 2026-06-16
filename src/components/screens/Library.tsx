@@ -153,7 +153,7 @@ export default function Library({ onNavigate }: LibraryProps) {
         {/* Search Bar */}
         {showSearch && (
           <div className="relative mb-3">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30" />
             <input
               ref={searchRef}
               type="text"
@@ -163,7 +163,7 @@ export default function Library({ onNavigate }: LibraryProps) {
               className="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[14px] font-medium outline-none focus:border-accent transition-colors dark:text-white"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30">
                 <X size={16} />
               </button>
             )}
@@ -189,7 +189,7 @@ export default function Library({ onNavigate }: LibraryProps) {
           </div>
         </div>
 
-        <p className="text-[11px] text-txt-secondary mb-2">
+        <p className="text-[11px] text-txt-secondary dark:text-white/50 mb-2">
           {filtered.length} truyện
           {sortBy !== "newest" && ` · ${sortBy === "oldest" ? "Cũ nhất" : sortBy === "name" ? "A→Z" : "Phổ biến"}`}
         </p>
@@ -254,7 +254,7 @@ export default function Library({ onNavigate }: LibraryProps) {
             </div>
             <div className="p-3 pb-3.5">
               <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate dark:text-white">{story.title}</h5>
-              <p className="text-[11px] text-txt-secondary mb-1.5">
+              <p className="text-[11px] text-txt-secondary dark:text-white/50 mb-1.5">
                 {story.page_count} trang · {categoryLabels[story.category] || story.category}
               </p>
               <div className="flex items-center gap-1.5">
@@ -262,7 +262,7 @@ export default function Library({ onNavigate }: LibraryProps) {
                   {story.source === "ai" ? "AI" : "Truyện"}
                 </span>
                 {(story.play_count || 0) > 0 && (
-                  <span className="text-[10px] text-txt-secondary">▶ {story.play_count}</span>
+                  <span className="text-[10px] text-txt-secondary dark:text-white/50">▶ {story.play_count}</span>
                 )}
               </div>
             </div>

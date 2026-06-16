@@ -116,10 +116,10 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
   }, [playingId, settings.elevenLabsApiKey, settings.elevenLabsModelId]);
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         <h2 className="text-[28px] font-black tracking-tight mb-0.5">Giọng Nói</h2>
-        <p className="text-[13px] text-txt-secondary font-medium">
+        <p className="text-[13px] text-txt-secondary dark:text-white/50 font-medium">
           Voice profiles gia đình
         </p>
       </div>
@@ -140,7 +140,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
           return (
             <div
               key={v.id}
-              className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+              className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none"
             >
               <div className="flex items-center gap-3.5">
                 <div
@@ -168,7 +168,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
                       </button>
                       <button
                         onClick={cancelEdit}
-                        className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center shrink-0"
+                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/[0.08] text-gray-600 dark:text-white/50 flex items-center justify-center shrink-0"
                       >
                         <X size={14} />
                       </button>
@@ -178,19 +178,19 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
                       <h5 className="text-base font-bold truncate">{v.name}</h5>
                       <button
                         onClick={() => startEdit(v.id, v.name)}
-                        className="w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center text-gray-400 shrink-0"
+                        className="w-6 h-6 rounded-md hover:bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-400 dark:text-white/30 shrink-0"
                         title="Sửa tên"
                       >
                         <Pencil size={12} />
                       </button>
                     </div>
                   )}
-                  <p className="text-[11px] text-txt-secondary mb-1.5">
+                  <p className="text-[11px] text-txt-secondary dark:text-white/50 mb-1.5">
                     {relationLabel(v.relation)}
                     {v.elevenlabs_voice_id ? " · Đã clone" : " · Chưa clone"}
                   </p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1 bg-gray-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -215,7 +215,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
                       className={`w-[38px] h-[38px] rounded-xl border flex items-center justify-center active:scale-95 transition-all ${
                         isPlaying
                           ? "bg-violet-500 border-violet-500 text-white"
-                          : "bg-surface border-gray-200 text-violet-500"
+                          : "bg-surface dark:bg-white/[0.04] border-gray-200 dark:border-white/10 text-violet-500"
                       }`}
                       title="Nghe giọng"
                     >
@@ -231,7 +231,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
                   <button
                     onClick={() => handleDelete(v.id)}
                     disabled={deletingId === v.id}
-                    className="w-[38px] h-[38px] rounded-xl bg-surface border border-gray-200 flex items-center justify-center text-red-400 active:scale-95 transition-transform"
+                    className="w-[38px] h-[38px] rounded-xl bg-surface dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 flex items-center justify-center text-red-400 active:scale-95 transition-transform"
                     aria-label="Xóa giọng"
                   >
                     {deletingId === v.id ? (
@@ -247,14 +247,14 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
         })}
 
         {!loading && voiceProfiles.length === 0 && (
-          <div className="bg-white rounded-2xl p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-2/20 to-accent/20 flex items-center justify-center text-accent mx-auto mb-2">
               <Mic size={22} />
             </div>
-            <p className="text-[14px] font-bold text-txt mb-0.5">
+            <p className="text-[14px] font-bold text-txt dark:text-white mb-0.5">
               Chưa có giọng nào
             </p>
-            <p className="text-[12px] text-txt-secondary">
+            <p className="text-[12px] text-txt-secondary dark:text-white/50">
               Ghi âm để tạo giọng đọc đầu tiên
             </p>
           </div>
@@ -263,13 +263,13 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
         {/* Add Voice */}
         <button
           onClick={() => onNavigate("recording")}
-          className="w-full border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center active:scale-[0.98] transition-transform"
+          className="w-full border-2 border-dashed border-gray-300 dark:border-white/15 rounded-2xl p-6 text-center active:scale-[0.98] transition-transform"
         >
-          <div className="w-11 h-11 rounded-[14px] bg-gray-100 flex items-center justify-center text-accent mx-auto mb-2">
+          <div className="w-11 h-11 rounded-[14px] bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-accent mx-auto mb-2">
             <Plus size={20} />
           </div>
           <h5 className="text-[15px] font-bold mb-0.5">Thêm Giọng Nói Mới</h5>
-          <p className="text-xs text-txt-secondary">
+          <p className="text-xs text-txt-secondary dark:text-white/50">
             Ghi âm 30s — 3 phút để tạo voice
           </p>
         </button>

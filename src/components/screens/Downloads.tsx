@@ -162,11 +162,11 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
   const availableStories = stories.filter((s) => !s.downloaded);
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-[24px] font-black tracking-tight">Tải Về</h2>
@@ -174,20 +174,20 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
         </div>
 
         {/* Status Bar */}
-        <div className="bg-white rounded-2xl p-4 mb-5 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-5 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOnline ? "bg-green-50" : "bg-red-50"}`}>
               {isOnline ? <Wifi size={20} className="text-green-500" /> : <WifiOff size={20} className="text-red-500" />}
             </div>
             <div>
               <p className="text-[13px] font-bold">{isOnline ? "Đang kết nối" : "Ngoại tuyến"}</p>
-              <p className="text-[11px] text-txt-secondary">
+              <p className="text-[11px] text-txt-secondary dark:text-white/50">
                 {downloadedStories.length} truyện đã tải
               </p>
             </div>
           </div>
           <div className="text-right">
-            <div className="flex items-center gap-1 text-[11px] text-txt-secondary">
+            <div className="flex items-center gap-1 text-[11px] text-txt-secondary dark:text-white/50">
               <HardDrive size={12} />
               {formatSize(totalSize)}
             </div>
@@ -209,7 +209,7 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
                 </h3>
                 <div className="space-y-2">
                   {downloadedStories.map((story) => (
-                    <div key={story.id} className="bg-white rounded-xl p-3.5 shadow-sm flex items-center gap-3">
+                    <div key={story.id} className="bg-white dark:bg-white/[0.04] rounded-xl p-3.5 shadow-sm flex items-center gap-3">
                       <button
                         onClick={() => onNavigate("player", { storyId: story.id })}
                         className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0"
@@ -218,7 +218,7 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
                       </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold truncate">{story.title}</p>
-                        <p className="text-[11px] text-txt-secondary">
+                        <p className="text-[11px] text-txt-secondary dark:text-white/50">
                           {formatSize(story.sizeBytes)} • {story.category}
                         </p>
                       </div>
@@ -238,18 +238,18 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
             {availableStories.length > 0 && (
               <div>
                 <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2">
-                  <Download size={16} className="text-txt-secondary" />
+                  <Download size={16} className="text-txt-secondary dark:text-white/50" />
                   Có thể tải ({availableStories.length})
                 </h3>
                 <div className="space-y-2">
                   {availableStories.map((story) => (
-                    <div key={story.id} className="bg-white rounded-xl p-3.5 shadow-sm flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 text-lg">
+                    <div key={story.id} className="bg-white dark:bg-white/[0.04] rounded-xl p-3.5 shadow-sm flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/[0.04] flex items-center justify-center flex-shrink-0 text-lg">
                         📖
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold truncate">{story.title}</p>
-                        <p className="text-[11px] text-txt-secondary">{story.category}</p>
+                        <p className="text-[11px] text-txt-secondary dark:text-white/50">{story.category}</p>
                       </div>
                       <button
                         onClick={() => handleDownload(story.id)}
@@ -271,8 +271,8 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
             {stories.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-4xl mb-3">📖</p>
-                <p className="text-[14px] font-bold text-txt-secondary">Chưa có truyện nào</p>
-                <p className="text-[12px] text-txt-secondary mt-1">Tạo truyện mới để tải về nghe offline</p>
+                <p className="text-[14px] font-bold text-txt-secondary dark:text-white/50">Chưa có truyện nào</p>
+                <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-1">Tạo truyện mới để tải về nghe offline</p>
               </div>
             )}
           </>

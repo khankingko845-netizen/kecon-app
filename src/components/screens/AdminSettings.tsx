@@ -89,12 +89,12 @@ function SecretInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+        className="flex-1 px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent transition-colors"
       />
       <button
         type="button"
         onClick={() => setShow(!show)}
-        className="px-3 py-3 rounded-xl border border-gray-200 text-txt-secondary hover:bg-gray-50 transition-colors"
+        className="px-3 py-3 rounded-xl border border-gray-200 dark:border-white/10 text-txt-secondary dark:text-white/50 hover:bg-gray-50 dark:bg-white/[0.04] transition-colors"
       >
         {show ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
@@ -117,7 +117,7 @@ function TestButton({
         type="button"
         onClick={onClick}
         disabled={loading}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-[13px] font-bold text-txt-secondary hover:bg-gray-50 active:scale-[0.97] transition-all disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-[13px] font-bold text-txt-secondary dark:text-white/50 hover:bg-gray-50 dark:bg-white/[0.04] active:scale-[0.97] transition-all disabled:opacity-50"
       >
         {loading ? (
           <Loader2 size={14} className="animate-spin" />
@@ -167,13 +167,13 @@ function ModelSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent transition-colors"
       />
     );
   }
   if (models.length === 0) {
     return (
-      <div className="px-3.5 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-txt-secondary">
+      <div className="px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-sm text-txt-secondary dark:text-white/50">
         Nhấn &quot;Test Kết Nối&quot; để tải danh sách models
       </div>
     );
@@ -183,7 +183,7 @@ function ModelSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
+        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
       >
         <option value="">— Chọn model —</option>
         {models.map((m) => (
@@ -194,7 +194,7 @@ function ModelSelect({
       </select>
       <ChevronDown
         size={16}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary pointer-events-none"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary dark:text-white/50 pointer-events-none"
       />
     </div>
   );
@@ -311,10 +311,10 @@ function DefaultVoicesManager({
 
   return (
     <div className="space-y-4 pt-1">
-      <p className="text-[12px] font-bold text-txt-secondary uppercase tracking-widest">
+      <p className="text-[12px] font-bold text-txt-secondary dark:text-white/50 uppercase tracking-widest">
         Giọng mặc định cho người dùng
       </p>
-      <p className="text-[11px] text-txt-secondary -mt-2 leading-relaxed">
+      <p className="text-[11px] text-txt-secondary dark:text-white/50 -mt-2 leading-relaxed">
         Người dùng không clone voice sẽ chọn từ danh sách này.
         Thêm nhiều giọng cho mỗi ngôn ngữ.
       </p>
@@ -323,18 +323,18 @@ function DefaultVoicesManager({
         const voicesForLang = defaultVoices.filter((v) => v.language === lang.code);
 
         return (
-          <div key={lang.code} className="rounded-xl border border-gray-200 overflow-hidden">
+          <div key={lang.code} className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
             {/* Language header */}
-            <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50">
+            <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.04]">
               <span className="text-[13px] font-bold">{lang.label}</span>
-              <span className="text-[11px] text-txt-secondary font-semibold">
+              <span className="text-[11px] text-txt-secondary dark:text-white/50 font-semibold">
                 {voicesForLang.length} giọng
               </span>
             </div>
 
             {/* Voice list */}
             {voicesForLang.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-white/[0.06]">
                 {voicesForLang.map((v) => (
                   <div
                     key={v.id}
@@ -342,7 +342,7 @@ function DefaultVoicesManager({
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold truncate">{v.name}</p>
-                      <p className="text-[11px] text-txt-secondary font-mono truncate">
+                      <p className="text-[11px] text-txt-secondary dark:text-white/50 font-mono truncate">
                         {v.voice_id}
                       </p>
                     </div>
@@ -362,13 +362,13 @@ function DefaultVoicesManager({
                 ))}
               </div>
             ) : (
-              <div className="px-3.5 py-3 text-[12px] text-txt-secondary italic">
+              <div className="px-3.5 py-3 text-[12px] text-txt-secondary dark:text-white/50 italic">
                 Chưa có giọng mặc định nào
               </div>
             )}
 
             {/* Add button */}
-            <div className="px-3.5 py-2.5 border-t border-gray-100">
+            <div className="px-3.5 py-2.5 border-t border-gray-100 dark:border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -383,7 +383,7 @@ function DefaultVoicesManager({
                 Thêm giọng
               </button>
               {availableVoices.length === 0 && (
-                <span className="text-[11px] text-txt-secondary ml-2">
+                <span className="text-[11px] text-txt-secondary dark:text-white/50 ml-2">
                   (Test Kết Nối ElevenLabs trước)
                 </span>
               )}
@@ -395,7 +395,7 @@ function DefaultVoicesManager({
       {/* ─── Add Voice Modal ─── */}
       {addingForLang && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
+          <div className="bg-white dark:bg-white/[0.04] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
             {/* Modal header */}
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h4 className="text-[15px] font-bold">
@@ -404,7 +404,7 @@ function DefaultVoicesManager({
               <button
                 type="button"
                 onClick={() => setAddingForLang(null)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
               >
                 <X size={18} />
               </button>
@@ -417,14 +417,14 @@ function DefaultVoicesManager({
                   <div className="relative">
                     <Search
                       size={14}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30"
                     />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Tìm voice theo tên hoặc ID..."
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-accent transition-colors"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm outline-none focus:border-accent transition-colors"
                       autoFocus
                     />
                   </div>
@@ -444,14 +444,14 @@ function DefaultVoicesManager({
                       value={manualVoiceId}
                       onChange={(e) => { setManualVoiceId(e.target.value); setLookupError(null); }}
                       placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB)"
-                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono outline-none focus:border-accent transition-colors"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-mono outline-none focus:border-accent transition-colors"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleLookupVoice}
                       disabled={lookingUp || !manualVoiceId.trim()}
-                      className="px-3 py-2.5 rounded-xl border border-gray-200 text-accent text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
+                      className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-accent text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
                     >
                       {lookingUp ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -470,7 +470,7 @@ function DefaultVoicesManager({
                     value={manualName}
                     onChange={(e) => setManualName(e.target.value)}
                     placeholder={lookingUp ? "Đang tìm..." : "Tên hiển thị (nhập ID rồi nhấn 🔍)"}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-accent transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm outline-none focus:border-accent transition-colors"
                   />
                   <div className="flex items-center justify-between">
                     <button
@@ -508,7 +508,7 @@ function DefaultVoicesManager({
 
             {/* Voice list (scrollable) */}
             {!manualMode && (
-              <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-white/[0.06]">
                 {/* Library voices for this language */}
                 {libraryForLang.length > 0 && (
                   <div>
@@ -552,7 +552,7 @@ function DefaultVoicesManager({
                 {/* Premade voices */}
                 {ownPremade.length > 0 && (
                   <div>
-                    <div className="px-4 py-2 bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider sticky top-0">
+                    <div className="px-4 py-2 bg-gray-50 dark:bg-white/[0.04] text-[11px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider sticky top-0">
                       🌐 Premade
                     </div>
                     {ownPremade.map((v) => (
@@ -570,7 +570,7 @@ function DefaultVoicesManager({
                 )}
 
                 {filteredVoices.length === 0 && (
-                  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary">
+                  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary dark:text-white/50">
                     Không tìm thấy voice nào
                   </div>
                 )}
@@ -595,10 +595,10 @@ function VoiceRow({
   alreadyAdded: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:bg-white/[0.04] transition-colors">
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold truncate">{voice.name}</p>
-        <p className="text-[11px] text-txt-secondary">
+        <p className="text-[11px] text-txt-secondary dark:text-white/50">
           {voice.category}{voice.language ? ` · ${voice.language}` : ""}
         </p>
       </div>
@@ -853,14 +853,14 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
   // ── render ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] flex items-center justify-center">
         <Loader2 className="animate-spin text-accent" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-32">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-32">
       <TopBar title="Cài Đặt Hệ Thống" onBack={onBack} />
 
       {/* Info banner */}
@@ -874,14 +874,14 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
       {/* ═══════════ ELEVENLABS ═══════════ */}
       <div className="flex items-center gap-2.5 px-5 mt-6 mb-2">
         <SectionIcon icon={Mic} color="#7B61FF" />
-        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary">
+        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary dark:text-white/50">
           Giọng Nói (ElevenLabs)
         </h3>
       </div>
-      <div className="bg-white px-5 py-4 space-y-4">
+      <div className="bg-white dark:bg-white/[0.04] px-5 py-4 space-y-4">
         {/* API Key */}
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             API Key
           </label>
           <SecretInput
@@ -908,14 +908,14 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
 
         {/* Model */}
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             Model TTS
           </label>
           <div className="relative">
             <select
               value={settings["elevenlabs_model_id"] ?? "eleven_multilingual_v2"}
               onChange={(e) => handleChange("elevenlabs_model_id", e.target.value)}
-              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
+              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
             >
               <option value="eleven_v3">
                 Eleven v3 (mới nhất, chất lượng cao nhất)
@@ -928,7 +928,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
             </select>
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary dark:text-white/50 pointer-events-none"
             />
           </div>
         </div>
@@ -946,14 +946,14 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
       {/* ═══════════ AI STORY PROVIDER ═══════════ */}
       <div className="flex items-center gap-2.5 px-5 mt-6 mb-2">
         <SectionIcon icon={Brain} color="#00D68F" />
-        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary">
+        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary dark:text-white/50">
           AI Tạo Truyện
         </h3>
       </div>
-      <div className="bg-white px-5 py-4 space-y-4">
+      <div className="bg-white dark:bg-white/[0.04] px-5 py-4 space-y-4">
         {/* Provider selector */}
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             Provider Mặc Định
           </label>
           <div className="grid grid-cols-4 gap-1.5">
@@ -969,7 +969,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
                 className={`py-2.5 rounded-xl text-[12px] font-bold border-[1.5px] transition-all ${
                   selectedProvider === p.id
                     ? "border-accent bg-accent/10 text-accent"
-                    : "border-gray-200 bg-surface text-txt-secondary"
+                    : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                 }`}
               >
                 {p.label}
@@ -981,7 +981,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
         {/* Custom URL (only for custom provider) */}
         {selectedProvider === "custom" && (
           <div>
-            <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+            <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
               Base URL (OpenAI-compatible)
             </label>
             <input
@@ -989,9 +989,9 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
               value={settings["custom_provider_url"] ?? ""}
               onChange={(e) => handleChange("custom_provider_url", e.target.value)}
               placeholder="https://openrouter.ai/api/v1"
-              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 bg-surface text-sm font-mono outline-none focus:border-accent transition-colors"
+              className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent transition-colors"
             />
-            <p className="text-[11px] text-txt-secondary mt-1">
+            <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-1">
               Hỗ trợ OpenRouter, Groq, Together, LM Studio, Ollama…
             </p>
           </div>
@@ -999,7 +999,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
 
         {/* API Key for selected provider */}
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             API Key — {AI_PROVIDERS.find((p) => p.id === selectedProvider)?.label}
           </label>
           <SecretInput
@@ -1028,7 +1028,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
 
         {/* Model selector */}
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             Model Mặc Định
           </label>
           <ModelSelect
@@ -1039,7 +1039,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
             allowFreeText={selectedProvider === "custom" || aiModels.length === 0}
           />
           {aiModels.length === 0 && (
-            <p className="text-[11px] text-txt-secondary mt-1">
+            <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-1">
               Nhấn &quot;Test Kết Nối&quot; để tải danh sách models từ provider
             </p>
           )}
@@ -1049,13 +1049,13 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
       {/* ═══════════ IMAGE / DALLE ═══════════ */}
       <div className="flex items-center gap-2.5 px-5 mt-6 mb-2">
         <SectionIcon icon={Image} color="#FF6B3D" />
-        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary">
+        <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary dark:text-white/50">
           Minh Họa AI (DALL·E)
         </h3>
       </div>
-      <div className="bg-white px-5 py-4 space-y-4">
+      <div className="bg-white dark:bg-white/[0.04] px-5 py-4 space-y-4">
         <div>
-          <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+          <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
             OpenAI API Key (DALL·E)
           </label>
           <SecretInput
@@ -1063,7 +1063,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
             onChange={(v) => handleChange("dalle_api_key", v)}
             placeholder="sk-..."
           />
-          <p className="text-[11px] text-txt-secondary mt-1">
+          <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-1">
             Dùng chung key OpenAI. Nếu để trống sẽ fallback sang OpenAI Key ở mục AI.
           </p>
         </div>
@@ -1108,7 +1108,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
         </button>
       </div>
 
-      <div className="px-5 mt-3 flex items-center gap-2 text-[12px] text-txt-secondary">
+      <div className="px-5 mt-3 flex items-center gap-2 text-[12px] text-txt-secondary dark:text-white/50">
         <RefreshCw size={12} />
         <span>Thay đổi có hiệu lực ngay, không cần khởi động lại.</span>
       </div>

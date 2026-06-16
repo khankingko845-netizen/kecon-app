@@ -168,23 +168,23 @@ export default function Subscription({
             Gói hiện tại: {plans.find((p) => p.id === currentPlan)?.name || "Miễn Phí"}
           </span>
         </div>
-        <h2 className="text-xl font-black tracking-tight text-txt mb-1">
+        <h2 className="text-xl font-black tracking-tight text-txt dark:text-white mb-1">
           Nâng cấp trải nghiệm
         </h2>
-        <p className="text-[13px] text-txt-secondary">
+        <p className="text-[13px] text-txt-secondary dark:text-white/50">
           Mở khoá toàn bộ tính năng KểCon cho gia đình bạn
         </p>
       </div>
 
       {/* Billing toggle */}
       <div className="flex justify-center px-5 py-3">
-        <div className="flex bg-white rounded-xl p-1 shadow-sm">
+        <div className="flex bg-white dark:bg-white/[0.04] rounded-xl p-1 shadow-sm">
           <button
             onClick={() => setBilling("monthly")}
             className={`px-4 py-2 rounded-lg text-[13px] font-bold transition-all ${
               billing === "monthly"
                 ? "bg-accent text-white"
-                : "text-txt-secondary"
+                : "text-txt-secondary dark:text-white/50"
             }`}
           >
             Tháng
@@ -194,7 +194,7 @@ export default function Subscription({
             className={`px-4 py-2 rounded-lg text-[13px] font-bold transition-all relative ${
               billing === "yearly"
                 ? "bg-accent text-white"
-                : "text-txt-secondary"
+                : "text-txt-secondary dark:text-white/50"
             }`}
           >
             Năm
@@ -235,7 +235,7 @@ export default function Subscription({
               {/* Plan header */}
               <div
                 className={`bg-gradient-to-r ${gradient} p-4 ${
-                  isPaid ? "text-white" : "text-txt"
+                  isPaid ? "text-white" : "text-txt dark:text-white"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -243,7 +243,7 @@ export default function Subscription({
                   <h3 className="text-base font-black">{plan.name}</h3>
                 </div>
                 <p
-                  className={`text-[12px] ${isPaid ? "text-white/80" : "text-txt-secondary"}`}
+                  className={`text-[12px] ${isPaid ? "text-white/80" : "text-txt-secondary dark:text-white/50"}`}
                 >
                   {plan.description}
                 </p>
@@ -251,7 +251,7 @@ export default function Subscription({
                   <span className="text-2xl font-black">{formatVND(price)}</span>
                   {isPaid && (
                     <span
-                      className={`text-[12px] ml-1 ${isPaid ? "text-white/70" : "text-txt-secondary"}`}
+                      className={`text-[12px] ml-1 ${isPaid ? "text-white/70" : "text-txt-secondary dark:text-white/50"}`}
                     >
                       /{billing === "monthly" ? "tháng" : "năm"}
                     </span>
@@ -260,17 +260,17 @@ export default function Subscription({
               </div>
 
               {/* Features */}
-              <div className="bg-white p-4">
+              <div className="bg-white dark:bg-white/[0.04] p-4">
                 <ul className="space-y-2">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <Check
                         size={14}
                         className={`mt-0.5 shrink-0 ${
-                          isPaid ? "text-accent" : "text-gray-400"
+                          isPaid ? "text-accent" : "text-gray-400 dark:text-white/30"
                         }`}
                       />
-                      <span className="text-[13px] text-txt">{feature}</span>
+                      <span className="text-[13px] text-txt dark:text-white">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -281,10 +281,10 @@ export default function Subscription({
                   disabled={isCurrentPlan || subscribing !== null}
                   className={`w-full mt-4 py-3 rounded-xl text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
                     isCurrentPlan
-                      ? "bg-gray-100 text-txt-secondary cursor-default"
+                      ? "bg-gray-100 dark:bg-white/[0.06] text-txt-secondary dark:text-white/50 cursor-default"
                       : isPaid
                         ? "bg-accent text-white hover:bg-accent/90"
-                        : "bg-gray-100 text-txt hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white hover:bg-gray-200 dark:bg-white/[0.08]"
                   } disabled:opacity-60`}
                 >
                   {subscribing === plan.id ? (
@@ -308,14 +308,14 @@ export default function Subscription({
 
       {/* Current subscription info */}
       {currentSub && (
-        <div className="mx-5 mt-4 p-4 bg-white rounded-2xl shadow-sm">
+        <div className="mx-5 mt-4 p-4 bg-white dark:bg-white/[0.04] rounded-2xl shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <CreditCard size={16} className="text-accent" />
-            <span className="text-[13px] font-bold text-txt">
+            <span className="text-[13px] font-bold text-txt dark:text-white">
               Thông tin gói cước
             </span>
           </div>
-          <div className="space-y-1.5 text-[12px] text-txt-secondary">
+          <div className="space-y-1.5 text-[12px] text-txt-secondary dark:text-white/50">
             <p>
               Chu kỳ: {currentSub.billing_cycle === "monthly" ? "Hàng tháng" : "Hàng năm"}
             </p>
@@ -334,7 +334,7 @@ export default function Subscription({
 
       {/* Trust badges */}
       <div className="px-5 mt-5">
-        <div className="flex items-center justify-center gap-4 text-[11px] text-txt-secondary">
+        <div className="flex items-center justify-center gap-4 text-[11px] text-txt-secondary dark:text-white/50">
           <span className="flex items-center gap-1">
             <Shield size={12} /> Thanh toán an toàn
           </span>

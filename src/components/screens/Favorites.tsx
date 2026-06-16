@@ -33,12 +33,12 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <TopBar
         title="Yêu Thích"
         onBack={onBack}
         rightElement={
-          <span className="text-[13px] font-bold text-txt-secondary">
+          <span className="text-[13px] font-bold text-txt-secondary dark:text-white/50">
             {favorites.length} truyện
           </span>
         }
@@ -52,10 +52,10 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
         ) : favorites.length === 0 ? (
           <div className="text-center pt-20">
             <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-[15px] font-bold text-txt-secondary mb-2">
+            <p className="text-[15px] font-bold text-txt-secondary dark:text-white/50 mb-2">
               Chưa có truyện yêu thích
             </p>
-            <p className="text-[13px] text-txt-secondary/60">
+            <p className="text-[13px] text-txt-secondary dark:text-white/50/60">
               Nhấn ❤️ khi nghe truyện để lưu vào đây
             </p>
           </div>
@@ -64,7 +64,7 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
             {favorites.map((story) => (
               <div
                 key={story.id}
-                className="bg-white rounded-2xl border border-gray-100 p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
               >
                 {/* Cover / gradient */}
                 {story.cover_image_url ? (
@@ -88,11 +88,11 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-bold text-txt truncate">
+                  <p className="text-[14px] font-bold text-txt dark:text-white truncate">
                     {story.title}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[11px] text-txt-secondary">
+                    <span className="text-[11px] text-txt-secondary dark:text-white/50">
                       {story.page_count} trang
                     </span>
                     {(story.avg_rating ?? 0) > 0 && (

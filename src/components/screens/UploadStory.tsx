@@ -114,23 +114,23 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-10">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-10">
       <TopBar title="Tải Truyện Lên" onBack={onBack} />
 
       <div className="px-5 pt-2">
-        <p className="text-[13px] text-txt-secondary mb-4">
+        <p className="text-[13px] text-txt-secondary dark:text-white/50 mb-4">
           Dán nội dung hoặc tải tệp .txt / .docx / .pdf — hệ thống tự chia trang để bạn chỉnh sửa & minh hoạ.
         </p>
 
-        <label className="text-[13px] font-bold text-txt mb-2 block">Tiêu đề</label>
+        <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">Tiêu đề</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="VD: Sự tích bánh chưng bánh dày"
-          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-white text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors mb-4"
+          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[15px] font-semibold text-txt dark:text-white outline-none focus:border-accent transition-colors mb-4"
         />
 
-        <label className="text-[13px] font-bold text-txt mb-2 block">Thể loại</label>
+        <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">Thể loại</label>
         <div className="flex flex-wrap gap-2 mb-4">
           {categories.map((c) => (
             <button
@@ -139,7 +139,7 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
               className={`px-3.5 py-2 rounded-xl text-[13px] font-semibold border-[1.5px] transition-colors ${
                 category === c.id
                   ? "border-accent bg-orange-50 text-accent"
-                  : "border-gray-200 bg-white text-txt-secondary"
+                  : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
               }`}
             >
               {c.label}
@@ -147,8 +147,8 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
           ))}
         </div>
 
-        <label className="text-[13px] font-bold text-txt mb-2 block">Nội dung</label>
-        <label className="w-full mb-3 p-4 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center gap-2 text-[13px] font-bold text-txt-secondary cursor-pointer active:scale-[0.99] transition-transform">
+        <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">Nội dung</label>
+        <label className="w-full mb-3 p-4 rounded-2xl border-2 border-dashed border-gray-300 dark:border-white/15 flex items-center justify-center gap-2 text-[13px] font-bold text-txt-secondary dark:text-white/50 cursor-pointer active:scale-[0.99] transition-transform">
           {parsing ? (
             <>
               <Loader2 size={16} className="animate-spin" /> Đang đọc tệp...
@@ -172,11 +172,11 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="...hoặc dán toàn bộ nội dung truyện vào đây"
-          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-white text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-44 mb-2"
+          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[14px] text-txt dark:text-white outline-none focus:border-accent transition-colors resize-none h-44 mb-2"
         />
 
         {pageCount > 0 && (
-          <p className="text-[12px] text-txt-secondary mb-4 flex items-center gap-1.5">
+          <p className="text-[12px] text-txt-secondary dark:text-white/50 mb-4 flex items-center gap-1.5">
             <FileText size={13} /> Sẽ chia thành{" "}
             <span className="font-bold text-accent">{pageCount} trang</span>
           </p>

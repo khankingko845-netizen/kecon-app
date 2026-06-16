@@ -72,17 +72,17 @@ export default function Home({ onNavigate }: HomeProps) {
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {g.period === "morning" || g.period === "afternoon" ? (
             <>
-              <div className="absolute top-8 right-10 w-12 h-8 bg-white/20 rounded-full blur-sm animate-[float_6s_ease-in-out_infinite]" />
-              <div className="absolute top-16 right-28 w-8 h-5 bg-white/15 rounded-full blur-sm animate-[float_8s_ease-in-out_infinite_1s]" />
-              <div className="absolute top-6 left-8 w-6 h-4 bg-white/10 rounded-full blur-sm animate-[float_7s_ease-in-out_infinite_2s]" />
+              <div className="absolute top-8 right-10 w-12 h-8 bg-white dark:bg-white/[0.04]/20 rounded-full blur-sm animate-[float_6s_ease-in-out_infinite]" />
+              <div className="absolute top-16 right-28 w-8 h-5 bg-white dark:bg-white/[0.04]/15 rounded-full blur-sm animate-[float_8s_ease-in-out_infinite_1s]" />
+              <div className="absolute top-6 left-8 w-6 h-4 bg-white dark:bg-white/[0.04]/10 rounded-full blur-sm animate-[float_7s_ease-in-out_infinite_2s]" />
             </>
           ) : (
             <>
-              <div className="absolute top-6 right-12 w-1.5 h-1.5 bg-white/60 rounded-full animate-[twinkle_2s_ease-in-out_infinite]" />
-              <div className="absolute top-14 right-32 w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3s_ease-in-out_infinite_0.5s]" />
-              <div className="absolute top-10 left-16 w-1.5 h-1.5 bg-white/50 rounded-full animate-[twinkle_2.5s_ease-in-out_infinite_1s]" />
-              <div className="absolute top-20 left-10 w-1 h-1 bg-white/30 rounded-full animate-[twinkle_4s_ease-in-out_infinite_1.5s]" />
-              <div className="absolute top-8 left-[45%] w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3.5s_ease-in-out_infinite_2s]" />
+              <div className="absolute top-6 right-12 w-1.5 h-1.5 bg-white dark:bg-white/[0.04]/60 rounded-full animate-[twinkle_2s_ease-in-out_infinite]" />
+              <div className="absolute top-14 right-32 w-1 h-1 bg-white dark:bg-white/[0.04]/40 rounded-full animate-[twinkle_3s_ease-in-out_infinite_0.5s]" />
+              <div className="absolute top-10 left-16 w-1.5 h-1.5 bg-white dark:bg-white/[0.04]/50 rounded-full animate-[twinkle_2.5s_ease-in-out_infinite_1s]" />
+              <div className="absolute top-20 left-10 w-1 h-1 bg-white dark:bg-white/[0.04]/30 rounded-full animate-[twinkle_4s_ease-in-out_infinite_1.5s]" />
+              <div className="absolute top-8 left-[45%] w-1 h-1 bg-white dark:bg-white/[0.04]/40 rounded-full animate-[twinkle_3.5s_ease-in-out_infinite_2s]" />
             </>
           )}
         </div>
@@ -104,13 +104,13 @@ export default function Home({ onNavigate }: HomeProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => onNavigate("notifications")}
-              className="w-10 h-10 rounded-[14px] bg-white/20 backdrop-blur-sm flex items-center justify-center relative"
+              className="w-10 h-10 rounded-[14px] bg-white dark:bg-white/[0.04]/20 backdrop-blur-sm flex items-center justify-center relative"
             >
               <Bell size={18} className="text-white" />
             </button>
             <button
               onClick={() => onNavigate("profile-edit")}
-              className="w-11 h-11 rounded-[14px] bg-white/25 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold border border-white/20"
+              className="w-11 h-11 rounded-[14px] bg-white dark:bg-white/[0.04]/25 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold border border-white/20"
             >
               {initial}
             </button>
@@ -123,8 +123,8 @@ export default function Home({ onNavigate }: HomeProps) {
         onClick={() => onNavigate("library")}
         className="mx-5 mt-4 w-[calc(100%-2.5rem)] bg-white dark:bg-white/5 rounded-[14px] px-4 py-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none dark:border dark:border-white/10"
       >
-        <Search size={18} className="text-gray-400 dark:text-gray-500" />
-        <span className="text-sm text-gray-400 dark:text-gray-500">Tìm truyện, chủ đề...</span>
+        <Search size={18} className="text-gray-400 dark:text-white/40" />
+        <span className="text-sm text-gray-400 dark:text-white/40">Tìm truyện, chủ đề...</span>
       </button>
 
       {/* Voice Profiles */}
@@ -159,7 +159,7 @@ export default function Home({ onNavigate }: HomeProps) {
             onClick={() => onNavigate("recording")}
             className="text-center shrink-0"
           >
-            <div className="w-14 h-14 rounded-[18px] border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-1.5">
+            <div className="w-14 h-14 rounded-[18px] border-2 border-dashed border-gray-300 dark:border-white/15 flex items-center justify-center text-gray-400 dark:text-white/30 mb-1.5">
               <Plus size={20} />
             </div>
             <span className="text-[11px] font-bold text-txt dark:text-white">Thêm</span>
@@ -268,7 +268,7 @@ export default function Home({ onNavigate }: HomeProps) {
               <button
                 key={story.id}
                 onClick={() => onNavigate("player", { storyId: story.id })}
-                className="w-full bg-white dark:bg-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+                className="w-full bg-white dark:bg-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
               >
                 <div
                   className={`w-12 h-12 rounded-[12px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white shrink-0`}
@@ -277,7 +277,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="text-[14px] font-bold truncate">{story.title}</p>
-                  <p className="text-[11px] text-txt-secondary flex items-center gap-1">
+                  <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-1">
                     <Heart size={11} /> {story.like_count} · <Play size={11} /> {story.play_count}
                   </p>
                 </div>
@@ -307,15 +307,15 @@ export default function Home({ onNavigate }: HomeProps) {
         {recent.length === 0 ? (
           <button
             onClick={() => onNavigate("create")}
-            className="w-full bg-white dark:bg-white/5 rounded-2xl p-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+            className="w-full bg-white dark:bg-white/5 rounded-2xl p-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
           >
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-pink-500 flex items-center justify-center text-white">
               <Sparkles size={22} />
             </div>
-            <p className="text-[14px] font-bold text-txt">
+            <p className="text-[14px] font-bold text-txt dark:text-white">
               {loading ? "Đang tải..." : "Chưa có truyện nào"}
             </p>
-            <p className="text-[12px] text-txt-secondary">Tạo truyện AI đầu tiên cho bé</p>
+            <p className="text-[12px] text-txt-secondary dark:text-white/50">Tạo truyện AI đầu tiên cho bé</p>
           </button>
         ) : (
           <div className="space-y-2.5">
@@ -323,7 +323,7 @@ export default function Home({ onNavigate }: HomeProps) {
               <button
                 key={story.id}
                 onClick={() => onNavigate("player", { storyId: story.id })}
-                className="w-full bg-white rounded-2xl p-3.5 flex items-center gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+                className="w-full bg-white dark:bg-white/[0.04] rounded-2xl p-3.5 flex items-center gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
               >
                 <div
                   className={`w-14 h-14 rounded-[14px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white shrink-0`}
@@ -334,7 +334,7 @@ export default function Home({ onNavigate }: HomeProps) {
                   <div className="text-[15px] font-bold tracking-tight truncate">
                     {story.title}
                   </div>
-                  <div className="text-xs text-txt-secondary font-medium mt-0.5">
+                  <div className="text-xs text-txt-secondary dark:text-white/50 font-medium mt-0.5">
                     {story.page_count} trang
                     {story.description ? ` · ${story.description.slice(0, 30)}` : ""}
                   </div>

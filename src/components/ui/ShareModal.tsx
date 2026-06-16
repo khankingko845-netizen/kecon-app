@@ -70,7 +70,7 @@ export default function ShareModal({ storyId, storyTitle, onClose }: ShareModalP
           </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+            className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.04]/10 flex items-center justify-center text-white/70"
           >
             <X size={16} />
           </button>
@@ -103,7 +103,7 @@ export default function ShareModal({ storyId, storyTitle, onClose }: ShareModalP
         ) : (
           <div className="space-y-3">
             {/* Link display */}
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-white dark:bg-white/[0.04]/5 border border-white/10">
               <p className="flex-1 text-[13px] text-white/60 truncate font-mono">
                 {shareUrl}
               </p>
@@ -112,7 +112,7 @@ export default function ShareModal({ storyId, storyTitle, onClose }: ShareModalP
                 className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                   copied
                     ? "bg-emerald-500/20 text-emerald-400"
-                    : "bg-white/10 text-white/70"
+                    : "bg-white dark:bg-white/[0.04]/10 text-white/70"
                 }`}
               >
                 {copied ? <Check size={18} /> : <Copy size={18} />}
@@ -123,7 +123,7 @@ export default function ShareModal({ storyId, storyTitle, onClose }: ShareModalP
             <div className="flex gap-3">
               <button
                 onClick={copyLink}
-                className="flex-1 py-3 rounded-xl bg-white/10 text-white text-[13px] font-bold flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-white dark:bg-white/[0.04]/10 text-white text-[13px] font-bold flex items-center justify-center gap-2"
               >
                 <Copy size={15} />
                 {copied ? "Đã sao chép!" : "Sao chép"}

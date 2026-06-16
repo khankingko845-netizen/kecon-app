@@ -90,7 +90,7 @@ export default function AdminCategories({ onBack }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-28">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-28">
       <TopBar
         title="Danh mục truyện"
         onBack={onBack}
@@ -114,7 +114,7 @@ export default function AdminCategories({ onBack }: Props) {
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className={`bg-white rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${
+                className={`bg-white dark:bg-white/[0.04] rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none ${
                   !cat.is_active ? "opacity-50" : ""
                 }`}
               >
@@ -122,8 +122,8 @@ export default function AdminCategories({ onBack }: Props) {
                   <GripVertical size={16} className="text-gray-300 shrink-0" />
                   <span className="text-xl shrink-0">{cat.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-txt truncate">{cat.label}</p>
-                    <p className="text-[11px] text-txt-secondary truncate">
+                    <p className="text-[13px] font-bold text-txt dark:text-white truncate">{cat.label}</p>
+                    <p className="text-[11px] text-txt-secondary dark:text-white/50 truncate">
                       {cat.id} · {cat.description || "Không có mô tả"}
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export default function AdminCategories({ onBack }: Props) {
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="px-2 py-1 rounded-lg text-gray-500 text-[12px] font-bold"
+                      className="px-2 py-1 rounded-lg text-gray-500 dark:text-white/40 text-[12px] font-bold"
                     >
                       Huỷ
                     </button>
@@ -176,7 +176,7 @@ export default function AdminCategories({ onBack }: Props) {
             ))}
 
             {categories.length === 0 && (
-              <div className="text-center py-12 text-[13px] text-txt-secondary">
+              <div className="text-center py-12 text-[13px] text-txt-secondary dark:text-white/50">
                 Chưa có danh mục nào. Bấm + để thêm.
               </div>
             )}
@@ -187,18 +187,18 @@ export default function AdminCategories({ onBack }: Props) {
       {/* Edit/New Modal */}
       {editing && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center">
-          <div className="bg-white w-full max-w-[430px] rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
+          <div className="bg-white dark:bg-white/[0.04] w-full max-w-[430px] rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[15px] font-black text-txt">
+              <h3 className="text-[15px] font-black text-txt dark:text-white">
                 {isNew ? "Thêm danh mục" : "Sửa danh mục"}
               </h3>
               <button onClick={() => { setEditing(null); setIsNew(false); }}>
-                <X size={20} className="text-gray-400" />
+                <X size={20} className="text-gray-400 dark:text-white/30" />
               </button>
             </div>
 
             {/* ID */}
-            <label className="block text-[12px] font-bold text-txt-secondary mb-1">
+            <label className="block text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1">
               ID (tiếng Anh, không dấu)
             </label>
             <input
@@ -206,22 +206,22 @@ export default function AdminCategories({ onBack }: Props) {
               onChange={(e) => setEditing({ ...editing, id: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })}
               placeholder="vd: fairy_tale"
               disabled={!isNew}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm mb-3 disabled:bg-gray-50"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm mb-3 disabled:bg-gray-50 dark:bg-white/[0.04]"
             />
 
             {/* Label */}
-            <label className="block text-[12px] font-bold text-txt-secondary mb-1">
+            <label className="block text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1">
               Tên hiển thị
             </label>
             <input
               value={editing.label}
               onChange={(e) => setEditing({ ...editing, label: e.target.value })}
               placeholder="Cổ tích"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm mb-3"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm mb-3"
             />
 
             {/* Emoji */}
-            <label className="block text-[12px] font-bold text-txt-secondary mb-1">
+            <label className="block text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1">
               Emoji
             </label>
             <div className="flex gap-1.5 flex-wrap mb-3">
@@ -230,7 +230,7 @@ export default function AdminCategories({ onBack }: Props) {
                   key={em}
                   onClick={() => setEditing({ ...editing, emoji: em })}
                   className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center ${
-                    editing.emoji === em ? "bg-accent/20 ring-2 ring-accent" : "bg-gray-100"
+                    editing.emoji === em ? "bg-accent/20 ring-2 ring-accent" : "bg-gray-100 dark:bg-white/[0.06]"
                   }`}
                 >
                   {em}
@@ -239,31 +239,31 @@ export default function AdminCategories({ onBack }: Props) {
               <input
                 value={editing.emoji}
                 onChange={(e) => setEditing({ ...editing, emoji: e.target.value })}
-                className="w-12 h-9 rounded-lg border border-gray-200 text-center text-lg"
+                className="w-12 h-9 rounded-lg border border-gray-200 dark:border-white/10 text-center text-lg"
                 maxLength={2}
               />
             </div>
 
             {/* Description */}
-            <label className="block text-[12px] font-bold text-txt-secondary mb-1">
+            <label className="block text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1">
               Mô tả
             </label>
             <input
               value={editing.description || ""}
               onChange={(e) => setEditing({ ...editing, description: e.target.value })}
               placeholder="Mô tả ngắn về danh mục"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm mb-3"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm mb-3"
             />
 
             {/* Sort order */}
-            <label className="block text-[12px] font-bold text-txt-secondary mb-1">
+            <label className="block text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1">
               Thứ tự hiển thị
             </label>
             <input
               type="number"
               value={editing.sort_order}
               onChange={(e) => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm mb-3"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm mb-3"
             />
 
             {/* Active toggle */}
@@ -274,11 +274,11 @@ export default function AdminCategories({ onBack }: Props) {
                   editing.is_active ? "bg-emerald-500" : "bg-gray-300"
                 }`}
               >
-                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
+                <div className={`w-5 h-5 bg-white dark:bg-white/[0.04] rounded-full shadow-sm transition-transform ${
                   editing.is_active ? "translate-x-[18px]" : "translate-x-[2px]"
                 }`} />
               </button>
-              <span className="text-[13px] font-medium text-txt">
+              <span className="text-[13px] font-medium text-txt dark:text-white">
                 {editing.is_active ? "Đang hiển thị" : "Đã ẩn"}
               </span>
             </div>

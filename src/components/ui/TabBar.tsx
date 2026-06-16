@@ -28,7 +28,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
   }, [tapped]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/60 flex items-start justify-around px-2 pt-2 pb-6 z-50 safe-bottom dark:bg-[#0F0628]/95 dark:border-white/5">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-white/[0.04]/95 backdrop-blur-lg border-t border-gray-200 dark:border-white/10/60 flex items-start justify-around px-2 pt-2 pb-6 z-50 safe-bottom dark:bg-[#0F0628]/95 dark:border-white/5">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isCenter = tab.id === "create";
@@ -58,7 +58,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
             <div className="relative">
               <Icon
                 size={22}
-                className={`transition-colors duration-200 ${isActive ? "text-accent" : "text-gray-400 dark:text-gray-500"}`}
+                className={`transition-colors duration-200 ${isActive ? "text-accent" : "text-gray-400 dark:text-white/40"}`}
               />
               {isActive && (
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
@@ -66,7 +66,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
             </div>
             <span
               className={`text-[10px] font-semibold transition-colors duration-200 ${
-                isActive ? "text-accent" : "text-gray-400 dark:text-gray-500"
+                isActive ? "text-accent" : "text-gray-400 dark:text-white/40"
               }`}
             >
               {tab.label}

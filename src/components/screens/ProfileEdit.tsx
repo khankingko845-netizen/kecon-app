@@ -43,11 +43,11 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-[22px] font-black tracking-tight flex-1">Hồ Sơ</h2>
@@ -64,8 +64,8 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
         </div>
 
         {/* Avatar */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <p className="text-[13px] font-bold text-txt mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
+          <p className="text-[13px] font-bold text-txt dark:text-white mb-3 flex items-center gap-2">
             <User size={14} /> Ảnh đại diện
           </p>
           <div className="flex flex-wrap gap-2.5">
@@ -76,7 +76,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
                 className={`w-14 h-14 rounded-2xl text-2xl flex items-center justify-center transition-all ${
                   selectedAvatar === emoji
                     ? "bg-accent/10 border-2 border-accent scale-110"
-                    : "bg-gray-50 border-2 border-transparent"
+                    : "bg-gray-50 dark:bg-white/[0.04] border-2 border-transparent"
                 }`}
               >
                 {emoji}
@@ -86,8 +86,8 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
         </div>
 
         {/* Display Name */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
+          <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
             <Users size={14} /> Tên hiển thị
           </label>
           <input
@@ -95,13 +95,13 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="VD: Ba Minh, Mẹ Hà..."
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-surface text-[14px] font-semibold outline-none focus:border-accent transition-colors"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[14px] font-semibold outline-none focus:border-accent transition-colors"
           />
         </div>
 
         {/* Family Name */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
+          <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
             <Users size={14} /> Tên gia đình
           </label>
           <input
@@ -109,14 +109,14 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
             placeholder="VD: Gia đình Gấu, Nhà Mít..."
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-surface text-[14px] font-semibold outline-none focus:border-accent transition-colors"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[14px] font-semibold outline-none focus:border-accent transition-colors"
           />
-          <p className="text-[11px] text-txt-secondary mt-2">Hiển thị trên trang chủ &quot;Gia đình ...&quot;</p>
+          <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-2">Hiển thị trên trang chủ &quot;Gia đình ...&quot;</p>
         </div>
 
         {/* Child Age */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
+          <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
             <Baby size={14} /> Tuổi của bé
           </label>
           <div className="flex gap-2 flex-wrap">
@@ -127,7 +127,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
                 className={`w-10 h-10 rounded-xl text-[13px] font-bold flex items-center justify-center transition-all ${
                   childAge === age
                     ? "bg-accent text-white"
-                    : "bg-gray-50 text-txt border border-gray-200"
+                    : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"
                 }`}
               >
                 {age}
@@ -137,8 +137,8 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
         </div>
 
         {/* Language */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
+          <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
             <Globe size={14} /> Ngôn ngữ
           </label>
           <div className="flex gap-2">
@@ -153,7 +153,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
                 className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all ${
                   locale === lang.id
                     ? "bg-accent text-white"
-                    : "bg-gray-50 text-txt border border-gray-200"
+                    : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"
                 }`}
               >
                 {lang.label}
@@ -163,11 +163,11 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
         </div>
 
         {/* Email (read-only) */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4 opacity-60">
-          <label className="text-[13px] font-bold text-txt mb-2.5 flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4 opacity-60">
+          <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
             <Calendar size={14} /> Email
           </label>
-          <p className="text-[14px] text-txt-secondary">{profile?.email || "—"}</p>
+          <p className="text-[14px] text-txt-secondary dark:text-white/50">{profile?.email || "—"}</p>
         </div>
       </div>
     </div>

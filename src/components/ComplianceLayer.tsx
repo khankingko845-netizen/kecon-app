@@ -46,14 +46,14 @@ export default function ComplianceLayer() {
 
       {showConsent && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-8 animate-[slideUp_0.3s_ease]">
+          <div className="w-full max-w-[430px] bg-white dark:bg-white/[0.04] rounded-t-3xl p-6 pb-8 animate-[slideUp_0.3s_ease]">
             <div className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
               <ShieldCheck size={22} />
             </div>
             <h2 className="text-[18px] font-black tracking-tight mb-2">
               Quyền riêng tư & Trẻ em
             </h2>
-            <p className="text-[13px] text-txt-secondary leading-relaxed mb-4">
+            <p className="text-[13px] text-txt-secondary dark:text-white/50 leading-relaxed mb-4">
               KểCon tuân thủ COPPA & GDPR. Ứng dụng dành cho phụ huynh tạo nội
               dung cho con. Chúng tôi chỉ lưu dữ liệu cần thiết (giọng nói, truyện)
               trong tài khoản của bạn và không chia sẻ với bên thứ ba. Bạn có thể
@@ -67,7 +67,7 @@ export default function ComplianceLayer() {
             </button>
             <button
               onClick={() => setShowConsent(false)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-500 dark:text-white/40"
             >
               <X size={16} />
             </button>

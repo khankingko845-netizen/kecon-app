@@ -111,7 +111,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
     : [];
 
   return (
-    <div className="min-h-screen bg-surface pb-10">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-10">
       <TopBar title="Quản Trị" onBack={onBack} />
 
       {loading ? (
@@ -125,7 +125,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
             onClick={() => setShowCreate(true)}
             className="w-full mb-3 rounded-2xl bg-gradient-to-r from-accent to-pink-500 text-white p-4 flex items-center gap-3 shadow-[0_4px_12px_rgba(255,107,61,0.25)] active:scale-[0.99] transition-transform"
           >
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/[0.04]/20 flex items-center justify-center">
               <Plus size={20} />
             </div>
             <div className="text-left">
@@ -146,12 +146,12 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
               <button
                 key={m.label}
                 onClick={() => onNavigate(m.screen)}
-                className="bg-white rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col items-center gap-1.5 active:scale-[0.97] transition-transform"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col items-center gap-1.5 active:scale-[0.97] transition-transform"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${m.color}`}>
                   <m.icon size={17} />
                 </div>
-                <span className="text-[11px] font-bold text-txt text-center leading-tight">{m.label}</span>
+                <span className="text-[11px] font-bold text-txt dark:text-white text-center leading-tight">{m.label}</span>
               </button>
             ))}
           </div>
@@ -159,12 +159,12 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
           {/* KPI grid */}
           <div className="grid grid-cols-3 gap-2.5 mb-6">
             {kpis.map((k) => (
-              <div key={k.label} className="bg-white rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <div key={k.label} className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${k.color}`}>
                   <k.icon size={16} />
                 </div>
                 <div className="text-[20px] font-black tracking-tight">{k.value}</div>
-                <div className="text-[11px] text-txt-secondary font-medium">{k.label}</div>
+                <div className="text-[11px] text-txt-secondary dark:text-white/50 font-medium">{k.label}</div>
               </div>
             ))}
           </div>
@@ -173,15 +173,15 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
           <h3 className="text-[15px] font-black tracking-tight mb-2.5">
             Phân bố thể loại
           </h3>
-          <div className="bg-white rounded-2xl p-4 mb-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-2.5">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-2.5">
             {stats && stats.categoryBreakdown.length > 0 ? (
               stats.categoryBreakdown.map((c) => (
                 <div key={c.category}>
                   <div className="flex justify-between text-[12px] font-semibold mb-1">
                     <span>{categoryLabels[c.category] || c.category}</span>
-                    <span className="text-txt-secondary">{c.count}</span>
+                    <span className="text-txt-secondary dark:text-white/50">{c.count}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-2 rounded-full bg-gray-100 dark:bg-white/[0.06] overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-accent to-pink-500"
                       style={{ width: `${(c.count / maxCat) * 100}%` }}
@@ -190,7 +190,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
                 </div>
               ))
             ) : (
-              <p className="text-[13px] text-txt-secondary text-center py-2">
+              <p className="text-[13px] text-txt-secondary dark:text-white/50 text-center py-2">
                 Chưa có dữ liệu
               </p>
             )}
@@ -206,7 +206,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
               .map((g) => (
                 <div
                   key={g.category}
-                  className="bg-white rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
+                  className="bg-white dark:bg-white/[0.04] rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
                 >
                   <span
                     className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${
@@ -217,7 +217,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
                   >
                     {g.priority === "high" ? "Cao" : "Vừa"}
                   </span>
-                  <p className="flex-1 text-[13px] font-medium text-txt">
+                  <p className="flex-1 text-[13px] font-medium text-txt dark:text-white">
                     {g.suggestion}
                   </p>
                   <button
@@ -229,7 +229,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
                 </div>
               ))}
             {gaps.filter((g) => g.priority !== "low").length === 0 && (
-              <div className="bg-white rounded-2xl p-4 text-center text-[13px] text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center text-[13px] text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
                 <CheckCircle2 size={16} /> Nội dung đã đa dạng
               </div>
             )}
@@ -238,34 +238,34 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
           {/* Moderation queue */}
           <h3 className="text-[15px] font-black tracking-tight mb-2.5 flex items-center gap-1.5">
             <AlertTriangle size={16} className="text-amber-500" /> Hàng chờ duyệt
-            <span className="text-[12px] font-bold text-txt-secondary">
+            <span className="text-[12px] font-bold text-txt-secondary dark:text-white/50">
               ({queue.length})
             </span>
           </h3>
           <div className="space-y-2">
             {queue.length === 0 ? (
-              <div className="bg-white rounded-2xl p-4 text-center text-[13px] text-txt-secondary">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center text-[13px] text-txt-secondary dark:text-white/50">
                 Không có truyện chờ duyệt
               </div>
             ) : (
               queue.map((story) => (
                 <div
                   key={story.id}
-                  className="bg-white rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
+                  className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
                 >
                   <div
                     className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} shrink-0`}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-bold truncate">{story.title}</p>
-                    <p className="text-[11px] text-txt-secondary">
+                    <p className="text-[11px] text-txt-secondary dark:text-white/50">
                       {categoryLabels[story.category] || story.category} ·{" "}
                       {story.page_count} trang
                     </p>
                   </div>
                   <button
                     onClick={() => onNavigate("editor", { storyId: story.id })}
-                    className="px-2.5 py-1.5 rounded-lg bg-gray-100 text-[12px] font-bold text-txt"
+                    className="px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-[12px] font-bold text-txt dark:text-white"
                   >
                     Sửa
                   </button>
@@ -294,14 +294,14 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
           onClick={() => !creating && setShowCreate(false)}
         >
           <div
-            className="w-full max-w-[430px] bg-white rounded-t-3xl p-5 pb-8 animate-[slideUp_0.2s_ease]"
+            className="w-full max-w-[430px] bg-white dark:bg-white/[0.04] rounded-t-3xl p-5 pb-8 animate-[slideUp_0.2s_ease]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[16px] font-black tracking-tight">Tạo truyện mới</h3>
               <button
                 onClick={() => !creating && setShowCreate(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-txt-secondary"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-txt-secondary dark:text-white/50"
               >
                 <X size={16} />
               </button>
@@ -310,38 +310,38 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
               <button
                 onClick={handleWriteByHand}
                 disabled={creating}
-                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform disabled:opacity-60"
+                className="w-full bg-surface dark:bg-white/[0.04] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform disabled:opacity-60"
               >
                 <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
                   {creating ? <Loader2 size={18} className="animate-spin" /> : <PenLine size={18} />}
                 </div>
                 <div className="text-left">
                   <div className="text-[14px] font-bold">Viết tay</div>
-                  <div className="text-[12px] text-txt-secondary">Tạo truyện trống &amp; tự viết từng trang</div>
+                  <div className="text-[12px] text-txt-secondary dark:text-white/50">Tạo truyện trống &amp; tự viết từng trang</div>
                 </div>
               </button>
               <button
                 onClick={() => { setShowCreate(false); onNavigate("create"); }}
-                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
+                className="w-full bg-surface dark:bg-white/[0.04] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
               >
                 <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600">
                   <Sparkles size={18} />
                 </div>
                 <div className="text-left">
                   <div className="text-[14px] font-bold">AI tạo</div>
-                  <div className="text-[12px] text-txt-secondary">AI sinh cốt truyện theo chủ đề</div>
+                  <div className="text-[12px] text-txt-secondary dark:text-white/50">AI sinh cốt truyện theo chủ đề</div>
                 </div>
               </button>
               <button
                 onClick={() => { setShowCreate(false); onNavigate("upload"); }}
-                className="w-full bg-surface rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
+                className="w-full bg-surface dark:bg-white/[0.04] rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
               >
                 <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
                   <Upload size={18} />
                 </div>
                 <div className="text-left">
                   <div className="text-[14px] font-bold">Upload file</div>
-                  <div className="text-[12px] text-txt-secondary">Nhập .txt / .docx / .pdf</div>
+                  <div className="text-[12px] text-txt-secondary dark:text-white/50">Nhập .txt / .docx / .pdf</div>
                 </div>
               </button>
             </div>

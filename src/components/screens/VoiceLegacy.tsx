@@ -130,7 +130,7 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
               <AvatarIcon gender={info.gender} />
             </div>
             <span className="text-[11px] font-bold">{m.name}</span>
-            <span className="text-[10px] text-txt-secondary">
+            <span className="text-[10px] text-txt-secondary dark:text-white/50">
               {count > 0 ? `${count} truyện` : info.label}
             </span>
             <button
@@ -147,10 +147,10 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-white/[0.04]">
       <button
         onClick={onBack}
-        className="absolute left-5 top-14 w-9 h-9 rounded-xl bg-gray-100 text-txt flex items-center justify-center"
+        className="absolute left-5 top-14 w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white flex items-center justify-center"
         aria-label="Quay lại"
       >
         <ChevronLeft size={20} />
@@ -159,7 +159,7 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
         <h2 className="text-[22px] font-extrabold tracking-tight mb-1 flex items-center justify-center gap-2">
           <TreeDeciduous size={22} className="text-emerald-700" /> Cây Giọng Nói
         </h2>
-        <p className="text-[13px] text-txt-secondary font-medium">
+        <p className="text-[13px] text-txt-secondary dark:text-white/50 font-medium">
           Lưu giữ giọng nói — di sản tình yêu
         </p>
       </div>
@@ -169,10 +169,10 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
           <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
             <TreeDeciduous size={28} />
           </div>
-          <p className="text-sm text-txt-secondary mb-1 font-semibold">
+          <p className="text-sm text-txt-secondary dark:text-white/50 mb-1 font-semibold">
             Chưa có thành viên nào
           </p>
-          <p className="text-[12px] text-txt-secondary/70 mb-4">
+          <p className="text-[12px] text-txt-secondary dark:text-white/50/70 mb-4">
             Thêm ông bà, bố mẹ để xây cây giọng nói gia đình.
           </p>
         </div>
@@ -181,14 +181,14 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
           {tiers.grandparents.length > 0 && (
             <>
               {renderTier(tiers.grandparents)}
-              <div className="w-0.5 h-5 bg-gray-200 rounded-full" />
+              <div className="w-0.5 h-5 bg-gray-200 dark:bg-white/[0.08] rounded-full" />
             </>
           )}
           {tiers.parents.length > 0 && (
             <>
               {renderTier(tiers.parents)}
               {tiers.children.length > 0 && (
-                <div className="w-0.5 h-5 bg-gray-200 rounded-full" />
+                <div className="w-0.5 h-5 bg-gray-200 dark:bg-white/[0.08] rounded-full" />
               )}
             </>
           )}
@@ -208,28 +208,28 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
 
       {/* Legacy stats (real data) */}
       <div className="px-5 pb-10 pt-5">
-        <div className="bg-surface rounded-2xl p-[18px]">
+        <div className="bg-surface dark:bg-white/[0.04] rounded-2xl p-[18px]">
           <h4 className="text-base font-extrabold tracking-tight mb-3.5 flex items-center gap-2">
             <Heart size={18} className="text-pink-500" /> Di Sản Gia Đình
           </h4>
-          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+          <div className="flex items-center gap-3 py-2 border-b border-gray-200 dark:border-white/10">
             <div className="w-[38px] h-[38px] rounded-[10px] bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
               <BookOpen size={18} />
             </div>
             <div>
               <h5 className="text-sm font-bold mb-px">Tổng số truyện</h5>
-              <p className="text-[11px] text-txt-secondary">
+              <p className="text-[11px] text-txt-secondary dark:text-white/50">
                 {totalStories} truyện trong thư viện gia đình
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+          <div className="flex items-center gap-3 py-2 border-b border-gray-200 dark:border-white/10">
             <div className="w-[38px] h-[38px] rounded-[10px] bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
               <Mic size={18} />
             </div>
             <div>
               <h5 className="text-sm font-bold mb-px">Giọng đã lưu</h5>
-              <p className="text-[11px] text-txt-secondary">
+              <p className="text-[11px] text-txt-secondary dark:text-white/50">
                 {voicesWithClone}/{voiceProfiles.length} giọng đã clone
               </p>
             </div>
@@ -240,7 +240,7 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
             </div>
             <div>
               <h5 className="text-sm font-bold mb-px">Thành viên</h5>
-              <p className="text-[11px] text-txt-secondary">
+              <p className="text-[11px] text-txt-secondary dark:text-white/50">
                 {familyMembers.length} người trong cây gia đình
               </p>
             </div>
@@ -251,28 +251,28 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
       {/* Add member modal */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease]">
+          <div className="w-full max-w-[430px] bg-white dark:bg-white/[0.04] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[17px] font-black tracking-tight">
                 Thêm thành viên
               </h3>
               <button
                 onClick={() => setShowAdd(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-txt-secondary"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-txt-secondary dark:text-white/50"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <label className="text-[13px] font-bold text-txt mb-2 block">Tên</label>
+            <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">Tên</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="VD: Bà Ngoại"
-              className="w-full px-4 py-3 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors mb-4"
+              className="w-full px-4 py-3 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-semibold text-txt dark:text-white outline-none focus:border-accent transition-colors mb-4"
             />
 
-            <label className="text-[13px] font-bold text-txt mb-2 block">Vai trò</label>
+            <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">Vai trò</label>
             <div className="flex flex-wrap gap-2 mb-4">
               {RELATION_OPTIONS.map((r) => (
                 <button
@@ -281,7 +281,7 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
                   className={`px-3.5 py-2 rounded-xl text-[13px] font-semibold border-[1.5px] transition-colors ${
                     relation === r.key
                       ? "border-accent bg-orange-50 text-accent"
-                      : "border-gray-200 bg-white text-txt-secondary"
+                      : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                   }`}
                 >
                   {r.label}
@@ -291,13 +291,13 @@ export default function VoiceLegacy({ onBack }: VoiceLegacyProps) {
 
             {voiceProfiles.length > 0 && (
               <>
-                <label className="text-[13px] font-bold text-txt mb-2 block">
+                <label className="text-[13px] font-bold text-txt dark:text-white mb-2 block">
                   Liên kết giọng (tuỳ chọn)
                 </label>
                 <select
                   value={voiceProfileId}
                   onChange={(e) => setVoiceProfileId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors mb-4"
+                  className="w-full px-4 py-3 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-semibold text-txt dark:text-white outline-none focus:border-accent transition-colors mb-4"
                 >
                   <option value="">— Không liên kết —</option>
                   {voiceProfiles.map((v) => (

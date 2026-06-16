@@ -77,7 +77,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
   // ----- Story picker (no storyId provided) -----
   if (!storyId) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
         <TopBar
           title=""
           onBack={onBack}
@@ -89,7 +89,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
         />
         <div className="flex-1 px-6 pt-5 pb-10">
           {branchingStories.length === 0 ? (
-            <div className="text-center pt-20 text-txt-secondary">
+            <div className="text-center pt-20 text-txt-secondary dark:text-white/50">
               <BookOpen size={40} className="mx-auto mb-3 opacity-40" />
               <p className="text-sm">
                 Chưa có truyện phân nhánh nào. Hãy tạo lựa chọn rẽ nhánh trong
@@ -98,7 +98,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
             </div>
           ) : (
             <div className="space-y-2.5">
-              <h3 className="text-base font-extrabold text-txt mb-1">
+              <h3 className="text-base font-extrabold text-txt dark:text-white mb-1">
                 Chọn một cuộc phiêu lưu
               </h3>
               {branchingStories.map((s) => (
@@ -107,7 +107,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
                   onClick={() =>
                     onNavigate?.("adventure", { storyId: s.id })
                   }
-                  className="w-full p-4 rounded-[14px] flex items-center gap-3.5 border-2 border-transparent bg-surface hover:border-emerald-300 hover:bg-emerald-50 transition-all active:scale-[0.98] text-left"
+                  className="w-full p-4 rounded-[14px] flex items-center gap-3.5 border-2 border-transparent bg-surface dark:bg-white/[0.04] hover:border-emerald-300 hover:bg-emerald-50 transition-all active:scale-[0.98] text-left"
                 >
                   <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
                     <Leaf size={20} />
@@ -116,7 +116,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
                     <strong className="text-[15px] font-bold block mb-0.5">
                       {s.title}
                     </strong>
-                    <span className="text-xs text-txt-secondary">
+                    <span className="text-xs text-txt-secondary dark:text-white/50">
                       {s.page_count} trang · phân nhánh
                     </span>
                   </div>
@@ -131,7 +131,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-white/[0.04] flex items-center justify-center">
         <Loader2 className="animate-spin text-emerald-600" size={28} />
       </div>
     );
@@ -139,9 +139,9 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
 
   if (error || !currentPage) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
         <TopBar title="" onBack={onBack} />
-        <div className="flex-1 flex items-center justify-center px-6 text-center text-txt-secondary">
+        <div className="flex-1 flex items-center justify-center px-6 text-center text-txt-secondary dark:text-white/50">
           <p className="text-sm">{error || "Truyện không có nội dung."}</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
   const effect = asEffectType(currentPage.particle_effect);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white flex flex-col">
+    <div className="relative min-h-screen overflow-hidden bg-white dark:bg-white/[0.04] flex flex-col">
       <SceneEffects effect={effect} active />
       <div className="relative z-10 flex flex-col min-h-screen">
         <TopBar
@@ -179,7 +179,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
 
         {/* Story */}
         <div className="flex-1 px-6 pt-5 pb-10">
-          <p className="text-[15px] leading-[1.8] text-txt mb-5 whitespace-pre-wrap">
+          <p className="text-[15px] leading-[1.8] text-txt dark:text-white mb-5 whitespace-pre-wrap">
             {currentPage.content}
           </p>
 
@@ -192,7 +192,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
                 <button
                   key={i}
                   onClick={() => goTo(c.target)}
-                  className="w-full p-4 rounded-[14px] flex items-center gap-3.5 mb-2.5 border-2 border-transparent bg-surface hover:border-emerald-300 hover:bg-emerald-50 transition-all active:scale-[0.98] text-left"
+                  className="w-full p-4 rounded-[14px] flex items-center gap-3.5 mb-2.5 border-2 border-transparent bg-surface dark:bg-white/[0.04] hover:border-emerald-300 hover:bg-emerald-50 transition-all active:scale-[0.98] text-left"
                 >
                   <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold shrink-0">
                     {i + 1}
@@ -202,7 +202,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
                       {c.label || `Lựa chọn ${i + 1}`}
                     </strong>
                     {c.description && (
-                      <span className="text-xs text-txt-secondary">
+                      <span className="text-xs text-txt-secondary dark:text-white/50">
                         {c.description}
                       </span>
                     )}
@@ -238,7 +238,7 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
           {path.length > 1 && (
             <button
               onClick={goPrev}
-              className="w-full mt-3 py-2.5 text-sm font-semibold text-txt-secondary"
+              className="w-full mt-3 py-2.5 text-sm font-semibold text-txt-secondary dark:text-white/50"
             >
               ← Quay lại lựa chọn trước
             </button>

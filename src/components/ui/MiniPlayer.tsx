@@ -50,13 +50,13 @@ export default function MiniPlayer() {
         />
         {/* Seek thumb — visible on hover/drag */}
         <div
-          className="absolute top-[-3px] w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity"
+          className="absolute top-[-3px] w-3 h-3 rounded-full bg-white dark:bg-white/[0.04] shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity"
           style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
         />
       </div>
 
       {/* Player bar */}
-      <div className="bg-white/95 backdrop-blur-xl border-t border-black/5 px-4 py-2.5 flex items-center gap-3">
+      <div className="bg-white dark:bg-white/[0.04]/95 backdrop-blur-xl border-t border-black/5 px-4 py-2.5 flex items-center gap-3">
         {/* Story icon */}
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center text-white shrink-0 shadow-md">
           <span className="text-[14px] font-black">📖</span>
@@ -64,10 +64,10 @@ export default function MiniPlayer() {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold text-txt truncate">
+          <p className="text-[13px] font-bold text-txt dark:text-white truncate">
             {currentTrack.storyTitle}
           </p>
-          <p className="text-[11px] text-txt-secondary font-medium">
+          <p className="text-[11px] text-txt-secondary dark:text-white/50 font-medium">
             Trang {currentTrack.pageNumber}/{currentTrack.totalPages}
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function MiniPlayer() {
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={prevPage}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
           >
             <SkipBack size={14} />
           </button>
@@ -88,13 +88,13 @@ export default function MiniPlayer() {
           </button>
           <button
             onClick={nextPage}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
           >
             <SkipForward size={14} />
           </button>
           <button
             onClick={stop}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
           >
             <X size={14} />
           </button>

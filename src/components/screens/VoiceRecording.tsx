@@ -231,7 +231,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
   const progress = (elapsed / 180) * 100;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
       <TopBar title="Ghi Âm Giọng Nói" onBack={onBack} />
 
       <div className="flex-1 flex flex-col items-center px-7 pt-6 pb-10">
@@ -277,7 +277,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
             ? "Ghi âm hoàn tất"
             : "Đọc đoạn văn sau"}
         </h2>
-        <p className="text-sm text-txt-secondary text-center leading-relaxed mb-5">
+        <p className="text-sm text-txt-secondary dark:text-white/50 text-center leading-relaxed mb-5">
           {cloneResult
             ? `Giọng "${cloneResult.name}" đã được tạo trên ElevenLabs`
             : "AI sẽ học giọng bạn từ đoạn ghi âm này. Đọc to, rõ ràng, tự nhiên."}
@@ -296,7 +296,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
                 className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all ${
                   selectedScript === s.id
                     ? "border-accent bg-orange-50 text-accent"
-                    : "border-gray-200 bg-white text-txt-secondary"
+                    : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                 }`}
               >
                 {s.label}
@@ -306,21 +306,21 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
         </div>
 
         {/* Script Card */}
-        <div className="w-full bg-surface rounded-2xl p-[18px] border border-gray-200 mb-5">
-          <p className="text-[15px] leading-relaxed italic text-txt">
+        <div className="w-full bg-surface dark:bg-white/[0.04] rounded-2xl p-[18px] border border-gray-200 dark:border-white/10 mb-5">
+          <p className="text-[15px] leading-relaxed italic text-txt dark:text-white">
             &ldquo;{SAMPLE_SCRIPTS.find((s) => s.id === selectedScript)?.text}&rdquo;
           </p>
         </div>
 
         {/* Progress */}
         <div className="w-full mb-1">
-          <div className="w-full h-1 bg-gray-200 rounded-full">
+          <div className="w-full h-1 bg-gray-200 dark:bg-white/[0.08] rounded-full">
             <div
               className="h-full bg-gradient-to-r from-accent-2 to-accent rounded-full transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs font-semibold text-txt-secondary mt-2">
+          <div className="flex justify-between text-xs font-semibold text-txt-secondary dark:text-white/50 mt-2">
             <span>{formatTime(elapsed)}</span>
             <span>3:00</span>
           </div>
@@ -331,7 +331,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
           <button
             onClick={handleToggleRecording}
             disabled={isCloning}
-            className="w-[72px] h-[72px] rounded-full border-4 border-gray-200 flex items-center justify-center text-white mt-4 active:scale-95 transition-transform disabled:opacity-50"
+            className="w-[72px] h-[72px] rounded-full border-4 border-gray-200 dark:border-white/10 flex items-center justify-center text-white mt-4 active:scale-95 transition-transform disabled:opacity-50"
             style={{
               background: isRecording ? "#EF4444" : "#EF4444",
               boxShadow: "0 6px 20px -4px rgba(239,68,68,0.35)",
@@ -341,7 +341,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
           </button>
         )}
         {!cloneResult && !audioBlob && (
-          <p className="text-xs text-txt-secondary mt-2 font-medium">
+          <p className="text-xs text-txt-secondary dark:text-white/50 mt-2 font-medium">
             {isRecording ? "Nhấn để dừng" : "Nhấn để bắt đầu ghi âm"}
           </p>
         )}
@@ -365,7 +365,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
               value={voiceName}
               onChange={(e) => setVoiceName(e.target.value)}
               placeholder="Tên giọng nói (VD: Mẹ Lan)"
-              className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[15px] font-semibold text-txt outline-none focus:border-accent transition-colors"
+              className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[15px] font-semibold text-txt dark:text-white outline-none focus:border-accent transition-colors"
             />
             <div className="grid grid-cols-2 gap-2.5">
               {(["female", "male"] as const).map((gOpt) => (
@@ -375,7 +375,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
                   className={`py-3 rounded-xl text-[14px] font-bold border-[1.5px] transition-colors ${
                     gender === gOpt
                       ? "border-accent bg-accent/10 text-accent"
-                      : "border-gray-200 bg-surface text-txt-secondary"
+                      : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                   }`}
                 >
                   {gOpt === "female" ? "Giọng Nữ" : "Giọng Nam"}
@@ -384,7 +384,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
             </div>
             {/* Language selector for voice clone */}
             <div>
-              <label className="text-[12px] font-bold text-txt-secondary mb-1.5 block">
+              <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
                 Ngôn ngữ giọng nói
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -399,7 +399,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
                     className={`py-2.5 rounded-xl text-[12px] font-bold border-[1.5px] transition-colors ${
                       voiceLang === lang.id
                         ? "border-accent bg-accent/10 text-accent"
-                        : "border-gray-200 bg-surface text-txt-secondary"
+                        : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                     }`}
                   >
                     {lang.label}

@@ -99,7 +99,7 @@ export default function LongPressMenu({
                 <button
                   key={item.id}
                   onClick={() => handleSelect(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl active:bg-gray-50 dark:active:bg-white/5 transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl active:bg-gray-50 dark:active:bg-white dark:bg-white/[0.04]/5 transition-colors ${
                     item.destructive ? "text-red-500" : ""
                   }`}
                 >

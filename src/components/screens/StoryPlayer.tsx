@@ -956,7 +956,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
             mergeAbortRef.current = true;
             onBack();
           }}
-          className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+          className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04]/5 flex items-center justify-center"
         >
           <ChevronLeft size={20} className="text-white/60" />
         </button>
@@ -981,7 +981,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                 audioRef.current?.pause();
                 onNavigate("editor", { storyId });
               }}
-              className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04]/5 flex items-center justify-center"
               title="Chỉnh sửa truyện"
             >
               <Pencil size={16} className="text-white/60" />
@@ -989,7 +989,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           )}
           <button
             onClick={() => setShowRating(!showRating)}
-            className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+            className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04]/5 flex items-center justify-center"
           >
             <MoreHorizontal size={20} className="text-white/60" />
           </button>
@@ -1066,7 +1066,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                       <button
                         key={v.id}
                         onClick={() => handleVoiceSelect(v.elevenlabs_voice_id!, v.name)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white dark:bg-white/[0.04]/10 transition-colors ${
                           resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}
                       >
@@ -1085,7 +1085,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                       <button
                         key={v.id}
                         onClick={() => handleVoiceSelect(v.voice_id, v.name)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white dark:bg-white/[0.04]/10 transition-colors ${
                           resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}
                       >
@@ -1102,7 +1102,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                       <button
                         key={v.id}
                         onClick={() => handleVoiceSelect(v.voice_id, v.name)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white dark:bg-white/[0.04]/10 transition-colors ${
                           resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
                         }`}
                       >
@@ -1154,7 +1154,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
         {/* Active visual-effect indicator */}
         {activeEffect && (
-          <span className="mb-3 px-3 py-1 rounded-full bg-white/[0.08] text-[11px] font-bold text-white/70 flex items-center gap-1.5">
+          <span className="mb-3 px-3 py-1 rounded-full bg-white dark:bg-white/[0.04]/[0.08] text-[11px] font-bold text-white/70 flex items-center gap-1.5">
             <Sparkles size={11} className="text-accent-2" />
             Hiệu ứng: {EFFECT_LABELS[activeEffect]}
           </span>
@@ -1178,7 +1178,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         {/* Text Preview — Lyrics-style word highlight */}
         <div
           key={`txt-${currentPage}`}
-          className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
+          className="fx-page-enter w-full px-[18px] py-3.5 bg-white dark:bg-white/[0.04]/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
         >
           {displayText ? (
             <LyricsText
@@ -1192,7 +1192,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
         {/* Seek Bar — draggable */}
         <div className="w-full mb-1">
           <div
-            className="w-full h-2.5 bg-white/[0.08] rounded-full relative cursor-pointer group"
+            className="w-full h-2.5 bg-white dark:bg-white/[0.04]/[0.08] rounded-full relative cursor-pointer group"
             role="slider"
             aria-valuemin={0}
             aria-valuemax={100}
@@ -1238,7 +1238,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               mergedRef.current.pageMarkers.slice(1).map((marker, i) => (
                 <div
                   key={i}
-                  className="absolute top-0 w-0.5 h-full bg-white/20 rounded-full"
+                  className="absolute top-0 w-0.5 h-full bg-white dark:bg-white/[0.04]/20 rounded-full"
                   style={{ left: `${(marker / mergedRef.current!.totalDuration) * 100}%` }}
                 />
               ))
@@ -1248,7 +1248,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               style={{ width: `${progress}%` }}
             />
             <div
-              className="absolute top-[-3px] w-4 h-4 rounded-full bg-white shadow-md shadow-black/30 group-active:scale-125 transition-transform"
+              className="absolute top-[-3px] w-4 h-4 rounded-full bg-white dark:bg-white/[0.04] shadow-md shadow-black/30 group-active:scale-125 transition-transform"
               style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
             />
           </div>
@@ -1278,7 +1278,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           <button
             onClick={togglePlay}
             disabled={isTTSLoading}
-            className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg shadow-white/20 active:scale-95 transition-transform disabled:opacity-60"
+            className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-lg shadow-white/20 active:scale-95 transition-transform disabled:opacity-60"
           >
             {isTTSLoading ? (
               <Loader2 size={24} className="text-[#0F0628] animate-spin" />
@@ -1321,7 +1321,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               </h3>
               <button
                 onClick={() => setShowRating(false)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+                className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.04]/10 flex items-center justify-center text-white/70"
               >
                 <X size={16} />
               </button>
@@ -1339,7 +1339,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
             </div>
 
             {/* User's rating */}
-            <div className="bg-white/5 rounded-2xl p-4 mb-5">
+            <div className="bg-white dark:bg-white/[0.04]/5 rounded-2xl p-4 mb-5">
               <p className="text-[13px] font-bold text-white/70 mb-3">
                 Đánh giá của bạn
               </p>
@@ -1349,7 +1349,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
             </div>
 
             {/* Write review */}
-            <div className="bg-white/5 rounded-2xl p-4 mb-5">
+            <div className="bg-white dark:bg-white/[0.04]/5 rounded-2xl p-4 mb-5">
               <p className="text-[13px] font-bold text-white/70 mb-3 flex items-center gap-1.5">
                 <MessageSquare size={14} /> Viết nhận xét
               </p>
@@ -1358,7 +1358,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="Chia sẻ cảm nhận của bạn..."
                 rows={3}
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[13px] text-white placeholder-white/30 outline-none focus:border-accent-2/50 resize-none"
+                className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-[13px] text-white placeholder-white/30 outline-none focus:border-accent-2/50 resize-none"
               />
               <button
                 onClick={handleSubmitReview}
@@ -1386,7 +1386,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               ) : (
                 <div className="space-y-3">
                   {reviews.map((r) => (
-                    <div key={r.id} className="bg-white/5 rounded-xl p-3">
+                    <div key={r.id} className="bg-white dark:bg-white/[0.04]/5 rounded-xl p-3">
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-[12px] font-bold text-white/60">
                           {r.display_name || "Phụ huynh"}
@@ -1429,7 +1429,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               </h3>
               <button
                 onClick={() => setShowMixer(false)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+                className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.04]/10 flex items-center justify-center text-white/70"
               >
                 <X size={16} />
               </button>
@@ -1440,7 +1440,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
                 autoAmbient
                   ? "bg-accent-2/20 text-accent-2"
-                  : "bg-white/5 text-white/50"
+                  : "bg-white dark:bg-white/[0.04]/5 text-white/50"
               }`}
             >
               <Volume2 size={14} />
@@ -1456,7 +1456,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     <button
                       onClick={() => toggleAmbient(type, !on)}
                       className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
-                        on ? "bg-accent text-white" : "bg-white/5 text-white/50"
+                        on ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04]/5 text-white/50"
                       }`}
                     >
                       {label}
@@ -1490,7 +1490,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                   className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
                     autoEffect && !manualEffect
                       ? "bg-accent-2 text-[#0F0628]"
-                      : "bg-white/5 text-white/50"
+                      : "bg-white dark:bg-white/[0.04]/5 text-white/50"
                   }`}
                 >
                   AI tự chọn
@@ -1503,7 +1503,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                   className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
                     !autoEffect && !manualEffect
                       ? "bg-accent text-white"
-                      : "bg-white/5 text-white/50"
+                      : "bg-white dark:bg-white/[0.04]/5 text-white/50"
                   }`}
                 >
                   Tắt
@@ -1515,7 +1515,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
                       manualEffect === type
                         ? "bg-accent text-white"
-                        : "bg-white/5 text-white/50"
+                        : "bg-white dark:bg-white/[0.04]/5 text-white/50"
                     }`}
                   >
                     {EFFECT_LABELS[type]}
@@ -1553,7 +1553,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               </h3>
               <button
                 onClick={() => setShowAIMenu(false)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+                className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.04]/10 flex items-center justify-center text-white/70"
               >
                 <X size={16} />
               </button>
@@ -1564,7 +1564,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               <button
                 onClick={() => { setShowAIMenu(false); handleAutoIllustrate(); }}
                 disabled={isIllustrating}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+                className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
               >
                 <div className="text-2xl mb-2">🎨</div>
                 <div className="text-sm font-bold text-white">Tạo Minh Hoạ</div>
@@ -1575,7 +1575,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               <button
                 onClick={() => { setShowAIMenu(false); handlePersonalize(); }}
                 disabled={isPersonalizing}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+                className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
               >
                 <div className="text-2xl mb-2">🧒</div>
                 <div className="text-sm font-bold text-white">Cá Nhân Hoá</div>
@@ -1590,7 +1590,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     onNavigate("vocab-quiz", { storyId, storyTitle: story?.title || "" });
                   }
                 }}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+                className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
               >
                 <div className="text-2xl mb-2">📚</div>
                 <div className="text-sm font-bold text-white">Từ Vựng & Quiz</div>
@@ -1609,7 +1609,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                   handleTranslate(targetLang, bilingual);
                 }}
                 disabled={isTranslating}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
+                className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
               >
                 <div className="text-2xl mb-2">🌍</div>
                 <div className="text-sm font-bold text-white">Dịch Truyện</div>
@@ -1619,7 +1619,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
               {/* Ambient Sounds */}
               <button
                 onClick={() => { setShowAIMenu(false); setShowMixer(true); }}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+                className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
               >
                 <div className="text-2xl mb-2">🎵</div>
                 <div className="text-sm font-bold text-white">Âm Nền</div>
@@ -1633,7 +1633,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
                     setShowAIMenu(false);
                     onNavigate("editor", { storyId });
                   }}
-                  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
+                  className="p-4 rounded-2xl bg-white dark:bg-white/[0.04]/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
                 >
                   <div className="text-2xl mb-2">✏️</div>
                   <div className="text-sm font-bold text-white">Chỉnh Sửa</div>

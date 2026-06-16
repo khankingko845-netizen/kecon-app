@@ -146,19 +146,19 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="relative max-w-[430px] mx-auto min-h-screen bg-white flex items-center justify-center">
+      <div className="relative max-w-[430px] mx-auto min-h-screen bg-white dark:bg-[#0A0A0F] flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center mx-auto mb-3 animate-pulse">
             <span className="text-white text-xl font-bold">K</span>
           </div>
-          <p className="text-sm text-gray-400 font-medium">Loading...</p>
+          <p className="text-sm text-gray-400 dark:text-white/30 font-medium">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative max-w-[430px] mx-auto min-h-screen bg-white shadow-2xl shadow-black/10">
+    <div className="relative max-w-[430px] mx-auto min-h-screen bg-white dark:bg-[#0A0A0F] shadow-2xl shadow-black/10">
       <div className="screen-enter" key={current.screen}>
         {current.screen === "onboarding" && (
           <Onboarding

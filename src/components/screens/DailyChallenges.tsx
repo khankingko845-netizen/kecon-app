@@ -154,11 +154,11 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
   const totalReward = challenges.filter((c) => c.completed).reduce((s, c) => s + c.xp_reward, 0);
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-[22px] font-black tracking-tight">Thử Thách Hàng Ngày</h2>
@@ -167,20 +167,20 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5 mb-5">
-          <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 text-center shadow-sm">
             <Flame size={20} className="text-orange-500 mx-auto mb-1" />
             <p className="text-[18px] font-black">{streak}</p>
-            <p className="text-[10px] text-txt-secondary font-semibold">Streak</p>
+            <p className="text-[10px] text-txt-secondary dark:text-white/50 font-semibold">Streak</p>
           </div>
-          <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 text-center shadow-sm">
             <Star size={20} className="text-amber-500 mx-auto mb-1" />
             <p className="text-[18px] font-black">{totalXP}</p>
-            <p className="text-[10px] text-txt-secondary font-semibold">Tổng XP</p>
+            <p className="text-[10px] text-txt-secondary dark:text-white/50 font-semibold">Tổng XP</p>
           </div>
-          <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-3 text-center shadow-sm">
             <Gift size={20} className="text-purple-500 mx-auto mb-1" />
             <p className="text-[18px] font-black">{completedCount}/{challenges.length}</p>
-            <p className="text-[10px] text-txt-secondary font-semibold">Hoàn thành</p>
+            <p className="text-[10px] text-txt-secondary dark:text-white/50 font-semibold">Hoàn thành</p>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
             {challenges.map((challenge) => (
               <div
                 key={challenge.id}
-                className={`bg-white rounded-2xl p-4 shadow-sm transition-all ${
+                className={`bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm transition-all ${
                   challenge.completed ? "opacity-70" : ""
                 }`}
               >
@@ -220,28 +220,28 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className={`text-[14px] font-bold ${challenge.completed ? "line-through text-txt-secondary" : "text-txt"}`}>
+                      <p className={`text-[14px] font-bold ${challenge.completed ? "line-through text-txt-secondary dark:text-white/50" : "text-txt dark:text-white"}`}>
                         {challenge.title}
                       </p>
                       <span className="text-[11px] font-bold text-accent flex items-center gap-1">
                         <Star size={10} /> +{challenge.xp_reward} XP
                       </span>
                     </div>
-                    <p className="text-[12px] text-txt-secondary mt-0.5">{challenge.description}</p>
+                    <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-0.5">{challenge.description}</p>
 
                     {/* Progress bar */}
                     <div className="mt-2.5">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-txt-secondary">
+                        <span className="text-[10px] font-semibold text-txt-secondary dark:text-white/50">
                           {challenge.progress}/{challenge.target}
                         </span>
                         {!challenge.completed && (
-                          <span className="text-[10px] text-txt-secondary flex items-center gap-1">
+                          <span className="text-[10px] text-txt-secondary dark:text-white/50 flex items-center gap-1">
                             <Clock size={9} /> Hôm nay
                           </span>
                         )}
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             challenge.completed ? "bg-green-400" : "bg-accent"

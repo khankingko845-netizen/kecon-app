@@ -23,7 +23,7 @@ const roleLabels: Record<string, string> = {
 function roleBadge(role: string) {
   if (role === "super_admin") return "bg-violet-100 text-violet-700";
   if (role === "admin") return "bg-accent/10 text-accent";
-  return "bg-gray-100 text-gray-500";
+  return "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/40";
 }
 
 export default function AdminUsers({ onBack }: AdminUsersProps) {
@@ -77,12 +77,12 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
   });
 
   return (
-    <div className="min-h-screen bg-surface pb-10">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-10">
       <TopBar title="Người dùng" onBack={onBack} />
 
       <div className="px-5 pt-1">
-        <div className="bg-white rounded-[14px] px-4 py-3 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-3">
-          <Search size={18} className="text-gray-400" />
+        <div className="bg-white dark:bg-white/[0.04] rounded-[14px] px-4 py-3 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none mb-3">
+          <Search size={18} className="text-gray-400 dark:text-white/30" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -102,7 +102,7 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
             <Loader2 size={24} className="animate-spin text-accent" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 text-center text-[13px] text-txt-secondary">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 text-center text-[13px] text-txt-secondary dark:text-white/50">
             Không tìm thấy người dùng
           </div>
         ) : (
@@ -113,7 +113,7 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
               return (
                 <div
                   key={u.id}
-                  className="bg-white rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
+                  className="bg-white dark:bg-white/[0.04] rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-amber-400 flex items-center justify-center text-white font-bold text-lg">
@@ -123,10 +123,10 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
                       <div className="flex items-center gap-1.5">
                         <p className="text-[14px] font-bold truncate">{name}</p>
                         {isSelf && (
-                          <span className="text-[10px] text-txt-secondary">(bạn)</span>
+                          <span className="text-[10px] text-txt-secondary dark:text-white/50">(bạn)</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2.5 mt-0.5 text-[11px] text-txt-secondary">
+                      <div className="flex items-center gap-2.5 mt-0.5 text-[11px] text-txt-secondary dark:text-white/50">
                         <span className="flex items-center gap-0.5">
                           <BookOpen size={11} /> {u.storyCount}
                         </span>
@@ -146,7 +146,7 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
                       <button
                         onClick={() => changeRole(u, "user")}
                         disabled={working === u.id || u.role === "user"}
-                        className="flex-1 py-1.5 rounded-lg bg-gray-100 text-txt text-[12px] font-bold flex items-center justify-center gap-1 disabled:opacity-40"
+                        className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white text-[12px] font-bold flex items-center justify-center gap-1 disabled:opacity-40"
                       >
                         <UserIcon size={12} /> User
                       </button>

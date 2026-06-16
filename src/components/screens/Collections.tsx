@@ -133,13 +133,13 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
   const selected = selectedCollection ? collections.find((c) => c.id === selectedCollection) : null;
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <button
             onClick={() => selectedCollection ? setSelectedCollection(null) : onBack()}
-            className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm"
+            className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
           >
             <ChevronLeft size={18} />
           </button>
@@ -155,21 +155,21 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
         ) : selected ? (
           /* Collection detail */
           <div className="space-y-2.5">
-            <p className="text-[13px] text-txt-secondary mb-3">
+            <p className="text-[13px] text-txt-secondary dark:text-white/50 mb-3">
               {selected.emoji} {selected.description}
             </p>
             {selected.stories.map((story) => (
               <button
                 key={story.id}
                 onClick={() => onNavigate("player", { storyId: story.id })}
-                className="w-full bg-white rounded-xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.98] transition-transform"
+                className="w-full bg-white dark:bg-white/[0.04] rounded-xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.98] transition-transform"
               >
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white flex-shrink-0`}>
                   <StoryIcon icon={iconForCategory(story.category, story.id)} />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="text-[14px] font-bold truncate">{story.title}</p>
-                  <p className="text-[11px] text-txt-secondary flex items-center gap-2">
+                  <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-2">
                     <span className="flex items-center gap-0.5"><Play size={10} /> {story.play_count || 0}</span>
                     <span className="flex items-center gap-0.5"><Heart size={10} /> {story.like_count || 0}</span>
                   </p>
@@ -181,8 +181,8 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
         ) : collections.length === 0 ? (
           <div className="text-center py-16">
             <BookOpen size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-[14px] font-bold text-txt-secondary">Chưa có bộ sưu tập</p>
-            <p className="text-[12px] text-txt-secondary mt-1">Tạo truyện để bắt đầu sưu tập</p>
+            <p className="text-[14px] font-bold text-txt-secondary dark:text-white/50">Chưa có bộ sưu tập</p>
+            <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-1">Tạo truyện để bắt đầu sưu tập</p>
             <button
               onClick={() => onNavigate("create")}
               className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold"
@@ -197,14 +197,14 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
               <button
                 key={col.id}
                 onClick={() => setSelectedCollection(col.id)}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.97] transition-transform"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.97] transition-transform"
               >
                 <div className={`h-20 bg-gradient-to-br ${col.color} flex items-center justify-center`}>
                   <span className="text-4xl">{col.emoji}</span>
                 </div>
                 <div className="p-3">
                   <p className="text-[13px] font-bold truncate">{col.name}</p>
-                  <p className="text-[11px] text-txt-secondary flex items-center gap-1">
+                  <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-1">
                     <Star size={10} /> {col.description}
                   </p>
                 </div>

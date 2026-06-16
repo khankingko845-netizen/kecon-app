@@ -99,7 +99,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
       {reviews && (
         <div className="space-y-2">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-[13px] font-black text-txt flex items-center gap-1.5">
+            <h3 className="text-[13px] font-black text-txt dark:text-white flex items-center gap-1.5">
               <Brain size={14} className="text-indigo-600" />
               Đánh Giá Chuyên Gia
             </h3>
@@ -119,7 +119,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
             return (
               <div
                 key={key}
-                className="rounded-2xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-hidden"
+                className="rounded-2xl border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.04] shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-hidden"
               >
                 {/* Header */}
                 <button
@@ -128,8 +128,8 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                 >
                   <span className="text-2xl">{data.expert.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-bold text-txt">{data.expert.name}</div>
-                    <div className="text-[11px] text-txt-secondary">{data.expert.title}</div>
+                    <div className="text-[13px] font-bold text-txt dark:text-white">{data.expert.name}</div>
+                    <div className="text-[11px] text-txt-secondary dark:text-white/50">{data.expert.title}</div>
                   </div>
                   {score && (
                     <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-yellow-50">
@@ -137,7 +137,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                       <span className="text-[13px] font-black text-yellow-700">{score}/10</span>
                     </div>
                   )}
-                  {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                  {isExpanded ? <ChevronUp size={16} className="text-gray-400 dark:text-white/30" /> : <ChevronDown size={16} className="text-gray-400 dark:text-white/30" />}
                 </button>
 
                 {/* Expanded Details */}
@@ -150,7 +150,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                         {/* Summary */}
                         {review?.summary && (
                           <div className="p-2.5 rounded-xl bg-surface">
-                            <p className="text-[12px] text-txt leading-relaxed">{review.summary}</p>
+                            <p className="text-[12px] text-txt dark:text-white leading-relaxed">{review.summary}</p>
                           </div>
                         )}
 
@@ -161,7 +161,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                               <Star size={11} /> Điểm mạnh
                             </div>
                             {review.strengths.map((s: string, i: number) => (
-                              <p key={i} className="text-[12px] text-txt-secondary ml-4 mb-0.5">• {s}</p>
+                              <p key={i} className="text-[12px] text-txt-secondary dark:text-white/50 ml-4 mb-0.5">• {s}</p>
                             ))}
                           </div>
                         )}
@@ -173,7 +173,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                               <AlertTriangle size={11} /> Lưu ý
                             </div>
                             {review.concerns.map((s: string, i: number) => (
-                              <p key={i} className="text-[12px] text-txt-secondary ml-4 mb-0.5">• {s}</p>
+                              <p key={i} className="text-[12px] text-txt-secondary dark:text-white/50 ml-4 mb-0.5">• {s}</p>
                             ))}
                           </div>
                         )}
@@ -185,7 +185,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                               <Lightbulb size={11} /> Gợi ý cải thiện
                             </div>
                             {review.suggestions.map((s: string, i: number) => (
-                              <p key={i} className="text-[12px] text-txt-secondary ml-4 mb-0.5">• {s}</p>
+                              <p key={i} className="text-[12px] text-txt-secondary dark:text-white/50 ml-4 mb-0.5">• {s}</p>
                             ))}
                           </div>
                         )}
@@ -197,7 +197,7 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                               <MessageSquare size={11} /> Câu hỏi cho bé
                             </div>
                             {review.discussion_questions.map((q: string, i: number) => (
-                              <p key={i} className="text-[12px] text-txt-secondary ml-4 mb-0.5">❓ {q}</p>
+                              <p key={i} className="text-[12px] text-txt-secondary dark:text-white/50 ml-4 mb-0.5">❓ {q}</p>
                             ))}
                           </div>
                         )}
@@ -209,19 +209,19 @@ export default function ExpertPanel({ storyContent, storyTitle, targetAge, langu
                               ✏️ Gợi ý viết lại
                             </div>
                             {review.rewrite_hints.map((h: string, i: number) => (
-                              <p key={i} className="text-[12px] text-txt-secondary ml-4 mb-0.5">→ {h}</p>
+                              <p key={i} className="text-[12px] text-txt-secondary dark:text-white/50 ml-4 mb-0.5">→ {h}</p>
                             ))}
                           </div>
                         )}
 
                         {/* Extra fields */}
                         {review?.structure_analysis && (
-                          <p className="text-[11px] text-txt-secondary bg-surface rounded-lg p-2">
+                          <p className="text-[11px] text-txt-secondary dark:text-white/50 bg-surface dark:bg-white/[0.04] rounded-lg p-2">
                             📐 <b>Cấu trúc:</b> {review.structure_analysis}
                           </p>
                         )}
                         {review?.educational_value && (
-                          <p className="text-[11px] text-txt-secondary bg-surface rounded-lg p-2">
+                          <p className="text-[11px] text-txt-secondary dark:text-white/50 bg-surface dark:bg-white/[0.04] rounded-lg p-2">
                             🎓 <b>Giáo dục:</b> {review.educational_value}
                           </p>
                         )}

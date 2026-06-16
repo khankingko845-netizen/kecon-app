@@ -219,13 +219,13 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <button
             onClick={step === "review" ? () => setStep("capture") : onBack}
-            className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm"
+            className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
           >
             <ChevronLeft size={18} />
           </button>
@@ -253,12 +253,12 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
         {step === "capture" && (
           <>
             {/* Instructions */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen size={18} className="text-accent" />
                 <p className="text-[14px] font-bold">Hướng dẫn</p>
               </div>
-              <ul className="text-[12px] text-txt-secondary space-y-1.5 ml-1">
+              <ul className="text-[12px] text-txt-secondary dark:text-white/50 space-y-1.5 ml-1">
                 <li>📸 Chụp rõ từng trang sách (tối đa 10 ảnh)</li>
                 <li>💡 Đặt sách trên nền sáng, chụp thẳng</li>
                 <li>🤖 AI sẽ đọc và trích xuất nội dung tự động</li>
@@ -269,12 +269,12 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
             {/* Image grid */}
             {images.length > 0 && (
               <div className="mb-4">
-                <p className="text-[12px] font-semibold text-txt-secondary mb-2">
+                <p className="text-[12px] font-semibold text-txt-secondary dark:text-white/50 mb-2">
                   {images.length}/10 ảnh
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {images.map((img, idx) => (
-                    <div key={idx} className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100">
+                    <div key={idx} className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 dark:bg-white/[0.06]">
                       <img
                         src={img}
                         alt={`Trang ${idx + 1}`}
@@ -307,10 +307,10 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-white rounded-2xl p-4 flex flex-col items-center gap-2 border border-gray-200 active:scale-95 transition-transform"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 flex flex-col items-center gap-2 border border-gray-200 dark:border-white/10 active:scale-95 transition-transform"
               >
                 <ImagePlus size={24} className="text-accent" />
-                <span className="text-[13px] font-bold text-txt">Chọn Từ Thư Viện</span>
+                <span className="text-[13px] font-bold text-txt dark:text-white">Chọn Từ Thư Viện</span>
               </button>
             </div>
 
@@ -351,8 +351,8 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
             <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mb-4">
               <Loader2 size={36} className="animate-spin text-accent" />
             </div>
-            <p className="text-[16px] font-bold text-txt">AI đang đọc sách...</p>
-            <p className="text-[12px] text-txt-secondary mt-2 text-center">
+            <p className="text-[16px] font-bold text-txt dark:text-white">AI đang đọc sách...</p>
+            <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-2 text-center">
               Đang phân tích {images.length} ảnh và trích xuất nội dung.
               <br />Quá trình có thể mất 10-30 giây.
             </p>
@@ -363,15 +363,15 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
         {step === "review" && result && (
           <>
             {/* Title */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
-              <label className="text-[12px] font-semibold text-txt-secondary mb-1 block">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm mb-3">
+              <label className="text-[12px] font-semibold text-txt-secondary dark:text-white/50 mb-1 block">
                 Tên truyện
               </label>
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="w-full text-[16px] font-bold text-txt border-b border-gray-200 pb-1 focus:border-accent outline-none"
+                className="w-full text-[16px] font-bold text-txt dark:text-white border-b border-gray-200 dark:border-white/10 pb-1 focus:border-accent outline-none"
               />
             </div>
 
@@ -396,7 +396,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
             {/* Pages */}
             <div className="space-y-3 mb-6">
               {editPages.map((page, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm">
+                <div key={idx} className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[12px] font-bold text-accent">
                       Trang {idx + 1}
@@ -418,7 +418,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
                       setEditPages(updated);
                     }}
                     rows={4}
-                    className="w-full text-[13px] text-txt border border-gray-100 rounded-lg p-2 focus:border-accent outline-none resize-none"
+                    className="w-full text-[13px] text-txt dark:text-white border border-gray-100 dark:border-white/[0.06] rounded-lg p-2 focus:border-accent outline-none resize-none"
                   />
                 </div>
               ))}
@@ -434,7 +434,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
               </button>
               <button
                 onClick={() => { setStep("capture"); setResult(null); }}
-                className="w-full py-3 rounded-2xl bg-white text-txt text-[14px] font-bold flex items-center justify-center gap-2 border border-gray-200"
+                className="w-full py-3 rounded-2xl bg-white dark:bg-white/[0.04] text-txt dark:text-white text-[14px] font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-white/10"
               >
                 <RotateCcw size={16} /> Chụp Lại
               </button>
@@ -448,7 +448,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
             <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mb-4">
               <Loader2 size={36} className="animate-spin text-green-500" />
             </div>
-            <p className="text-[16px] font-bold text-txt">{savingProgress}</p>
+            <p className="text-[16px] font-bold text-txt dark:text-white">{savingProgress}</p>
           </div>
         )}
 

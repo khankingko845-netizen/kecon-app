@@ -83,11 +83,11 @@ export default function Achievements({ onBack }: AchievementsProps) {
   const progress = Math.min(100, ((xp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100);
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-[24px] font-black tracking-tight">Thành Tích</h2>
@@ -97,7 +97,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
         <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white mb-5 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black">
+              <div className="w-12 h-12 rounded-full bg-white dark:bg-white/[0.04]/20 flex items-center justify-center text-2xl font-black">
                 {level}
               </div>
               <div>
@@ -112,9 +112,9 @@ export default function Achievements({ onBack }: AchievementsProps) {
               <p className="text-[20px] font-black">{earnedCount}/{totalCount}</p>
             </div>
           </div>
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+          <div className="h-2 bg-white dark:bg-white/[0.04]/20 rounded-full overflow-hidden">
             <div
-              className="h-full bg-white rounded-full transition-all"
+              className="h-full bg-white dark:bg-white/[0.04] rounded-full transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -154,7 +154,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
                      <Trophy size={14} className="text-white" />}
                   </div>
                   <h3 className="text-[15px] font-bold">{CATEGORY_LABELS[cat] || cat}</h3>
-                  <span className="text-[11px] text-txt-secondary ml-auto">
+                  <span className="text-[11px] text-txt-secondary dark:text-white/50 ml-auto">
                     {catBadges.filter((b) => earnedSet.has(b.id)).length}/{catBadges.length}
                   </span>
                 </div>
@@ -165,7 +165,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
                     return (
                       <div
                         key={badge.id}
-                        className={`bg-white rounded-xl p-3 text-center transition-all ${
+                        className={`bg-white dark:bg-white/[0.04] rounded-xl p-3 text-center transition-all ${
                           earned
                             ? isNew ? "ring-2 ring-amber-400 shadow-lg" : "shadow-sm"
                             : "opacity-40 grayscale"
@@ -173,7 +173,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
                       >
                         <div className="text-2xl mb-1">{badge.icon}</div>
                         <p className="text-[11px] font-bold leading-tight mb-0.5">{badge.name}</p>
-                        <p className="text-[9px] text-txt-secondary leading-tight">{badge.description}</p>
+                        <p className="text-[9px] text-txt-secondary dark:text-white/50 leading-tight">{badge.description}</p>
                         <p className="text-[9px] font-bold text-accent mt-1">+{badge.xp_reward} XP</p>
                       </div>
                     );

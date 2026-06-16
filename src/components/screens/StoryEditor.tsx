@@ -426,7 +426,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-white/[0.04]">
         <TopBar title="Soạn Truyện" onBack={onBack} />
         <div className="flex justify-center pt-20">
           <Loader2 size={26} className="animate-spin text-accent" />
@@ -437,9 +437,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
 
   if (!story) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-white/[0.04]">
         <TopBar title="Soạn Truyện" onBack={onBack} />
-        <p className="px-5 pt-10 text-center text-txt-secondary text-sm">
+        <p className="px-5 pt-10 text-center text-txt-secondary dark:text-white/50 text-sm">
           Không tìm thấy truyện.
         </p>
       </div>
@@ -447,7 +447,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-32">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-32">
       <TopBar title="Soạn Truyện" onBack={onBack} />
 
       <div className="px-5 pt-2">
@@ -455,21 +455,21 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Tiêu đề truyện"
-          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 bg-white text-[17px] font-bold text-txt outline-none focus:border-accent transition-colors mb-2"
+          className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[17px] font-bold text-txt dark:text-white outline-none focus:border-accent transition-colors mb-2"
         />
 
         {/* Metadata (collapsible) */}
         <button
           onClick={() => setShowMeta((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-gray-100 text-[13px] font-bold text-txt-secondary mb-2"
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] text-[13px] font-bold text-txt-secondary dark:text-white/50 mb-2"
         >
           <span>Chi tiết truyện</span>
           {showMeta ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         {showMeta && (
-          <div className="bg-white rounded-xl border border-gray-100 p-3.5 mb-2 space-y-3">
+          <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.06] p-3.5 mb-2 space-y-3">
             <div>
-              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Thể loại</label>
+              <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5">Thể loại</label>
               <div className="flex flex-wrap gap-1.5">
                 {CATEGORY_OPTIONS.map((c) => (
                   <button
@@ -478,7 +478,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     className={`px-2.5 py-1.5 rounded-lg text-[12px] font-bold ${
                       category === c.id
                         ? "bg-accent text-white"
-                        : "bg-gray-100 text-txt-secondary"
+                        : "bg-gray-100 dark:bg-white/[0.06] text-txt-secondary dark:text-white/50"
                     }`}
                   >
                     {c.label}
@@ -487,36 +487,36 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
               </div>
             </div>
             <div>
-              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Mô tả ngắn</label>
+              <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5">Mô tả ngắn</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Tóm tắt nội dung truyện..."
                 rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent resize-none"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[13px] outline-none focus:border-accent resize-none"
               />
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Tuổi từ</label>
+                <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5">Tuổi từ</label>
                 <input
                   type="number"
                   min={0}
                   max={18}
                   value={ageMin}
                   onChange={(e) => setAgeMin(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[13px] outline-none focus:border-accent"
                 />
               </div>
               <div className="flex-1">
-                <label className="text-[12px] font-bold text-txt-secondary block mb-1.5">Tuổi đến</label>
+                <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5">Tuổi đến</label>
                 <input
                   type="number"
                   min={0}
                   max={18}
                   value={ageMax}
                   onChange={(e) => setAgeMax(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-accent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[13px] outline-none focus:border-accent"
                 />
               </div>
             </div>
@@ -526,7 +526,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         {/* Characters (collapsible) */}
         <button
           onClick={() => setShowCharacters((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white border border-gray-100 text-[13px] font-bold text-txt-secondary mb-2"
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] text-[13px] font-bold text-txt-secondary dark:text-white/50 mb-2"
         >
           <span className="flex items-center gap-1.5">
             <Users size={14} className="text-violet-600" /> Nhân vật & Giọng đọc
@@ -539,10 +539,10 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           {showCharacters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         {showCharacters && (
-          <div className="bg-white rounded-xl border border-gray-100 p-3.5 mb-2 space-y-3">
+          <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.06] p-3.5 mb-2 space-y-3">
             {/* Narrator voice */}
             <div>
-              <label className="text-[12px] font-bold text-txt-secondary block mb-1.5 flex items-center gap-1">
+              <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5 flex items-center gap-1">
                 <Mic size={12} className="text-accent" /> Giọng Người Kể (Narrator)
               </label>
               <select
@@ -551,7 +551,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   const v = defaultVoices.find((d) => d.voice_id === e.target.value);
                   handleNarratorChange(e.target.value, v?.name || "");
                 }}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[12px] outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-[12px] outline-none focus:border-accent"
               >
                 <option value="">— Mặc định (theo ngôn ngữ) —</option>
                 {defaultVoices
@@ -573,11 +573,11 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
 
             {/* Characters list */}
             {characters.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 p-2 rounded-lg bg-surface border border-gray-100">
+              <div key={c.id} className="flex items-center gap-2 p-2 rounded-lg bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06]">
                 <span className="text-lg shrink-0">{c.emoji || "👤"}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-bold text-txt truncate">{c.name}</div>
-                  <div className="text-[10px] text-txt-secondary truncate">
+                  <div className="text-[12px] font-bold text-txt dark:text-white truncate">{c.name}</div>
+                  <div className="text-[10px] text-txt-secondary dark:text-white/50 truncate">
                     {c.voice_name || "Chưa gắn giọng"}
                   </div>
                 </div>
@@ -588,7 +588,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     const v = defaultVoices.find((d) => d.voice_id === e.target.value);
                     handleCharVoiceChange(c.id, e.target.value, v?.name || "");
                   }}
-                  className="w-24 px-1.5 py-1 rounded-lg border border-gray-200 text-[10px] outline-none"
+                  className="w-24 px-1.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-[10px] outline-none"
                 >
                   <option value="">— Giọng —</option>
                   {defaultVoices
@@ -614,13 +614,13 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     value={newCharEmoji}
                     onChange={(e) => setNewCharEmoji(e.target.value)}
                     placeholder="🐿️"
-                    className="w-12 px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-center text-[14px] outline-none focus:border-accent"
+                    className="w-12 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-center text-[14px] outline-none focus:border-accent"
                   />
                   <input
                     value={newCharName}
                     onChange={(e) => setNewCharName(e.target.value)}
                     placeholder="Tên nhân vật"
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] outline-none focus:border-accent"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[12px] outline-none focus:border-accent"
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -628,7 +628,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     value={newCharVoiceId}
                     onChange={(e) => setNewCharVoiceId(e.target.value)}
                     placeholder="Voice ID hoặc chọn bên dưới"
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] outline-none focus:border-accent"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[11px] outline-none focus:border-accent"
                   />
                   <button
                     onClick={async () => {
@@ -652,7 +652,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     setNewCharVoiceId(e.target.value);
                     setNewCharVoiceName(v?.name || "");
                   }}
-                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] outline-none focus:border-accent"
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[11px] outline-none focus:border-accent"
                 >
                   <option value="">— Chọn giọng mặc định —</option>
                   {defaultVoices
@@ -662,7 +662,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     ))}
                 </select>
                 <div className="flex gap-1.5 items-center">
-                  <span className="text-[10px] text-txt-secondary font-medium">Màu:</span>
+                  <span className="text-[10px] text-txt-secondary dark:text-white/50 font-medium">Màu:</span>
                   {CHARACTER_COLORS.map((color) => (
                     <button
                       key={color}
@@ -684,7 +684,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   </button>
                   <button
                     onClick={() => setAddingChar(false)}
-                    className="flex-1 py-1.5 rounded-lg bg-gray-200 text-txt-secondary text-[12px] font-bold"
+                    className="flex-1 py-1.5 rounded-lg bg-gray-200 dark:bg-white/[0.08] text-txt-secondary dark:text-white/50 text-[12px] font-bold"
                   >
                     Hủy
                   </button>
@@ -702,7 +702,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         )}
 
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-100 text-txt-secondary">
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-100 dark:bg-white/[0.06] text-txt-secondary dark:text-white/50">
             {pages.length} trang
           </span>
           <span
@@ -732,7 +732,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
           {pages.map((page, i) => (
             <div
               key={page.id}
-              className="bg-white rounded-2xl border border-gray-100 p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
+              className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[13px] font-black text-accent">
@@ -742,14 +742,14 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   <button
                     onClick={() => movePage(i, -1)}
                     disabled={i === 0}
-                    className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 disabled:opacity-30"
+                    className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-white/[0.04] flex items-center justify-center text-gray-500 dark:text-white/40 disabled:opacity-30"
                   >
                     <ChevronUp size={16} />
                   </button>
                   <button
                     onClick={() => movePage(i, 1)}
                     disabled={i === pages.length - 1}
-                    className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 disabled:opacity-30"
+                    className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-white/[0.04] flex items-center justify-center text-gray-500 dark:text-white/40 disabled:opacity-30"
                   >
                     <ChevronDown size={16} />
                   </button>
@@ -794,7 +794,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                       updatePageLocal(page.id, { content: newVal });
                       requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(cursor, cursor); });
                     }}
-                    className="w-7 h-7 rounded-md text-[12px] font-black text-txt-secondary bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center justify-center"
+                    className="w-7 h-7 rounded-md text-[12px] font-black text-txt-secondary dark:text-white/50 bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:bg-white/[0.06] transition-colors flex items-center justify-center"
                   >
                     {btn.label}
                   </button>
@@ -806,14 +806,14 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                 value={page.content}
                 onChange={(e) => updatePageLocal(page.id, { content: e.target.value })}
                 placeholder="Nội dung trang... Dùng **đậm**, *nghiêng*, --- ngắt cảnh"
-                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[14px] text-txt outline-none focus:border-accent transition-colors resize-none h-24 mb-1 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[14px] text-txt dark:text-white outline-none focus:border-accent transition-colors resize-none h-24 mb-1 font-mono"
               />
               {/* Voice markup toolbar */}
               {characters.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   <button
                     onClick={() => insertMarkup(page.id, "narrator")}
-                    className="px-2 py-1 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                    className="px-2 py-1 rounded-lg text-[10px] font-bold bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-white/50 hover:bg-gray-200 dark:bg-white/[0.08] transition-colors"
                   >
                     🎤 Người kể
                   </button>
@@ -833,11 +833,11 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                 value={page.scene_description ?? ""}
                 onChange={(e) => updatePageLocal(page.id, { scene_description: e.target.value })}
                 placeholder="Mô tả cảnh (cho minh hoạ AI)..."
-                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[12px] text-txt-secondary outline-none focus:border-accent transition-colors mb-2"
+                className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[12px] text-txt-secondary dark:text-white/50 outline-none focus:border-accent transition-colors mb-2"
               />
 
               {/* Visual effect for this page */}
-              <label className="text-[11px] font-bold text-txt-secondary mb-1.5 flex items-center gap-1">
+              <label className="text-[11px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 flex items-center gap-1">
                 <Sparkles size={12} className="text-accent-2" /> Hiệu ứng hình ảnh
               </label>
               <select
@@ -848,7 +848,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                       e.target.value === EFFECT_NONE ? null : e.target.value,
                   })
                 }
-                className="w-full px-3 py-2 rounded-xl border-[1.5px] border-gray-200 bg-surface text-[12px] text-txt outline-none focus:border-accent transition-colors mb-3"
+                className="w-full px-3 py-2 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[12px] text-txt dark:text-white outline-none focus:border-accent transition-colors mb-3"
               >
                 <option value={EFFECT_NONE}>Tự động theo cảnh</option>
                 {(Object.keys(EFFECT_LABELS) as EffectType[]).map((t) => (
@@ -859,7 +859,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
               </select>
 
               {/* Ambient Sound */}
-              <label className="text-[11px] font-bold text-txt-secondary mb-1.5 flex items-center gap-1">
+              <label className="text-[11px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 flex items-center gap-1">
                 🔊 Âm thanh nền
               </label>
               <div className="flex flex-wrap gap-1 mb-3">
@@ -868,7 +868,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
                     !page.ambient_sound
                       ? "border-accent bg-orange-50 text-accent"
-                      : "border-gray-200 bg-white text-txt-secondary"
+                      : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                   }`}
                 >
                   🤖 Tự động
@@ -880,7 +880,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
                       page.ambient_sound === cat.id
                         ? "border-accent bg-orange-50 text-accent"
-                        : "border-gray-200 bg-white text-txt-secondary"
+                        : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
                     }`}
                   >
                     {cat.emoji} {cat.label}
@@ -889,9 +889,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
               </div>
 
               {/* Branching choices for this page */}
-              <div className="mb-2 rounded-xl bg-surface border border-gray-100 p-2.5">
+              <div className="mb-2 rounded-xl bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] p-2.5">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-bold text-txt-secondary flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50 flex items-center gap-1">
                     <GitBranch size={12} className="text-emerald-600" /> Lựa chọn rẽ nhánh
                   </span>
                   <button
@@ -902,7 +902,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                   </button>
                 </div>
                 {(page.choices ?? []).length === 0 ? (
-                  <p className="text-[11px] text-txt-secondary/60">
+                  <p className="text-[11px] text-txt-secondary dark:text-white/50/60">
                     Không có lựa chọn — trang đọc tuần tự.
                   </p>
                 ) : (
@@ -915,7 +915,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                             updateChoice(page, ci, { label: e.target.value })
                           }
                           placeholder={`Lựa chọn ${ci + 1}`}
-                          className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] text-txt outline-none focus:border-accent"
+                          className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[12px] text-txt dark:text-white outline-none focus:border-accent"
                         />
                         <select
                           value={choice.target}
@@ -924,7 +924,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
                               target: Number(e.target.value),
                             })
                           }
-                          className="px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-[12px] text-txt outline-none focus:border-accent"
+                          className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-[12px] text-txt dark:text-white outline-none focus:border-accent"
                         >
                           {pages.map((_, pi) => (
                             <option key={pi} value={pi + 1}>
@@ -1007,7 +1007,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
 
         <button
           onClick={handleAddPage}
-          className="w-full mt-3 py-3.5 rounded-2xl border-2 border-dashed border-gray-300 text-[14px] font-bold text-txt-secondary flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          className="w-full mt-3 py-3.5 rounded-2xl border-2 border-dashed border-gray-300 dark:border-white/15 text-[14px] font-bold text-txt-secondary dark:text-white/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
           <Plus size={18} /> Thêm trang
         </button>
@@ -1029,7 +1029,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
             </>
           )}
         </button>
-        <p className="text-[11px] text-txt-secondary text-center mt-1 mb-2">
+        <p className="text-[11px] text-txt-secondary dark:text-white/50 text-center mt-1 mb-2">
           Tự động tạo TTS cho các trang chưa có audio (cần ElevenLabs API Key)
         </p>
 
@@ -1044,7 +1044,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
         <div className="flex gap-2 mt-2">
           <button
             onClick={() => onNavigate("player", { storyId: story.id })}
-            className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-[14px] font-bold text-txt flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            className="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-white/[0.06] text-[14px] font-bold text-txt dark:text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
           >
             <FileText size={16} /> Xem thử
           </button>

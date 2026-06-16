@@ -112,7 +112,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
         {phase === "loading" && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-violet-500 mb-4" />
-            <p className="text-sm text-txt-secondary font-medium">
+            <p className="text-sm text-txt-secondary dark:text-white/50 font-medium">
               AI đang phân tích từ vựng...
             </p>
           </div>
@@ -128,7 +128,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
         {/* Vocabulary Phase */}
         {phase === "vocab" && (
           <>
-            <p className="text-sm text-txt-secondary mb-4 text-center">
+            <p className="text-sm text-txt-secondary dark:text-white/50 mb-4 text-center">
               Từ vựng mới trong truyện &quot;{storyTitle}&quot;
             </p>
 
@@ -136,7 +136,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
               {vocabulary.map((word, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
+                  className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 border border-gray-100 dark:border-white/[0.06] shadow-sm"
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-2xl">{word.emoji}</span>
@@ -149,8 +149,8 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
                       {word.difficulty === "easy" ? "Dễ" : word.difficulty === "medium" ? "Vừa" : "Khó"}
                     </span>
                   </div>
-                  <p className="text-sm text-txt mb-1">{word.definition}</p>
-                  <p className="text-xs text-txt-secondary italic">&quot;{word.example}&quot;</p>
+                  <p className="text-sm text-txt dark:text-white mb-1">{word.definition}</p>
+                  <p className="text-xs text-txt-secondary dark:text-white/50 italic">&quot;{word.example}&quot;</p>
                 </div>
               ))}
             </div>
@@ -172,19 +172,19 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
           <>
             {/* Progress */}
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-gray-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-violet-500 to-pink-500 rounded-full transition-all"
                   style={{ width: `${((currentQ + 1) / totalQ) * 100}%` }}
                 />
               </div>
-              <span className="text-xs font-bold text-txt-secondary">
+              <span className="text-xs font-bold text-txt-secondary dark:text-white/50">
                 {currentQ + 1}/{totalQ}
               </span>
             </div>
 
             {/* Question */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-4">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-gray-100 dark:border-white/[0.06] shadow-sm mb-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                   quiz[currentQ].type === "content" ? "bg-blue-100 text-blue-700" :
@@ -195,7 +195,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
                    quiz[currentQ].type === "vocabulary" ? "📚 Từ vựng" : "💛 Bài học"}
                 </span>
               </div>
-              <p className="text-base font-bold text-txt mb-4">
+              <p className="text-base font-bold text-txt dark:text-white mb-4">
                 {quiz[currentQ].question}
               </p>
 
@@ -203,7 +203,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
                 {quiz[currentQ].options.map((opt, i) => {
                   const isCorrect = i === quiz[currentQ].correct;
                   const isSelected = i === selected;
-                  let bg = "bg-gray-50 border-gray-200";
+                  let bg = "bg-gray-50 dark:bg-white/[0.04] border-gray-200 dark:border-white/10";
                   if (selected !== null) {
                     if (isCorrect) bg = "bg-green-50 border-green-400";
                     else if (isSelected) bg = "bg-red-50 border-red-400";
@@ -218,10 +218,10 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-7 h-7 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                        <span className="w-7 h-7 rounded-full bg-white dark:bg-white/[0.04] border-2 border-gray-200 dark:border-white/10 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-white/40 shrink-0">
                           {String.fromCharCode(65 + i)}
                         </span>
-                        <span className="text-sm font-medium text-txt flex-1">{opt}</span>
+                        <span className="text-sm font-medium text-txt dark:text-white flex-1">{opt}</span>
                         {selected !== null && isCorrect && (
                           <CheckCircle size={20} className="text-green-500 shrink-0" />
                         )}
@@ -245,7 +245,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
                 <p className="text-sm font-bold mb-1">
                   {selected === quiz[currentQ].correct ? "🎉 Đúng rồi!" : "💪 Chưa đúng!"}
                 </p>
-                <p className="text-sm text-txt-secondary">{quiz[currentQ].explanation}</p>
+                <p className="text-sm text-txt-secondary dark:text-white/50">{quiz[currentQ].explanation}</p>
               </div>
             )}
 
@@ -268,7 +268,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
               <Trophy size={48} className="text-white" />
             </div>
 
-            <h2 className="text-2xl font-bold text-txt mb-2">{getMessage()}</h2>
+            <h2 className="text-2xl font-bold text-txt dark:text-white mb-2">{getMessage()}</h2>
 
             <div className="flex gap-1 mb-4">
               {[1, 2, 3].map((s) => (
@@ -280,8 +280,8 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 w-full mb-6">
-              <p className="text-center text-lg font-bold text-txt">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-gray-100 dark:border-white/[0.06] w-full mb-6">
+              <p className="text-center text-lg font-bold text-txt dark:text-white">
                 {score}/{totalQ} câu đúng
               </p>
               <div className="mt-3 flex gap-1.5 justify-center">

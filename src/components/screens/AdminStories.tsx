@@ -49,7 +49,7 @@ function statusBadge(s: StoryRow) {
     return { text: "Xuất bản", cls: "bg-emerald-100 text-emerald-600" };
   if (s.status === "pending_review")
     return { text: "Chờ duyệt", cls: "bg-amber-100 text-amber-600" };
-  return { text: "Nháp", cls: "bg-gray-100 text-gray-500" };
+  return { text: "Nháp", cls: "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/40" };
 }
 
 export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) {
@@ -135,7 +135,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-28">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-28">
       <TopBar
         title="Quản lý truyện"
         onBack={onBack}
@@ -143,7 +143,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
           <button
             onClick={() => setShowDeleted((v) => !v)}
             className={`text-[12px] font-bold px-2.5 py-1.5 rounded-lg ${
-              showDeleted ? "bg-red-100 text-red-600" : "bg-gray-100 text-txt-secondary"
+              showDeleted ? "bg-red-100 text-red-600" : "bg-gray-100 dark:bg-white/[0.06] text-txt-secondary dark:text-white/50"
             }`}
           >
             {showDeleted ? "Ẩn đã xoá" : "Thùng rác"}
@@ -153,8 +153,8 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
 
       <div className="px-5 pt-1">
         {/* Search */}
-        <div className="bg-white rounded-[14px] px-4 py-3 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-3">
-          <Search size={18} className="text-gray-400" />
+        <div className="bg-white dark:bg-white/[0.04] rounded-[14px] px-4 py-3 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none mb-3">
+          <Search size={18} className="text-gray-400 dark:text-white/30" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -172,7 +172,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
               className={`px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap ${
                 status === t.id
                   ? "bg-accent text-white"
-                  : "bg-white text-txt-secondary"
+                  : "bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
               }`}
             >
               {t.label}
@@ -185,7 +185,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={toggleAll}
-              className="flex items-center gap-1.5 text-[12px] font-bold text-txt-secondary"
+              className="flex items-center gap-1.5 text-[12px] font-bold text-txt-secondary dark:text-white/50"
             >
               {allSelected ? (
                 <CheckSquare size={16} className="text-accent" />
@@ -194,7 +194,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
               )}
               Chọn tất cả
             </button>
-            <span className="text-[12px] text-txt-secondary font-medium">
+            <span className="text-[12px] text-txt-secondary dark:text-white/50 font-medium">
               {stories.length} truyện
             </span>
           </div>
@@ -205,7 +205,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
             <Loader2 size={24} className="animate-spin text-accent" />
           </div>
         ) : stories.length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 text-center text-[13px] text-txt-secondary mt-2">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 text-center text-[13px] text-txt-secondary dark:text-white/50 mt-2">
             Không có truyện nào
           </div>
         ) : (
@@ -216,7 +216,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
               return (
                 <div
                   key={story.id}
-                  className={`bg-white rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] ${
+                  className={`bg-white dark:bg-white/[0.04] rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] ${
                     isSel ? "ring-2 ring-accent" : ""
                   }`}
                 >
@@ -242,7 +242,7 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
                         <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${badge.cls}`}>
                           {badge.text}
                         </span>
-                        <span className="text-[11px] text-txt-secondary">
+                        <span className="text-[11px] text-txt-secondary dark:text-white/50">
                           {categoryLabels[story.category] || story.category} · {story.page_count} trang · {story.play_count} nghe
                         </span>
                       </div>
@@ -262,13 +262,13 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
                       <>
                         <button
                           onClick={() => onNavigate("editor", { storyId: story.id })}
-                          className="flex-1 py-1.5 rounded-lg bg-gray-100 text-txt text-[12px] font-bold flex items-center justify-center gap-1"
+                          className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white text-[12px] font-bold flex items-center justify-center gap-1"
                         >
                           <Pencil size={13} /> Sửa
                         </button>
                         <button
                           onClick={() => onNavigate("player", { storyId: story.id })}
-                          className="py-1.5 px-2.5 rounded-lg bg-gray-100 text-txt text-[12px] font-bold flex items-center justify-center"
+                          className="py-1.5 px-2.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white text-[12px] font-bold flex items-center justify-center"
                         >
                           <Eye size={13} />
                         </button>
@@ -311,8 +311,8 @@ export default function AdminStories({ onBack, onNavigate }: AdminStoriesProps) 
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-100 px-4 py-3 flex items-center gap-2 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
-          <span className="text-[12px] font-bold text-txt-secondary shrink-0">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-white/[0.04] border-t border-gray-100 dark:border-white/[0.06] px-4 py-3 flex items-center gap-2 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+          <span className="text-[12px] font-bold text-txt-secondary dark:text-white/50 shrink-0">
             {selected.size} chọn
           </span>
           <button

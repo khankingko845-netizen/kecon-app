@@ -172,7 +172,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
       <TopBar title="✏️ Vẽ Truyện" onBack={onBack} />
 
       <div className="flex-1 flex flex-col px-4 pt-2 pb-4">
@@ -183,12 +183,12 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
             value={childName}
             onChange={(e) => setChildName(e.target.value)}
             placeholder="Tên bé (tuỳ chọn)"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-surface text-sm font-medium text-txt outline-none focus:border-accent"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-medium text-txt dark:text-white outline-none focus:border-accent"
           />
         </div>
 
         {/* Canvas */}
-        <div className="relative flex-1 rounded-2xl border-2 border-gray-200 overflow-hidden bg-white mb-3 touch-none">
+        <div className="relative flex-1 rounded-2xl border-2 border-gray-200 dark:border-white/10 overflow-hidden bg-white dark:bg-white/[0.04] mb-3 touch-none">
           <canvas
             ref={canvasRef}
             className="w-full h-full"
@@ -213,7 +213,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
         </div>
 
         {/* Toolbar */}
-        <div className="bg-gray-50 rounded-2xl p-3 mb-3">
+        <div className="bg-gray-50 dark:bg-white/[0.04] rounded-2xl p-3 mb-3">
           {/* Colors */}
           <div className="flex gap-1.5 mb-2.5 overflow-x-auto no-scrollbar">
             {COLORS.map((c) => (
@@ -221,7 +221,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
                 key={c}
                 onClick={() => { setColor(c); setIsEraser(false); }}
                 className={`w-7 h-7 rounded-full shrink-0 border-2 transition-all ${
-                  color === c && !isEraser ? "border-accent scale-110" : "border-gray-200"
+                  color === c && !isEraser ? "border-accent scale-110" : "border-gray-200 dark:border-white/10"
                 }`}
                 style={{ backgroundColor: c }}
               />
@@ -237,7 +237,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
                   key={size}
                   onClick={() => setBrushSize(size)}
                   className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    brushSize === size ? "bg-accent text-white" : "bg-white text-gray-500"
+                    brushSize === size ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40"
                   }`}
                 >
                   <div
@@ -254,7 +254,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
             <button
               onClick={() => setIsEraser(!isEraser)}
               className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                isEraser ? "bg-accent text-white" : "bg-white text-gray-500"
+                isEraser ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40"
               }`}
             >
               <Eraser size={18} />
@@ -263,7 +263,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
             {/* Undo */}
             <button
               onClick={undo}
-              className="w-9 h-9 rounded-xl bg-white text-gray-500 flex items-center justify-center"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
             >
               <Undo2 size={18} />
             </button>
@@ -271,7 +271,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
             {/* Clear */}
             <button
               onClick={clearCanvas}
-              className="w-9 h-9 rounded-xl bg-white text-gray-500 flex items-center justify-center"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
             >
               <RotateCcw size={18} />
             </button>

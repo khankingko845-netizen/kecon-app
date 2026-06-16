@@ -59,7 +59,7 @@ export default function RatingStars({
       {showValue && value > 0 && (
         <span
           className={`ml-1.5 text-sm font-bold ${
-            dark ? "text-white/60" : "text-txt-secondary"
+            dark ? "text-white/60" : "text-txt-secondary dark:text-white/50"
           }`}
         >
           {value.toFixed(1)}
