@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
  Loader2, Plus, Pencil, Trash2, X, Check, Eye, EyeOff,
- Search, ChevronDown, FileText, Copy,
+ Search, ChevronDown, FileText, Copy, BookOpen,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import {
@@ -12,6 +12,7 @@ import {
  deleteStoryTemplate,
  toggleStoryTemplateActive,
  getStoryCategories,
+ createStoryFromTemplate,
  type StoryTemplateRow,
  type StoryCategoryRow,
 } from "@/lib/db";
@@ -167,6 +168,20 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
  id: "",
  title: tpl.title + " (bản sao)",
  });
+ };
+
+ const [creatingStory, setCreatingStory] = useState<string | null>(null);
+
+ const handleCreateStory = async (tpl: StoryTemplateRow) => {
+ setCreatingStory(tpl.id);
+ try {
+ const storyId = await createStoryFromTemplate(tpl.id);
+ onNavigate("editor" as Screen, { storyId });
+ } catch (e) {
+ alert("Lỗi tạo truyện: " + (e instanceof Error ? e.message : "Unknown"));
+ } finally {
+ setCreatingStory(null);
+ }
  };
 
  // If editing, show editor
@@ -492,6 +507,14 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
  title="Nhân bản"
  >
  <Copy size={12} />
+ </button>
+ <button
+ onClick={() => handleCreateStory(tpl)}
+ disabled={creatingStory === tpl.id}
+ className="py-1.5 px-2.5 rounded-lg bg-accent/10 text-accent text-[12px] font-bold flex items-center justify-center gap-1"
+ title="Tạo truyện từ mẫu"
+ >
+ {creatingStory === tpl.id ? <Loader2 size={12} className="animate-spin" /> : <BookOpen size={12} />} Tạo truyện
  </button>
  <button
  onClick={() => handleToggle(tpl)}
