@@ -20,6 +20,7 @@ import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
 import ShareModal from "@/components/ui/ShareModal";
+import LyricsText from "@/components/ui/LyricsText";
 import {
   effectForScene,
   asEffectType,
@@ -1174,14 +1175,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
           </div>
         )}
 
-        {/* Text Preview */}
+        {/* Text Preview — Lyrics-style word highlight */}
         <div
           key={`txt-${currentPage}`}
-          className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic text-white/50 leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
+          className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
         >
           {displayText ? (
-            <span dangerouslySetInnerHTML={{ __html: `\u201C${renderMarkdown(displayText)}\u201D` }} />
-          ) : "..."}
+            <LyricsText
+              text={`\u201C${displayText}\u201D`}
+              progress={progress}
+              isPlaying={isPlaying}
+            />
+          ) : <span className="text-white/50">...</span>}
         </div>
 
         {/* Seek Bar — draggable */}
