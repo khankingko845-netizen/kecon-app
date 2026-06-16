@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  Search, Moon, Play, User, UserRound, Plus, Sparkles,
-  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera,
+  Search, Moon, Sun, CloudMoon, Play, User, UserRound, Plus, Sparkles,
+  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera, Star,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -12,6 +12,7 @@ import { gradientFor, iconForCategory } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
 import type { StoryRow } from "@/lib/db";
 import ReadingStreakCard from "@/components/ui/ReadingStreakCard";
+import { HomeSkeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 
 interface HomeProps {
@@ -32,9 +33,10 @@ function StoryIcon({ icon }: { icon: string }) {
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 11) return { text: "Chào buổi sáng", showMoon: false };
-  if (h < 18) return { text: "Chào buổi chiều", showMoon: false };
-  return { text: "Chào buổi tối", showMoon: true };
+  if (h < 6) return { text: "Khuya rồi, ngủ ngon nhé", emoji: "🌙", gradient: "from-indigo-900 via-purple-900 to-indigo-800", icon: CloudMoon, period: "night" as const };
+  if (h < 11) return { text: "Chào buổi sáng", emoji: "☀️", gradient: "from-amber-400 via-orange-400 to-yellow-300", icon: Sun, period: "morning" as const };
+  if (h < 18) return { text: "Chào buổi chiều", emoji: "🌤️", gradient: "from-sky-400 via-blue-400 to-cyan-300", icon: Sun, period: "afternoon" as const };
+  return { text: "Chào buổi tối", emoji: "🌙", gradient: "from-indigo-800 via-violet-800 to-purple-900", icon: Moon, period: "evening" as const };
 }
 
 export default function Home({ onNavigate }: HomeProps) {
@@ -58,29 +60,57 @@ export default function Home({ onNavigate }: HomeProps) {
       .catch(() => {});
   }, [settings.childAge, stories.length]);
 
+  if (loading && stories.length === 0) {
+    return <HomeSkeleton />;
+  }
+
   return (
     <div className="min-h-screen bg-surface pb-24">
-      {/* Header */}
-      <div className="px-5 pt-14 pb-4">
-        <div className="flex justify-between items-center">
+      {/* Animated Hero Banner */}
+      <div className={`relative bg-gradient-to-br ${g.gradient} px-5 pt-12 pb-5 rounded-b-[28px] overflow-hidden`}>
+        {/* Floating decorations */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {g.period === "morning" || g.period === "afternoon" ? (
+            <>
+              <div className="absolute top-8 right-10 w-12 h-8 bg-white/20 rounded-full blur-sm animate-[float_6s_ease-in-out_infinite]" />
+              <div className="absolute top-16 right-28 w-8 h-5 bg-white/15 rounded-full blur-sm animate-[float_8s_ease-in-out_infinite_1s]" />
+              <div className="absolute top-6 left-8 w-6 h-4 bg-white/10 rounded-full blur-sm animate-[float_7s_ease-in-out_infinite_2s]" />
+            </>
+          ) : (
+            <>
+              <div className="absolute top-6 right-12 w-1.5 h-1.5 bg-white/60 rounded-full animate-[twinkle_2s_ease-in-out_infinite]" />
+              <div className="absolute top-14 right-32 w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3s_ease-in-out_infinite_0.5s]" />
+              <div className="absolute top-10 left-16 w-1.5 h-1.5 bg-white/50 rounded-full animate-[twinkle_2.5s_ease-in-out_infinite_1s]" />
+              <div className="absolute top-20 left-10 w-1 h-1 bg-white/30 rounded-full animate-[twinkle_4s_ease-in-out_infinite_1.5s]" />
+              <div className="absolute top-8 left-[45%] w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3.5s_ease-in-out_infinite_2s]" />
+            </>
+          )}
+        </div>
+
+        <div className="relative z-10 flex justify-between items-start">
           <div>
-            <p className="text-sm text-txt-secondary font-medium flex items-center gap-1">
-              {g.text} {g.showMoon && <Moon size={14} />}
+            <p className="text-sm font-semibold text-white/80 flex items-center gap-1.5 mb-0.5">
+              {g.emoji} {g.text}
             </p>
-            <h1 className="text-2xl font-extrabold tracking-tight mt-0.5">
+            <h1 className="text-[22px] font-black tracking-tight text-white">
               Gia đình {familyName}
             </h1>
+            {stories.length > 0 && (
+              <p className="text-[12px] text-white/60 font-medium mt-1">
+                📚 {stories.length} truyện · 🎙️ {voiceProfiles.length} giọng đọc
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onNavigate("notifications")}
-              className="w-10 h-10 rounded-[14px] bg-white flex items-center justify-center shadow-sm relative"
+              className="w-10 h-10 rounded-[14px] bg-white/20 backdrop-blur-sm flex items-center justify-center relative"
             >
-              <Bell size={18} className="text-txt" />
+              <Bell size={18} className="text-white" />
             </button>
             <button
               onClick={() => onNavigate("profile-edit")}
-              className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-accent to-amber-400 flex items-center justify-center text-white text-xl font-bold"
+              className="w-11 h-11 rounded-[14px] bg-white/25 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold border border-white/20"
             >
               {initial}
             </button>

@@ -45,6 +45,8 @@ import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider } from "@/lib/audio-player-context";
 import { I18nProvider } from "@/lib/i18n";
+import { ToastProvider } from "@/components/ui/Toast";
+import { ThemeProvider } from "@/lib/theme-context";
 
 interface ScreenState {
   screen: Screen;
@@ -289,7 +291,11 @@ export default function AppShell() {
         <DataProvider>
           <AudioPlayerProvider>
             <I18nProvider>
-              <AppContent />
+              <ThemeProvider>
+                <ToastProvider>
+                  <AppContent />
+                </ToastProvider>
+              </ThemeProvider>
             </I18nProvider>
           </AudioPlayerProvider>
         </DataProvider>

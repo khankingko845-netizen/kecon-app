@@ -18,6 +18,7 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from "@/lib/push-notifications";
+import { useTheme } from "@/lib/theme-context";
 import type { Screen } from "@/lib/types";
 
 interface SettingsProps {
@@ -300,7 +301,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
   ];
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14 pb-3 flex items-center gap-3">
         <button onClick={onBack} className="text-accent text-sm font-semibold">
           ‹ Quay lại
@@ -340,6 +341,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
   const { user, signOut, isAdmin } = useAuth();
   const { refreshAll } = useData();
   const { locale } = useI18n();
+  const { mode: themeMode, isDark, setMode: setThemeMode } = useTheme();
   const [tab, setTab] = useState<SettingsTab>("main");
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -392,7 +394,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
 
   if (tab === "api") {
     return (
-      <div className="min-h-screen bg-surface pb-24">
+      <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
         <div className="px-5 pt-14 pb-3 flex items-center gap-3">
           <button
             onClick={() => setTab("main")}
@@ -410,7 +412,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14 pb-2">
         <h2 className="text-[28px] font-black tracking-tight mb-0.5">
           Cài Đặt
@@ -476,9 +478,9 @@ export default function Settings({ onNavigate }: SettingsProps) {
         />
         <SettingsRow
           icon={Moon}
-          label="Hẹn Giờ Ru Ngủ"
-          value={`${settings.sleepTimerDefault} phút`}
-          onClick={() => {}}
+          label="Chế Độ Tối"
+          value={themeMode === "system" ? "Hệ thống" : isDark ? "Bật" : "Tắt"}
+          onClick={() => setThemeMode(themeMode === "light" ? "dark" : themeMode === "dark" ? "system" : "light")}
         />
         <SettingsRow
           icon={Bell}

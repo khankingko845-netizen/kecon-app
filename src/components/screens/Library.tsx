@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc } from "lucide-react";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
+import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 
 interface LibraryProps {
@@ -123,21 +124,21 @@ export default function Library({ onNavigate }: LibraryProps) {
   }, [stories, activeFilter, searchQuery, sortBy]);
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       <div className="px-5 pt-14">
         {/* Header */}
         <div className="flex items-center justify-between mb-3.5">
-          <h2 className="text-[28px] font-black tracking-tight">Thư Viện</h2>
+          <h2 className="text-[28px] font-black tracking-tight dark:text-white">Thư Viện</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setShowSearch(!showSearch); if (!showSearch) setTimeout(() => searchRef.current?.focus(), 100); }}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${showSearch ? "bg-accent text-white" : "bg-white shadow-sm text-txt"}`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${showSearch ? "bg-accent text-white" : "bg-white dark:bg-white/10 shadow-sm text-txt dark:text-white"}`}
             >
               <Search size={16} />
             </button>
             <button
               onClick={() => setSortBy((s) => s === "newest" ? "oldest" : s === "oldest" ? "name" : s === "name" ? "popular" : "newest")}
-              className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-white/10 flex items-center justify-center shadow-sm dark:text-white"
               title={`Sắp xếp: ${sortBy}`}
             >
               {sortBy === "oldest" ? <SortAsc size={16} /> : <SortDesc size={16} />}
@@ -155,7 +156,7 @@ export default function Library({ onNavigate }: LibraryProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên, mô tả, thể loại..."
-              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-gray-200 text-[14px] font-medium outline-none focus:border-accent transition-colors"
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[14px] font-medium outline-none focus:border-accent transition-colors dark:text-white"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -174,8 +175,8 @@ export default function Library({ onNavigate }: LibraryProps) {
                 onClick={() => setActiveFilter(f.id)}
                 className={`px-3 py-2 rounded-[10px] text-[12px] font-semibold whitespace-nowrap border transition-all flex items-center gap-1 ${
                   activeFilter === f.id
-                    ? "bg-txt text-white border-txt"
-                    : "bg-white text-txt-secondary border-gray-200"
+                    ? "bg-txt text-white border-txt dark:bg-accent dark:border-accent"
+                    : "bg-white dark:bg-white/5 text-txt-secondary dark:text-white/50 border-gray-200 dark:border-white/10"
                 }`}
               >
                 <span>{f.emoji}</span> {f.label}
@@ -191,9 +192,7 @@ export default function Library({ onNavigate }: LibraryProps) {
       </div>
 
       {loading && stories.length === 0 && (
-        <div className="flex justify-center py-12">
-          <Loader2 size={24} className="animate-spin text-accent" />
-        </div>
+        <LibrarySkeleton />
       )}
 
       {!loading && filtered.length === 0 && (
@@ -223,7 +222,7 @@ export default function Library({ onNavigate }: LibraryProps) {
           <button
             key={story.id}
             onClick={() => onNavigate("player", { storyId: story.id })}
-            className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-left active:scale-[0.97] transition-transform"
+            className="bg-white dark:bg-white/5 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none text-left active:scale-[0.97] transition-transform"
           >
             <div className={`h-[90px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white relative`}>
               <StoryIcon icon={iconForCategory(story.category, story.id)} />
@@ -248,7 +247,7 @@ export default function Library({ onNavigate }: LibraryProps) {
               </button>
             </div>
             <div className="p-3 pb-3.5">
-              <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate">{story.title}</h5>
+              <h5 className="text-[13px] font-bold tracking-tight mb-0.5 truncate dark:text-white">{story.title}</h5>
               <p className="text-[11px] text-txt-secondary mb-1.5">
                 {story.page_count} trang · {categoryLabels[story.category] || story.category}
               </p>
