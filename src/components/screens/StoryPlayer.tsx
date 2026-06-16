@@ -143,6 +143,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   const [submittingReview, setSubmittingReview] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [isFav, setIsFav] = useState(false);
+
+  // Swipe gesture
+  const swipeRef = useRef({ x: 0, y: 0, time: 0 });
   const [favLoading, setFavLoading] = useState(false);
 
   // Default voices from admin + user voice selection
@@ -757,6 +760,21 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     }
   };
 
+  // Swipe handlers for page navigation
+  const onSwipeStart = (e: React.TouchEvent) => {
+    swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+  };
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - swipeRef.current.x;
+    const dy = e.changedTouches[0].clientY - swipeRef.current.y;
+    const dt = Date.now() - swipeRef.current.time;
+    // Only register horizontal swipes (not vertical scroll)
+    if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 60 && dt < 500) {
+      if (dx < 0) goPage(1);  // swipe left → next
+      else goPage(-1);         // swipe right → prev
+    }
+  };
+
   const handleLike = () => {
     if (isGenerated || !storyId) return;
     const next = !liked;
@@ -978,7 +996,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
       </div>
 
       {/* Album Art — now shows illustration if available */}
-      <div className="relative z-10 flex-1 flex flex-col items-center px-7 pt-5">
+      <div
+        className="relative z-10 flex-1 flex flex-col items-center px-7 pt-5"
+        onTouchStart={onSwipeStart}
+        onTouchEnd={onSwipeEnd}
+      >
         <div
           key={`art-${currentPage}`}
           className={`w-64 h-64 rounded-[28px] ${

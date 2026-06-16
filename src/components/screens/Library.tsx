@@ -5,6 +5,7 @@ import { Sparkles, BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAs
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 import type { Screen } from "@/lib/types";
 
 interface LibraryProps {
@@ -50,7 +51,8 @@ const categoryLabels: Record<string, string> = {
 type SortBy = "newest" | "oldest" | "name" | "popular";
 
 export default function Library({ onNavigate }: LibraryProps) {
-  const { stories, loading } = useData();
+  const { stories, loading, refreshStories } = useData();
+  const { toast } = useToast();
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);

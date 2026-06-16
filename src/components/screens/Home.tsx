@@ -65,7 +65,7 @@ export default function Home({ onNavigate }: HomeProps) {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
+    <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
       {/* Animated Hero Banner */}
       <div className={`relative bg-gradient-to-br ${g.gradient} px-5 pt-12 pb-5 rounded-b-[28px] overflow-hidden`}>
         {/* Floating decorations */}
@@ -121,16 +121,16 @@ export default function Home({ onNavigate }: HomeProps) {
       {/* Search */}
       <button
         onClick={() => onNavigate("library")}
-        className="mx-5 w-[calc(100%-2.5rem)] bg-white rounded-[14px] px-4 py-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+        className="mx-5 mt-4 w-[calc(100%-2.5rem)] bg-white dark:bg-white/5 rounded-[14px] px-4 py-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none dark:border dark:border-white/10"
       >
-        <Search size={18} className="text-gray-400" />
-        <span className="text-sm text-gray-400">Tìm truyện, chủ đề...</span>
+        <Search size={18} className="text-gray-400 dark:text-gray-500" />
+        <span className="text-sm text-gray-400 dark:text-gray-500">Tìm truyện, chủ đề...</span>
       </button>
 
       {/* Voice Profiles */}
       <div className="px-5 pt-5">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-extrabold tracking-tight">Giọng Đọc</h3>
+          <h3 className="text-base font-extrabold tracking-tight dark:text-white">Giọng Đọc</h3>
           <button
             onClick={() => onNavigate("profiles")}
             className="text-sm text-accent font-semibold"
@@ -150,7 +150,7 @@ export default function Home({ onNavigate }: HomeProps) {
               >
                 {v.gender === "female" ? <UserRound size={24} /> : <User size={24} />}
               </div>
-              <span className="text-[11px] font-bold text-txt block max-w-[56px] truncate">
+              <span className="text-[11px] font-bold text-txt dark:text-white block max-w-[56px] truncate">
                 {v.name}
               </span>
             </button>
@@ -162,7 +162,7 @@ export default function Home({ onNavigate }: HomeProps) {
             <div className="w-14 h-14 rounded-[18px] border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 mb-1.5">
               <Plus size={20} />
             </div>
-            <span className="text-[11px] font-bold text-txt">Thêm</span>
+            <span className="text-[11px] font-bold text-txt dark:text-white">Thêm</span>
           </button>
         </div>
       </div>
@@ -171,58 +171,58 @@ export default function Home({ onNavigate }: HomeProps) {
       <div className="px-5 pt-5 grid grid-cols-2 gap-2.5">
         <button
           onClick={() => onNavigate("upload")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
         >
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
             <Upload size={17} />
           </div>
-          <span className="text-[13px] font-bold text-txt">Tải truyện</span>
+          <span className="text-[13px] font-bold text-txt dark:text-white">Tải truyện</span>
         </button>
         <button
           onClick={() => onNavigate("favorites")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
         >
           <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-600">
             <Heart size={17} />
           </div>
-          <span className="text-[13px] font-bold text-txt">Yêu thích</span>
+          <span className="text-[13px] font-bold text-txt dark:text-white">Yêu thích</span>
         </button>
         <button
           onClick={() => onNavigate("scan-book")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
         >
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
             <Camera size={17} />
           </div>
-          <span className="text-[13px] font-bold text-txt">Chụp sách</span>
+          <span className="text-[13px] font-bold text-txt dark:text-white">Chụp sách</span>
         </button>
         <button
           onClick={() => onNavigate("daily-challenges")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
         >
           <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
             <Flame size={17} />
           </div>
-          <span className="text-[13px] font-bold text-txt">Thử thách</span>
+          <span className="text-[13px] font-bold text-txt dark:text-white">Thử thách</span>
         </button>
         <button
           onClick={() => onNavigate("collections")}
-          className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
         >
           <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
             <FolderOpen size={17} />
           </div>
-          <span className="text-[13px] font-bold text-txt">Bộ sưu tập</span>
+          <span className="text-[13px] font-bold text-txt dark:text-white">Bộ sưu tập</span>
         </button>
         {isAdmin && (
           <button
             onClick={() => onNavigate("admin")}
-            className="bg-white rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+            className="bg-white dark:bg-white/5 rounded-2xl p-3.5 flex items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none active:scale-[0.98] transition-transform"
           >
             <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
               <LayoutDashboard size={17} />
             </div>
-            <span className="text-[13px] font-bold text-txt">Quản trị</span>
+            <span className="text-[13px] font-bold text-txt dark:text-white">Quản trị</span>
           </button>
         )}
       </div>
@@ -231,7 +231,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {forYou.length > 0 && (
         <div className="px-5 pt-5">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-extrabold tracking-tight flex items-center gap-1.5">
+            <h3 className="text-base font-extrabold tracking-tight dark:text-white flex items-center gap-1.5">
               <Sparkles size={16} className="text-accent" /> Dành cho bé
             </h3>
           </div>
@@ -259,7 +259,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {trending.length > 0 && (
         <div className="px-5 pt-5">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-extrabold tracking-tight flex items-center gap-1.5">
+            <h3 className="text-base font-extrabold tracking-tight dark:text-white flex items-center gap-1.5">
               <TrendingUp size={16} className="text-pink-500" /> Đang thịnh hành
             </h3>
           </div>
@@ -268,7 +268,7 @@ export default function Home({ onNavigate }: HomeProps) {
               <button
                 key={story.id}
                 onClick={() => onNavigate("player", { storyId: story.id })}
-                className="w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+                className="w-full bg-white dark:bg-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
               >
                 <div
                   className={`w-12 h-12 rounded-[12px] bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white shrink-0`}
@@ -295,7 +295,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {/* Recent Stories */}
       <div className="px-5 pt-5">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-extrabold tracking-tight">Nghe Gần Đây</h3>
+          <h3 className="text-base font-extrabold tracking-tight dark:text-white">Nghe Gần Đây</h3>
           <button
             onClick={() => onNavigate("library")}
             className="text-sm text-accent font-semibold"
@@ -307,7 +307,7 @@ export default function Home({ onNavigate }: HomeProps) {
         {recent.length === 0 ? (
           <button
             onClick={() => onNavigate("create")}
-            className="w-full bg-white rounded-2xl p-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+            className="w-full bg-white dark:bg-white/5 rounded-2xl p-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
           >
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-pink-500 flex items-center justify-center text-white">
               <Sparkles size={22} />
