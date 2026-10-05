@@ -101,6 +101,16 @@ const EMOTION_PRESETS: Record<EmotionType, EmotionSettings> = {
   dramatic:  { stability: 0.35, similarity_boost: 0.65, style: 0.85, use_speaker_boost: true },
 };
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** True when `text` contains any of `words` as a whole word (Unicode-aware). */
+function hasWord(text: string, words: string[]): boolean {
+  const pattern = words.map(escapeRegExp).join("|");
+  return new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])(?:${pattern})(?![\\p{L}\\p{M}\\p{N}])`, "u").test(text.normalize("NFC"));
+}
+
 /**
  * Auto-detect emotion from text content.
  * Returns the most likely emotion based on keywords and context.
@@ -119,14 +129,16 @@ export function detectEmotion(text: string): EmotionType {
   if (/\[kịch tính\]|\[dramatic\]/i.test(text)) return "dramatic";
 
   // Auto-detect from context
-  if (/thì thầm|nhỏ giọng|rì rầm|whisper|thầm thì|lẩm bẩm/.test(t)) return "whisper";
-  if (/hét|la lớn|kêu lên|wow|hoan hô|tuyệt vời|haha|oà/.test(t)) return "excited";
-  if (/buồn|khóc|nước mắt|nhớ|thương|đau|mất|chia ly/.test(t)) return "sad";
-  if (/sợ|run|rùng mình|kinh|hãi|đáng sợ|bóng tối/.test(t)) return "scared";
-  if (/giận|tức|nổi điên|bực|la mắng/.test(t)) return "angry";
-  if (/cười|vui|hạnh phúc|sung sướng|mừng|yêu|xinh|đẹp/.test(t)) return "happy";
-  if (/ru ngủ|dịu dàng|nhẹ nhàng|ấm áp|âu yếm|ôm/.test(t)) return "gentle";
-  if (/bất ngờ|bí ẩn|kịch tính|nguy hiểm|phiêu lưu|mạo hiểm/.test(t)) return "dramatic";
+  // Whole-word matching so short keywords don't hit inside other words
+  // (e.g. "ôm" in "hôm", "run" in "trung").
+  if (hasWord(t, ["thì thầm", "nhỏ giọng", "rì rầm", "whisper", "thầm thì", "lẩm bẩm"])) return "whisper";
+  if (hasWord(t, ["hét", "la lớn", "kêu lên", "wow", "hoan hô", "tuyệt vời", "haha", "oà"])) return "excited";
+  if (hasWord(t, ["buồn", "khóc", "nước mắt", "nhớ", "thương", "đau", "mất", "chia ly"])) return "sad";
+  if (hasWord(t, ["sợ", "run", "rùng mình", "kinh", "hãi", "đáng sợ", "bóng tối"])) return "scared";
+  if (hasWord(t, ["giận", "tức", "nổi điên", "bực", "la mắng"])) return "angry";
+  if (hasWord(t, ["cười", "vui", "hạnh phúc", "sung sướng", "mừng", "yêu", "xinh", "đẹp"])) return "happy";
+  if (hasWord(t, ["ru ngủ", "dịu dàng", "nhẹ nhàng", "ấm áp", "âu yếm", "ôm"])) return "gentle";
+  if (hasWord(t, ["bất ngờ", "bí ẩn", "kịch tính", "nguy hiểm", "phiêu lưu", "mạo hiểm"])) return "dramatic";
 
   return "neutral";
 }

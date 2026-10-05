@@ -123,7 +123,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  </div>
 
  {/* Skip button */}
- <div className="px-5 pt-14 flex justify-end relative z-10">
+ <div className="px-5 pt-14 flex justify-end relative z-20">
  <button
  onClick={onGetStarted}
  className="text-[13px] text-white/70 font-semibold px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"

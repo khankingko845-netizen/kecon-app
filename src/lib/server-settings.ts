@@ -142,18 +142,34 @@ function isPrivateIPv4(ip: string): boolean {
   });
 }
 
+/** Expand an IPv6 address (incl. embedded IPv4) to 8 numeric groups, or null if invalid. */
+function expandIPv6(ip: string): number[] | null {
+  let addr = ip.toLowerCase().replace(/^\[|\]$/g, "").split("%")[0];
+  const v4 = addr.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) {
+    const [a, b, c, d] = v4.slice(1).map(Number);
+    addr = addr.slice(0, -v4[0].length) + ((a << 8) | b).toString(16) + ":" + ((c << 8) | d).toString(16);
+  }
+  const halves = addr.split("::");
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(":") : [];
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const fill = halves.length === 2 ? 8 - head.length - tail.length : 0;
+  if (fill < 0) return null;
+  const groups = [...head, ...Array(fill).fill("0"), ...tail].map((g) => parseInt(g, 16));
+  return groups.length === 8 && groups.every((g) => Number.isInteger(g) && g >= 0 && g <= 0xffff) ? groups : null;
+}
+
 function isPrivateIPv6(ip: string): boolean {
-  const addr = ip.toLowerCase().replace(/^\[|\]$/g, "");
-  if (addr === "::" || addr === "::1") return true;
-  // IPv4-mapped / IPv4-compatible (::ffff:a.b.c.d, ::a.b.c.d)
-  const v4 = addr.match(/(\d+\.\d+\.\d+\.\d+)$/);
-  if (v4) return isPrivateIPv4(v4[1]) || addr.startsWith("::ffff:") || addr.startsWith("64:ff9b:");
-  if (addr.startsWith("::ffff:")) return true;
-  if (addr.startsWith("64:ff9b:")) return true; // NAT64
-  const first = parseInt(addr.split(":")[0] || "0", 16);
-  if ((first & 0xfe00) === 0xfc00) return true; // fc00::/7 ULA
-  if ((first & 0xffc0) === 0xfe80) return true; // fe80::/10 link-local
-  if ((first & 0xff00) === 0xff00) return true; // ff00::/8 multicast
+  const g = expandIPv6(ip);
+  if (!g) return true;
+  if (g.slice(0, 6).every((x) => x === 0)) return true; // ::/96 (::, ::1, IPv4-compatible)
+  if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) return true; // ::ffff:0:0/96 IPv4-mapped
+  if (g[0] === 0x64 && g[1] === 0xff9b) return true; // 64:ff9b::/96 NAT64
+  if ((g[0] & 0xfe00) === 0xfc00) return true; // fc00::/7 ULA
+  if ((g[0] & 0xffc0) === 0xfe80) return true; // fe80::/10 link-local
+  if ((g[0] & 0xff00) === 0xff00) return true; // ff00::/8 multicast
+  if (g[0] === 0x2002) return isPrivateIPv4(`${g[1] >> 8}.${g[1] & 0xff}.${g[2] >> 8}.${g[2] & 0xff}`); // 6to4
   return false;
 }
 

@@ -24,7 +24,7 @@ export const EFFECT_LABELS: Record<EffectType, string> = {
 // Narrow an arbitrary stored string to a valid EffectType (or null).
 export function asEffectType(value: string | null | undefined): EffectType | null {
   if (!value) return null;
-  return value in EFFECT_LABELS ? (value as EffectType) : null;
+  return Object.hasOwn(EFFECT_LABELS, value) ? (value as EffectType) : null;
 }
 
 // Pick a visual effect from free text (scene description + page content).

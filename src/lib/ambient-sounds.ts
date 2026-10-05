@@ -100,6 +100,12 @@ export const AMBIENT_CATEGORIES: AmbientCategory[] = [
   },
 ];
 
+/** Whole-word, Unicode-aware match ("ma" must not match inside "mai"). */
+function containsWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${escaped}(?![\\p{L}\\p{M}\\p{N}])`, "u").test(text.normalize("NFC"));
+}
+
 /**
  * Match a scene description to the best ambient category.
  * Returns the category ID or null if no good match.
@@ -113,7 +119,7 @@ export function matchAmbientCategory(sceneDescription: string): string | null {
   for (const cat of AMBIENT_CATEGORIES) {
     let score = 0;
     for (const keyword of cat.keywords) {
-      if (lower.includes(keyword.toLowerCase())) {
+      if (containsWord(lower, keyword.toLowerCase())) {
         score += keyword.length; // Longer keyword matches are more specific
       }
     }
