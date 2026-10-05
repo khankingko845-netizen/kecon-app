@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AI agent skills (third-party reference material)
+    ".agents/**",
   ]),
 ]);
 
