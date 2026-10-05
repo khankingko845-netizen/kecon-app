@@ -264,6 +264,19 @@ npm run build
 npm start
 ```
 
+### Kiểm thử & chất lượng code
+
+| Lệnh | Nội dung |
+|---|---|
+| `npm run lint` | ESLint (Next.js + React Compiler rules) |
+| `npm run typecheck` | TypeScript `tsc --noEmit` |
+| `npm test` | Vitest: unit test `tests/unit` + test migration Supabase bằng PGlite `tests/db` (không cần Supabase thật) |
+| `npm run test:e2e` | Playwright smoke test `tests/e2e` (tự build + start app ở port 3100 với Supabase giả) |
+
+Lần đầu chạy E2E: `npx playwright install chromium` (hoặc đặt `PLAYWRIGHT_CHROMIUM_PATH` trỏ tới Chromium có sẵn).
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) chạy lint → typecheck → test → build, sau đó E2E smoke cho mọi push và pull request. CI dùng biến môi trường giả, không cần secret.
+
 ---
 
 ## Biến môi trường
