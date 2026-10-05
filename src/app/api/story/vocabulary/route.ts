@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey, getSystemSetting } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 /**
  * Analyze story vocabulary and generate quiz questions.
@@ -45,6 +46,9 @@ export async function POST(request: NextRequest) {
   if (!apiKey) {
     return Response.json({ error: "Chưa cấu hình API key" }, { status: 400 });
   }
+
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   const storyContent = pages
     .map((p) => p.content?.replace(/\[(?:narrator|character:[^\]]+)\]/g, "").replace(/\[\/(?:narrator|character)\]/g, ""))

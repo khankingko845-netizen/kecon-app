@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 /**
  * Batch-illustrate all pages of a story using DALL·E 3.
@@ -44,9 +45,24 @@ export async function POST(request: NextRequest) {
   // Get story info for context
   const { data: story } = await supabase
     .from("stories")
-    .select("title, category, locale")
+    .select("title, category, locale, user_id")
     .eq("id", storyId)
     .single();
+  if (!story) {
+    return Response.json({ error: "Không tìm thấy truyện" }, { status: 404 });
+  }
+
+  // Only the owner (or an admin) may spend illustration credits on a story
+  if (story.user_id !== user.id) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+      return Response.json({ error: "Bạn không có quyền minh hoạ truyện này" }, { status: 403 });
+    }
+  }
 
   // Get pages (optionally filter by page numbers)
   let query = supabase
@@ -72,6 +88,20 @@ export async function POST(request: NextRequest) {
   if (toIllustrate.length === 0) {
     return Response.json({ results: [], message: "Tất cả trang đã có minh hoạ" });
   }
+
+  const MAX_PAGES_PER_BATCH = 20;
+  if (toIllustrate.length > MAX_PAGES_PER_BATCH) {
+    return Response.json(
+      { error: `Mỗi lần chỉ minh hoạ tối đa ${MAX_PAGES_PER_BATCH} trang. Hãy chọn bớt trang (pageNumbers).` },
+      { status: 400 }
+    );
+  }
+
+  const usageBlocked = await guardUsage(supabase, "illustration", {
+    byo: Boolean(userKey),
+    amount: toIllustrate.length,
+  });
+  if (usageBlocked) return usageBlocked;
 
   const stylePrompt = ILLUSTRATION_STYLES[style] || ILLUSTRATION_STYLES.watercolor;
   const storyTitle = story?.title || "";

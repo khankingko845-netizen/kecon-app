@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { Screen } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/Toast";
 
 interface Plan {
  id: string;
@@ -58,6 +59,7 @@ export default function Subscription({
  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
  const [loading, setLoading] = useState(true);
  const [subscribing, setSubscribing] = useState<string | null>(null);
+ const { toast } = useToast();
 
  const load = useCallback(async () => {
  setLoading(true);
@@ -131,17 +133,27 @@ export default function Subscription({
  periodEnd.setFullYear(periodEnd.getFullYear() + 1);
  }
 
- await createClient().from("user_subscriptions").insert({
+ // Plan changes are server-protected (migration 016): only admins can
+ // grant plans until a payment provider is integrated.
+ const { error: subError } = await createClient().from("user_subscriptions").insert({
  user_id: user.id,
  plan_id: planId,
  billing_cycle: billing,
  current_period_end: periodEnd.toISOString(),
  });
 
- await createClient()
+ const { error: planError } = subError
+ ? { error: subError }
+ : await createClient()
  .from("profiles")
  .update({ current_plan: planId })
  .eq("id", user.id);
+
+ if (subError || planError) {
+ toast("info", "Thanh toán online đang được tích hợp. Vui lòng liên hệ admin để nâng cấp gói.");
+ setSubscribing(null);
+ return;
+ }
 
  setCurrentPlan(planId);
  setSubscribing(null);

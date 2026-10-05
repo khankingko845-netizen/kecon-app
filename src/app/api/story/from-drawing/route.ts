@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey, getSystemSetting } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 /**
  * Generate a story from a child's drawing.
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const usageBlocked = await guardUsage(supabase, "story");
+  if (usageBlocked) return usageBlocked;
 
   // Also get story generation provider
   const storyProvider = await getSystemSetting("default_story_provider") || "openai";

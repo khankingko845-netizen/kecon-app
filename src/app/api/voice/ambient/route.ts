@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { generateAmbientSound, getAmbientCategory, matchAmbientCategory } from "@/lib/ambient-sounds";
+import { guardUsage } from "@/lib/usage-guard";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
   } else {
     return Response.json({ error: "Missing sceneDescription or categoryId" }, { status: 400 });
   }
+
+  const usageBlocked = await guardUsage(supabase, "tts", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   try {
     const audioBlob = await generateAmbientSound(apiKey, prompt, duration || 10);

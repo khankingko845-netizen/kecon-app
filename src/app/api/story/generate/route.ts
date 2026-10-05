@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
 import { resolveApiKey, resolveCustomBaseUrl, getSystemSetting } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 const CATEGORY_MAP: Record<string, string> = {
   cotich: "fairy_tale",
@@ -55,17 +56,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Resolve base URL for custom provider
+  // Resolve base URL for custom provider (client URL only honoured with BYO key)
   const baseUrl = provider === "custom"
-    ? await resolveCustomBaseUrl(userBaseUrl)
+    ? await resolveCustomBaseUrl(userBaseUrl, userKey)
     : undefined;
 
   if (provider === "custom" && !baseUrl) {
     return Response.json(
-      { error: "Custom provider cần Base URL (OpenAI-compatible)" },
+      { error: "Custom provider cần Base URL hợp lệ (OpenAI-compatible, không trỏ tới địa chỉ nội bộ)" },
       { status: 400 }
     );
   }
+
+  const usageBlocked = await guardUsage(supabase, "story", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   try {
     const story = await generateStory(

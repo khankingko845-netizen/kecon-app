@@ -245,11 +245,9 @@ Chỉnh sửa `.env.local` với thông tin Supabase project của bạn (xem m�
 
 ### Bước 4: Chạy database migrations
 
-Vào Supabase Dashboard → SQL Editor → chạy lần lượt:
-1. `supabase/migrations/001_initial_schema.sql`
-2. `supabase/migrations/002_storage_and_functions.sql`
-3. `supabase/migrations/003_branching.sql`
-4. `supabase/migrations/004_admin_upgrade.sql`
+Vào Supabase Dashboard → SQL Editor → chạy lần lượt **tất cả** file trong `supabase/migrations/` theo thứ tự số (001 → 016).
+
+> ⚠️ `016_security_hardening.sql` là bản vá bảo mật bắt buộc (chặn leo thang quyền, hạn mức phía server). Dự án đang chạy cần áp dụng ngay.
 
 ### Bước 5: Chạy dev server
 
@@ -280,6 +278,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Bắt buộc — URL redirect auth
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
+# Khuyến nghị — Service role key (CHỈ server-side, không có tiền tố NEXT_PUBLIC_)
+# Cho phép API route đọc API key admin cấu hình trong Cài Đặt Hệ Thống cho mọi user.
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
 # Tuỳ chọn — API keys cho AI (server-side only)
 ELEVENLABS_API_KEY=your-elevenlabs-key
 OPENAI_API_KEY=your-openai-key
@@ -287,13 +289,15 @@ GEMINI_API_KEY=your-gemini-key
 ANTHROPIC_API_KEY=your-anthropic-key
 ```
 
+> **Bảo mật:** Không bao giờ đưa `SUPABASE_SERVICE_ROLE_KEY` vào code client hoặc biến `NEXT_PUBLIC_*`.
+
 > **Lưu ý:** Nếu không có API keys ngoại, app vẫn chạy — các tính năng AI sẽ hiện "Chưa cấu hình". User cũng có thể nhập key riêng trong Cài Đặt (BYO-key model).
 
 ---
 
 ## Database & Migrations
 
-### 4 file migration (chạy theo thứ tự):
+### Migrations (chạy theo thứ tự số):
 
 | File | Nội dung |
 |---|---|
@@ -301,6 +305,8 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `002_storage_and_functions.sql` | Storage buckets, helper functions |
 | `003_branching.sql` | Thêm `story_pages.choices` + `stories.is_branching` |
 | `004_admin_upgrade.sql` | `is_platform_content`, `deleted_at`, bảng `story_templates`, RLS admin |
+| `005` → `015` | Rating/chia sẻ/yêu thích, push + gói cước, app settings, giọng mặc định, nhân vật, offline/gamification/parental, thông báo, danh mục & template |
+| `016_security_hardening.sql` | Bảo vệ cột `role`/`current_plan`, khoá bộ đếm `usage_limits`, hàm `consume_usage()` (rate limit + hạn mức gói phía server) |
 
 ### Bảng chính:
 - `profiles` — User profiles (display_name, role, child_name, child_age...)
@@ -385,11 +391,51 @@ kecon-app/
 
 ## Tài khoản test
 
-| Vai trò | Email | Mật khẩu |
-|---|---|---|
-| **Super Admin** | `kecontest2026@gmail.com` | `Test12345!` |
+Không lưu thông tin đăng nhập trong repo. Để tạo super admin cho môi trường của bạn: đăng ký tài khoản trong app, sau đó chạy trong Supabase SQL Editor:
+
+```sql
+UPDATE public.profiles SET role = 'super_admin'
+WHERE id = (SELECT id FROM auth.users WHERE email = 'you@example.com');
+```
 
 > Đăng nhập tài khoản super admin → Trang Chủ hiện nút **"Quản trị"** → vào module admin.
+
+---
+
+## Hạn mức & Rate limit (phía server)
+
+Mọi API route gọi AI/TTS đều đi qua `guardUsage()` (`src/lib/usage-guard.ts`) → RPC `consume_usage()`:
+
+| Loại | Rate limit (đơn vị / phút) | Hạn mức theo gói |
+|---|---|---|
+| `story` (tạo truyện AI, truyện từ hình vẽ) | 5 | `subscription_plans.story_limit` / tháng |
+| `voice_clone` | 3 | `subscription_plans.voice_clone_limit` (số giọng hiện có hoặc số lần clone trong tháng, lấy số lớn hơn) |
+| `tts` (đọc truyện, âm thanh nền) — 1 đơn vị / 1.000 ký tự, tối đa 10.000 ký tự/lần | 60 | — |
+| `illustration` — 1 đơn vị / ảnh, tối đa 20 trang/batch | 20 | — |
+| `ai` (dịch, từ vựng, cá nhân hoá, scan; đánh giá chuyên gia = số chuyên gia) | 20 | — |
+
+- Người dùng dùng **API key riêng (BYO)** không bị tính hạn mức gói, chỉ áp dụng rate limit.
+- Admin được rate limit ×5 và không giới hạn gói.
+- Gói được xác định từ `user_subscriptions` còn hạn; nếu đã từng có subscription nhưng hết hạn → `free`; nếu chưa từng có → `profiles.current_plan` (chỉ admin sửa được).
+- Base URL tuỳ chỉnh từ client chỉ được dùng khi client gửi kèm API key riêng, phải là địa chỉ công khai (kiểm tra cả DNS) và không theo redirect.
+- Nếu chưa chạy migration 016, request dùng key nền tảng trả **503** (fail-closed). Có thể tạm đặt `USAGE_GUARD_FAIL_OPEN=1` trong lúc chuyển đổi.
+
+---|---|---|
+| `story` (tạo truyện AI, truyện từ hình vẽ) | 5 | `subscription_plans.story_limit` / tháng |
+| `voice_clone` | 3 | `subscription_plans.voice_clone_limit` (tổng số giọng) |
+| `tts` (đọc truyện, âm thanh nền) | 60 | — |
+| `illustration` | 10 | — |
+| `ai` (dịch, từ vựng, cá nhân hoá, chuyên gia, scan) | 20 | — |
+
+- Người dùng dùng **API key riêng (BYO)** không bị tính hạn mức gói, chỉ áp dụng rate limit.
+- Admin được rate limit ×5 và không giới hạn gói.
+- Base URL tuỳ chỉnh từ client chỉ được dùng khi client gửi kèm API key riêng, và không được trỏ tới địa chỉ nội bộ.
+
+---
+
+## AI Agent Skills
+
+Repo kèm bộ skill cho AI agent (Claude Code, Codex, Cursor, Notion AI…) trong `.agents/skills/`. Xem bản đồ vai trò → skill tại `.agents/skills/ROLES.md`.
 
 ---
 

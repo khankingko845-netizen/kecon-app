@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey, getSystemSetting, resolveCustomBaseUrl } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 /**
  * Translate a story to another language.
@@ -49,6 +50,9 @@ export async function POST(request: NextRequest) {
   if (!apiKey) {
     return Response.json({ error: "Chưa cấu hình API key" }, { status: 400 });
   }
+
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   const langNames: Record<string, string> = {
     vi: "Tiếng Việt",

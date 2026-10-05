@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey, resolveCustomBaseUrl } from "@/lib/server-settings";
 import { getSystemSetting } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 const EXPERTS = {
   psychologist: {
@@ -136,7 +137,7 @@ async function callAI(
     };
   }
 
-  const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+  const res = await fetch(endpoint, { method: "POST", redirect: "error", headers, body: JSON.stringify(body) });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error?.message || `AI error: ${res.status}`);
@@ -170,7 +171,10 @@ export async function POST(request: NextRequest) {
   if (!apiKey) {
     return Response.json({ error: "Chưa cấu hình AI provider" }, { status: 400 });
   }
-  const baseUrl = provider === "custom" ? await resolveCustomBaseUrl(userBaseUrl) : undefined;
+  const baseUrl = provider === "custom" ? await resolveCustomBaseUrl(userBaseUrl, userKey) : undefined;
+  if (provider === "custom" && !baseUrl) {
+    return Response.json({ error: "Custom provider cần Base URL hợp lệ" }, { status: 400 });
+  }
 
   // Build the user prompt
   const userPrompt = `Đánh giá câu chuyện thiếu nhi sau:
@@ -188,6 +192,13 @@ Hãy đánh giá chi tiết và trả về JSON theo format yêu cầu. Viết b
   const expertKeys: ExpertKey[] = requestedExperts?.length
     ? requestedExperts.filter((k: string) => k in EXPERTS)
     : ["psychologist", "screenwriter", "educator"];
+
+  // Each expert is one paid AI call
+  const usageBlocked = await guardUsage(supabase, "ai", {
+    byo: Boolean(userKey),
+    amount: Math.max(expertKeys.length, 1),
+  });
+  if (usageBlocked) return usageBlocked;
 
   // Call all experts in parallel
   const results: Record<string, { expert: typeof EXPERTS[ExpertKey]; review: unknown; error?: string }> = {};

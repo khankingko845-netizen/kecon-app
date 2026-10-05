@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 // Generates an illustration for a story page using OpenAI Images (DALL·E 3).
 // Key resolution: user BYO → admin "dalle_api_key" → admin "openai_api_key" → env.
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const usageBlocked = await guardUsage(supabase, "illustration", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   try {
     const res = await fetch("https://api.openai.com/v1/images/generations", {

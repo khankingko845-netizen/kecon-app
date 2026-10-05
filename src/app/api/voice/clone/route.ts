@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cloneVoice } from "@/lib/elevenlabs";
 import { resolveApiKey } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const usageBlocked = await guardUsage(supabase, "voice_clone", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   try {
     const result = await cloneVoice(apiKey, name, audioFile, language);

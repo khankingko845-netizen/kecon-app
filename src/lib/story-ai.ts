@@ -98,6 +98,7 @@ async function callOpenAICompatible(
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const res = await fetch(endpoint, {
     method: "POST",
+    redirect: "error", // never follow redirects from custom base URLs (SSRF)
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",

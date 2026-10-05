@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey, resolveCustomBaseUrl, getSystemSetting } from "@/lib/server-settings";
+import { guardUsage } from "@/lib/usage-guard";
 
 /**
  * Personalize a story for a specific child.
@@ -65,10 +66,16 @@ export async function POST(request: NextRequest) {
   }
 
   const baseUrl = provider === "custom"
-    ? await resolveCustomBaseUrl(userBaseUrl)
+    ? await resolveCustomBaseUrl(userBaseUrl, userKey)
     : provider === "openai"
     ? "https://api.openai.com/v1"
     : null;
+  if (provider === "custom" && !baseUrl) {
+    return Response.json({ error: "Custom provider cần Base URL hợp lệ" }, { status: 400 });
+  }
+
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  if (usageBlocked) return usageBlocked;
 
   // Build personalization context
   const childContext = [
@@ -143,6 +150,7 @@ Hãy cá nhân hóa truyện này cho bé ${childName}. Trả về JSON.`;
         : "https://api.openai.com/v1/chat/completions";
       const res = await fetch(endpoint, {
         method: "POST",
+        redirect: "error",
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
