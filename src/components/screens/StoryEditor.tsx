@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import ExpertPanel from "@/components/ui/ExpertPanel";
-import { AMBIENT_CATEGORIES, matchAmbientCategory } from "@/lib/ambient-sounds";
+import { AMBIENT_CATEGORIES } from "@/lib/ambient-sounds";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { illustrateApi, ttsApi } from "@/lib/api-client";

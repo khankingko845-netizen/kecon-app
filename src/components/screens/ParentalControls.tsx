@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, Shield, Clock, Moon, Lock, Save, Loader2, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getParentalControls, upsertParentalControls, type ParentalControls as PCType } from "@/lib/db";
+import { getParentalControls, upsertParentalControls } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 
 interface ParentalControlsProps {
@@ -34,11 +34,12 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
  const [maxAge, setMaxAge] = useState(99);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
- const controls = await getParentalControls(profile.id);
+ const controls = await getParentalControls(profileId);
  if (controls) {
  setEnabled(controls.is_enabled);
  setDailyLimit(controls.daily_limit_minutes);
@@ -51,7 +52,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  // ignore
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 

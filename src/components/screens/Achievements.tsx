@@ -39,15 +39,16 @@ export default function Achievements({ onBack }: AchievementsProps) {
  const [loading, setLoading] = useState(true);
  const [newBadges, setNewBadges] = useState<string[]>([]);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const [badges, earned, xpData, freshBadges] = await Promise.all([
  getAllBadges(),
- getUserBadges(profile.id),
- getProfileXP(profile.id),
- checkAndAwardBadges(profile.id),
+ getUserBadges(profileId),
+ getProfileXP(profileId),
+ checkAndAwardBadges(profileId),
  ]);
  setAllBadges(badges);
  setUserBadges(earned);
@@ -56,9 +57,9 @@ export default function Achievements({ onBack }: AchievementsProps) {
  if (freshBadges.length > 0) {
  setNewBadges(freshBadges);
  // Reload badges to include newly awarded
- const updated = await getUserBadges(profile.id);
+ const updated = await getUserBadges(profileId);
  setUserBadges(updated);
- const updatedXp = await getProfileXP(profile.id);
+ const updatedXp = await getProfileXP(profileId);
  setXp(updatedXp.xp);
  setLevel(updatedXp.level);
  }
@@ -66,7 +67,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
  // silently fail
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 

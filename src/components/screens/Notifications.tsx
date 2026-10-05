@@ -82,15 +82,16 @@ export default function Notifications({ onBack, onNavigate }: NotificationsProps
  const [notifications, setNotifications] = useState<Notification[]>([]);
  const [loading, setLoading] = useState(true);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const supabase = createClient();
  const { data } = await supabase
  .from("notifications")
  .select("*")
- .eq("user_id", profile.id)
+ .eq("user_id", profileId)
  .order("created_at", { ascending: false })
  .limit(50);
 
@@ -104,7 +105,7 @@ export default function Notifications({ onBack, onNavigate }: NotificationsProps
  setNotifications(generateTips());
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 

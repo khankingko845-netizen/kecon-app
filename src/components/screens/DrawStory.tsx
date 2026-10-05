@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
- Palette, Eraser, RotateCcw, Sparkles, Loader2, ChevronLeft,
- Minus, Plus, Undo2,
+ Palette, Eraser, RotateCcw, Sparkles, Loader2,
+ Undo2,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";

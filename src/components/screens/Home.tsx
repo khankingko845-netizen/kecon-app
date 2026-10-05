@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
  Search, Moon, Sun, CloudMoon, Play, User, UserRound, Plus, Sparkles,
- Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera, Star,
+ Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";

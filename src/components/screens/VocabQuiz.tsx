@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
- BookOpen, CheckCircle, XCircle, Loader2, ChevronRight,
- Trophy, Star, Sparkles, ArrowLeft, Volume2,
+ CheckCircle, XCircle, Loader2, ChevronRight,
+ Trophy, Star, Sparkles,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import type { Screen } from "@/lib/types";

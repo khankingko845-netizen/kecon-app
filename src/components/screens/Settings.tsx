@@ -52,8 +52,6 @@ function SettingsRow({
  onClick,
  color,
  badge,
- isFirst,
- isLast,
 }: {
  icon: typeof Key;
  label: string;

@@ -98,8 +98,9 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  const [totalXP, setTotalXP] = useState(0);
  const [loading, setLoading] = useState(true);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const supabase = createClient();
@@ -107,9 +108,9 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  // Get today's progress from play_sessions and stories
  const today = new Date().toISOString().split("T")[0];
  const [{ count: listenCount }, { count: storyCount }, { count: voiceCount }] = await Promise.all([
- supabase.from("play_sessions").select("*", { count: "exact", head: true }).eq("user_id", profile.id).gte("started_at", today),
- supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", profile.id).gte("created_at", today),
- supabase.from("voice_profiles").select("*", { count: "exact", head: true }).eq("user_id", profile.id).gte("created_at", today),
+ supabase.from("play_sessions").select("*", { count: "exact", head: true }).eq("user_id", profileId).gte("started_at", today),
+ supabase.from("stories").select("*", { count: "exact", head: true }).eq("user_id", profileId).gte("created_at", today),
+ supabase.from("voice_profiles").select("*", { count: "exact", head: true }).eq("user_id", profileId).gte("created_at", today),
  ]);
 
  const lc = listenCount || 0;
@@ -130,7 +131,7 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  const { data: streakData } = await supabase
  .from("reading_streaks")
  .select("current_streak")
- .eq("user_id", profile.id)
+ .eq("user_id", profileId)
  .single();
  setStreak(streakData?.current_streak || 0);
 
@@ -138,7 +139,7 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  const { data: xpData } = await supabase
  .from("user_badges")
  .select("badge:badge_definitions(xp_reward)")
- .eq("user_id", profile.id);
+ .eq("user_id", profileId);
  // eslint-disable-next-line @typescript-eslint/no-explicit-any
  const xp = (xpData || []).reduce((sum: number, b: any) => sum + (b.badge?.[0]?.xp_reward || b.badge?.xp_reward || 0), 0);
  setTotalXP(xp);
@@ -146,7 +147,7 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  // use defaults
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 

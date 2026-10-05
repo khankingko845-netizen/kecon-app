@@ -74,6 +74,69 @@ function updateMediaSession(track: AudioTrack | null, handlers: {
   navigator.mediaSession.setActionHandler("stop", handlers.onStop || null);
 }
 
+type AudioRef = React.RefObject<HTMLAudioElement | null>;
+type SetPlayerState = React.Dispatch<React.SetStateAction<AudioPlayerState>>;
+
+/** Attach progress / auto-advance listeners to an Audio element */
+function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: SetPlayerState) {
+  audio.onloadedmetadata = () => {
+    setState((s) => ({ ...s, duration: audio.duration }));
+  };
+
+  audio.ontimeupdate = () => {
+    if (audio.duration) {
+      setState((s) => ({
+        ...s,
+        currentTime: audio.currentTime,
+        progress: (audio.currentTime / audio.duration) * 100,
+      }));
+    }
+  };
+
+  audio.onended = () => {
+    setState((prev) => {
+      const t = prev.currentTrack;
+      if (!t?.allPages) {
+        return { ...prev, isPlaying: false, progress: 100 };
+      }
+      const nextIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber) + 1;
+      if (nextIdx < t.allPages.length) {
+        const nextPage = t.allPages[nextIdx];
+        setTimeout(() => {
+          startTrack({
+            ...t,
+            pageNumber: nextPage.pageNumber,
+            audioUrl: nextPage.audioUrl,
+          }, audioRef, setState);
+        }, 0);
+        return prev;
+      }
+      return { ...prev, isPlaying: false, progress: 100 };
+    });
+  };
+}
+
+/** Stop the current Audio element (if any) and start playing `track` */
+function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerState) {
+  if (audioRef.current) {
+    audioRef.current.pause();
+    audioRef.current = null;
+  }
+
+  const audio = new Audio(track.audioUrl);
+  audioRef.current = audio;
+  wireAudioEvents(audio, audioRef, setState);
+
+  audio.play().catch(() => {});
+  setState({
+    currentTrack: track,
+    isPlaying: true,
+    progress: 0,
+    currentTime: 0,
+    duration: 0,
+  });
+}
+
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [state, setState] = useState<AudioPlayerState>({
@@ -94,64 +157,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  const wireAudioEvents = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
-    audio.onloadedmetadata = () => {
-      setState((s) => ({ ...s, duration: audio.duration }));
-    };
-
-    audio.ontimeupdate = () => {
-      if (audio.duration) {
-        setState((s) => ({
-          ...s,
-          currentTime: audio.currentTime,
-          progress: (audio.currentTime / audio.duration) * 100,
-        }));
-      }
-    };
-
-    audio.onended = () => {
-      setState((prev) => {
-        const t = prev.currentTrack;
-        if (!t?.allPages) {
-          return { ...prev, isPlaying: false, progress: 100 };
-        }
-        const nextIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber) + 1;
-        if (nextIdx < t.allPages.length) {
-          const nextPage = t.allPages[nextIdx];
-          setTimeout(() => {
-            play({
-              ...t,
-              pageNumber: nextPage.pageNumber,
-              audioUrl: nextPage.audioUrl,
-            });
-          }, 0);
-          return prev;
-        }
-        return { ...prev, isPlaying: false, progress: 100 };
-      });
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const play = useCallback((track: AudioTrack) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    const audio = new Audio(track.audioUrl);
-    audioRef.current = audio;
-    wireAudioEvents(audio, track);
-
-    audio.play().catch(() => {});
-    setState({
-      currentTrack: track,
-      isPlaying: true,
-      progress: 0,
-      currentTime: 0,
-      duration: 0,
-    });
-  }, [wireAudioEvents]);
+    startTrack(track, audioRef, setState);
+  }, []);
 
   /** Adopt an already-playing Audio element from StoryPlayer so it keeps playing in MiniPlayer */
   const adoptAudio = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
@@ -159,7 +167,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       audioRef.current.pause();
     }
     audioRef.current = audio;
-    wireAudioEvents(audio, track);
+    wireAudioEvents(audio, audioRef, setState);
 
     const isCurrentlyPlaying = !audio.paused && !audio.ended;
     setState({
@@ -169,7 +177,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       currentTime: audio.currentTime,
       duration: audio.duration || 0,
     });
-  }, [wireAudioEvents]);
+  }, []);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();

@@ -15,7 +15,7 @@ import { useAudioPlayer } from "@/lib/audio-player-context";
 import { mergeAudioBlobs, getPageAtTime, type MergeResult } from "@/lib/audio-merger";
 import { ttsApi } from "@/lib/api-client";
 import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
-import { parseVoiceMarkup, type ParsedSegment } from "@/lib/elevenlabs";
+import { parseVoiceMarkup } from "@/lib/elevenlabs";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
@@ -107,6 +107,20 @@ function ambientForScene(text: string, pageAmbient?: string | null): AmbientType
  return null;
 }
 
+// Snapshot of the active audio element's clock, used for the time display.
+interface AudioClock {
+ currentTime: number;
+ duration: number;
+}
+
+function readAudioClock(audio: HTMLAudioElement): AudioClock | null {
+ return audio.duration ? { currentTime: audio.currentTime, duration: audio.duration } : null;
+}
+
+function formatClock(seconds: number): string {
+ return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
  const { settings, hasElevenLabs } = useSettings();
  const { voiceProfiles } = useData();
@@ -162,15 +176,19 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const audioRef = useRef<HTMLAudioElement | null>(null);
  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
- const startRef = useRef<number>(Date.now());
+ const startRef = useRef<number>(0); // set to Date.now() by the mount effect below
  const pagesListenedRef = useRef<Set<number>>(new Set());
  // Audio prefetch cache: pageIndex → objectURL or remote URL
  const prefetchCache = useRef<Map<number, string>>(new Map());
+ // Render-safe snapshot of audioRef.current's time/duration (null = no active audio)
+ const [audioClock, setAudioClock] = useState<AudioClock | null>(null);
 
  // Continuous playback: merged audio for gapless background play
  const [mergeStatus, setMergeStatus] = useState<"idle" | "generating" | "merging" | "ready" | "playing">("idle");
  const [mergeProgress, setMergeProgress] = useState("");
  const mergedRef = useRef<MergeResult | null>(null);
+ // Render-safe mirror of mergedRef (page tick marks on the seek bar)
+ const [mergedResult, setMergedResult] = useState<MergeResult | null>(null);
  const mergeAbortRef = useRef(false);
 
  // Sound mixer (Web Audio ambient layers).
@@ -276,16 +294,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  .replace(/\[\/(narrator|character)\]/g, "")
  .trim();
 
- // Simple markdown → HTML for story display
- const renderMarkdown = (text: string): string => {
- return text
- .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
- .replace(/\*(.+?)\*/g, '<em>$1</em>')
- .replace(/^---$/gm, '<hr class="my-2 border-white/10">')
- .replace(/^> (.+)$/gm, '<span class="opacity-70 pl-2 border-l-2 border-white/20">$1</span>')
- .replace(/\n/g, '<br>');
- };
-
  // Get illustration URL for the current page
  const currentIllustration = isGenerated
  ? null
@@ -303,7 +311,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const rememberedVoiceId = story?.last_voice_id ?? null;
  const rememberedVoiceName = story?.last_voice_name ?? null;
  const defaultsForLocale = defaultVoices.filter((v) => v.language === storyLocale);
- const allDefaults = defaultVoices.length > 0 ? defaultVoices : [];
  // First family cloned voice (prioritized over system defaults)
  const firstClonedVoice = voiceProfiles.find((v) => v.elevenlabs_voice_id);
 
@@ -313,8 +320,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  || firstClonedVoice?.elevenlabs_voice_id
  || narratorVoiceId
  || storyVoice?.elevenlabs_voice_id
- || defaultsForLocale[0]?.voice_id
- || allDefaults[0]?.voice_id
+ || defaultVoices.find((v) => v.language === storyLocale)?.voice_id
+ || defaultVoices[0]?.voice_id
  || FALLBACK_VOICE_ID;
  const elevenVoiceId = resolvedVoiceId;
 
@@ -417,39 +424,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [sceneDesc, autoAmbient, isPlaying, currentPage]);
 
- // Auto-play next page when audio ends and advances
- useEffect(() => {
- if (pendingAutoPlay) {
- setPendingAutoPlay(false);
- playWithTTS();
- }
- // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [pendingAutoPlay, currentPage]);
-
- // Fake progress when there is no audio element (no API key configured).
- useEffect(() => {
- if (isPlaying && !audioRef.current) {
- intervalRef.current = setInterval(() => {
- setProgress((p) => {
- if (p >= 100) {
- if (currentPage < totalPages - 1) {
- setCurrentPage((c) => c + 1);
- return 0;
- }
- setIsPlaying(false);
- return 100;
- }
- return p + 0.5;
- });
- }, 500);
- } else if (!isPlaying && intervalRef.current) {
- clearInterval(intervalRef.current);
- }
- return () => {
- if (intervalRef.current) clearInterval(intervalRef.current);
- };
- }, [isPlaying, currentPage, totalPages]);
-
  // Helper: generate TTS for a page text and return an audio URL (objectURL or remote)
  const generatePageAudio = useCallback(async (
  text: string,
@@ -475,7 +449,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  seg.voiceId, seg.text,
  settings.elevenLabsApiKey || undefined,
  settings.elevenLabsModelId || undefined,
- story?.locale || "vi"
+ storyLocale
  );
  audioBlobs.push(segBlob);
  }
@@ -496,7 +470,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  elevenVoiceId, text,
  settings.elevenLabsApiKey || undefined,
  settings.elevenLabsModelId || undefined,
- story?.locale || "vi"
+ storyLocale
  );
  }
 
@@ -513,7 +487,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  return URL.createObjectURL(blob);
- }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, story?.locale, currentPage, pages]);
+ }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale, currentPage, pages]);
 
  // Prefetch next page audio in background
  const prefetchNextPage = useCallback((fromPageIdx: number) => {
@@ -568,7 +542,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  elevenVoiceId, pageRow.content,
  settings.elevenLabsApiKey || undefined,
  settings.elevenLabsModelId || undefined,
- story?.locale || "vi"
+ storyLocale
  );
  }
  } else {
@@ -576,7 +550,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  elevenVoiceId, pageRow.content,
  settings.elevenLabsApiKey || undefined,
  settings.elevenLabsModelId || undefined,
- story?.locale || "vi"
+ storyLocale
  );
  // Save to DB for future reuse
  uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
@@ -607,13 +581,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  mergedRef.current = result;
+ setMergedResult(result);
  setMergeStatus("ready");
  setMergeProgress("🎧 Audio liên tục sẵn sàng");
  } catch {
  setMergeStatus("idle"); // allow retry
  setMergeProgress("");
  }
- }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, story?.locale]);
+ }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale]);
 
  // Switch to merged audio playback
  const switchToMerged = useCallback(() => {
@@ -630,6 +605,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const audio = new Audio(merged.blobUrl);
  audioRef.current = audio;
+ setAudioClock(null);
 
  // Seek to current page position
  const seekTime = merged.pageMarkers[currentPage] || 0;
@@ -639,6 +615,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
 
  audio.ontimeupdate = () => {
+ if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
  if (audio.duration) {
  // Update overall progress
  setProgress((audio.currentTime / audio.duration) * 100);
@@ -650,6 +627,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  audio.onended = () => {
  audioRef.current = null;
+ setAudioClock(null);
  setIsPlaying(false);
  setProgress(100);
  setMergeStatus("ready");
@@ -697,9 +675,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const audio = new Audio(url);
  audioRef.current = audio;
+ setAudioClock(null);
+
+ audio.onloadedmetadata = () => {
+ if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
+ };
 
  audio.onended = () => {
  audioRef.current = null;
+ setAudioClock(null);
  if (currentPage < totalPages - 1) {
  setCurrentPage((c) => c + 1);
  setProgress(0);
@@ -712,6 +696,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
 
  audio.ontimeupdate = () => {
+ if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
  if (audio.duration) {
  setProgress((audio.currentTime / audio.duration) * 100);
  }
@@ -733,6 +718,40 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setIsTTSLoading(false);
  }
  }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge]);
+
+ // Effects below are declared after playWithTTS (which they call) but keep
+ // their original relative order: auto-play runs before fake-progress.
+ // Auto-play next page when audio ends and advances
+ useEffect(() => {
+ if (pendingAutoPlay) {
+ setPendingAutoPlay(false);
+ playWithTTS();
+ }
+ }, [pendingAutoPlay, currentPage, playWithTTS]);
+
+ // Fake progress when there is no audio element (no API key configured).
+ useEffect(() => {
+ if (isPlaying && !audioRef.current) {
+ intervalRef.current = setInterval(() => {
+ setProgress((p) => {
+ if (p >= 100) {
+ if (currentPage < totalPages - 1) {
+ setCurrentPage((c) => c + 1);
+ return 0;
+ }
+ setIsPlaying(false);
+ return 100;
+ }
+ return p + 0.5;
+ });
+ }, 500);
+ } else if (!isPlaying && intervalRef.current) {
+ clearInterval(intervalRef.current);
+ }
+ return () => {
+ if (intervalRef.current) clearInterval(intervalRef.current);
+ };
+ }, [isPlaying, currentPage, totalPages]);
 
  const togglePlay = () => {
  if (isPlaying) {
@@ -758,6 +777,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setIsPlaying(false);
  audioRef.current?.pause();
  audioRef.current = null;
+ setAudioClock(null);
  }
  };
 
@@ -816,7 +836,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setFavLoading(false);
  };
 
- const anyAmbientOn = AMBIENT_OPTIONS.some((o) => ambientOn[o.type]);
  // --- AI Feature States ---
  const [isIllustrating, setIsIllustrating] = useState(false);
  const [showAIMenu, setShowAIMenu] = useState(false);
@@ -949,6 +968,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  allPages: allPageAudios && allPageAudios.length > 0 ? allPageAudios : undefined,
  });
  audioRef.current = null; // Don't pause — MiniPlayer owns it now
+ setAudioClock(null);
  } else {
  audioRef.current?.pause();
  }
@@ -1234,12 +1254,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }}
  >
  {/* Page markers (tick marks) for merged mode */}
- {mergeStatus === "playing" && mergedRef.current && mergedRef.current.pageMarkers.length > 1 && (
- mergedRef.current.pageMarkers.slice(1).map((marker, i) => (
+ {mergeStatus === "playing" && mergedResult && mergedResult.pageMarkers.length > 1 && (
+ mergedResult.pageMarkers.slice(1).map((marker, i) => (
  <div
  key={i}
  className="absolute top-0 w-0.5 h-full bg-white/20 rounded-full"
- style={{ left: `${(marker / mergedRef.current!.totalDuration) * 100}%` }}
+ style={{ left: `${(marker / mergedResult.totalDuration) * 100}%` }}
  />
  ))
  )}
@@ -1255,14 +1275,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  {/* Time display */}
  <div className="flex justify-between text-xs font-semibold text-white/30 mt-2">
  <span>
- {audioRef.current && audioRef.current.duration
- ? `${Math.floor(audioRef.current.currentTime / 60)}:${String(Math.floor(audioRef.current.currentTime % 60)).padStart(2, "0")}`
+ {audioClock
+ ? formatClock(audioClock.currentTime)
  : `${currentPage + 1}/${totalPages}`
  }
  </span>
  <span>
- {audioRef.current && audioRef.current.duration
- ? `${Math.floor(audioRef.current.duration / 60)}:${String(Math.floor(audioRef.current.duration % 60)).padStart(2, "0")}`
+ {audioClock
+ ? formatClock(audioClock.duration)
  : isGenerated ? "AI Story" : `${totalPages} trang`
  }
  </span>

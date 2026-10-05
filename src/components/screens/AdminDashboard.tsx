@@ -5,7 +5,7 @@ import {
  BookOpen, Mic, Play, Heart, Loader2, Lightbulb, Globe,
  FileText, CheckCircle2, AlertTriangle, Sparkles,
  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X, Settings,
- FolderOpen, BookTemplate,
+ FolderOpen,
 } from "lucide-react";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";

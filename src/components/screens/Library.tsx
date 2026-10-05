@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import { BookOpen, Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "lucide-react";
+import { Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "lucide-react";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
@@ -53,7 +53,7 @@ const categoryLabels: Record<string, string> = {
 type SortBy = "newest" | "oldest" | "name" | "popular";
 
 export default function Library({ onNavigate }: LibraryProps) {
- const { stories, loading, refreshStories } = useData();
+ const { stories, loading } = useData();
  const { toast } = useToast();
  const [activeFilter, setActiveFilter] = useState("all");
  const [searchQuery, setSearchQuery] = useState("");

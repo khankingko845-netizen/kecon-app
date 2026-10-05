@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Flame, BookOpen, Headphones, Trophy, Star, Zap } from "lucide-react";
+import { Flame, BookOpen, Headphones, Trophy, Zap } from "lucide-react";
 import { getReadingStreak, type ReadingStreakRow } from "@/lib/db";
 
 /* ── XP & Level calculations ── */
@@ -66,7 +66,7 @@ export default function ReadingStreakCard() {
 
  if (!streak) return null;
 
- const { level, xp, xpInLevel, xpForNext, progress } = calcLevel(
+ const { level, xpInLevel, xpForNext, progress } = calcLevel(
  streak.total_stories_read, streak.total_listen_minutes, streak.current_streak
  );
  const title = LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];

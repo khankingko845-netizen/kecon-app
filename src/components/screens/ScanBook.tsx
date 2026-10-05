@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import {
  ChevronLeft, Camera, ImagePlus, Loader2, Sparkles, Trash2,
- BookOpen, CheckCircle, AlertCircle, X, RotateCcw, ZoomIn,
+ BookOpen, CheckCircle, AlertCircle, X, RotateCcw,
 } from "lucide-react";
 import { useSettings } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";

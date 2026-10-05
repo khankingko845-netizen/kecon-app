@@ -21,12 +21,13 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
  const [loading, setLoading] = useState(true);
  const [period, setPeriod] = useState<7 | 14 | 30>(7);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const [usageData, streakData] = await Promise.all([
- getUsageHistory(profile.id, period),
+ getUsageHistory(profileId, period),
  getReadingStreak(),
  ]);
  setUsage(usageData);
@@ -38,7 +39,7 @@ export default function ParentAnalytics({ onBack }: ParentAnalyticsProps) {
  // ignore
  }
  setLoading(false);
- }, [profile?.id, period]);
+ }, [profileId, period]);
 
  useEffect(() => { load(); }, [load]);
 

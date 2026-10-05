@@ -8,7 +8,6 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import {
  getDownloadedStories, removeDownloadedStory, markStoryDownloaded,
- type DownloadedStory,
 } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";
@@ -48,14 +47,15 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  };
  }, []);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const supabase = createClient();
  const [{ data: allStories }, downloads] = await Promise.all([
- supabase.from("stories").select("id, title, category").eq("user_id", profile.id).order("created_at", { ascending: false }),
- getDownloadedStories(profile.id),
+ supabase.from("stories").select("id, title, category").eq("user_id", profileId).order("created_at", { ascending: false }),
+ getDownloadedStories(profileId),
  ]);
 
  const downloadMap = new Map(downloads.map((d) => [d.story_id, d]));
@@ -75,7 +75,7 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  // ignore
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 

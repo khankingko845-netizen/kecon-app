@@ -45,8 +45,9 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  const [loading, setLoading] = useState(true);
  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
 
+ const profileId = profile?.id;
  const load = useCallback(async () => {
- if (!profile?.id) return;
+ if (!profileId) return;
  setLoading(true);
  try {
  const supabase = createClient();
@@ -55,7 +56,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  const { data: stories } = await supabase
  .from("stories")
  .select("id, title, category, play_count, like_count")
- .eq("user_id", profile.id)
+ .eq("user_id", profileId)
  .order("created_at", { ascending: false });
 
  if (!stories || stories.length === 0) {
@@ -126,7 +127,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  // ignore
  }
  setLoading(false);
- }, [profile?.id]);
+ }, [profileId]);
 
  useEffect(() => { load(); }, [load]);
 
