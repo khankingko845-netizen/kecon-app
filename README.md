@@ -87,9 +87,21 @@
 - Đăng nhập / Đăng ký bằng email + mật khẩu
 - Google OAuth (callback route)
 - Tự động tạo profile khi đăng ký (trigger SQL)
-- 3 vai trò: `user` → `admin` → `super_admin`
-- Hàm `is_admin()` SQL dùng trong RLS
-- Trang quản trị là route riêng `/admin` (Admin v2 · A-01): guard phía server (`src/lib/admin-guard.ts`) — chưa đăng nhập / user thường nhận 404 kể cả gõ URL; RLS `is_admin()` vẫn chặn ở DB
+- Phân quyền theo quyền hạn (Admin v2 · A-02, migration `019_admin_rbac.sql`): vai trò `user` + 7 vai trò nhân sự (bảng dưới). Quyền nằm ở DB (`admin_roles`, `admin_permissions`, `admin_role_permissions`); RLS và API route cùng gọi `has_permission('…')`; `src/lib/admin-permissions.ts` là bản sao cho UI (test DB so khớp hai bên)
+- `is_admin()` giữ nghĩa cũ (`admin`/`super_admin`) cho các policy cũ — vai trò hẹp không đi qua nó
+- Trang quản trị là route riêng `/admin` (Admin v2 · A-01): guard phía server (`src/lib/admin-guard.ts`) — chưa đăng nhập / user thường nhận 404 kể cả gõ URL; mục không có quyền cũng 404 và không hiện trên thanh bên
+
+| Vai trò | Quyền | Ghi chú |
+|---|---|---|
+| `super_admin` · Super admin | tất cả | Người duy nhất đổi được vai trò (không tự đổi vai trò của mình) |
+| `admin` · Admin (đầy đủ) | tất cả trừ `roles.manage` | Vai trò cũ — giữ nguyên những gì làm được trước A-02 |
+| `ops` · Vận hành | `dashboard.view`, `analytics.view`, `settings.read`, `settings.write`, `voices.manage`, `notifications.send` | Sửa cài đặt **không bí mật**; không đọc / đặt API key |
+| `editor` · Biên tập | `dashboard.view`, `stories.read`, `stories.write`, `categories.manage`, `templates.manage` | Chỉ truyện nền tảng (`is_platform_content`), không đụng truyện riêng của gia đình |
+| `moderator` · Kiểm duyệt | `dashboard.view`, `stories.read`, `moderation.manage` | Xem truyện nền tảng, hàng chờ kiểm duyệt |
+| `support` · Hỗ trợ | `dashboard.view`, `users.read` | Xem danh sách tài khoản, không sửa |
+| `analyst` · Phân tích | `dashboard.view`, `analytics.view` | Chỉ số liệu tổng hợp (`admin_usage_summary()`) |
+
+API key (`app_settings.is_secret`) chỉ `secrets.manage` (super_admin, admin) đọc / ghi được. Chỉ người có `stories.write` mới gắn / bỏ cờ truyện nền tảng (trigger `stories_guard_platform_content`). Rate limit ×5 / không giới hạn gói vẫn chỉ áp dụng cho `admin`/`super_admin`.
 
 ### 2. Trang Chủ (Home)
 - Hiển thị tên gia đình, voice profiles, truyện gần đây
@@ -169,9 +181,9 @@
 - Gợi ý cho bé theo tuổi
 - Gợi ý cho gia đình (truyện chưa ai nghe)
 
-### 13. Module Quản Trị (Admin) — Chỉ admin/super_admin
+### 13. Module Quản Trị (Admin) — Chỉ vai trò nhân sự
 
-Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có thanh mục ngang). Mỗi mục một URL: `/admin` (Tổng quan), `/admin/stories`, `/admin/users`, `/admin/analytics`, `/admin/categories`, `/admin/templates`, `/admin/settings` — map trong `src/lib/admin-routes.ts`. Server kiểm tra phiên + `profiles.role` ở mọi request (`src/app/admin/[[...section]]/page.tsx`), không phải admin → 404 thường (không lộ tiêu đề / nội dung). E2E: `tests/e2e/admin.spec.ts`.
+Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có thanh mục ngang). Mỗi mục một URL: `/admin` (Tổng quan), `/admin/stories`, `/admin/users`, `/admin/analytics`, `/admin/categories`, `/admin/templates`, `/admin/settings` — map trong `src/lib/admin-routes.ts`. Server kiểm tra phiên + quyền (`my_admin_permissions()`) ở mọi request (`src/app/admin/[[...section]]/page.tsx`): không phải nhân sự hoặc thiếu quyền của mục (`admin-routes.ts` → `permission`) → 404 thường (không lộ tiêu đề / nội dung). Thanh bên chỉ hiện mục mình có quyền. E2E: `tests/e2e/admin.spec.ts`; RLS từng vai trò: `tests/db/admin-rbac.test.ts`.
 
 #### 13a. Admin Dashboard
 - 6 KPIs real-time: tổng truyện, đã xuất bản, lượt nghe, yêu thích, giọng nói, nháp
@@ -189,8 +201,8 @@ Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có tha
 
 #### 13c. Quản Lý Người Dùng (AdminUsers)
 - Danh sách users + tìm kiếm
-- Badge vai trò (user / admin / super_admin)
-- Đổi quyền user (chỉ super_admin)
+- Badge + ô chọn vai trò (Người dùng / 7 vai trò nhân sự)
+- Đổi vai trò (chỉ `roles.manage` = super_admin; DB chặn cả khi gọi API trực tiếp)
 - Số truyện + voice profiles mỗi user
 
 #### 13d. Thống Kê (AdminAnalytics)
@@ -322,6 +334,8 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `004_admin_upgrade.sql` | `is_platform_content`, `deleted_at`, bảng `story_templates`, RLS admin |
 | `005` → `015` | Rating/chia sẻ/yêu thích, push + gói cước, app settings, giọng mặc định, nhân vật, offline/gamification/parental, thông báo, danh mục & template |
 | `016_security_hardening.sql` | Bảo vệ cột `role`/`current_plan`, khoá bộ đếm `usage_limits`, hàm `consume_usage()` (rate limit + hạn mức gói phía server) |
+| `017` → `018` | PIN phụ huynh bcrypt phía server, khoá sau 5 lần sai, đặt lại PIN bằng mật khẩu |
+| `019_admin_rbac.sql` | RBAC: `admin_roles` / `admin_permissions` / `admin_role_permissions`, `has_permission()`, `my_admin_permissions()`, `admin_usage_summary()`, policy cho vai trò hẹp, API key chỉ `secrets.manage`, chuyển `admin`/`super_admin` cũ |
 
 ### Bảng chính:
 - `profiles` — User profiles (display_name, role, child_name, child_age...)
@@ -413,7 +427,7 @@ UPDATE public.profiles SET role = 'super_admin'
 WHERE id = (SELECT id FROM auth.users WHERE email = 'you@example.com');
 ```
 
-> Đăng nhập tài khoản super admin → Trang Chủ hiện nút **"Quản trị"** → vào module admin.
+> Đăng nhập tài khoản super admin → tab **Bố mẹ** (qua cổng phụ huynh) → **Trang quản trị**, hoặc vào thẳng `/admin`. Gán vai trò hẹp cho nhân sự khác ở `/admin/users`.
 
 ---
 

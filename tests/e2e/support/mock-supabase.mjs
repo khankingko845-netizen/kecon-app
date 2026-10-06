@@ -17,6 +17,8 @@ const MOCK_PIN = "2468";
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
 /** Admin v2 · A-01: the only mock account whose profile role is "admin". */
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
+/** Admin v2 · A-02: an "editor" (Biên tập) — narrow role, no settings / users / API keys. */
+export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
@@ -45,11 +47,17 @@ const adminUser = {
   id: MOCK_ADMIN_USER_ID,
   email: "e2e-admin@kecon.test",
 };
+const editorUser = {
+  ...user,
+  id: MOCK_EDITOR_USER_ID,
+  email: "e2e-editor@kecon.test",
+};
 const USERS = {
   [MOCK_USER_ID]: user,
   [MOCK_PIN_USER_ID]: pinUser,
   [MOCK_AGE_USER_ID]: ageUser,
   [MOCK_ADMIN_USER_ID]: adminUser,
+  [MOCK_EDITOR_USER_ID]: editorUser,
 };
 
 const profile = {
@@ -147,12 +155,31 @@ const ageProfile = { ...profile, id: MOCK_AGE_USER_ID, email: ageUser.email, fam
 
 const adminProfile = { ...profile, id: MOCK_ADMIN_USER_ID, email: adminUser.email, family_name: "Đội KểCon", display_name: "Admin E2E", role: "admin" };
 
-const TABLES = { profiles: [profile, pinProfile, ageProfile, adminProfile], stories, story_pages: pages, parental_controls: parentalControls };
+const editorProfile = { ...profile, id: MOCK_EDITOR_USER_ID, email: editorUser.email, family_name: "Đội KểCon", display_name: "Biên tập E2E", role: "editor" };
 
-/** Parent-PIN RPCs (017/018), stateless so parallel specs can't interfere. */
-function pinRpc(name, sub, body) {
+/** Mirror of migration 019 / src/lib/admin-permissions.ts for the mock roles. */
+const ALL_PERMISSIONS = [
+  "analytics.view", "categories.manage", "dashboard.view", "moderation.manage", "notifications.send", "roles.manage", "secrets.manage",
+  "settings.read", "settings.write", "stories.read", "stories.write", "templates.manage", "users.read", "voices.manage",
+];
+const ROLE_PERMISSIONS = {
+  super_admin: ALL_PERMISSIONS,
+  admin: ALL_PERMISSIONS.filter((p) => p !== "roles.manage"),
+  editor: ["categories.manage", "dashboard.view", "stories.read", "stories.write", "templates.manage"],
+};
+
+const TABLES = { profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile], stories, story_pages: pages, parental_controls: parentalControls };
+
+/** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
+function rpc(name, sub, body) {
   const hasPin = sub === MOCK_PIN_USER_ID;
+  const role = TABLES.profiles.find((p) => p.id === sub)?.role ?? "user";
+  const permissions = ROLE_PERMISSIONS[role] ?? [];
   switch (name) {
+    case "my_admin_permissions":
+      return permissions;
+    case "has_permission":
+      return permissions.includes(body?.p_permission);
     case "parent_pin_status":
       return { ok: true, has_pin: hasPin, reset_required: false, locked_until: null };
     case "verify_parent_pin":
@@ -242,7 +269,7 @@ createServer((req, res) => {
     const authed = Boolean(USERS[sub]);
     if (path.startsWith("/rest/v1/rpc/")) {
       const name = path.slice("/rest/v1/rpc/".length);
-      readJson(req).then((body) => send(res, 200, authed ? pinRpc(name, sub, body) : null));
+      readJson(req).then((body) => send(res, 200, authed ? rpc(name, sub, body) : null));
       return;
     }
     const table = path.slice("/rest/v1/".length);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,8 +16,8 @@ import {
  ShieldCheck,
  Users,
 } from "@/components/ui/icons";
-import { ADMIN_SECTIONS, adminPath, isAdminScreen, type AdminScreen } from "@/lib/admin-routes";
-import type { AdminRole } from "@/lib/admin-guard";
+import { ROLE_LABELS, type AdminPermission, type StaffRole } from "@/lib/admin-permissions";
+import { ADMIN_SECTIONS, adminPath, canOpenSection, isAdminScreen, sectionsFor, type AdminScreen } from "@/lib/admin-routes";
 import type { Screen } from "@/lib/types";
 
 /**
@@ -52,8 +52,16 @@ const SECTION_ICONS: Record<AdminScreen, typeof Users> = {
 
 export interface AdminViewerInfo {
  email: string | null;
- role: AdminRole;
+ role: StaffRole;
+ permissions: AdminPermission[];
 }
+
+/**
+ * A-02: the viewer's permissions (verified on the server for this request) —
+ * screens use it to hide actions the DB would refuse anyway (RLS + has_permission).
+ */
+const NO_PERMISSIONS: readonly AdminPermission[] = [];
+const AdminPermissionsContext = createContext<readonly AdminPermission[]>(NO_PERMISSIONS);
 
 interface Overlay {
  screen: Screen;
@@ -65,13 +73,16 @@ const OVERLAY_SCREENS = new Set<Screen>(["editor", "create", "upload", "player"]
 
 function AdminContent({ screen }: { screen: AdminScreen }) {
  const router = useRouter();
+ const permissions = useContext(AdminPermissionsContext);
  const [overlays, setOverlays] = useState<Overlay[]>([]);
+ const canOpen = useCallback((s: Screen) => isAdminScreen(s) && canOpenSection(s, permissions), [permissions]);
+ const can = (p: AdminPermission) => permissions.includes(p);
 
  const navigate = useCallback(
  (next: Screen, data?: Record<string, string>) => {
  if (isAdminScreen(next)) {
  setOverlays([]);
- router.push(adminPath(next));
+ if (canOpenSection(next, permissions)) router.push(adminPath(next));
  } else if (OVERLAY_SCREENS.has(next)) {
  setOverlays((prev) => [...prev, { screen: next, data }]);
  } else {
@@ -79,7 +90,7 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
  setOverlays([]);
  }
  },
- [router]
+ [router, permissions]
  );
  const closeOverlay = useCallback(() => setOverlays((prev) => prev.slice(0, -1)), []);
  const toDashboard = useCallback(() => router.push(adminPath("admin")), [router]);
@@ -92,11 +103,11 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
 
  switch (screen) {
  case "admin":
- return <AdminDashboard onNavigate={navigate} />;
+ return <AdminDashboard onNavigate={navigate} canOpen={canOpen} canCreate={can("stories.write")} />;
  case "admin-stories":
  return <AdminStories onBack={toDashboard} onNavigate={navigate} />;
  case "admin-users":
- return <AdminUsers onBack={toDashboard} />;
+ return <AdminUsers onBack={toDashboard} canManageRoles={can("roles.manage")} />;
  case "admin-analytics":
  return <AdminAnalytics onBack={toDashboard} />;
  case "admin-categories":
@@ -104,12 +115,13 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
  case "admin-templates":
  return <AdminTemplates onBack={toDashboard} onNavigate={navigate} />;
  case "admin-settings":
- return <AdminSettings onBack={toDashboard} />;
+ return <AdminSettings onBack={toDashboard} canManageSecrets={can("secrets.manage")} />;
  }
 }
 
 function AdminShell({ screen, viewer }: { screen: AdminScreen; viewer: AdminViewerInfo }) {
  const current = ADMIN_SECTIONS.find((s) => s.screen === screen) ?? ADMIN_SECTIONS[0];
+ const sections = useMemo(() => sectionsFor(viewer.permissions), [viewer.permissions]);
  const backToApp = (
  <Link
  href="/"
@@ -134,7 +146,7 @@ function AdminShell({ screen, viewer }: { screen: AdminScreen; viewer: AdminView
  </div>
  <nav aria-label="Quản trị" className="lg:flex-1 lg:overflow-y-auto">
  <ul className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible">
- {ADMIN_SECTIONS.map((s) => {
+ {sections.map((s) => {
  const Icon = SECTION_ICONS[s.screen];
  const active = s.screen === screen;
  return (
@@ -158,7 +170,7 @@ function AdminShell({ screen, viewer }: { screen: AdminScreen; viewer: AdminView
  <p className="truncate text-[13px] font-semibold" title={viewer.email ?? undefined}>
  {viewer.email ?? "Quản trị viên"}
  </p>
- <p className="mb-2 text-[12px] text-ink-2">{viewer.role === "super_admin" ? "Super admin" : "Admin"}</p>
+ <p className="mb-2 text-[12px] text-ink-2">{ROLE_LABELS[viewer.role]}</p>
  {backToApp}
  </div>
  </aside>
@@ -174,7 +186,9 @@ function AdminShell({ screen, viewer }: { screen: AdminScreen; viewer: AdminView
 export default function AdminApp({ screen, viewer }: { screen: AdminScreen; viewer: AdminViewerInfo }) {
  return (
  <AppProviders>
+ <AdminPermissionsContext.Provider value={viewer.permissions}>
  <AdminShell screen={screen} viewer={viewer} />
+ </AdminPermissionsContext.Provider>
  </AppProviders>
  );
 }

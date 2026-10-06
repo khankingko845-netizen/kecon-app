@@ -26,6 +26,10 @@ interface AdminDashboardProps {
  /** A-01: the dashboard is the console's home — no back button by default. */
  onBack?: () => void;
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
+ /** A-02: hide shortcuts to sections the viewer's role can't open. */
+ canOpen?: (screen: Screen) => boolean;
+ /** A-02: "Tạo truyện mới", Sửa / Duyệt in the queue need `stories.write`. */
+ canCreate?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -37,7 +41,7 @@ const categoryLabels: Record<string, string> = {
  custom: "Tùy chỉnh",
 };
 
-export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack, onNavigate, canOpen = () => true, canCreate = true }: AdminDashboardProps) {
  const { refreshStories } = useData();
  const [stats, setStats] = useState<AdminStats | null>(null);
  const [gaps, setGaps] = useState<ContentGap[]>([]);
@@ -122,6 +126,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
  ) : (
  <div className="px-5 pt-2">
  {/* Create story + management hub */}
+ {canCreate && (
  <button
  onClick={() => setShowCreate(true)}
  className="w-full mb-3 rounded-2xl bg-gradient-to-r from-accent to-pink-500 text-white p-4 flex items-center gap-3 shadow-[0_4px_12px_rgba(255,107,61,0.25)] active:scale-[0.99] transition-transform"
@@ -134,6 +139,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
  <div className="text-[12px] text-white/85">Viết tay · AI · Upload</div>
  </div>
  </button>
+ )}
 
  <div className="grid grid-cols-3 gap-2 mb-6">
  {[
@@ -143,7 +149,7 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
  { icon: Users, label: "Users", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
  { icon: BarChart3, label: "Thống kê", screen: "admin-analytics" as Screen, color: "text-emerald-600 bg-emerald-50" },
  { icon: Settings, label: "Cài Đặt", screen: "admin-settings" as Screen, color: "text-orange-600 bg-orange-50" },
- ].map((m) => (
+ ].filter((m) => canOpen(m.screen)).map((m) => (
  <button
  key={m.label}
  onClick={() => onNavigate(m.screen)}
@@ -264,6 +270,8 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
  {story.page_count} trang
  </p>
  </div>
+ {canCreate && (
+ <>
  <button
  onClick={() => onNavigate("editor", { storyId: story.id })}
  className="px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-[12px] font-bold text-txt dark:text-white"
@@ -282,6 +290,8 @@ export default function AdminDashboard({ onBack, onNavigate }: AdminDashboardPro
  )}
  Duyệt
  </button>
+ </>
+ )}
  </div>
  ))
  )}

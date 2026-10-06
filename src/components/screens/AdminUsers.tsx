@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Search, Shield, ShieldCheck, User as UserIcon, BookOpen, Mic } from "@/components/ui/icons";
+import { Loader2, Search, BookOpen, Mic } from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -9,31 +9,33 @@ import {
  updateUserRole,
  type AdminUserRow,
 } from "@/lib/db";
+import { ROLE_LABELS, STAFF_ROLES, type UserRole } from "@/lib/admin-permissions";
 
 interface AdminUsersProps {
  onBack: () => void;
+ /** A-02: `roles.manage` (super admin). Defaults to the legacy check on the caller's role. */
+ canManageRoles?: boolean;
 }
 
-const roleLabels: Record<string, string> = {
- user: "Người dùng",
- admin: "Admin",
- super_admin: "Super Admin",
-};
+const roleLabels: Record<string, string> = ROLE_LABELS;
+const ROLE_OPTIONS: UserRole[] = ["user", ...STAFF_ROLES];
 
 function roleBadge(role: string) {
  if (role === "super_admin") return "bg-violet-100 text-violet-700";
  if (role === "admin") return "bg-accent/10 text-accent";
+ if (role !== "user") return "bg-blue-50 text-blue-700";
  return "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/40";
 }
 
-export default function AdminUsers({ onBack }: AdminUsersProps) {
+export default function AdminUsers({ onBack, canManageRoles }: AdminUsersProps) {
  const { profile } = useAuth();
  const [users, setUsers] = useState<AdminUserRow[]>([]);
  const [loading, setLoading] = useState(true);
  const [search, setSearch] = useState("");
  const [working, setWorking] = useState<string | null>(null);
+ const [roleError, setRoleError] = useState<string | null>(null);
 
- const isSuperAdmin = profile?.role === "super_admin";
+ const isSuperAdmin = canManageRoles ?? profile?.role === "super_admin";
 
  const load = useCallback(async () => {
  setLoading(true);
@@ -50,18 +52,17 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
  load();
  }, [load]);
 
- const changeRole = async (
- u: AdminUserRow,
- role: "user" | "admin" | "super_admin"
- ) => {
+ const changeRole = async (u: AdminUserRow, role: UserRole) => {
+ if (role === u.role) return;
  setWorking(u.id);
+ setRoleError(null);
  try {
  await updateUserRole(u.id, role);
  setUsers((prev) =>
  prev.map((x) => (x.id === u.id ? { ...x, role } : x))
  );
- } catch {
- /* ignore */
+ } catch (err) {
+ setRoleError(err instanceof Error && err.message ? err.message : "Không đổi được vai trò");
  } finally {
  setWorking(null);
  }
@@ -94,6 +95,11 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
  {!isSuperAdmin && (
  <div className="bg-amber-50 text-amber-700 rounded-xl p-3 text-[12px] font-medium mb-3">
  Chỉ Super Admin mới có thể thay đổi quyền người dùng.
+ </div>
+ )}
+ {roleError && (
+ <div role="alert" className="bg-red-50 text-red-700 rounded-xl p-3 text-[12px] font-medium mb-3">
+ {roleError}
  </div>
  )}
 
@@ -142,29 +148,22 @@ export default function AdminUsers({ onBack }: AdminUsersProps) {
  </div>
 
  {isSuperAdmin && !isSelf && (
- <div className="flex gap-1.5 mt-2.5">
- <button
- onClick={() => changeRole(u, "user")}
- disabled={working === u.id || u.role === "user"}
- className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-txt dark:text-white text-[12px] font-bold flex items-center justify-center gap-1 disabled:opacity-40"
+ <label className="mt-2.5 flex items-center gap-2 text-[12px] font-bold text-txt-secondary dark:text-white/50">
+ Vai trò
+ <select
+ value={u.role}
+ disabled={working === u.id}
+ onChange={(e) => changeRole(u, e.target.value as UserRole)}
+ aria-label={`Vai trò của ${name}`}
+ className="flex-1 min-h-[36px] rounded-lg border border-gray-200 bg-white px-2 text-[13px] font-bold text-txt disabled:opacity-60"
  >
- <UserIcon size={12} /> User
- </button>
- <button
- onClick={() => changeRole(u, "admin")}
- disabled={working === u.id || u.role === "admin"}
- className="flex-1 py-1.5 rounded-lg bg-accent/10 text-accent text-[12px] font-bold flex items-center justify-center gap-1 disabled:opacity-40"
- >
- <Shield size={12} /> Admin
- </button>
- <button
- onClick={() => changeRole(u, "super_admin")}
- disabled={working === u.id || u.role === "super_admin"}
- className="flex-1 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-[12px] font-bold flex items-center justify-center gap-1 disabled:opacity-40"
- >
- <ShieldCheck size={12} /> Super
- </button>
- </div>
+ {ROLE_OPTIONS.map((r) => (
+ <option key={r} value={r}>
+ {ROLE_LABELS[r]}
+ </option>
+ ))}
+ </select>
+ </label>
  )}
  </div>
  );

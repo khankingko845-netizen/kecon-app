@@ -13,8 +13,13 @@ import {
  type AppSettingRow,
 } from "@/lib/db";
 
+/** `app_settings` rows flagged `is_secret` (migration 007): every `*_api_key` + the custom provider key. */
+const SECRET_KEY_PATTERN = /(_api_key|_provider_key)$/;
+
 interface AdminSettingsProps {
  onBack: () => void;
+ /** A-02: `secrets.manage` — false → API key fields are locked and never saved. */
+ canManageSecrets?: boolean;
 }
 
 /* ──────────────── types ──────────────── */
@@ -76,10 +81,13 @@ function SecretInput({
  value,
  onChange,
  placeholder,
+ locked = false,
 }: {
  value: string;
  onChange: (v: string) => void;
  placeholder: string;
+ /** A-02: roles without `secrets.manage` can't read or set keys. */
+ locked?: boolean;
 }) {
  const [show, setShow] = useState(false);
  return (
@@ -88,7 +96,8 @@ function SecretInput({
  type={show ? "text" : "password"}
  value={value}
  onChange={(e) => onChange(e.target.value)}
- placeholder={placeholder}
+ placeholder={locked ? "Chỉ Super admin / Admin đặt được key" : placeholder}
+ disabled={locked}
  className="flex-1 px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent transition-colors"
  />
  <button
@@ -624,7 +633,7 @@ function VoiceRow({
 }
 
 /* ──────────────── main component ──────────────── */
-export default function AdminSettings({ onBack }: AdminSettingsProps) {
+export default function AdminSettings({ onBack, canManageSecrets = true }: AdminSettingsProps) {
  const [settings, setSettings] = useState<Record<string, string>>({});
  const [original, setOriginal] = useState<Record<string, string>>({});
  const [loading, setLoading] = useState(true);
@@ -807,6 +816,8 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
  try {
  const changed: Record<string, string> = {};
  for (const [k, v] of Object.entries(settings)) {
+ // A-02: without secrets.manage the DB refuses key rows anyway — never send them.
+ if (!canManageSecrets && SECRET_KEY_PATTERN.test(k)) continue;
  if (v !== (original[k] ?? "")) {
  changed[k] = v;
  }
@@ -888,6 +899,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
  value={settings["elevenlabs_api_key"] ?? ""}
  onChange={(v) => handleChange("elevenlabs_api_key", v)}
  placeholder="sk_..."
+ locked={!canManageSecrets}
  />
  <a
  href="https://elevenlabs.io/app/settings/api-keys"
@@ -1006,6 +1018,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
  value={settings[aiKeyField().key] ?? ""}
  onChange={(v) => handleChange(aiKeyField().key, v)}
  placeholder={aiKeyField().placeholder}
+ locked={!canManageSecrets}
  />
  {aiKeyField().helpUrl && (
  <a
@@ -1062,6 +1075,7 @@ export default function AdminSettings({ onBack }: AdminSettingsProps) {
  value={settings["dalle_api_key"] ?? ""}
  onChange={(v) => handleChange("dalle_api_key", v)}
  placeholder="sk-..."
+ locked={!canManageSecrets}
  />
  <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-1">
  Dùng chung key OpenAI. Nếu để trống sẽ fallback sang OpenAI Key ở mục AI.

@@ -4,6 +4,7 @@
  * existing admin screens to URLs, so both the server guard (validates the slug)
  * and the client shell (sidebar, in-app links) share one source of truth.
  */
+import type { AdminPermission } from "@/lib/admin-permissions";
 import type { Screen } from "@/lib/types";
 
 export type AdminScreen =
@@ -20,18 +21,20 @@ export interface AdminSection {
   slug: string;
   screen: AdminScreen;
   label: string;
+  /** A-02: needed to open the section (otherwise 404, hidden from the sidebar). */
+  permission: AdminPermission;
 }
 
 export const ADMIN_BASE_PATH = "/admin";
 
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
-  { slug: "", screen: "admin", label: "Tổng quan" },
-  { slug: "stories", screen: "admin-stories", label: "Truyện" },
-  { slug: "users", screen: "admin-users", label: "Người dùng" },
-  { slug: "analytics", screen: "admin-analytics", label: "Thống kê" },
-  { slug: "categories", screen: "admin-categories", label: "Danh mục" },
-  { slug: "templates", screen: "admin-templates", label: "Mẫu truyện" },
-  { slug: "settings", screen: "admin-settings", label: "Cài đặt hệ thống" },
+  { slug: "", screen: "admin", label: "Tổng quan", permission: "dashboard.view" },
+  { slug: "stories", screen: "admin-stories", label: "Truyện", permission: "stories.read" },
+  { slug: "users", screen: "admin-users", label: "Người dùng", permission: "users.read" },
+  { slug: "analytics", screen: "admin-analytics", label: "Thống kê", permission: "analytics.view" },
+  { slug: "categories", screen: "admin-categories", label: "Danh mục", permission: "categories.manage" },
+  { slug: "templates", screen: "admin-templates", label: "Mẫu truyện", permission: "templates.manage" },
+  { slug: "settings", screen: "admin-settings", label: "Cài đặt hệ thống", permission: "settings.read" },
 ];
 
 const BY_SCREEN = new Map<string, AdminSection>(ADMIN_SECTIONS.map((s) => [s.screen, s]));
@@ -55,4 +58,15 @@ export function sectionFromSegments(segments: readonly string[] | undefined): Ad
   if (!segments || segments.length === 0) return BY_SLUG.get("") ?? null;
   if (segments.length !== 1 || !segments[0]) return null;
   return BY_SLUG.get(segments[0]) ?? null;
+}
+
+/** Sections the viewer may open, in sidebar order. */
+export function sectionsFor(permissions: readonly string[]): AdminSection[] {
+  const granted = new Set(permissions);
+  return ADMIN_SECTIONS.filter((s) => granted.has(s.permission));
+}
+
+export function canOpenSection(screen: AdminScreen, permissions: readonly string[]): boolean {
+  const section = BY_SCREEN.get(screen);
+  return Boolean(section && permissions.includes(section.permission));
 }

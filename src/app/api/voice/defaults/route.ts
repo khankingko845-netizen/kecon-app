@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/admin-permissions";
 import { z } from "zod";
 import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
@@ -55,22 +56,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Admin check
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-    return Response.json({ error: "Admin only" }, { status: 403 });
-  }
+  // A-02: permission check shared with RLS (has_permission).
+  const denied = await requirePermission(supabase, "voices.manage");
+  if (denied) return denied;
 
   const parsed = await parseJsonBody(request, DefaultVoiceBody);
   if (!parsed.ok) return parsed.response;
@@ -113,22 +101,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Admin check
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-    return Response.json({ error: "Admin only" }, { status: 403 });
-  }
+  // A-02: permission check shared with RLS (has_permission).
+  const denied = await requirePermission(supabase, "voices.manage");
+  if (denied) return denied;
 
   const id = request.nextUrl.searchParams.get("id");
   if (!id) {
