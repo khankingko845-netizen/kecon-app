@@ -5,7 +5,7 @@ import TopBar from "@/components/ui/TopBar";
 import {
  Crown, Check, Sparkles, Zap, Star, Loader2,
  CreditCard, ArrowRight, Shield, Heart,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import type { Screen } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";

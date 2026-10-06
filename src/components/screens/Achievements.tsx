@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Trophy, Star, Zap, Target, Loader2 } from "lucide-react";
+import { ChevronLeft, Trophy, Star, Zap, Target, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import {
  getAllBadges, getUserBadges, getProfileXP, checkAndAwardBadges,
  type BadgeDefinition, type UserBadge,
 } from "@/lib/db";
 import type { Screen } from "@/lib/types";
+import Mascot from "@/components/ui/Mascot";
 
 interface AchievementsProps {
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
@@ -84,25 +85,26 @@ export default function Achievements({ onBack }: AchievementsProps) {
  const progress = Math.min(100, ((xp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100);
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
+ <div className="min-h-screen bg-surface dark:bg-night pb-24">
  <div className="px-5 pt-14">
  {/* Header */}
  <div className="flex items-center gap-3 mb-6">
- <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
+ <button onClick={onBack} aria-label="Quay lại" className="w-11 h-11 rounded-xl bg-white dark:bg-white/[0.06] flex items-center justify-center shadow-sm">
  <ChevronLeft size={18} />
  </button>
- <h2 className="text-[24px] font-black tracking-tight">Thành Tích</h2>
+ <h2 className="font-display text-[26px] font-extrabold tracking-tight text-ink dark:text-white">Thành tích</h2>
  </div>
 
- {/* XP & Level Card */}
- <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white mb-5 shadow-lg">
+ {/* XP & Level Card — Đóm ăn mừng (UI v2) */}
+ <div className="relative overflow-hidden bg-gradient-to-br from-brand to-[#7A5CF0] rounded-card p-5 pr-28 text-white mb-5 shadow-lg">
+ <Mascot state="celebrate" size={112} label={null} className="absolute -right-1 -bottom-1" />
  <div className="flex items-center justify-between mb-3">
  <div className="flex items-center gap-2">
- <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl font-black">
+ <div className="w-12 h-12 rounded-full bg-glow text-ink flex items-center justify-center text-2xl font-black">
  {level}
  </div>
  <div>
- <p className="text-[11px] font-bold text-white/70 uppercase">Level</p>
+ <p className="text-[11px] font-bold text-white/75">Cấp độ</p>
  <p className="text-[18px] font-black">
  {xp.toLocaleString()} XP
  </p>
@@ -115,19 +117,19 @@ export default function Achievements({ onBack }: AchievementsProps) {
  </div>
  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
  <div
- className="h-full bg-white dark:bg-white/[0.04] rounded-full transition-all"
+ className="h-full bg-glow rounded-full transition-all"
  style={{ width: `${progress}%` }}
  />
  </div>
- <p className="text-[10px] text-white/60 mt-1 text-right">
- {nextLevelXp - xp} XP đến Level {level + 1}
+ <p className="text-[11px] text-white/80 mt-1">
+ Còn {nextLevelXp - xp} XP để lên cấp {level + 1}
  </p>
  </div>
 
  {/* New badge notification */}
  {newBadges.length > 0 && (
  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-amber-200 rounded-xl p-4 mb-5 flex items-center gap-3">
- <div className="text-3xl">🎉</div>
+ <Mascot state="happy" size={56} label={null} still />
  <div>
  <p className="text-[13px] font-bold text-amber-800">Chúc mừng! Huy hiệu mới!</p>
  <p className="text-[11px] text-amber-600">

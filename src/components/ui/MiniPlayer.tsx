@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Pause, X, SkipBack, SkipForward } from "lucide-react";
+import { Play, Pause, X, SkipBack, SkipForward } from "@/components/ui/icons";
 import { useAudioPlayer } from "@/lib/audio-player-context";
 
 export default function MiniPlayer() {

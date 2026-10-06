@@ -5,7 +5,7 @@ import {
  Plus, Trash2, ChevronUp, ChevronDown, Save, Loader2,
  Image as ImageIcon, Globe, FileText, Check, Sparkles, GitBranch, X,
  Headphones, Volume2, Users, Mic, Search,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import ExpertPanel from "@/components/ui/ExpertPanel";
 import { AMBIENT_CATEGORIES } from "@/lib/ambient-sounds";

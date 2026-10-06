@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
  ChevronLeft, Flame, Star, Gift, CheckCircle, Clock, Loader2, Sparkles,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";

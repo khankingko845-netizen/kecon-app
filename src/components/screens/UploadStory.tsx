@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
  Upload, FileText, Loader2, Sparkles, AlertCircle, Wand2,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
 import {

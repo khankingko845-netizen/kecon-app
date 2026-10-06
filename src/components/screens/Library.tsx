@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import { Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "lucide-react";
+import { Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "@/components/ui/icons";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import EmptyState from "@/components/ui/EmptyState";
+import { CategoryIcon } from "@/components/ui/Icon3D";
 import LongPressMenu from "@/components/ui/LongPressMenu";
 import type { Screen } from "@/lib/types";
 
@@ -31,14 +32,14 @@ function StoryIcon({ icon, size = 36 }: { icon: string; size?: number }) {
 }
 
 const filters = [
- { id: "all", label: "Tất Cả", emoji: "📚" },
- { id: "fairy_tale", label: "Cổ Tích", emoji: "🏰" },
- { id: "adventure", label: "Phiêu Lưu", emoji: "🚀" },
- { id: "bedtime", label: "Ru Ngủ", emoji: "🌙" },
- { id: "animal", label: "Động Vật", emoji: "🐰" },
- { id: "educational", label: "Học Chơi", emoji: "📖" },
- { id: "ai", label: "AI Tạo", emoji: "✨" },
- { id: "custom", label: "Tùy Chỉnh", emoji: "🎨" },
+ { id: "all", label: "Tất Cả" },
+ { id: "fairy_tale", label: "Cổ Tích" },
+ { id: "adventure", label: "Phiêu Lưu" },
+ { id: "bedtime", label: "Ru Ngủ" },
+ { id: "animal", label: "Động Vật" },
+ { id: "educational", label: "Học Chơi" },
+ { id: "ai", label: "AI Tạo" },
+ { id: "custom", label: "Tùy Chỉnh" },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -132,7 +133,7 @@ export default function Library({ onNavigate }: LibraryProps) {
  <div className="px-5 pt-14">
  {/* Header */}
  <div className="flex items-center justify-between mb-3.5">
- <h2 className="text-[28px] font-black tracking-tight dark:text-white">Thư Viện</h2>
+ <h2 className="font-display text-[28px] font-extrabold tracking-tight text-ink dark:text-white">Thư viện</h2>
  <div className="flex items-center gap-2">
  <button
  onClick={() => { setShowSearch(!showSearch); if (!showSearch) setTimeout(() => searchRef.current?.focus(), 100); }}
@@ -177,13 +178,13 @@ export default function Library({ onNavigate }: LibraryProps) {
  <button
  key={f.id}
  onClick={() => setActiveFilter(f.id)}
- className={`px-3 py-2 rounded-[10px] text-[12px] font-semibold whitespace-nowrap border transition-all flex items-center gap-1 ${
+ className={`pl-1.5 pr-3.5 py-1.5 rounded-full text-[13px] font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 min-h-[44px] ${
  activeFilter === f.id
- ? "bg-txt text-white border-txt dark:bg-accent dark:border-accent"
+ ? "bg-brand text-white border-brand dark:bg-brand dark:border-brand"
  : "bg-white dark:bg-white/5 text-txt-secondary dark:text-white/50 border-gray-200 dark:border-white/10"
  }`}
  >
- <span>{f.emoji}</span> {f.label}
+ <CategoryIcon category={f.id} size={30} className="rounded-[10px]" /> {f.label}
  </button>
  ))}
  </div>

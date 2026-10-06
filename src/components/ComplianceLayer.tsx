@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShieldCheck, WifiOff, X } from "lucide-react";
+import { ShieldCheck, WifiOff, X } from "@/components/ui/icons";
 
 const CONSENT_KEY = "kecon-consent-v1";
 

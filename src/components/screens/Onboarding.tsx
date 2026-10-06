@@ -1,64 +1,71 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { ChevronRight, Sparkles, Mic, BookOpen, Shield, Star } from "lucide-react";
+import { ChevronRight, Sparkles, ShieldCheck, Lock, Mic, BookOpen } from "@/components/ui/icons";
+import Mascot, { type MascotState } from "@/components/ui/Mascot";
 
 interface OnboardingProps {
  onGetStarted: () => void;
  onLogin: () => void;
 }
 
-const steps = [
+/**
+ * Onboarding v2 (UI-07): Đóm dẫn đường qua 5 bước, nền kem ấm, chữ ink,
+ * CTA cam. Tiêu đề h1 + nhãn nút được E2E smoke test sử dụng — giữ nguyên.
+ */
+const steps: {
+ mascot: MascotState;
+ title: string;
+ subtitle: string;
+ description: string;
+ /** Soft backdrop blob colour behind Đóm. */
+ halo: string;
+}[] = [
  {
- icon: <Sparkles size={40} />,
+ mascot: "hello",
  title: "Chào mừng đến KểCon!",
- subtitle: "Nền tảng kể chuyện AI cho gia đình Việt",
- description: "Tạo câu chuyện cá nhân hóa cho bé yêu với giọng đọc của chính bạn",
- gradient: "from-amber-400 via-orange-400 to-rose-400",
- iconBg: "from-amber-200 to-orange-200",
- emoji: "🎉",
- particles: ["✨", "⭐", "💫", "🌟"],
+ subtitle: "Mình là Đóm — bạn kể chuyện của bé",
+ description: "Truyện cá nhân hoá cho bé yêu, đọc bằng chính giọng của ba mẹ",
+ halo: "from-glow-soft to-[#FFE2CC]",
  },
  {
- icon: <Mic size={40} />,
+ mascot: "listen",
  title: "Clone giọng nói",
  subtitle: "Giọng đọc của ba mẹ, ông bà",
- description: "Ghi âm 30 giây → AI clone giọng nói. Bé được nghe truyện bằng giọng người thân yêu nhất",
- gradient: "from-blue-400 via-cyan-400 to-teal-400",
- iconBg: "from-blue-200 to-cyan-200",
- emoji: "🎤",
- particles: ["🎵", "🎶", "🎤", "🔊"],
+ description: "Ghi âm khoảng 30 giây, Đóm học giọng — bé được nghe truyện bằng giọng người thân yêu nhất",
+ halo: "from-brand-soft to-[#DDEBFF]",
  },
  {
- icon: <BookOpen size={40} />,
+ mascot: "story",
  title: "Tạo truyện bằng AI",
- subtitle: "Vô vàn câu chuyện sáng tạo",
- description: "Mô tả → AI viết truyện + minh họa + đọc bằng giọng bạn chọn. Có chuyên gia trẻ em hỗ trợ",
- gradient: "from-emerald-400 via-green-400 to-teal-400",
- iconBg: "from-emerald-200 to-green-200",
- emoji: "✍️",
- particles: ["📖", "📚", "✏️", "🦋"],
+ subtitle: "Mỗi tối một câu chuyện mới",
+ description: "Kể cho Đóm vài ý, Đóm viết truyện, vẽ minh hoạ và đọc bằng giọng bạn chọn",
+ halo: "from-success-soft to-glow-soft",
  },
  {
- icon: <Shield size={40} />,
+ mascot: "happy",
  title: "An toàn cho bé",
- subtitle: "Kiểm soát hoàn toàn",
- description: "Giới hạn thời gian, giờ ngủ, chặn nội dung. COPPA/GDPR — dữ liệu bé luôn an toàn",
- gradient: "from-violet-400 via-purple-400 to-fuchsia-400",
- iconBg: "from-violet-200 to-purple-200",
- emoji: "🛡️",
- particles: ["🔒", "🛡️", "💜", "✅"],
+ subtitle: "Ba mẹ kiểm soát hoàn toàn",
+ description: "Giới hạn thời gian, giờ ngủ, lọc nội dung theo độ tuổi. Không quảng cáo, dữ liệu của bé luôn được bảo vệ",
+ halo: "from-brand-soft to-success-soft",
  },
  {
- icon: <Star size={40} />,
+ mascot: "celebrate",
  title: "Sẵn sàng rồi!",
- subtitle: "Hãy bắt đầu hành trình",
- description: "Clone giọng đọc đầu tiên hoặc tạo ngay câu chuyện AI cho bé nào!",
- gradient: "from-yellow-400 via-amber-400 to-orange-400",
- iconBg: "from-yellow-200 to-amber-200",
- emoji: "⭐",
- particles: ["🎉", "🚀", "🌈", "⭐"],
+ subtitle: "Cùng Đóm bắt đầu hành trình",
+ description: "Tạo câu chuyện đầu tiên hoặc ghi âm giọng đọc cho bé ngay nào!",
+ halo: "from-glow-soft to-[#FFD9C2]",
  },
+];
+
+const TRUST_CHIPS = [
+ { icon: ShieldCheck, label: "Không quảng cáo" },
+ { icon: Lock, label: "Khoá phụ huynh" },
+];
+
+const FEATURE_CHIPS = [
+ { icon: Mic, label: "Giọng ba mẹ" },
+ { icon: BookOpen, label: "Truyện 3–12 tuổi" },
 ];
 
 export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
@@ -100,33 +107,16 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
 
  return (
  <div
- className={`min-h-screen bg-gradient-to-b ${current.gradient} flex flex-col overflow-hidden transition-all duration-500`}
+ className="relative min-h-screen bg-cream text-ink flex flex-col overflow-hidden"
  onTouchStart={onTouchStart}
  onTouchEnd={onTouchEnd}
  >
- {/* Floating particles */}
- <div className="absolute inset-0 pointer-events-none overflow-hidden">
- {current.particles.map((p, i) => (
- <div
- key={`${step}-${i}`}
- className="absolute text-2xl opacity-20 animate-[float_6s_ease-in-out_infinite]"
- style={{
- left: `${15 + i * 22}%`,
- top: `${10 + (i % 3) * 20}%`,
- animationDelay: `${i * 1.5}s`,
- animationDuration: `${5 + i}s`,
- }}
- >
- {p}
- </div>
- ))}
- </div>
-
  {/* Skip button */}
- <div className="px-5 pt-14 flex justify-end relative z-20">
+ <div className="px-5 pt-14 flex items-center justify-between relative z-20">
+ <span className="font-display text-[20px] font-extrabold text-brand tracking-tight">KểCon</span>
  <button
  onClick={onGetStarted}
- className="text-[13px] text-white/70 font-semibold px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"
+ className="min-h-tap-min text-[14px] text-ink-2 font-bold px-4 rounded-full bg-white/70 border border-ink/5 active:scale-95 transition-transform"
  >
  Bỏ qua
  </button>
@@ -135,7 +125,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  {/* Content */}
  <div
  ref={contentRef}
- className={`flex-1 flex flex-col items-center justify-center px-8 -mt-8 relative z-10 transition-all duration-250 ${
+ className={`flex-1 flex flex-col items-center justify-center px-7 relative z-10 transition-all duration-250 ${
  animating
  ? direction === "next"
  ? "opacity-0 translate-x-8"
@@ -143,38 +133,56 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  : "opacity-100 translate-x-0"
  }`}
  >
- {/* Icon container */}
- <div className={`w-32 h-32 rounded-[36px] bg-gradient-to-br ${current.iconBg} flex items-center justify-center mb-8 shadow-2xl shadow-black/10 text-gray-800 dark:text-white/80`}>
- <div className="animate-[scaleIn_0.5s_ease]">
- {current.icon}
- </div>
+ {/* Đóm on a soft halo */}
+ <div className="relative mb-6 flex items-end justify-center w-[240px] h-[220px]">
+ <div aria-hidden className={`absolute inset-x-2 bottom-2 top-8 rounded-[999px] bg-gradient-to-br ${current.halo} opacity-90`} />
+ <Mascot key={current.mascot} state={current.mascot} size={210} priority className="relative" />
  </div>
 
  <div className="text-center">
- <h1 className="text-[26px] font-black text-white tracking-tight mb-1 drop-shadow-sm">
- {current.title} {current.emoji}
+ <h1 className="font-display text-[28px] leading-tight font-extrabold text-ink tracking-tight mb-1.5">
+ {current.title}
  </h1>
- <p className="text-[15px] font-bold text-white/80 mb-3">
+ <p className="text-[16px] font-bold text-brand mb-2.5">
  {current.subtitle}
  </p>
- <p className="text-[14px] text-white/60 leading-relaxed max-w-xs mx-auto">
+ <p className="text-[15px] text-ink-2 leading-relaxed max-w-xs mx-auto">
  {current.description}
  </p>
  </div>
+
+ {step === 0 && (
+ <ul className="mt-5 flex flex-wrap justify-center gap-2" aria-label="Cam kết của KểCon">
+ {[...FEATURE_CHIPS, ...TRUST_CHIPS].map(({ icon: Icon, label }) => (
+ <li
+ key={label}
+ className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-bold text-ink shadow-sm border border-ink/5"
+ >
+ <Icon size={16} className="text-brand" /> {label}
+ </li>
+ ))}
+ </ul>
+ )}
  </div>
 
  {/* Bottom */}
- <div className="px-8 pb-12 relative z-10">
+ <div className="px-7 pb-12 relative z-10">
  {/* Dots */}
- <div className="flex justify-center gap-2 mb-6">
- {steps.map((_, i) => (
+ <div className="flex justify-center gap-1 mb-5">
+ {steps.map((s, i) => (
  <button
  key={i}
  onClick={() => transition(i)}
- className={`h-2.5 rounded-full transition-all duration-300 ${
- i === step ? "w-8 bg-white dark:bg-white/[0.04]" : "w-2.5 bg-white/30"
+ aria-label={`Bước ${i + 1}: ${s.title}`}
+ aria-current={i === step ? "step" : undefined}
+ className="h-6 px-1 flex items-center"
+ >
+ <span
+ className={`block h-2.5 rounded-full transition-all duration-300 ${
+ i === step ? "w-8 bg-brand" : "w-2.5 bg-ink/15"
  }`}
  />
+ </button>
  ))}
  </div>
 
@@ -183,13 +191,13 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  <div className="space-y-2.5">
  <button
  onClick={onGetStarted}
- className="w-full py-4 rounded-2xl bg-white dark:bg-white/[0.04] text-gray-900 dark:text-white/90 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] active:bg-cta-press transition-transform shadow-[0_6px_0_var(--color-cta-press)]"
  >
- <Sparkles size={18} /> Bắt Đầu Ngay
+ <Sparkles size={20} weight="fill" /> Bắt đầu ngay
  </button>
  <button
  onClick={onLogin}
- className="w-full py-4 rounded-2xl bg-white/15 backdrop-blur-sm text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform border border-white/20"
+ className="w-full min-h-tap-min rounded-btn bg-white text-brand text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform border-2 border-brand-soft"
  >
  Đã có tài khoản? Đăng nhập
  </button>
@@ -197,9 +205,9 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  ) : (
  <button
  onClick={handleNext}
- className="w-full py-4 rounded-2xl bg-white dark:bg-white/[0.04] text-gray-900 dark:text-white/90 text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] active:bg-cta-press transition-transform shadow-[0_6px_0_var(--color-cta-press)]"
  >
- Tiếp tục <ChevronRight size={18} />
+ Tiếp tục <ChevronRight size={20} />
  </button>
  )}
  </div>

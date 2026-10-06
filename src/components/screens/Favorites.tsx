@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Loader2, Play, Star, Trash2 } from "lucide-react";
+import { Heart, Loader2, Play, Star, Trash2 } from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { getUserFavorites, toggleFavorite, gradientFor, type StoryRow } from "@/lib/db";
 import type { Screen } from "@/lib/types";

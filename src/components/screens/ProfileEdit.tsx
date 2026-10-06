@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Check, User, Users, Baby, Calendar, Globe, Loader2 } from "lucide-react";
+import { ChevronLeft, Check, User, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";

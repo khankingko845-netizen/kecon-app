@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     .map((p) => p.content?.replace(/\[(?:narrator|character:[^\]]+)\]/g, "").replace(/\[\/(?:narrator|character)\]/g, ""))
     .join(" ");
 
-  const age = childAge || "4-6";
+  const age = childAge || "3-5";
   const locale = story?.locale || "vi";
 
   const systemPrompt = `Bạn là chuyên gia giáo dục trẻ em và ngôn ngữ học. Phân tích từ vựng trong truyện thiếu nhi và tạo câu hỏi quiz vui.

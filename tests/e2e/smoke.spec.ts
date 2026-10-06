@@ -37,6 +37,24 @@ test.describe("Trang chủ (chưa đăng nhập)", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test("UI v2: Đóm xuất hiện ở onboarding và ảnh tải thành công", async ({ page }) => {
+    const pageErrors = trackPageErrors(page);
+    await page.goto("/");
+
+    const mascot = page.locator('[data-mascot="hello"] img');
+    await expect(mascot).toBeVisible();
+    await expect(mascot).toHaveAttribute("alt", /Đóm/);
+    await expect
+      .poll(() => mascot.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await expect(page.getByText("Không quảng cáo")).toBeVisible();
+
+    // Bước 2 đổi tư thế → Đóm lắng nghe
+    await page.getByRole("button", { name: /Tiếp tục/ }).click();
+    await expect(page.locator('[data-mascot="listen"] img')).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
+
   test("'Bỏ qua' → màn hình tạo tài khoản", async ({ page }) => {
     // Regression: nút "Bỏ qua" từng bị khối nội dung (-mt-8 z-10) che mất.
     const pageErrors = trackPageErrors(page);

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
  Search, Moon, Sun, CloudMoon, Play, User, UserRound, Plus, Sparkles,
  Upload, LayoutDashboard, TrendingUp, Heart, Bell, Flame, FolderOpen, Camera,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
 import { useSettings } from "@/lib/settings-context";
@@ -12,6 +12,7 @@ import { gradientFor, iconForCategory } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
 import type { StoryRow } from "@/lib/db";
 import ReadingStreakCard from "@/components/ui/ReadingStreakCard";
+import Mascot from "@/components/ui/Mascot";
 import { HomeSkeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 
@@ -31,12 +32,13 @@ function StoryIcon({ icon }: { icon: string }) {
  return <>{iconMap[icon] || iconMap.wand}</>;
 }
 
+/** Hero theo khung giờ — Đóm đổi tư thế theo nhịp ngày của bé (UI-07). */
 function greeting() {
  const h = new Date().getHours();
- if (h < 6) return { text: "Khuya rồi, ngủ ngon nhé", emoji: "🌙", gradient: "from-indigo-900 via-purple-900 to-indigo-800", icon: CloudMoon, period: "night" as const };
- if (h < 11) return { text: "Chào buổi sáng", emoji: "☀️", gradient: "from-amber-400 via-orange-400 to-yellow-300", icon: Sun, period: "morning" as const };
- if (h < 18) return { text: "Chào buổi chiều", emoji: "🌤️", gradient: "from-sky-400 via-blue-400 to-cyan-300", icon: Sun, period: "afternoon" as const };
- return { text: "Chào buổi tối", emoji: "🌙", gradient: "from-indigo-800 via-violet-800 to-purple-900", icon: Moon, period: "evening" as const };
+ if (h < 6) return { text: "Khuya rồi, ngủ ngon nhé", gradient: "from-night via-[#231C52] to-night-card", icon: CloudMoon, period: "night" as const, mascot: "sleepy" as const, bubble: "Suỵt… mình nghe nhạc ru nhé?", cta: "Nghe nhạc ru", target: "lullaby" as const, dark: true };
+ if (h < 11) return { text: "Chào buổi sáng", gradient: "from-glow-soft via-[#FFE6CF] to-cream", icon: Sun, period: "morning" as const, mascot: "hello" as const, bubble: "Sáng nay bé muốn nghe truyện gì?", cta: "Chọn truyện", target: "library" as const, dark: false };
+ if (h < 18) return { text: "Chào buổi chiều", gradient: "from-brand-soft via-[#E6EEFF] to-cream", icon: Sun, period: "afternoon" as const, mascot: "happy" as const, bubble: "Cùng Đóm phiêu lưu một chút nào!", cta: "Chọn truyện", target: "library" as const, dark: false };
+ return { text: "Chào buổi tối", gradient: "from-night via-[#2A2160] to-[#3B2F7A]", icon: Moon, period: "evening" as const, mascot: "story" as const, bubble: "Tối nay nghe truyện gì nhỉ?", cta: "Kể chuyện tối nay", target: "library" as const, dark: true };
 }
 
 export default function Home({ onNavigate }: HomeProps) {
@@ -51,6 +53,7 @@ export default function Home({ onNavigate }: HomeProps) {
  const familyName = /^gia\s*đình/i.test(rawName) ? rawName : `Gia đình ${rawName}`;
  const initial = (rawName[0] || "K").toUpperCase();
  const g = greeting();
+ const GreetIcon = g.icon;
  const recent = stories.slice(0, 3);
 
  useEffect(() => {
@@ -67,55 +70,72 @@ export default function Home({ onNavigate }: HomeProps) {
  }
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- {/* Animated Hero Banner */}
- <div className={`relative bg-gradient-to-br ${g.gradient} px-5 pt-12 pb-5 rounded-b-[28px] overflow-hidden`}>
+ <div className="min-h-screen bg-surface dark:bg-night pb-24">
+ {/* Hero — Đóm theo khung giờ (UI v2) */}
+ <div className={`relative bg-gradient-to-b ${g.gradient} px-5 pt-12 pb-5 rounded-b-[28px] overflow-hidden`}>
  {/* Floating decorations */}
- <div className="absolute inset-0 pointer-events-none overflow-hidden">
- {g.period === "morning" || g.period === "afternoon" ? (
+ <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+ {g.dark ? (
  <>
- <div className="absolute top-8 right-10 w-12 h-8 bg-white/20 rounded-full blur-sm animate-[float_6s_ease-in-out_infinite]" />
- <div className="absolute top-16 right-28 w-8 h-5 bg-white/15 rounded-full blur-sm animate-[float_8s_ease-in-out_infinite_1s]" />
- <div className="absolute top-6 left-8 w-6 h-4 bg-white/10 rounded-full blur-sm animate-[float_7s_ease-in-out_infinite_2s]" />
+ <div className="absolute top-6 right-12 w-1.5 h-1.5 bg-moon/70 rounded-full animate-[twinkle_2s_ease-in-out_infinite]" />
+ <div className="absolute top-14 right-32 w-1 h-1 bg-moon/50 rounded-full animate-[twinkle_3s_ease-in-out_infinite_0.5s]" />
+ <div className="absolute top-10 left-16 w-1.5 h-1.5 bg-glow/70 rounded-full animate-[twinkle_2.5s_ease-in-out_infinite_1s]" />
+ <div className="absolute top-24 left-[42%] w-1 h-1 bg-moon/40 rounded-full animate-[twinkle_4s_ease-in-out_infinite_1.5s]" />
+ <div className="absolute top-8 left-[55%] w-1 h-1 bg-glow/50 rounded-full animate-[twinkle_3.5s_ease-in-out_infinite_2s]" />
  </>
  ) : (
  <>
- <div className="absolute top-6 right-12 w-1.5 h-1.5 bg-white/60 rounded-full animate-[twinkle_2s_ease-in-out_infinite]" />
- <div className="absolute top-14 right-32 w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3s_ease-in-out_infinite_0.5s]" />
- <div className="absolute top-10 left-16 w-1.5 h-1.5 bg-white/50 rounded-full animate-[twinkle_2.5s_ease-in-out_infinite_1s]" />
- <div className="absolute top-20 left-10 w-1 h-1 bg-white/30 rounded-full animate-[twinkle_4s_ease-in-out_infinite_1.5s]" />
- <div className="absolute top-8 left-[45%] w-1 h-1 bg-white/40 rounded-full animate-[twinkle_3.5s_ease-in-out_infinite_2s]" />
+ <div className="absolute top-8 right-10 w-14 h-8 bg-white/60 rounded-full blur-sm animate-[float_6s_ease-in-out_infinite]" />
+ <div className="absolute top-20 right-32 w-9 h-5 bg-white/50 rounded-full blur-sm animate-[float_8s_ease-in-out_infinite_1s]" />
  </>
  )}
  </div>
 
  <div className="relative z-10 flex justify-between items-start">
  <div>
- <p className="text-sm font-semibold text-white/80 flex items-center gap-1.5 mb-0.5">
- {g.emoji} {g.text}
+ <p className={`text-sm font-bold flex items-center gap-1.5 mb-0.5 ${g.dark ? "text-moon-2" : "text-ink-2"}`}>
+ <GreetIcon size={16} weight="fill" className={g.dark ? "text-glow" : "text-amber"} /> {g.text}
  </p>
- <h1 className="text-[22px] font-black tracking-tight text-white">
+ <h1 className={`font-display text-[24px] font-extrabold tracking-tight ${g.dark ? "text-moon" : "text-ink"}`}>
  {familyName}
  </h1>
  {stories.length > 0 && (
- <p className="text-[12px] text-white/60 font-medium mt-1">
- 📚 {stories.length} truyện · 🎙️ {voiceProfiles.length} giọng đọc
+ <p className={`text-[12px] font-semibold mt-0.5 ${g.dark ? "text-moon-2" : "text-ink-2"}`}>
+ {stories.length} truyện · {voiceProfiles.length} giọng đọc
  </p>
  )}
  </div>
  <div className="flex items-center gap-2">
  <button
  onClick={() => onNavigate("notifications")}
- className="w-10 h-10 rounded-[14px] bg-white/20 backdrop-blur-sm flex items-center justify-center relative"
+ aria-label="Thông báo"
+ className={`w-11 h-11 rounded-[14px] flex items-center justify-center relative ${g.dark ? "bg-white/10 text-moon" : "bg-white/80 text-ink"}`}
  >
- <Bell size={18} className="text-white" />
+ <Bell size={20} />
  </button>
  <button
  onClick={() => onNavigate("profile-edit")}
- className="w-11 h-11 rounded-[14px] bg-white/25 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold border border-white/20"
+ aria-label="Hồ sơ"
+ className={`w-11 h-11 rounded-[14px] flex items-center justify-center text-xl font-extrabold ${g.dark ? "bg-white/15 text-moon border border-white/15" : "bg-brand text-white"}`}
  >
  {initial}
  </button>
+ </div>
+ </div>
+
+ {/* Đóm + speech bubble */}
+ <div className="relative z-10 mt-3 flex items-end gap-2">
+ <Mascot state={g.mascot} size={104} priority className="-mb-1 -ml-1" />
+ <div className="flex-1 mb-3">
+ <div className={`relative rounded-[20px] rounded-bl-md px-4 py-3 shadow-sm ${g.dark ? "bg-night-card text-moon border border-white/10" : "bg-white text-ink"}`}>
+ <p className="font-display text-[17px] font-bold leading-snug">{g.bubble}</p>
+ <button
+ onClick={() => onNavigate(g.target)}
+ className="mt-2 inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-cta px-4 text-[14px] font-extrabold text-white active:scale-95 transition-transform"
+ >
+ <Play size={14} weight="fill" /> {g.cta}
+ </button>
+ </div>
  </div>
  </div>
  </div>
@@ -132,7 +152,7 @@ export default function Home({ onNavigate }: HomeProps) {
  {/* Voice Profiles */}
  <div className="px-5 pt-5">
  <div className="flex justify-between items-center mb-3">
- <h3 className="text-base font-extrabold tracking-tight text-txt dark:text-white">Giọng Đọc</h3>
+ <h3 className="font-display text-[18px] font-bold tracking-tight text-txt dark:text-white">Giọng đọc</h3>
  <button
  onClick={() => onNavigate("profiles")}
  className="text-sm text-accent font-semibold"
@@ -233,7 +253,7 @@ export default function Home({ onNavigate }: HomeProps) {
  {forYou.length > 0 && (
  <div className="px-5 pt-5">
  <div className="flex justify-between items-center mb-3">
- <h3 className="text-base font-extrabold tracking-tight text-txt dark:text-white flex items-center gap-1.5">
+ <h3 className="font-display text-[18px] font-bold tracking-tight text-txt dark:text-white flex items-center gap-1.5">
  <Sparkles size={16} className="text-accent" /> Dành cho bé
  </h3>
  </div>
@@ -261,7 +281,7 @@ export default function Home({ onNavigate }: HomeProps) {
  {trending.length > 0 && (
  <div className="px-5 pt-5">
  <div className="flex justify-between items-center mb-3">
- <h3 className="text-base font-extrabold tracking-tight text-txt dark:text-white flex items-center gap-1.5">
+ <h3 className="font-display text-[18px] font-bold tracking-tight text-txt dark:text-white flex items-center gap-1.5">
  <TrendingUp size={16} className="text-pink-500" /> Đang thịnh hành
  </h3>
  </div>
@@ -297,7 +317,7 @@ export default function Home({ onNavigate }: HomeProps) {
  {/* Recent Stories */}
  <div className="px-5 pt-5">
  <div className="flex justify-between items-center mb-3">
- <h3 className="text-base font-extrabold tracking-tight text-txt dark:text-white">Nghe Gần Đây</h3>
+ <h3 className="font-display text-[18px] font-bold tracking-tight text-txt dark:text-white">Nghe gần đây</h3>
  <button
  onClick={() => onNavigate("library")}
  className="text-sm text-accent font-semibold"

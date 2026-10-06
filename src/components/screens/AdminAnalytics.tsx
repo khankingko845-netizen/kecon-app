@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
  Loader2, TrendingUp, Play, Heart, CheckCircle2, Users, Headphones,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { getAdminAnalytics, type AdminAnalytics } from "@/lib/db";
 

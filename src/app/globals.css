@@ -1,15 +1,67 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * UI v2 design tokens (docs/design/ui-v2, ticket UI-02).
+ * Legacy names (accent, surface, txt…) are remapped onto the new palette so
+ * existing screens pick up the brand without per-file rewrites.
+ */
 @theme inline {
-  --color-accent: #FF6B3D;
-  --color-accent-hover: #FF5722;
-  --color-accent-2: #7B61FF;
-  --color-accent-3: #00D68F;
-  --color-surface: #FAFAFA;
+  /* Brand */
+  --color-brand: #5B4BDB;          /* Tím đêm — white text 6.0:1 */
+  --color-brand-press: #4636C2;
+  --color-brand-soft: #ECE9FF;
+  --color-cta: #E85A2A;            /* Cam san hô — white bold ≥18px 3.5:1 */
+  --color-cta-press: #B9441C;
+  --color-glow: #FFC94D;           /* Ánh đom đóm — ink text 9.4:1 */
+  --color-glow-soft: #FFF0C7;
+  --color-success: #1F6B57;
+  --color-success-soft: #E3F8F1;
+
+  /* Day (child) */
+  --color-cream: #FFF8EE;
+  --color-cream-2: #FFEFD9;
+  --color-ink: #2B2350;            /* 13.6:1 on cream */
+  --color-ink-2: #6B6390;          /* 5.2:1 on cream */
+
+  /* Night (bedtime) — never pure white */
+  --color-night: #151233;
+  --color-night-card: #221C4A;
+  --color-moon: #F3E9D2;           /* 14.9:1 on night */
+  --color-moon-2: #B9AED6;         /* 8.6:1 on night */
+  --color-amber: #FFB547;
+
+  /* Parent */
+  --color-parent-bg: #F7F6FB;
+
+  /* Legacy names → new palette */
+  --color-accent: #E85A2A;
+  --color-accent-hover: #D24E22;
+  --color-accent-2: #5B4BDB;
+  --color-accent-3: #0F8A68;
+  --color-surface: #FFF8EE;
   --color-surface-dark: #0A0A0F;
-  --color-txt: #0A0A0F;
-  --color-txt-secondary: #6B7280;
-  --font-sans: var(--font-inter);
+  --color-txt: #2B2350;
+  --color-txt-secondary: #6B6390;
+
+  /* Type: Nunito (child UI), Baloo 2 (display), Be Vietnam Pro (parent) */
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-baloo), var(--font-nunito);
+  --font-parent: var(--font-be-vietnam);
+
+  /* Shape & touch targets */
+  --radius-card: 24px;
+  --radius-btn: 22px;
+  --radius-tile: 20px;
+  --spacing-tap-kid: 64px;
+  --spacing-tap-min: 48px;
+}
+
+@layer base {
+  h1, h2 {
+    font-family: var(--font-display);
+  }
 }
 
 * { -webkit-tap-highlight-color: transparent; }
@@ -20,7 +72,8 @@ html, body {
 }
 
 body {
-  background: #F5F5F7;
+  background: #FFF8EE;
+  color: #2B2350;
   font-family: var(--font-sans), -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -211,4 +264,53 @@ body {
 }
 .dark body {
   background: #0A0A0F;
+}
+
+/* ── Mascot "Đóm" (UI-04) ── */
+@keyframes dom-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes dom-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-12px) scale(1.02, 0.98); }
+  55% { transform: translateY(0) scale(1.04, 0.96); }
+  70% { transform: translateY(-3px) scale(1); }
+}
+@keyframes dom-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+@keyframes dom-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-5deg); }
+  40% { transform: rotate(4deg); }
+  60% { transform: rotate(-2deg); }
+  80% { transform: rotate(0deg); }
+}
+@keyframes dom-glow {
+  0%, 100% { opacity: var(--dom-glow-min, 0.45); transform: scale(0.96); }
+  50% { opacity: var(--dom-glow-max, 0.85); transform: scale(1.06); }
+}
+.dom-anim-float { animation: dom-float 3.2s ease-in-out infinite; }
+.dom-anim-bounce { animation: dom-bounce 1.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.dom-anim-breathe { animation: dom-breathe 5s ease-in-out infinite; transform-origin: 50% 100%; }
+.dom-anim-wiggle { animation: dom-wiggle 1.2s ease-in-out 1, dom-float 3.2s ease-in-out 1.2s infinite; transform-origin: 50% 90%; }
+.dom-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  width: 78%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255, 201, 77, 0.95) 0%, rgba(255, 201, 77, 0.35) 45%, rgba(255, 201, 77, 0) 70%);
+  filter: blur(6px);
+  animation: dom-glow 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.dom-glow-fast { animation-duration: 1.1s; }
+.dom-glow-dim { --dom-glow-min: 0.18; --dom-glow-max: 0.32; animation-duration: 6s; }
+@media (prefers-reduced-motion: reduce) {
+  .dom-anim-float, .dom-anim-bounce, .dom-anim-breathe, .dom-anim-wiggle, .dom-glow { animation: none !important; }
 }

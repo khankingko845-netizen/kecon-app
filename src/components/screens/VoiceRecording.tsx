@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Mic, Pause, Loader2, Check, AlertCircle, Settings, Play, Square, Volume2 } from "lucide-react";
+import {
+ Mic, Pause, Loader2, Check, AlertCircle, Settings, Play, Square, Volume2,
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { cloneVoiceApi } from "@/lib/api-client";
 import { uploadRecording, createVoiceProfile } from "@/lib/db";
 import type { Screen } from "@/lib/types";
+import Mascot from "@/components/ui/Mascot";
 
 const SAMPLE_SCRIPTS = [
  {
@@ -231,8 +234,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const progress = (elapsed / 180) * 100;
 
  return (
- <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
- <TopBar title="Ghi Âm Giọng Nói" onBack={onBack} />
+ <div className="min-h-screen bg-white dark:bg-night flex flex-col">
+ <TopBar title="Ghi âm giọng nói" onBack={onBack} />
 
  <div className="flex-1 flex flex-col items-center px-7 pt-6 pb-10">
  {/* API warning */}
@@ -249,26 +252,29 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  </button>
  )}
 
- {/* Mic Ring */}
- <div className="w-40 h-40 rounded-full bg-gradient-to-br from-accent-2/10 to-accent/10 flex items-center justify-center relative mb-6">
+ {/* Đóm lắng nghe (UI v2) */}
+ <div className="w-44 h-44 rounded-full bg-gradient-to-br from-brand-soft to-glow-soft flex items-end justify-center relative mb-5">
  {isRecording && (
  <>
  <div
- className="absolute inset-[-8px] rounded-full border-2 border-accent-2/15"
+ className="absolute inset-[-8px] rounded-full border-2 border-brand/20"
  style={{ animation: "pulse-ring 2s ease-in-out infinite" }}
  />
  <div
- className="absolute inset-[-20px] rounded-full border-2 border-accent-2/8"
+ className="absolute inset-[-20px] rounded-full border-2 border-brand/10"
  style={{ animation: "pulse-ring 2s ease-in-out infinite 0.5s" }}
  />
  </>
  )}
- <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent-2 to-accent flex items-center justify-center text-white shadow-lg shadow-accent-2/35">
- <Mic size={36} />
- </div>
+ <Mascot
+ state={cloneResult ? "celebrate" : audioBlob && !isRecording ? "happy" : "listen"}
+ size={160}
+ priority
+ label={isRecording ? "Đóm đang lắng nghe giọng của bạn" : undefined}
+ />
  </div>
 
- <h2 className="text-[22px] font-extrabold tracking-tight mb-1.5 text-center">
+ <h2 className="font-display text-[24px] font-extrabold tracking-tight mb-1.5 text-center text-ink dark:text-white">
  {cloneResult
  ? "Clone thành công!"
  : isRecording
@@ -280,7 +286,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  <p className="text-sm text-txt-secondary dark:text-white/50 text-center leading-relaxed mb-5">
  {cloneResult
  ? `Giọng "${cloneResult.name}" đã được tạo trên ElevenLabs`
- : "AI sẽ học giọng bạn từ đoạn ghi âm này. Đọc to, rõ ràng, tự nhiên."}
+ : "Đóm sẽ học giọng bạn từ đoạn ghi âm này. Đọc to, rõ ràng, tự nhiên nhé."}
  </p>
 
  {/* Script Selector */}

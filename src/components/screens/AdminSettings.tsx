@@ -5,7 +5,7 @@ import {
  Save, Loader2, Check, Eye, EyeOff, ExternalLink,
  Mic, Brain, Image, RefreshCw, Plug, AlertCircle, ChevronDown,
  Plus, Trash2, X, Search,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import {
  getAppSettings,

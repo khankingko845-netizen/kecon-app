@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
- Mic,
  Mail,
  Lock,
  Users,
@@ -11,8 +10,9 @@ import {
  User,
  Eye,
  EyeOff,
-} from "lucide-react";
+} from "@/components/ui/icons";
 
+import Mascot from "@/components/ui/Mascot";
 import type { Screen } from "@/lib/types";
 
 interface SignupProps {
@@ -76,16 +76,14 @@ export default function Signup({ onNavigate }: SignupProps) {
  }
 
  return (
- <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
- {/* Hero gradient */}
- <div className="bg-gradient-to-br from-[#FF6B3D] via-[#FF3D77] to-[#7B61FF] px-7 pt-16 pb-8 text-white text-center rounded-b-[32px]">
- <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
- <Mic className="w-7 h-7" />
- </div>
- <h1 className="text-[26px] font-extrabold tracking-tight mb-1">
+ <div className="min-h-screen bg-cream dark:bg-night flex flex-col">
+ {/* Hero — Đóm (UI v2) */}
+ <div className="relative bg-gradient-to-b from-glow-soft via-cream to-cream px-7 pt-12 pb-6 text-center rounded-b-[32px] overflow-hidden">
+ <Mascot state="happy" size={120} priority className="mx-auto mb-2" />
+ <h1 className="font-display text-[28px] font-extrabold text-ink tracking-tight mb-1">
  Tạo tài khoản
  </h1>
- <p className="text-sm opacity-80">
+ <p className="text-[15px] text-ink-2">
  Bắt đầu kể chuyện cho con
  </p>
  </div>
@@ -113,7 +111,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  name="familyName"
  type="text"
  placeholder="Gia đình Minh"
- className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-[#FF6B3D] focus:ring-1 focus:ring-[#FF6B3D]/20 transition-colors"
+ className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  </div>
  </div>
@@ -129,7 +127,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  type="email"
  placeholder="name@email.com"
  required
- className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-[#FF6B3D] focus:ring-1 focus:ring-[#FF6B3D]/20 transition-colors"
+ className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  </div>
  </div>
@@ -146,7 +144,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  placeholder="Tối thiểu 8 ký tự"
  required
  minLength={8}
- className="w-full pl-11 pr-11 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-[#FF6B3D] focus:ring-1 focus:ring-[#FF6B3D]/20 transition-colors"
+ className="w-full pl-11 pr-11 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  <button
  type="button"
@@ -173,7 +171,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  name="childName"
  type="text"
  placeholder="VD: Minh"
- className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-[#FF6B3D] focus:ring-1 focus:ring-[#FF6B3D]/20 transition-colors"
+ className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  </div>
  </div>
@@ -189,7 +187,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  min="0"
  max="18"
  placeholder="4"
- className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-[#FF6B3D] focus:ring-1 focus:ring-[#FF6B3D]/20 transition-colors"
+ className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  </div>
  </div>
@@ -198,9 +196,9 @@ export default function Signup({ onNavigate }: SignupProps) {
  <button
  type="submit"
  disabled={pending}
- className="w-full py-4 rounded-[14px] bg-gradient-to-r from-[#FF6B3D] to-[#FF3D77] text-white text-base font-bold disabled:opacity-60 transition-opacity mt-2"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none disabled:opacity-60 transition mt-2"
  >
- {pending ? "Đang tạo tài khoản..." : "Tạo Tài Khoản"}
+ {pending ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
  </button>
 
  <div className="text-center mt-5 text-sm text-gray-500 dark:text-white/40 font-medium">
@@ -208,7 +206,7 @@ export default function Signup({ onNavigate }: SignupProps) {
  <button
  type="button"
  onClick={() => onNavigate("login")}
- className="text-[#FF6B3D] font-bold"
+ className="text-brand font-bold"
  >
  Đăng nhập
  </button>

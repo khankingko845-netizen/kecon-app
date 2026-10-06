@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import {
  ChevronLeft, BookOpen, Loader2, Play, Star, Heart, Sparkles,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { gradientFor, iconForCategory } from "@/lib/db";
 import type { Screen } from "@/lib/types";
+import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
+import Mascot from "@/components/ui/Mascot";
 
 interface CollectionsProps {
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
@@ -18,7 +20,7 @@ interface Collection {
  id: string;
  name: string;
  description: string;
- emoji: string;
+ icon: Icon3DName;
  color: string;
  stories: CollectionStory[];
 }
@@ -73,13 +75,13 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  categoryMap.get(cat)!.push(s);
  }
 
- const categoryMeta: Record<string, { name: string; emoji: string; color: string }> = {
- fairy_tale: { name: "Cổ Tích Việt Nam", emoji: "🏰", color: "from-purple-400 to-purple-600" },
- adventure: { name: "Phiêu Lưu Kỳ Thú", emoji: "🚀", color: "from-blue-400 to-blue-600" },
- bedtime: { name: "Ru Ngủ Bé Yêu", emoji: "🌙", color: "from-indigo-400 to-indigo-600" },
- animal: { name: "Thế Giới Động Vật", emoji: "🐰", color: "from-green-400 to-green-600" },
- educational: { name: "Học Mà Chơi", emoji: "📖", color: "from-amber-400 to-amber-600" },
- custom: { name: "Truyện Tùy Chỉnh", emoji: "🎨", color: "from-pink-400 to-pink-600" },
+ const categoryMeta: Record<string, { name: string; icon: Icon3DName; color: string }> = {
+ fairy_tale: { name: "Cổ Tích Việt Nam", icon: "castle", color: "from-purple-400 to-purple-600" },
+ adventure: { name: "Phiêu Lưu Kỳ Thú", icon: "rocket", color: "from-blue-400 to-blue-600" },
+ bedtime: { name: "Ru Ngủ Bé Yêu", icon: "moon", color: "from-indigo-400 to-indigo-600" },
+ animal: { name: "Thế Giới Động Vật", icon: "paw", color: "from-green-400 to-green-600" },
+ educational: { name: "Học Mà Chơi", icon: "blocks", color: "from-amber-400 to-amber-600" },
+ custom: { name: "Truyện Tùy Chỉnh", icon: "brush", color: "from-pink-400 to-pink-600" },
  };
 
  // Add special collections
@@ -93,7 +95,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  id: "popular",
  name: "Nghe Nhiều Nhất",
  description: `${popularStories.length} truyện phổ biến`,
- emoji: "🔥",
+ icon: "headphones",
  color: "from-orange-400 to-red-500",
  stories: popularStories,
  });
@@ -104,19 +106,19 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  id: "favorites",
  name: "Yêu Thích",
  description: `${favoriteStories.length} truyện được yêu thích`,
- emoji: "❤️",
+ icon: "chest",
  color: "from-pink-400 to-rose-500",
  stories: favoriteStories,
  });
  }
 
  for (const [cat, catStories] of categoryMap) {
- const meta = categoryMeta[cat] || { name: cat, emoji: "📚", color: "from-gray-400 to-gray-600" };
+ const meta = categoryMeta[cat] || { name: cat, icon: "book", color: "from-gray-400 to-gray-600" };
  cols.push({
  id: cat,
  name: meta.name,
  description: `${catStories.length} truyện`,
- emoji: meta.emoji,
+ icon: meta.icon,
  color: meta.color,
  stories: catStories,
  });
@@ -156,8 +158,8 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  ) : selected ? (
  /* Collection detail */
  <div className="space-y-2.5">
- <p className="text-[13px] text-txt-secondary dark:text-white/50 mb-3">
- {selected.emoji} {selected.description}
+ <p className="text-[13px] text-txt-secondary dark:text-white/50 mb-3 flex items-center gap-2">
+ <Icon3D name={selected.icon} size={28} className="rounded-lg" /> {selected.description}
  </p>
  {selected.stories.map((story) => (
  <button
@@ -181,7 +183,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  </div>
  ) : collections.length === 0 ? (
  <div className="text-center py-16">
- <BookOpen size={40} className="text-gray-300 mx-auto mb-3" />
+ <Mascot state="thinking" size={128} className="mx-auto mb-3" />
  <p className="text-[14px] font-bold text-txt-secondary dark:text-white/50">Chưa có bộ sưu tập</p>
  <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-1">Tạo truyện để bắt đầu sưu tập</p>
  <button
@@ -201,7 +203,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  className="bg-white dark:bg-white/[0.04] rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.97] transition-transform"
  >
  <div className={`h-20 bg-gradient-to-br ${col.color} flex items-center justify-center`}>
- <span className="text-4xl">{col.emoji}</span>
+ <Icon3D name={col.icon} size={60} className="rounded-[16px] shadow-md" />
  </div>
  <div className="p-3">
  <p className="text-[13px] font-bold truncate">{col.name}</p>

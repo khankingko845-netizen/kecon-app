@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
  Loader2, Plus, Pencil, Trash2, X, Check, Eye, EyeOff,
  Search, Copy, BookOpen,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import {
  getAllStoryTemplates,

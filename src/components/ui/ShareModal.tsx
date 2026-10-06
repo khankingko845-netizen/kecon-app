@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Copy, Check, Link2, MessageCircle } from "lucide-react";
+import { X, Copy, Check, Link2, MessageCircle } from "@/components/ui/icons";
 import { createShareLink, type StoryShareRow } from "@/lib/db";
 
 interface ShareModalProps {

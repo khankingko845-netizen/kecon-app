@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Leaf, Loader2, RotateCcw, BookOpen } from "lucide-react";
+import { Leaf, Loader2, RotateCcw, BookOpen } from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import SceneEffects from "@/components/ui/SceneEffects";
 import { asEffectType } from "@/lib/scene-effects";

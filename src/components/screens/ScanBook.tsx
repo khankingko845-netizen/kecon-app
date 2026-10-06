@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { CategoryIcon } from "@/components/ui/Icon3D";
 import {
  ChevronLeft, Camera, ImagePlus, Loader2, Sparkles, Trash2,
  BookOpen, CheckCircle, AlertCircle, X, RotateCcw,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useSettings } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -32,12 +33,12 @@ interface ScanResult {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
- fairy_tale: "🏰 Cổ tích",
- adventure: "🚀 Phiêu lưu",
- bedtime: "🌙 Ru ngủ",
- animal: "🐰 Động vật",
- educational: "📖 Giáo dục",
- custom: "🎨 Tùy chỉnh",
+ fairy_tale: "Cổ tích",
+ adventure: "Phiêu lưu",
+ bedtime: "Ru ngủ",
+ animal: "Động vật",
+ educational: "Học chơi",
+ custom: "Tùy chỉnh",
 };
 
 export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
@@ -380,8 +381,8 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-[11px] font-bold">
  {result.language === "vi" ? "🇻🇳 Tiếng Việt" : result.language === "en" ? "🇺🇸 English" : result.language}
  </span>
- <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-[11px] font-bold">
- {CATEGORY_LABELS[result.suggestedCategory] || "📚 Truyện"}
+ <span className="pl-1 pr-3 py-1 bg-purple-50 text-purple-600 rounded-full text-[11px] font-bold inline-flex items-center gap-1">
+ <CategoryIcon category={result.suggestedCategory} size={20} className="rounded-md" /> {CATEGORY_LABELS[result.suggestedCategory] || "Truyện"}
  </span>
  <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[11px] font-bold">
  {editPages.length} trang

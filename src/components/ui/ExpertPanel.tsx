@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Loader2, ChevronDown, ChevronUp, Star, AlertTriangle, Lightbulb, MessageSquare } from "lucide-react";
+import { Brain, Loader2, ChevronDown, ChevronUp, Star, AlertTriangle, Lightbulb, MessageSquare } from "@/components/ui/icons";
 import { useSettings } from "@/lib/settings-context";
 
 interface ExpertInfo {

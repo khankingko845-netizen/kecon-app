@@ -4,11 +4,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import {
  Palette, Eraser, RotateCcw, Sparkles, Loader2,
  Undo2,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import type { Screen } from "@/lib/types";
+import { normalizeAgeBand } from "@/lib/age-bands";
 
 const COLORS = [
  "#1a1a1a", "#EF4444", "#F59E0B", "#10B981", "#3B82F6",
@@ -154,7 +155,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  body: JSON.stringify({
  imageData,
  childName: childName || undefined,
- age: settings.childAge || "4-6",
+ age: normalizeAgeBand(settings.childAge),
  language: settings.language || "vi",
  }),
  });

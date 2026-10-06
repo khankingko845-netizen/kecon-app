@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, Mic, Heart, Search, FolderOpen, Sparkles } from "lucide-react";
+import { Sparkles } from "@/components/ui/icons";
+import Mascot, { type MascotState } from "@/components/ui/Mascot";
 
 type EmptyType = "library" | "favorites" | "search" | "voices" | "collections" | "generic";
 
@@ -10,103 +11,68 @@ interface EmptyStateProps {
  onAction?: () => void;
 }
 
+// UI v2: Đóm replaces the gradient icon box + emoji particles (UI-04/UI-06).
 const configs: Record<EmptyType, {
- icon: typeof BookOpen;
- gradient: string;
+ mascot: MascotState;
  title: string;
  subtitle: string;
  actionLabel?: string;
- particles: string[];
 }> = {
  library: {
- icon: BookOpen,
- gradient: "from-violet-400 to-purple-500",
+ mascot: "story",
  title: "Thư viện đang chờ truyện đầu tiên!",
- subtitle: "Tạo truyện AI cho bé yêu — chỉ mất 30 giây ✨",
+ subtitle: "Đóm cùng bé tạo truyện mới — chỉ mất 30 giây",
  actionLabel: "Tạo Truyện",
- particles: ["📖", "✨", "🌟"],
  },
  favorites: {
- icon: Heart,
- gradient: "from-rose-400 to-pink-500",
+ mascot: "hello",
  title: "Chưa có truyện yêu thích",
- subtitle: "Nhấn ❤️ khi nghe truyện để lưu vào đây",
- particles: ["❤️", "💕", "💖"],
+ subtitle: "Nhấn trái tim khi nghe truyện để lưu vào đây nhé",
  },
  search: {
- icon: Search,
- gradient: "from-blue-400 to-cyan-500",
+ mascot: "oops",
  title: "Không tìm thấy kết quả",
- subtitle: "Thử tìm với từ khoá khác nhé",
- particles: ["🔍", "📚", "🔎"],
+ subtitle: "Đóm tìm mãi chưa thấy — thử từ khoá khác nhé",
  },
  voices: {
- icon: Mic,
- gradient: "from-emerald-400 to-teal-500",
+ mascot: "listen",
  title: "Chưa có giọng đọc nào",
- subtitle: "Ghi âm 30 giây để AI clone giọng ba mẹ cho bé",
+ subtitle: "Ghi âm 30 giây để bé nghe truyện bằng giọng ba mẹ",
  actionLabel: "Ghi Âm Ngay",
- particles: ["🎤", "🎵", "🔊"],
  },
  collections: {
- icon: FolderOpen,
- gradient: "from-amber-400 to-orange-500",
+ mascot: "thinking",
  title: "Chưa có bộ sưu tập",
  subtitle: "Tạo bộ sưu tập để sắp xếp truyện theo chủ đề",
  actionLabel: "Tạo Bộ Sưu Tập",
- particles: ["📁", "⭐", "📚"],
  },
  generic: {
- icon: Sparkles,
- gradient: "from-gray-400 to-gray-500",
+ mascot: "hello",
  title: "Chưa có gì ở đây",
- subtitle: "Hãy bắt đầu khám phá!",
- particles: ["✨", "💫", "⭐"],
+ subtitle: "Hãy bắt đầu khám phá cùng Đóm!",
  },
 };
 
 export default function EmptyState({ type, query, onAction }: EmptyStateProps) {
  const cfg = configs[type];
- const Icon = cfg.icon;
 
  return (
- <div className="flex flex-col items-center justify-center py-12 px-8">
- {/* Animated icon container */}
- <div className="relative mb-5">
- {/* Floating particles */}
- {cfg.particles.map((p, i) => (
- <span
- key={i}
- className="absolute text-lg opacity-40 animate-[float_5s_ease-in-out_infinite]"
- style={{
- top: `${-10 + (i * 15)}px`,
- left: `${-20 + (i * 30)}px`,
- animationDelay: `${i * 1.2}s`,
- animationDuration: `${4 + i}s`,
- }}
- >
- {p}
- </span>
- ))}
+ <div className="flex flex-col items-center justify-center py-10 px-8" data-empty-state={type}>
+ <Mascot state={cfg.mascot} size={148} className="mb-3" />
 
- <div className={`w-20 h-20 rounded-[24px] bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-white shadow-xl animate-[scaleIn_0.5s_ease]`}>
- <Icon size={32} />
- </div>
- </div>
-
- <h3 className="text-[16px] font-black text-center text-txt dark:text-white tracking-tight mb-1.5">
+ <h3 className="font-display text-[19px] font-extrabold text-center text-ink dark:text-moon leading-tight mb-1.5">
  {query ? `Không tìm thấy "${query}"` : cfg.title}
  </h3>
- <p className="text-[13px] text-txt-secondary dark:text-white/50 text-center max-w-[260px] leading-relaxed mb-5">
+ <p className="text-[14px] font-semibold text-ink-2 dark:text-moon-2 text-center max-w-[270px] leading-relaxed mb-5">
  {cfg.subtitle}
  </p>
 
  {cfg.actionLabel && onAction && (
  <button
  onClick={onAction}
- className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-accent to-pink-500 text-white text-[14px] font-bold active:scale-95 transition-transform shadow-lg shadow-accent/25"
+ className="inline-flex items-center gap-2 px-6 min-h-tap-min rounded-btn bg-cta text-white font-display text-[17px] font-extrabold active:translate-y-0.5 active:shadow-none transition-all shadow-[0_4px_0_var(--color-cta-press)]"
  >
- <Sparkles size={16} /> {cfg.actionLabel}
+ <Sparkles size={18} weight="fill" /> {cfg.actionLabel}
  </button>
  )}
  </div>

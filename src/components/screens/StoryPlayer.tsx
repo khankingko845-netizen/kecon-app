@@ -6,7 +6,7 @@ import {
  SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
  Volume2, Loader2, X, Sparkles, Share2, Star, MessageSquare, Send,
  Bookmark, Pencil,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";

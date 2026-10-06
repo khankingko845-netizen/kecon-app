@@ -6,7 +6,7 @@ import {
  FileText, CheckCircle2, AlertTriangle, Sparkles,
  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X, Settings,
  FolderOpen,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
 import {
