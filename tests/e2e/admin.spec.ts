@@ -3,12 +3,13 @@
  * Tiêu chí: chưa đăng nhập / user thường nhận 404 kể cả gõ URL; admin vào được
  * layout desktop có thanh bên; Trang chủ của bé không còn ô "Quản trị".
  * A-02 — vai trò hẹp (Biên tập) chỉ thấy / mở được mục mình có quyền.
+ * A-03 — màn "Nhật ký" (super admin / admin) lọc theo người / hành động / thời gian.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MOCK_ADMIN_USER_ID, MOCK_EDITOR_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
 
 const ADMIN_URLS = ["/admin", "/admin/users", "/admin/settings"];
-const ALL_SECTIONS = ["Tổng quan", "Truyện", "Người dùng", "Thống kê", "Danh mục", "Mẫu truyện", "Cài đặt hệ thống"];
+const ALL_SECTIONS = ["Tổng quan", "Truyện", "Người dùng", "Thống kê", "Danh mục", "Mẫu truyện", "Cài đặt hệ thống", "Nhật ký"];
 const EDITOR_SECTIONS = ["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"];
 const kidNav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
 const adminNav = (page: Page) => page.getByRole("navigation", { name: "Quản trị" });
@@ -103,6 +104,64 @@ test.describe("A-01 · admin", () => {
   });
 });
 
+test.describe("A-03 · Nhật ký thao tác", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
+  });
+
+  test("admin xem nhật ký mới nhất trước; lọc theo hành động, người, ngày", async ({ page }) => {
+    const res = await page.goto("/admin/audit");
+    expect(res?.status()).toBe(200);
+    await expect(page).toHaveTitle("Nhật ký · Quản trị KểCon");
+    await expect(adminNav(page).getByRole("link", { name: "Nhật ký" })).toHaveAttribute("aria-current", "page");
+    const entries = page.getByRole("list", { name: "Nhật ký thao tác" }).locator(":scope > li");
+    await expect(entries).toHaveCount(4);
+
+    const newest = entries.first();
+    await expect(newest).toContainText("Đổi vai trò");
+    await expect(newest).toContainText("e2e-admin@kecon.test · Admin (đầy đủ)");
+    await expect(newest).toContainText("role: user → editor");
+    await expect(newest).toContainText("IP 203.0.113.7");
+    // API key changes are logged without the key itself; SQL / system changes have no actor.
+    await expect(entries.nth(2)).toContainText("Đổi API key");
+    await expect(entries.nth(2)).toContainText("value: [đã ẩn] → [đã ẩn]");
+    await expect(entries.nth(3)).toContainText("Hệ thống / SQL");
+
+    await page.getByLabel("Hành động").selectOption({ label: "Sửa truyện" });
+    await expect(entries).toHaveCount(1);
+    await expect(entries.first()).toContainText("title: Thỏ con → Thỏ con và Rùa");
+    await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
+    await expect(entries).toHaveCount(4);
+
+    await page.getByLabel("Người thực hiện").fill("EDITOR@");
+    await expect(entries).toHaveCount(1);
+    await expect(entries.first()).toContainText("e2e-editor@kecon.test · Biên tập");
+    await page.getByLabel("Người thực hiện").fill("");
+    await expect(entries).toHaveCount(4);
+
+    await page.getByLabel("Từ ngày").fill("2026-03-01");
+    await expect(entries).toHaveCount(2);
+    await page.getByLabel("Đến ngày").fill("2026-03-03");
+    await expect(entries).toHaveCount(1);
+    await page.getByLabel("Hành động").selectOption({ label: "Đổi vai trò" });
+    await expect(page.getByText("Không có thao tác nào khớp bộ lọc")).toBeVisible();
+
+    // Read-only screen: no edit / delete controls for log entries.
+    await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
+    await expect(entries).toHaveCount(4);
+    await expect(page.getByRole("button", { name: /Sửa|Xoá(?! bộ lọc)/ })).toHaveCount(0);
+  });
+
+  test("ô Nhật ký trên Tổng quan mở /admin/audit", async ({ page }) => {
+    await page.goto("/admin");
+    await page.getByRole("main").getByRole("button", { name: "Nhật ký" }).click();
+    await expect(page).toHaveURL(/\/admin\/audit$/);
+    await expect(page.getByRole("heading", { name: "Nhật ký", exact: true })).toBeVisible();
+  });
+});
+
 test.describe("A-02 · biên tập (vai trò hẹp)", () => {
   test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
 
@@ -122,7 +181,7 @@ test.describe("A-02 · biên tập (vai trò hẹp)", () => {
     await expect(page).toHaveURL(/\/admin\/categories$/);
     await expect(adminNav(page).getByRole("link", { name: "Danh mục" })).toHaveAttribute("aria-current", "page");
 
-    for (const url of ["/admin/settings", "/admin/users", "/admin/analytics"]) await expectNotFound(page, url);
+    for (const url of ["/admin/settings", "/admin/users", "/admin/analytics", "/admin/audit"]) await expectNotFound(page, url);
   });
 
   test("lối vào Trang quản trị trong khu Bố mẹ", async ({ page }) => {

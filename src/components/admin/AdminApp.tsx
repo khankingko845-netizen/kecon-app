@@ -10,6 +10,7 @@ import {
  BarChart3,
  BookOpen,
  FolderOpen,
+ History,
  LayoutDashboard,
  LayoutList,
  Settings,
@@ -35,6 +36,7 @@ const AdminAnalytics = dynamic(() => import("@/components/screens/AdminAnalytics
 const AdminCategories = dynamic(() => import("@/components/screens/AdminCategories"), { loading: Fallback });
 const AdminTemplates = dynamic(() => import("@/components/screens/AdminTemplates"), { loading: Fallback });
 const AdminSettings = dynamic(() => import("@/components/screens/AdminSettings"), { loading: Fallback });
+const AdminAudit = dynamic(() => import("@/components/screens/AdminAudit"), { loading: Fallback });
 const StoryEditor = dynamic(() => import("@/components/screens/StoryEditor"), { loading: Fallback });
 const CreateStory = dynamic(() => import("@/components/screens/CreateStory"), { loading: Fallback });
 const UploadStory = dynamic(() => import("@/components/screens/UploadStory"), { loading: Fallback });
@@ -48,6 +50,7 @@ const SECTION_ICONS: Record<AdminScreen, typeof Users> = {
  "admin-categories": FolderOpen,
  "admin-templates": BookOpen,
  "admin-settings": Settings,
+ "admin-audit": History,
 };
 
 export interface AdminViewerInfo {
@@ -116,6 +119,8 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
  return <AdminTemplates onBack={toDashboard} onNavigate={navigate} />;
  case "admin-settings":
  return <AdminSettings onBack={toDashboard} canManageSecrets={can("secrets.manage")} />;
+ case "admin-audit":
+ return <AdminAudit onBack={toDashboard} />;
  }
 }
 

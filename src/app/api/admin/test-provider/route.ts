@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
+import { auditAdmin } from "@/lib/admin-audit";
 import { getSystemSetting, isSafePublicBaseUrl } from "@/lib/server-settings";
 import { GEMINI_BASE_URL } from "@/lib/llm";
 import { z } from "zod";
@@ -27,6 +28,9 @@ export async function GET(request: NextRequest) {
   if (!voiceId) {
     return Response.json({ error: "voice_id required" }, { status: 400 });
   }
+  // A-03: log before spending the system ElevenLabs key.
+  const auditFailed = await auditAdmin(supabase, request, { action: "voice.lookup", targetType: "voice", targetId: voiceId.slice(0, 100) });
+  if (auditFailed) return auditFailed;
 
   // Get ElevenLabs API key from system settings
   const apiKey = await getSystemSetting("elevenlabs_api_key");
@@ -128,6 +132,14 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJsonBody(request, TestProviderBody);
   if (!parsed.ok) return parsed.response;
   const { provider, apiKey, baseUrl } = parsed.data;
+  // A-03: the key itself is never logged — only which provider / host was tried.
+  const auditFailed = await auditAdmin(supabase, request, {
+    action: "provider.test",
+    targetType: "provider",
+    targetId: provider,
+    after: { host: baseUrl ? new URL(baseUrl).host : null },
+  });
+  if (auditFailed) return auditFailed;
 
   try {
     switch (provider) {

@@ -5,7 +5,7 @@ import {
  BookOpen, Mic, Play, Heart, Loader2, Lightbulb, Globe,
  FileText, CheckCircle2, AlertTriangle, Sparkles,
  PenLine, Upload, LayoutList, Users, BarChart3, Plus, X, Settings,
- FolderOpen,
+ FolderOpen, History,
 } from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useData } from "@/lib/data-context";
@@ -149,6 +149,7 @@ export default function AdminDashboard({ onBack, onNavigate, canOpen = () => tru
  { icon: Users, label: "Users", screen: "admin-users" as Screen, color: "text-violet-600 bg-violet-50" },
  { icon: BarChart3, label: "Thống kê", screen: "admin-analytics" as Screen, color: "text-emerald-600 bg-emerald-50" },
  { icon: Settings, label: "Cài Đặt", screen: "admin-settings" as Screen, color: "text-orange-600 bg-orange-50" },
+ { icon: History, label: "Nhật ký", screen: "admin-audit" as Screen, color: "text-slate-600 bg-slate-100" },
  ].filter((m) => canOpen(m.screen)).map((m) => (
  <button
  key={m.label}

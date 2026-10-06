@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission } from "@/lib/admin-permissions";
+import { auditAdmin } from "@/lib/admin-audit";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
@@ -66,8 +67,18 @@ export async function POST(request: NextRequest) {
 
   // Only the owner (or staff with stories.write — RLS limits editors to
   // platform stories) may spend illustration credits on a story
-  if (story.user_id !== user.id && !(await hasPermission(supabase, "stories.write"))) {
-    return Response.json({ error: "Bạn không có quyền minh hoạ truyện này" }, { status: 403 });
+  if (story.user_id !== user.id) {
+    if (!(await hasPermission(supabase, "stories.write"))) {
+      return Response.json({ error: "Bạn không có quyền minh hoạ truyện này" }, { status: 403 });
+    }
+    // A-03: staff spending illustration credits on someone else's / a platform story.
+    const auditFailed = await auditAdmin(supabase, request, {
+      action: "story.illustrate",
+      targetType: "story",
+      targetId: storyId,
+      after: { style, pages: pageNumbers?.length ? pageNumbers : "all" },
+    });
+    if (auditFailed) return auditFailed;
   }
 
   // Get pages (optionally filter by page numbers)

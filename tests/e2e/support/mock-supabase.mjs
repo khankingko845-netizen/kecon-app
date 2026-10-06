@@ -159,7 +159,7 @@ const editorProfile = { ...profile, id: MOCK_EDITOR_USER_ID, email: editorUser.e
 
 /** Mirror of migration 019 / src/lib/admin-permissions.ts for the mock roles. */
 const ALL_PERMISSIONS = [
-  "analytics.view", "categories.manage", "dashboard.view", "moderation.manage", "notifications.send", "roles.manage", "secrets.manage",
+  "analytics.view", "audit.read", "categories.manage", "dashboard.view", "moderation.manage", "notifications.send", "roles.manage", "secrets.manage",
   "settings.read", "settings.write", "stories.read", "stories.write", "templates.manage", "users.read", "voices.manage",
 ];
 const ROLE_PERMISSIONS = {
@@ -168,13 +168,50 @@ const ROLE_PERMISSIONS = {
   editor: ["categories.manage", "dashboard.view", "stories.read", "stories.write", "templates.manage"],
 };
 
-const TABLES = { profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile], stories, story_pages: pages, parental_controls: parentalControls };
+/** A-03 · append-only admin log, newest first (the app orders by id desc). */
+const adminAuditLog = [
+  {
+    id: 4, created_at: "2026-03-05T09:15:00+00:00", actor_id: MOCK_ADMIN_USER_ID, actor_email: adminUser.email, actor_role: "admin",
+    action: "user.role_change", target_type: "user", target_id: MOCK_EDITOR_USER_ID, before: { role: "user" }, after: { role: "editor" },
+    reason: null, ip: "203.0.113.7", source: "db",
+  },
+  {
+    id: 3, created_at: "2026-03-02T08:00:00+00:00", actor_id: MOCK_EDITOR_USER_ID, actor_email: editorUser.email, actor_role: "editor",
+    action: "story.update", target_type: "story", target_id: "story-1", before: { title: "Thỏ con" }, after: { title: "Thỏ con và Rùa" },
+    reason: null, ip: null, source: "db",
+  },
+  {
+    id: 2, created_at: "2026-01-20T10:00:00+00:00", actor_id: MOCK_ADMIN_USER_ID, actor_email: adminUser.email, actor_role: "admin",
+    action: "secret.update", target_type: "setting", target_id: "elevenlabs_api_key", before: { value: "[đã ẩn]" }, after: { value: "[đã ẩn]" },
+    reason: null, ip: "203.0.113.7", source: "db",
+  },
+  {
+    id: 1, created_at: "2026-01-10T10:00:00+00:00", actor_id: null, actor_email: null, actor_role: null,
+    action: "user.plan_change", target_type: "user", target_id: MOCK_USER_ID, before: { plan: "free" }, after: { plan: "premium" },
+    reason: null, ip: null, source: "system",
+  },
+];
+
+const TABLES = {
+  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile],
+  stories,
+  story_pages: pages,
+  parental_controls: parentalControls,
+  admin_audit_log: adminAuditLog,
+};
+
+/** Tables whose RLS needs a staff permission (mirrors the SELECT policies). */
+const TABLE_PERMISSION = { admin_audit_log: "audit.read" };
+
+function permissionsOf(sub) {
+  const role = TABLES.profiles.find((p) => p.id === sub)?.role ?? "user";
+  return ROLE_PERMISSIONS[role] ?? [];
+}
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
 function rpc(name, sub, body) {
   const hasPin = sub === MOCK_PIN_USER_ID;
-  const role = TABLES.profiles.find((p) => p.id === sub)?.role ?? "user";
-  const permissions = ROLE_PERMISSIONS[role] ?? [];
+  const permissions = permissionsOf(sub);
   switch (name) {
     case "my_admin_permissions":
       return permissions;
@@ -217,17 +254,37 @@ function tokenSub(auth) {
   }
 }
 
-/** Apply the simple `col=eq.value` filters PostgREST receives. */
+function compare(a, b) {
+  const na = Number(a);
+  const nb = Number(b);
+  if (a !== "" && b !== "" && Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  const da = Date.parse(a);
+  const db = Date.parse(b);
+  if (!Number.isNaN(da) && !Number.isNaN(db)) return da - db;
+  return String(a).localeCompare(String(b));
+}
+
+/** Apply the simple `col=op.value` filters PostgREST receives (eq/is/in/gt/gte/lt/lte/ilike). */
 function filterRows(rows, params) {
   let out = rows;
   for (const [key, raw] of params) {
     if (["select", "order", "limit", "offset", "or", "and"].includes(key)) continue;
-    const m = /^(eq|is|in)\.(.*)$/.exec(raw);
+    const m = /^(eq|is|in|gte|gt|lte|lt|ilike)\.(.*)$/.exec(raw);
     if (!m) continue;
     const [, op, val] = m;
     out = out.filter((r) => {
       const v = r[key];
       if (op === "eq") return String(v) === val;
+      if (["gt", "gte", "lt", "lte"].includes(op)) {
+        if (v == null) return false;
+        const c = compare(String(v), val);
+        return op === "gt" ? c > 0 : op === "gte" ? c >= 0 : op === "lt" ? c < 0 : c <= 0;
+      }
+      if (op === "ilike") {
+        if (v == null) return false;
+        const re = new RegExp(`^${val.split(/[%*]/).map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`, "i");
+        return re.test(String(v));
+      }
       if (op === "is") return val === "null" ? v == null : String(v) === val;
       if (op === "in") return val.replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/"/g, "")).includes(String(v));
       return true;
@@ -291,7 +348,8 @@ createServer((req, res) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       return send(res, req.method === "DELETE" ? 204 : 201, req.method === "DELETE" ? undefined : []);
     }
-    const rows = authed ? filterRows(TABLES[table] ?? [], url.searchParams) : [];
+    const allowed = authed && (!TABLE_PERMISSION[table] || permissionsOf(sub).includes(TABLE_PERMISSION[table]));
+    const rows = allowed ? filterRows(TABLES[table] ?? [], url.searchParams) : [];
     const range = { "Content-Range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" };
     if (req.method === "HEAD") return send(res, 200, undefined, range);
     if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {

@@ -116,8 +116,10 @@ describe("quyền theo mục (A-02)", () => {
     expect(canOpenSection("admin-templates", EDITOR)).toBe(true);
   });
 
-  it("admin cũ + super admin thấy đủ 7 mục; phân tích chỉ Tổng quan + Thống kê", () => {
+  it("admin cũ + super admin thấy đủ 8 mục (kể cả Nhật ký); phân tích chỉ Tổng quan + Thống kê", () => {
+    expect(ADMIN_SECTIONS).toHaveLength(8);
     expect(sectionsFor(ADMIN)).toHaveLength(ADMIN_SECTIONS.length);
+    expect(adminPath("admin-audit")).toBe("/admin/audit");
     expect(sectionsFor(ROLE_PERMISSIONS.super_admin)).toHaveLength(ADMIN_SECTIONS.length);
     expect(sectionsFor(ROLE_PERMISSIONS.analyst).map((s) => s.screen)).toEqual(["admin", "admin-analytics"]);
   });
@@ -126,6 +128,9 @@ describe("quyền theo mục (A-02)", () => {
     for (const role of STAFF_ROLES) expect(ROLE_PERMISSIONS[role]).toContain("dashboard.view");
     expect(STAFF_ROLES.filter((r) => ROLE_PERMISSIONS[r].includes("roles.manage"))).toEqual(["super_admin"]);
     expect(STAFF_ROLES.filter((r) => ROLE_PERMISSIONS[r].includes("secrets.manage"))).toEqual(["super_admin", "admin"]);
+    // A-03: chỉ super admin + admin đọc được nhật ký thao tác.
+    expect(STAFF_ROLES.filter((r) => ROLE_PERMISSIONS[r].includes("audit.read"))).toEqual(["super_admin", "admin"]);
+    expect(canOpenSection("admin-audit", EDITOR)).toBe(false);
     expect([...ROLE_PERMISSIONS.super_admin].sort()).toEqual([...ADMIN_PERMISSIONS].sort());
   });
 });

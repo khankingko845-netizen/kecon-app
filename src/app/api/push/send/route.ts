@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
+import { auditAdmin } from "@/lib/admin-audit";
 import { z } from "zod";
 import { optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
 
@@ -31,6 +32,14 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJsonBody(request, PushSendBody);
   if (!parsed.ok) return parsed.response;
   const { title, body, url, storyId, userIds } = parsed.data;
+  // A-03: log before anything is sent (fails closed).
+  const auditFailed = await auditAdmin(supabase, request, {
+    action: "push.send",
+    targetType: "push",
+    targetId: storyId ?? null,
+    after: { title, body: body.slice(0, 160), url: url ?? null, recipients: userIds?.length ? userIds.length : "all" },
+  });
+  if (auditFailed) return auditFailed;
 
   // Fetch subscriptions
   let query = supabase.from("push_subscriptions").select("subscription_json");
