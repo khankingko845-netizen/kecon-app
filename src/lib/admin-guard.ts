@@ -8,22 +8,21 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasAuthCookie } from "@/lib/auth-cookie";
-import { ADMIN_ROLES } from "@/lib/byo-key";
+import { isStaffRole, myPermissions, type AdminPermission, type StaffRole } from "@/lib/admin-permissions";
 import { createClient } from "@/lib/supabase/server";
-
-export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export interface AdminViewer {
   id: string;
   email: string | null;
-  role: AdminRole;
+  role: StaffRole;
+  /** A-02: from `my_admin_permissions()` — the console only shows what these allow. */
+  permissions: AdminPermission[];
 }
 
-export function isAdminRole(role: unknown): role is AdminRole {
-  return typeof role === "string" && (ADMIN_ROLES as readonly string[]).includes(role);
-}
-
-/** Verified user (GoTrue `getUser`, not the unverified cookie) + role from `profiles`. */
+/**
+ * Verified user (GoTrue `getUser`, not the unverified cookie) + staff role from
+ * `profiles` + permissions from the DB. No staff role or no permission → null.
+ */
 export async function resolveAdminViewer(supabase: SupabaseClient): Promise<AdminViewer | null> {
   const {
     data: { user },
@@ -35,8 +34,10 @@ export async function resolveAdminViewer(supabase: SupabaseClient): Promise<Admi
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
-  if (profileError || !profile || !isAdminRole(profile.role)) return null;
-  return { id: user.id, email: user.email ?? null, role: profile.role };
+  if (profileError || !profile || !isStaffRole(profile.role)) return null;
+  const permissions = await myPermissions(supabase);
+  if (permissions.length === 0) return null;
+  return { id: user.id, email: user.email ?? null, role: profile.role, permissions };
 }
 
 /** Cached per request, so `generateMetadata` and the page share one lookup. */

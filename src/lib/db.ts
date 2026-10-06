@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import type { UserRole } from "@/lib/admin-permissions";
 
 // ============================================================
 // Row types (mirror supabase/migrations/001_initial_schema.sql)
@@ -872,7 +873,7 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
 
 export async function updateUserRole(
   userId: string,
-  role: "user" | "admin" | "super_admin"
+  role: UserRole
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase
@@ -929,21 +930,29 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     .map(([category, plays]) => ({ category, plays }))
     .sort((a, b) => b.plays - a.plays);
 
-  const { count: totalSessions } = await supabase
-    .from("play_sessions")
-    .select("id", { count: "exact", head: true });
-
-  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-  const { count: recentSignups } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .gte("created_at", weekAgo);
+  // A-02: totals come from `admin_usage_summary()` (analytics.view) so roles
+  // without row access to families' data still see them; older DBs fall back.
+  const { data: summary, error: summaryError } = await supabase.rpc("admin_usage_summary");
+  let totalSessions = Number((summary as { total_sessions?: number } | null)?.total_sessions ?? NaN);
+  let recentSignups = Number((summary as { recent_signups?: number } | null)?.recent_signups ?? NaN);
+  if (summaryError || !Number.isFinite(totalSessions) || !Number.isFinite(recentSignups)) {
+    const { count: sessions } = await supabase
+      .from("play_sessions")
+      .select("id", { count: "exact", head: true });
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const { count: signups } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", weekAgo);
+    totalSessions = sessions ?? 0;
+    recentSignups = signups ?? 0;
+  }
 
   return {
     topStories,
     avgCompletion,
-    totalSessions: totalSessions ?? 0,
-    recentSignups: recentSignups ?? 0,
+    totalSessions,
+    recentSignups,
     categoryPlays,
   };
 }

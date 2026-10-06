@@ -363,7 +363,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 
 export default function Settings({ onNavigate }: SettingsProps) {
  const { settings, updateSettings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
- const { user, signOut, isAdmin } = useAuth();
+ const { user, signOut, isAdmin, isStaff } = useAuth();
  const ageUi = useAgeUi();
  const { refreshAll } = useData();
  const { locale } = useI18n();
@@ -580,8 +580,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
  />
  </SettingsCard>
 
- {/* Admin */}
- {isAdmin && (
+ {/* Admin — A-02: every staff role (the console shows only what the role allows) */}
+ {isStaff && (
  <>
  <SectionHeader title="Quản trị" />
  <SettingsCard>

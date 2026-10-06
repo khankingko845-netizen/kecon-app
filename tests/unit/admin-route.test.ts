@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-import { ADMIN_SECTIONS, adminPath, isAdminScreen, sectionFromSegments } from "@/lib/admin-routes";
-import { isAdminRole, resolveAdminViewer } from "@/lib/admin-guard";
+import { ADMIN_SECTIONS, adminPath, canOpenSection, isAdminScreen, sectionFromSegments, sectionsFor } from "@/lib/admin-routes";
+import { resolveAdminViewer } from "@/lib/admin-guard";
+import { ADMIN_PERMISSIONS, ROLE_PERMISSIONS, STAFF_ROLES, isStaffRole, requirePermission } from "@/lib/admin-permissions";
 import { exploreFor, AGE_UI } from "@/lib/age-ui";
 import type { Screen } from "@/lib/types";
 
@@ -38,11 +39,13 @@ describe("admin routes (A-01)", () => {
   });
 });
 
-function fakeSupabase({ user, role, authError, profileError }: {
+function fakeSupabase({ user, role, authError, profileError, permissions = [], rpcError }: {
   user?: { id: string; email?: string } | null;
   role?: string | null;
   authError?: boolean;
   profileError?: boolean;
+  permissions?: string[];
+  rpcError?: boolean;
 }) {
   const maybeSingle = vi.fn(async () => ({
     data: profileError || role == null ? null : { role },
@@ -55,10 +58,19 @@ function fakeSupabase({ user, role, authError, profileError }: {
     data: { user: authError ? null : (user ?? null) },
     error: authError ? { message: "bad_jwt" } : null,
   }));
-  return { client: { auth: { getUser }, from } as unknown as SupabaseClient, from, eq };
+  const rpc = vi.fn(async (name: string, args?: { p_permission?: string }) => {
+    if (rpcError) return { data: null, error: { message: "function does not exist" } };
+    if (name === "my_admin_permissions") return { data: permissions, error: null };
+    if (name === "has_permission") return { data: permissions.includes(args?.p_permission ?? ""), error: null };
+    return { data: null, error: { message: "unknown rpc" } };
+  });
+  return { client: { auth: { getUser }, from, rpc } as unknown as SupabaseClient, from, eq, rpc };
 }
 
-describe("resolveAdminViewer (A-01 server guard)", () => {
+const EDITOR = ROLE_PERMISSIONS.editor as unknown as string[];
+const ADMIN = ROLE_PERMISSIONS.admin as unknown as string[];
+
+describe("resolveAdminViewer (A-01 guard + A-02 quyền hạn)", () => {
   it("chưa đăng nhập / token lỗi → null, không tra profiles", async () => {
     const anon = fakeSupabase({ user: null });
     expect(await resolveAdminViewer(anon.client)).toBeNull();
@@ -66,24 +78,67 @@ describe("resolveAdminViewer (A-01 server guard)", () => {
     expect(await resolveAdminViewer(fakeSupabase({ authError: true }).client)).toBeNull();
   });
 
-  it("user thường, chưa có hồ sơ, lỗi DB → null", async () => {
+  it("user thường, chưa có hồ sơ, lỗi DB → null (không hỏi quyền)", async () => {
     const u = { id: "u1", email: "a@b.c" };
-    expect(await resolveAdminViewer(fakeSupabase({ user: u, role: "user" }).client)).toBeNull();
+    const plain = fakeSupabase({ user: u, role: "user", permissions: ADMIN });
+    expect(await resolveAdminViewer(plain.client)).toBeNull();
+    expect(plain.rpc).not.toHaveBeenCalled();
     expect(await resolveAdminViewer(fakeSupabase({ user: u, role: null }).client)).toBeNull();
-    expect(await resolveAdminViewer(fakeSupabase({ user: u, role: "admin", profileError: true }).client)).toBeNull();
+    expect(await resolveAdminViewer(fakeSupabase({ user: u, role: "admin", profileError: true, permissions: ADMIN }).client)).toBeNull();
   });
 
-  it("admin / super_admin → viewer, tra đúng hồ sơ của chính user", async () => {
-    const admin = fakeSupabase({ user: { id: "u2", email: "ad@kecon.vn" }, role: "admin" });
-    expect(await resolveAdminViewer(admin.client)).toEqual({ id: "u2", email: "ad@kecon.vn", role: "admin" });
+  it("vai trò nhân sự + quyền từ DB → viewer; tra đúng hồ sơ của chính user", async () => {
+    const admin = fakeSupabase({ user: { id: "u2", email: "ad@kecon.vn" }, role: "admin", permissions: ADMIN });
+    expect(await resolveAdminViewer(admin.client)).toEqual({ id: "u2", email: "ad@kecon.vn", role: "admin", permissions: ADMIN });
     expect(admin.from).toHaveBeenCalledWith("profiles");
     expect(admin.eq).toHaveBeenCalledWith("id", "u2");
-    const superAdmin = fakeSupabase({ user: { id: "u3" }, role: "super_admin" });
-    expect(await resolveAdminViewer(superAdmin.client)).toEqual({ id: "u3", email: null, role: "super_admin" });
+    const editor = fakeSupabase({ user: { id: "u3" }, role: "editor", permissions: [...EDITOR, "không-có-thật"] });
+    expect(await resolveAdminViewer(editor.client)).toEqual({ id: "u3", email: null, role: "editor", permissions: EDITOR });
   });
 
-  it("chỉ admin / super_admin là vai trò quản trị", () => {
-    expect(["admin", "super_admin"].every(isAdminRole)).toBe(true);
-    expect(["user", "editor", "", null, undefined, 1].some(isAdminRole)).toBe(false);
+  it("đóng khi lỗi: RPC quyền lỗi / rỗng → null", async () => {
+    const u = { id: "u4" };
+    expect(await resolveAdminViewer(fakeSupabase({ user: u, role: "super_admin", rpcError: true }).client)).toBeNull();
+    expect(await resolveAdminViewer(fakeSupabase({ user: u, role: "editor", permissions: [] }).client)).toBeNull();
+  });
+
+  it("vai trò nhân sự: 7 vai trò, user không phải", () => {
+    expect(STAFF_ROLES.every(isStaffRole)).toBe(true);
+    expect(["user", "", null, undefined, 1, "root"].some(isStaffRole)).toBe(false);
+  });
+});
+
+describe("quyền theo mục (A-02)", () => {
+  it("biên tập chỉ thấy Tổng quan, Truyện, Danh mục, Mẫu truyện", () => {
+    expect(sectionsFor(EDITOR).map((s) => s.label)).toEqual(["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"]);
+    expect(canOpenSection("admin-settings", EDITOR)).toBe(false);
+    expect(canOpenSection("admin-users", EDITOR)).toBe(false);
+    expect(canOpenSection("admin-templates", EDITOR)).toBe(true);
+  });
+
+  it("admin cũ + super admin thấy đủ 7 mục; phân tích chỉ Tổng quan + Thống kê", () => {
+    expect(sectionsFor(ADMIN)).toHaveLength(ADMIN_SECTIONS.length);
+    expect(sectionsFor(ROLE_PERMISSIONS.super_admin)).toHaveLength(ADMIN_SECTIONS.length);
+    expect(sectionsFor(ROLE_PERMISSIONS.analyst).map((s) => s.screen)).toEqual(["admin", "admin-analytics"]);
+  });
+
+  it("mỗi vai trò mới đều có dashboard.view; chỉ super admin đổi được vai trò; không vai trò hẹp nào có secrets.manage", () => {
+    for (const role of STAFF_ROLES) expect(ROLE_PERMISSIONS[role]).toContain("dashboard.view");
+    expect(STAFF_ROLES.filter((r) => ROLE_PERMISSIONS[r].includes("roles.manage"))).toEqual(["super_admin"]);
+    expect(STAFF_ROLES.filter((r) => ROLE_PERMISSIONS[r].includes("secrets.manage"))).toEqual(["super_admin", "admin"]);
+    expect([...ROLE_PERMISSIONS.super_admin].sort()).toEqual([...ADMIN_PERMISSIONS].sort());
+  });
+});
+
+describe("requirePermission (API)", () => {
+  it("401 khi chưa đăng nhập, 403 khi thiếu quyền, null khi đủ", async () => {
+    expect((await requirePermission(fakeSupabase({ user: null }).client, "voices.manage"))?.status).toBe(401);
+    const editor = fakeSupabase({ user: { id: "e" }, role: "editor", permissions: EDITOR });
+    const res = await requirePermission(editor.client, "secrets.manage");
+    expect(res?.status).toBe(403);
+    expect(await res!.json()).toMatchObject({ code: "missing_permission", permission: "secrets.manage" });
+    expect(await requirePermission(editor.client, "stories.write")).toBeNull();
+    expect(editor.rpc).toHaveBeenCalledWith("has_permission", { p_permission: "stories.write" });
+    expect((await requirePermission(fakeSupabase({ user: { id: "x" }, rpcError: true }).client, "voices.manage"))?.status).toBe(403);
   });
 });

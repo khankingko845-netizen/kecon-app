@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { isStaffRole } from "@/lib/admin-permissions";
 
 interface Profile {
   id: string;
@@ -29,7 +30,10 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  /** Legacy full admin (admin / super_admin) — e.g. BYO API keys. */
   isAdmin: boolean;
+  /** A-02: any staff role (ops, editor…) — sees the "Trang quản trị" entry. */
+  isStaff: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -40,6 +44,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   profile: null,
   isAdmin: false,
+  isStaff: false,
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -120,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin =
     profile?.role === "admin" || profile?.role === "super_admin";
+  const isStaff = isStaffRole(profile?.role);
 
   return (
     <AuthContext.Provider
@@ -128,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         isAdmin,
+        isStaff,
         loading,
         signOut,
         refreshProfile,

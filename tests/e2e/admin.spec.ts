@@ -2,11 +2,14 @@
  * Admin v2 · A-01 — trang quản trị là route riêng `/admin`, guard phía server.
  * Tiêu chí: chưa đăng nhập / user thường nhận 404 kể cả gõ URL; admin vào được
  * layout desktop có thanh bên; Trang chủ của bé không còn ô "Quản trị".
+ * A-02 — vai trò hẹp (Biên tập) chỉ thấy / mở được mục mình có quyền.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { MOCK_ADMIN_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
+import { MOCK_ADMIN_USER_ID, MOCK_EDITOR_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
 
 const ADMIN_URLS = ["/admin", "/admin/users", "/admin/settings"];
+const ALL_SECTIONS = ["Tổng quan", "Truyện", "Người dùng", "Thống kê", "Danh mục", "Mẫu truyện", "Cài đặt hệ thống"];
+const EDITOR_SECTIONS = ["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"];
 const kidNav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
 const adminNav = (page: Page) => page.getByRole("navigation", { name: "Quản trị" });
 
@@ -64,6 +67,9 @@ test.describe("A-01 · admin", () => {
     expect(aside!.width).toBeLessThan(300);
     expect(aside!.height).toBeGreaterThanOrEqual(790);
     await expect(kidNav(page)).toHaveCount(0);
+    // A-02: legacy "admin" keeps every section.
+    await expect(adminNav(page).getByRole("link")).toHaveText(ALL_SECTIONS);
+    await expect(page.getByText("Admin (đầy đủ)")).toBeVisible();
 
     await adminNav(page).getByRole("link", { name: "Người dùng" }).click();
     await expect(page).toHaveURL(/\/admin\/users$/);
@@ -94,5 +100,37 @@ test.describe("A-01 · admin", () => {
     await page.getByRole("button", { name: /Trang quản trị/ }).click();
     await expect(page).toHaveURL(/\/admin$/);
     await expect(adminNav(page)).toBeVisible();
+  });
+});
+
+test.describe("A-02 · biên tập (vai trò hẹp)", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInAsMockFamily(context, baseURL!, { userId: MOCK_EDITOR_USER_ID });
+  });
+
+  test("thanh bên chỉ có mục của biên tập; mục khác → 404 kể cả gõ URL", async ({ page }) => {
+    const res = await page.goto("/admin");
+    expect(res?.status()).toBe(200);
+    await expect(adminNav(page).getByRole("link")).toHaveText(EDITOR_SECTIONS);
+    await expect(page.getByText("Biên tập", { exact: true })).toBeVisible();
+    // Dashboard tiles only link to sections the editor may open.
+    await expect(page.getByText("Tạo truyện mới").first()).toBeVisible();
+
+    await adminNav(page).getByRole("link", { name: "Danh mục" }).click();
+    await expect(page).toHaveURL(/\/admin\/categories$/);
+    await expect(adminNav(page).getByRole("link", { name: "Danh mục" })).toHaveAttribute("aria-current", "page");
+
+    for (const url of ["/admin/settings", "/admin/users", "/admin/analytics"]) await expectNotFound(page, url);
+  });
+
+  test("lối vào Trang quản trị trong khu Bố mẹ", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("home-explore")).toBeVisible();
+    await openParentArea(page);
+    await page.getByRole("button", { name: /Trang quản trị/ }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(adminNav(page).getByRole("link")).toHaveText(EDITOR_SECTIONS);
   });
 });

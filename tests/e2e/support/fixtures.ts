@@ -9,6 +9,8 @@ export const MOCK_PIN = "2468";
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
 /** The only mock account with `profiles.role = "admin"` (Admin v2 · A-01). */
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
+/** Narrow staff role "editor" (Admin v2 · A-02). */
+export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
 
 const MOCK_EMAILS: Record<string, string> = {
@@ -16,6 +18,7 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_PIN_USER_ID]: "e2e-pin@kecon.test",
   [MOCK_AGE_USER_ID]: "e2e-age@kecon.test",
   [MOCK_ADMIN_USER_ID]: "e2e-admin@kecon.test",
+  [MOCK_EDITOR_USER_ID]: "e2e-editor@kecon.test",
 };
 
 const b64url = (v: string) => Buffer.from(v).toString("base64url");

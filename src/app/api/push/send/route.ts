@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/admin-permissions";
 import { z } from "zod";
 import { optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
 
@@ -23,24 +24,9 @@ const PushSendBody = z.object({
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Check admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // A-02: permission check shared with RLS (has_permission).
+  const denied = await requirePermission(supabase, "notifications.send");
+  if (denied) return denied;
 
   const parsed = await parseJsonBody(request, PushSendBody);
   if (!parsed.ok) return parsed.response;
