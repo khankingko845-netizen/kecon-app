@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
- ChevronLeft, Flame, Star, Gift, CheckCircle, Clock, Loader2, Sparkles,
+ ChevronLeft, Flame, Star, Gift, CheckCircle, Clock, Sparkles,
 } from "@/components/ui/icons";
+import { KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";
@@ -199,9 +200,7 @@ export default function DailyChallenges({ onBack, onNavigate }: DailyChallengesP
  )}
 
  {loading ? (
- <div className="flex justify-center py-12">
- <Loader2 size={24} className="animate-spin text-accent" />
- </div>
+ <KidLoading title="Đóm đang chuẩn bị thử thách…" size={120} />
  ) : (
  <div className="space-y-3">
  {challenges.map((challenge) => (

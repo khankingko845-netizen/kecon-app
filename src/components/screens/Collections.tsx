@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
- ChevronLeft, BookOpen, Loader2, Play, Star, Heart, Sparkles,
+ ChevronLeft, BookOpen, Play, Star, Heart, Sparkles,
 } from "@/components/ui/icons";
+import { KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { gradientFor, iconForCategory } from "@/lib/db";
@@ -152,9 +153,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  </div>
 
  {loading ? (
- <div className="flex justify-center py-12">
- <Loader2 size={24} className="animate-spin text-accent" />
- </div>
+ <KidLoading title="Đóm đang xếp kệ truyện…" size={120} />
  ) : selected ? (
  /* Collection detail */
  <div className="space-y-2.5">

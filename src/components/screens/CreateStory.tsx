@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
- Sparkles, User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic, Volume2, Square, PenLine, Camera,
+ Sparkles, User, UserRound, AlertCircle, Settings, Globe, Mic, Volume2, Square, PenLine, Camera,
 } from "@/components/ui/icons";
+import { GlowDots } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import Mascot from "@/components/ui/Mascot";
 import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
@@ -351,7 +352,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
  >
  {loadingPreview && previewVoiceId === v.voice_id ? (
- <Loader2 size={10} className="animate-spin" />
+ <GlowDots size={3} />
  ) : previewVoiceId === v.voice_id ? (
  <Square size={9} />
  ) : (
@@ -395,7 +396,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
  >
  {loadingPreview && previewVoiceId === v.elevenlabs_voice_id ? (
- <Loader2 size={10} className="animate-spin" />
+ <GlowDots size={3} />
  ) : previewVoiceId === v.elevenlabs_voice_id ? (
  <Square size={9} />
  ) : (
@@ -472,7 +473,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  >
  {isGenerating ? (
  <>
- <Loader2 size={20} className="animate-spin" />
+ <GlowDots size={7} />
  Đóm đang viết truyện…
  </>
  ) : (

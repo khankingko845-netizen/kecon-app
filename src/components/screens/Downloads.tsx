@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
- ChevronLeft, Download, Trash2, Loader2, Wifi, WifiOff, HardDrive,
+ ChevronLeft, Download, Trash2, Wifi, WifiOff, HardDrive,
  Play, CheckCircle,
 } from "@/components/ui/icons";
+import { GlowDots, KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import {
  getDownloadedStories, removeDownloadedStory, markStoryDownloaded,
@@ -195,9 +196,7 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  </div>
 
  {loading ? (
- <div className="flex justify-center py-12">
- <Loader2 size={24} className="animate-spin text-accent" />
- </div>
+ <KidLoading title="Đóm đang tìm truyện đã tải…" size={120} />
  ) : (
  <>
  {/* Downloaded Stories */}
@@ -257,7 +256,7 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center disabled:opacity-40"
  >
  {story.downloading ? (
- <Loader2 size={14} className="animate-spin text-accent" />
+ <GlowDots size={4} className="text-accent" />
  ) : (
  <Download size={14} className="text-accent" />
  )}

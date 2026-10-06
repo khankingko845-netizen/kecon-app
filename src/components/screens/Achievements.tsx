@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Trophy, Star, Zap, Target, Loader2 } from "@/components/ui/icons";
+import { ChevronLeft, Trophy, Star, Zap, Target } from "@/components/ui/icons";
+import { KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import {
  getAllBadges, getUserBadges, getProfileXP, checkAndAwardBadges,
@@ -100,7 +101,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
  <Mascot state="celebrate" size={112} label={null} className="absolute -right-1 -bottom-1" />
  <div className="flex items-center justify-between mb-3">
  <div className="flex items-center gap-2">
- <div className="w-12 h-12 rounded-full bg-glow text-ink flex items-center justify-center text-2xl font-black">
+ <div className="w-12 h-12 rounded-full bg-glow text-night flex items-center justify-center text-2xl font-black">
  {level}
  </div>
  <div>
@@ -140,9 +141,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
  )}
 
  {loading ? (
- <div className="flex justify-center py-12">
- <Loader2 size={24} className="animate-spin text-accent" />
- </div>
+ <KidLoading title="Đóm đang đếm huy hiệu…" size={120} />
  ) : (
  /* Badge Categories */
  categories.map((cat) => {

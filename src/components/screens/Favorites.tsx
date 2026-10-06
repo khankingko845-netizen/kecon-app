@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Loader2, Play, Star, Trash2 } from "@/components/ui/icons";
+import { Heart, Play, Star, Trash2 } from "@/components/ui/icons";
+import { GlowDots, KidLoading } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import { getUserFavorites, toggleFavorite, gradientFor, type StoryRow } from "@/lib/db";
 import type { Screen } from "@/lib/types";
@@ -46,9 +47,7 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
 
  <div className="px-5 pt-2">
  {loading ? (
- <div className="flex justify-center pt-20">
- <Loader2 size={26} className="animate-spin text-accent" />
- </div>
+ <KidLoading title="Đóm đang mở hộp truyện yêu thích…" className="pt-16" />
  ) : favorites.length === 0 ? (
  <div className="text-center pt-20">
  <Heart size={48} className="mx-auto text-gray-300 mb-4" />
@@ -118,7 +117,7 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
  className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center disabled:opacity-50"
  >
  {removing === story.id ? (
- <Loader2 size={16} className="animate-spin text-red-400" />
+ <GlowDots size={4} className="text-red-400" />
  ) : (
  <Trash2 size={16} className="text-red-400" />
  )}

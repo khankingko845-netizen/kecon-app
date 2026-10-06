@@ -13,6 +13,7 @@ import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
 import type { StoryRow } from "@/lib/db";
 import ReadingStreakCard from "@/components/ui/ReadingStreakCard";
 import Mascot from "@/components/ui/Mascot";
+import { useTheme } from "@/lib/theme-context";
 import { HomeSkeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 
@@ -33,7 +34,16 @@ function StoryIcon({ icon }: { icon: string }) {
 }
 
 /** Hero theo khung giờ — Đóm đổi tư thế theo nhịp ngày của bé (UI-07). */
-function greeting() {
+function greeting(night = false) {
+ const g = timeGreeting();
+ // Night mode turned on during the day → keep the greeting text, switch to the bedtime look.
+ if (night && !g.dark) {
+ return { ...g, gradient: "from-night via-[#2A2160] to-[#3B2F7A]", mascot: "story" as const, bubble: "Mình nghe một truyện thật êm nhé?", cta: "Nghe truyện êm", dark: true };
+ }
+ return g;
+}
+
+function timeGreeting() {
  const h = new Date().getHours();
  if (h < 6) return { text: "Khuya rồi, ngủ ngon nhé", gradient: "from-night via-[#231C52] to-night-card", icon: CloudMoon, period: "night" as const, mascot: "sleepy" as const, bubble: "Suỵt… mình nghe nhạc ru nhé?", cta: "Nghe nhạc ru", target: "lullaby" as const, dark: true };
  if (h < 11) return { text: "Chào buổi sáng", gradient: "from-glow-soft via-[#FFE6CF] to-cream", icon: Sun, period: "morning" as const, mascot: "hello" as const, bubble: "Sáng nay bé muốn nghe truyện gì?", cta: "Chọn truyện", target: "library" as const, dark: false };
@@ -52,7 +62,8 @@ export default function Home({ onNavigate }: HomeProps) {
  // Avoid "Gia đình Gia đình Gấu" duplication
  const familyName = /^gia\s*đình/i.test(rawName) ? rawName : `Gia đình ${rawName}`;
  const initial = (rawName[0] || "K").toUpperCase();
- const g = greeting();
+ const { isNight } = useTheme();
+ const g = greeting(isNight);
  const GreetIcon = g.icon;
  const recent = stories.slice(0, 3);
 

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import {
- CheckCircle, XCircle, Loader2, ChevronRight,
+ CheckCircle, XCircle, ChevronRight,
  Trophy, Star, Sparkles,
 } from "@/components/ui/icons";
+import { KidError, KidLoading } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import type { Screen } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
  const [answers, setAnswers] = useState<boolean[]>([]);
  const [showExplanation, setShowExplanation] = useState(false);
  const [error, setError] = useState<string | null>(null);
+ const [reloadKey, setReloadKey] = useState(0);
 
  // Load vocabulary and quiz
  useEffect(() => {
@@ -62,7 +64,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
  setError(err.message);
  setPhase("vocab");
  });
- }, [storyId]);
+ }, [storyId, reloadKey]);
 
  const handleAnswer = (idx: number) => {
  if (selected !== null) return;
@@ -110,19 +112,22 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
  <div className="px-5 pt-2 pb-10">
  {/* Loading */}
  {phase === "loading" && (
- <div className="flex flex-col items-center justify-center py-20">
- <Loader2 size={40} className="animate-spin text-violet-500 mb-4" />
- <p className="text-sm text-txt-secondary dark:text-white/50 font-medium">
- AI đang phân tích từ vựng...
- </p>
- </div>
+ <KidLoading title="Đóm đang chọn từ mới cho bé…" message="Chờ Đóm một chút nhé!" className="py-16" />
  )}
 
  {/* Error */}
  {error && (
- <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-700 mb-4">
- {error}
- </div>
+ <KidError
+ title="Đóm chưa chọn được từ mới"
+ message={error}
+ onRetry={() => {
+ setError(null);
+ setPhase("loading");
+ setReloadKey((k) => k + 1);
+ }}
+ size={110}
+ className="py-6"
+ />
  )}
 
  {/* Vocabulary Phase */}

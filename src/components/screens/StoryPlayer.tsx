@@ -4,9 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
  ChevronLeft, ChevronDown, MoreHorizontal, Play, Pause,
  SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
- Volume2, Loader2, X, Sparkles, Share2, Star, MessageSquare, Send,
+ Volume2, X, Sparkles, Share2, Star, MessageSquare, Send,
  Bookmark, Pencil,
 } from "@/components/ui/icons";
+import { GlowDots, KidLoading } from "@/components/ui/states";
+import { NightToggle, ScreenOff, ScreenOffButton, SleepTimerButton, useSleepTimer } from "@/components/ui/NightControls";
+import { useTheme } from "@/lib/theme-context";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
@@ -123,6 +126,9 @@ function formatClock(seconds: number): string {
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
  const { settings, hasElevenLabs } = useSettings();
+ // UI-08 night mode: bedtime palette, sleep timer, screen-off.
+ const { isNight } = useTheme();
+ const [screenOff, setScreenOff] = useState(false);
  const { voiceProfiles } = useData();
  const globalPlayer = useAudioPlayer();
  const isGenerated = storyId === "__generated__";
@@ -753,7 +759,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
  }, [isPlaying, currentPage, totalPages]);
 
+ const pauseForSleep = useCallback(() => {
+ setIsPlaying(false);
+ audioRef.current?.pause();
+ engineRef.current?.stopAll();
+ }, []);
+ const sleep = useSleepTimer(pauseForSleep);
+
  const togglePlay = () => {
+ // At bedtime, starting playback arms the default sleep timer (parent can change/cancel it).
+ if (!isPlaying && isNight && !sleep.active) sleep.start(settings.sleepTimerDefault || 15);
  if (isPlaying) {
  setIsPlaying(false);
  audioRef.current?.pause();
@@ -935,16 +950,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  if (loading) {
  return (
- <div className="min-h-screen bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex items-center justify-center text-white">
- <Loader2 size={28} className="animate-spin text-accent-2" />
- </div>
+ <KidLoading fullScreen tone="night" title="Đóm đang mở truyện…" />
  );
  }
 
  return (
- <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#1A0F3A] to-[#0F0628] flex flex-col text-white">
+ <div className={`relative min-h-screen overflow-hidden bg-gradient-to-b ${isNight ? "from-night to-[#0B0920]" : "from-[#1A0F3A] to-[#0F0628]"} flex flex-col text-white`}>
  {/* Scene-matched visual effects (particles), behind all content */}
- <SceneEffects effect={activeEffect} active={isPlaying} />
+ <SceneEffects effect={activeEffect} active={isPlaying && !isNight} />
 
  {/* Top Bar */}
  <div className="relative z-10 flex justify-between items-center px-5 pt-14 pb-2">
@@ -976,16 +989,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  mergeAbortRef.current = true;
  onBack();
  }}
- className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+ aria-label="Quay lại"
+ className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center"
  >
- <ChevronLeft size={20} className="text-white/60" />
+ <ChevronLeft size={22} className="text-white/60" />
  </button>
- <div className="flex items-center gap-2">
- {hasElevenLabs && (
- <span className="px-2.5 py-1 rounded-lg bg-accent-2/20 text-[10px] font-bold text-accent-2 flex items-center gap-1">
- <Volume2 size={10} /> ElevenLabs
- </span>
- )}
+ <div className="flex items-center gap-1.5">
+ <SleepTimerButton remaining={sleep.remaining} onStart={sleep.start} onCancel={sleep.cancel} />
+ <NightToggle />
+ {isNight && <ScreenOffButton onClick={() => setScreenOff(true)} />}
  {/* Rating badge */}
  {ratingCount > 0 && (
  <button
@@ -1033,7 +1045,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <img
  src={currentIllustration}
  alt={`Minh hoạ trang ${currentPage + 1}`}
- className="absolute inset-0 w-full h-full object-cover"
+ className="absolute inset-0 w-full h-full object-cover night-dim"
  />
  ) : (
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
@@ -1148,7 +1160,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </button>
  ) : (
  <span className="text-[10px] text-white/30 flex items-center gap-1.5">
- <Loader2 size={10} className="animate-spin" /> {mergeProgress}
+ <GlowDots size={3} /> {mergeProgress}
  </span>
  )}
  </div>
@@ -1291,25 +1303,26 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Controls */}
  <div className="flex items-center justify-center gap-7 mt-4">
- <button onClick={() => goPage(-1)} className="text-white/40">
+ <button onClick={() => goPage(-1)} aria-label="Trang trước" className="text-white/40 h-11 w-11 flex items-center justify-center">
  <SkipBack size={22} />
  </button>
- <span className="text-xs font-bold text-white/40">Prev</span>
+ <span className="text-xs font-bold text-white/40">Trước</span>
  <button
  onClick={togglePlay}
  disabled={isTTSLoading}
- className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-lg shadow-white/20 active:scale-95 transition-transform disabled:opacity-60"
+ aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+ className="w-[72px] h-[72px] rounded-full bg-glow flex items-center justify-center shadow-lg shadow-glow/30 active:scale-95 transition-transform disabled:opacity-60"
  >
  {isTTSLoading ? (
- <Loader2 size={24} className="text-[#0F0628] animate-spin" />
+ <GlowDots size={7} className="text-night" label="Đang chuẩn bị giọng đọc" />
  ) : isPlaying ? (
- <Pause size={24} className="text-[#0F0628]" />
+ <Pause size={28} weight="fill" className="text-night" />
  ) : (
- <Play size={24} className="text-[#0F0628]" fill="#0F0628" />
+ <Play size={28} weight="fill" className="text-night ml-0.5" />
  )}
  </button>
- <span className="text-xs font-bold text-white/40">Next</span>
- <button onClick={() => goPage(1)} className="text-white/40">
+ <span className="text-xs font-bold text-white/40">Sau</span>
+ <button onClick={() => goPage(1)} aria-label="Trang sau" className="text-white/40 h-11 w-11 flex items-center justify-center">
  <SkipForward size={22} />
  </button>
  </div>
@@ -1386,7 +1399,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="mt-2 w-full py-2.5 rounded-xl bg-accent-2/20 text-accent-2 text-[13px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-40"
  >
  {submittingReview ? (
- <Loader2 size={14} className="animate-spin" />
+ <GlowDots size={4} />
  ) : (
  <Send size={14} />
  )}
@@ -1429,6 +1442,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </div>
  </div>
  )}
+
+ {/* Night mode: screen off, audio keeps playing */}
+ {screenOff && <ScreenOff onWake={() => setScreenOff(false)} remaining={sleep.remaining} />}
 
  {/* Share Modal */}
  {showShare && storyId && !isGenerated && (
@@ -1557,7 +1573,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  {aiMessage && (
  <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl bg-violet-600/95 backdrop-blur-sm text-white text-sm font-bold shadow-xl shadow-violet-900/50 max-w-[380px] text-center animate-[slideDown_0.3s_ease]">
  {(isIllustrating || isPersonalizing || isTranslating) && (
- <Loader2 size={14} className="inline animate-spin mr-2" />
+ <GlowDots size={4} className="mr-2" />
  )}
  {aiMessage}
  </div>

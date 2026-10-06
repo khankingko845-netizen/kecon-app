@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Clock, Moon, CloudRain, Waves, Music, Bug, Volume2, Wind, Flame, Trees } from "@/components/ui/icons";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import Mascot from "@/components/ui/Mascot";
+import { ScreenOff, ScreenOffButton } from "@/components/ui/NightControls";
 
 interface LullabyProps {
  onBack: () => void;
@@ -23,6 +24,7 @@ const timerOptions = ["15p", "30p", "45p", "Auto"];
 const timerMinutes: Record<string, number> = { "15p": 15, "30p": 30, "45p": 45, Auto: 60 };
 
 export default function Lullaby({ onBack }: LullabyProps) {
+ const [screenOff, setScreenOff] = useState(false);
  const engineRef = useRef<AmbientEngine | null>(null);
  const [activeSounds, setActiveSounds] = useState<Set<AmbientType>>(new Set());
  const [activeTimer, setActiveTimer] = useState("15p");
@@ -119,10 +121,14 @@ export default function Lullaby({ onBack }: LullabyProps) {
  >
  <ChevronLeft size={22} className="text-moon-2" />
  </button>
- <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/5 text-xs font-bold text-moon-2">
+ <div className="flex items-center gap-2">
+ <div className="flex items-center gap-1.5 px-4 h-11 rounded-full bg-white/5 text-xs font-bold text-moon-2">
  <Clock size={14} /> {remaining !== null ? fmt(remaining) : "Hẹn giờ"}
  </div>
+ <ScreenOffButton onClick={() => setScreenOff(true)} />
  </div>
+ </div>
+ {screenOff && <ScreenOff onWake={() => setScreenOff(false)} remaining={remaining} />}
 
  {/* Moon + Đóm buồn ngủ (UI v2, night mode) */}
  <div className="relative w-48 h-44 mt-6 mb-4 z-10 flex items-end justify-center">

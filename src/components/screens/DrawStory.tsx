@@ -2,9 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
- Palette, Eraser, RotateCcw, Sparkles, Loader2,
- Undo2,
+ Palette, Eraser, RotateCcw, Sparkles, Undo2,
 } from "@/components/ui/icons";
+import { GlowDots } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
@@ -294,8 +294,8 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  >
  {isGenerating ? (
  <>
- <Loader2 size={20} className="animate-spin" />
- AI đang phân tích bản vẽ...
+ <GlowDots size={7} />
+ Đóm đang ngắm tranh của bé…
  </>
  ) : (
  <>

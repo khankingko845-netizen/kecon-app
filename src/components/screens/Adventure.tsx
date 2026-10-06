@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Leaf, Loader2, RotateCcw, BookOpen } from "@/components/ui/icons";
+import { Leaf, RotateCcw, BookOpen } from "@/components/ui/icons";
+import { KidError, KidLoading } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import SceneEffects from "@/components/ui/SceneEffects";
 import { asEffectType } from "@/lib/scene-effects";
@@ -131,18 +132,20 @@ export default function Adventure({ storyId, onBack, onNavigate }: AdventureProp
 
  if (loading) {
  return (
- <div className="min-h-screen bg-white dark:bg-white/[0.04] flex items-center justify-center">
- <Loader2 className="animate-spin text-emerald-600" size={28} />
- </div>
+ <KidLoading fullScreen title="Đóm đang mở cuộc phiêu lưu…" />
  );
  }
 
  if (error || !currentPage) {
  return (
- <div className="min-h-screen bg-white dark:bg-white/[0.04] flex flex-col">
+ <div className="min-h-screen bg-cream dark:bg-night flex flex-col">
  <TopBar title="" onBack={onBack} />
- <div className="flex-1 flex items-center justify-center px-6 text-center text-txt-secondary dark:text-white/50">
- <p className="text-sm">{error || "Truyện không có nội dung."}</p>
+ <div className="flex-1 flex items-center justify-center">
+ {error ? (
+ <KidError message={error} onRetry={onBack} retryLabel="Quay lại" />
+ ) : (
+ <KidError title="Truyện này chưa có nội dung" message="Bé chọn truyện khác cùng Đóm nhé!" onRetry={onBack} retryLabel="Chọn truyện khác" />
+ )}
  </div>
  </div>
  );

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import { Loader2, Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "@/components/ui/icons";
+import { Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "@/components/ui/icons";
+import { GlowDots } from "@/components/ui/states";
 import { useData } from "@/lib/data-context";
 import { gradientFor, iconForCategory, getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
@@ -245,7 +246,7 @@ export default function Library({ onNavigate }: LibraryProps) {
  className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 active:scale-90 transition-all"
  >
  {loadingAudio === story.id ? (
- <Loader2 size={14} className="animate-spin" />
+ <GlowDots size={3} />
  ) : playingStoryId === story.id ? (
  <Square size={12} />
  ) : (
