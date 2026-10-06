@@ -220,9 +220,9 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  <LongPressMenu
  key={story.id}
  items={[
- { id: "play", icon: Play, label: "Nghe truyện", color: "text-cta" },
- { id: "edit", icon: Pencil, label: "Chỉnh sửa", color: "text-brand" },
- { id: "favorite", icon: Heart, label: "Yêu thích", color: "text-cta" },
+ { id: "play", icon: Play, label: "Nghe truyện", color: "text-cta-ink" },
+ { id: "edit", icon: Pencil, label: "Chỉnh sửa", color: "text-brand-ink" },
+ { id: "favorite", icon: Heart, label: "Yêu thích", color: "text-cta-ink" },
  { id: "share", icon: Share2, label: "Chia sẻ", color: "text-success" },
  { id: "delete", icon: Trash2, label: "Xoá", destructive: true },
  ]}
@@ -255,7 +255,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  type="button"
  onClick={(e) => togglePreview(story.id, e)}
  aria-label={playingStoryId === story.id ? "Dừng nghe thử" : `Nghe thử ${story.title}`}
- className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand shadow-sm active:scale-90"
+ className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-ink shadow-sm active:scale-90"
  >
  {loadingAudio === story.id ? <GlowDots size={3} /> : playingStoryId === story.id ? <Square size={14} weight="fill" /> : <Volume2 size={18} />}
  </button>

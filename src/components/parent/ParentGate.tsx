@@ -90,7 +90,7 @@ export default function ParentGate({
       <Card className="mt-4 p-5">
         {mode === "loading" && (
           <div className="flex h-40 items-center justify-center" role="status" aria-label="Đang kiểm tra khoá phụ huynh">
-            <Loader2 size={26} className="animate-spin text-brand" />
+            <Loader2 size={26} className="animate-spin text-brand-ink" />
           </div>
         )}
         {mode === "pin" && (
@@ -121,7 +121,7 @@ export default function ParentGate({
 function GateLabel({ children }: { children: ReactNode }) {
   return (
     <p className="flex items-center gap-2 font-parent text-[16px] font-semibold text-ink">
-      <LockKey size={20} weight="fill" className="text-brand" />
+      <LockKey size={20} weight="fill" className="text-brand-ink" />
       {children}
     </p>
   );
@@ -129,7 +129,7 @@ function GateLabel({ children }: { children: ReactNode }) {
 
 function ErrorText({ children }: { children: ReactNode }) {
   return (
-    <p role="alert" className="mt-3 rounded-2xl bg-[#FDE8E3] px-3 py-2 font-parent text-[13.5px] font-semibold text-cta">
+    <p role="alert" className="mt-3 rounded-2xl bg-[#FDE8E3] px-3 py-2 font-parent text-[13.5px] font-semibold text-cta-ink">
       {children}
     </p>
   );
@@ -202,7 +202,7 @@ function PinStep({
         {busy ? <Loader2 size={20} className="animate-spin" /> : <LockKey size={20} weight="fill" />}
         Mở khoá
       </Button3D>
-      <button type="button" onClick={onForgot} className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand">
+      <button type="button" onClick={onForgot} className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand-ink">
         Quên mã PIN?
       </button>
     </form>
@@ -363,7 +363,7 @@ function ForgotStep({ onDone, onBack }: { onDone: () => void; onBack: () => void
       <GateLabel>Quên mã PIN</GateLabel>
       {phase === "checking" && (
         <div className="flex h-24 items-center justify-center" role="status" aria-label="Đang kiểm tra">
-          <Loader2 size={24} className="animate-spin text-brand" />
+          <Loader2 size={24} className="animate-spin text-brand-ink" />
         </div>
       )}
       {phase === "password" && (
@@ -397,7 +397,7 @@ function ForgotStep({ onDone, onBack }: { onDone: () => void; onBack: () => void
           </Button3D>
         </div>
       )}
-      <button type="button" onClick={onBack} className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand">
+      <button type="button" onClick={onBack} className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand-ink">
         Quay lại nhập mã PIN
       </button>
     </div>

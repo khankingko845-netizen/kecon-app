@@ -56,6 +56,11 @@ export const securityHeaders: { key: string; value: string }[] = [
 
 const nextConfig: NextConfig = {
   // Removed output: "export" to enable API routes and server features
+  experimental: {
+    // UI-12: inline the (small, ~22 KB gz) Tailwind CSS into the HTML — removes
+    // the only render-blocking request, i.e. one round trip off FCP/LCP on 4G.
+    inlineCss: true,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

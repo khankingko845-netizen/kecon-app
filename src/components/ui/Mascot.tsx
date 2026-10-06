@@ -108,6 +108,7 @@ export default function Mascot({
         draggable={false}
         decoding="async"
         loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : undefined}
         className={`relative h-full w-full select-none object-contain object-bottom ${still ? "" : ANIMATION[state]}`}
       />
     </span>

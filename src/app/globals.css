@@ -15,6 +15,11 @@
   --color-brand-soft: #ECE9FF;
   --color-cta: #E85A2A;            /* Cam san hô — white bold ≥18px 3.5:1 */
   --color-cta-press: #B9441C;
+  /* Text-safe variants (UI-12, WCAG AA 4.5:1 for small text):
+     brand-ink 6.0:1 on white · cta-ink 5.4:1 on white; both lighten at night. */
+  --color-brand-ink: #5B4BDB;
+  --color-cta-ink: #B9441C;
+  --color-on-glow: #2B2350;        /* text on glow, same day & night (9.4:1) */
   --color-glow: #FFC94D;           /* Ánh đom đóm — ink text 9.4:1 */
   --color-glow-soft: #FFF0C7;
   --color-success: #1F6B57;
@@ -37,8 +42,9 @@
   --color-parent-bg: #F7F6FB;
 
   /* Legacy names → new palette */
-  --color-accent: #E85A2A;
-  --color-accent-hover: #D24E22;
+  /* Legacy accent darkened for AA: white text 5.0:1, text on white 5.0:1 (was 3.5:1). */
+  --color-accent: #C2461B;
+  --color-accent-hover: #A93B15;
   --color-accent-2: #5B4BDB;
   --color-accent-3: #0F8A68;
   --color-surface: #FFF8EE;
@@ -315,6 +321,8 @@ body {
 }
 .dom-glow-fast { animation-duration: 1.1s; }
 .dom-glow-dim { --dom-glow-min: 0.18; --dom-glow-max: 0.32; animation-duration: 6s; }
+/* UI-12: pinch-zoom stays allowed (WCAG 1.4.4); only double-tap zoom is off. */
+html { touch-action: manipulation; }
 /* ── UI-13 "Lớn cùng bé": sizes per age band (mirrors src/lib/age-ui.ts) ── */
 /* :root = default band (3–5) so the first paint already has big targets. */
 :root { --kid-tap: 64px; --kid-btn-lg: 68px; --kid-btn-md: 56px; --kid-btn-sm: 48px; --dom-scale: 1; }
@@ -366,6 +374,10 @@ html:not([data-density="high"]) [data-kid-extra] { display: none !important; }
   --color-glow-soft: #3A2F5C;
   --color-success-soft: #173F37;
   --color-parent-bg: #151233;
+  /* UI-12: text tokens readable on night cards (≥ 7:1) */
+  --color-brand-ink: #B3A8FF;
+  --color-cta-ink: #FF9A70;
+  --color-accent: #E85A2A;
 }
 .night body {
   background: var(--color-night);

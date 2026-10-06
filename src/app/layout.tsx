@@ -22,6 +22,9 @@ const beVietnam = Be_Vietnam_Pro({
   weight: ["400", "500", "600", "700"],
   variable: "--font-be-vietnam",
   display: "swap",
+  // UI-12: parent/admin screens only — don't spend the first-load bandwidth
+  // on 8 static font files the kid screens never show.
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -32,8 +35,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // UI-12: no maximumScale / userScalable=no — parents must be able to zoom (WCAG 1.4.4).
   themeColor: "#FFF8EE",
 };
 

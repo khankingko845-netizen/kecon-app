@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import type { Screen, TabId } from "@/lib/types";
 import { SettingsProvider } from "@/lib/settings-context";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
@@ -11,37 +12,6 @@ import Onboarding from "@/components/screens/Onboarding";
 import Login from "@/components/screens/Login";
 import Signup from "@/components/screens/Signup";
 import Home from "@/components/screens/Home";
-import VoiceRecording from "@/components/screens/VoiceRecording";
-import CreateStory from "@/components/screens/CreateStory";
-import StoryPlayer from "@/components/screens/StoryPlayer";
-import Lullaby from "@/components/screens/Lullaby";
-import Adventure from "@/components/screens/Adventure";
-import VoiceLegacy from "@/components/screens/VoiceLegacy";
-import Library from "@/components/screens/Library";
-import VoiceProfiles from "@/components/screens/VoiceProfiles";
-import Settings from "@/components/screens/Settings";
-import StoryEditor from "@/components/screens/StoryEditor";
-import UploadStory from "@/components/screens/UploadStory";
-import AdminDashboard from "@/components/screens/AdminDashboard";
-import AdminStories from "@/components/screens/AdminStories";
-import AdminUsers from "@/components/screens/AdminUsers";
-import AdminAnalytics from "@/components/screens/AdminAnalytics";
-import AdminSettings from "@/components/screens/AdminSettings";
-import AdminCategories from "@/components/screens/AdminCategories";
-import AdminTemplates from "@/components/screens/AdminTemplates";
-import Favorites from "@/components/screens/Favorites";
-import Subscription from "@/components/screens/Subscription";
-import Achievements from "@/components/screens/Achievements";
-import ParentalControls from "@/components/screens/ParentalControls";
-import ParentAnalytics from "@/components/screens/ParentAnalytics";
-import Downloads from "@/components/screens/Downloads";
-import Notifications from "@/components/screens/Notifications";
-import ProfileEdit from "@/components/screens/ProfileEdit";
-import DailyChallenges from "@/components/screens/DailyChallenges";
-import Collections from "@/components/screens/Collections";
-import ScanBook from "@/components/screens/ScanBook";
-import DrawStory from "@/components/screens/DrawStory";
-import VocabQuiz from "@/components/screens/VocabQuiz";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { AudioPlayerProvider, useAudioPlayer } from "@/lib/audio-player-context";
@@ -56,6 +26,58 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
 import { FeedbackProvider } from "@/lib/feedback-context";
 import { AgeUiProvider } from "@/lib/age-ui-context";
+
+/**
+ * UI-12 (hiệu năng): only the entry screens (onboarding, login, signup, home)
+ * ship in the first bundle; every other screen is its own chunk, fetched on
+ * first visit and prefetched while the browser is idle (see `prefetchScreens`).
+ * This keeps the first load small enough for LCP < 2.5 s on 4G.
+ */
+const ScreenFallback = () => <div aria-busy="true" className="min-h-screen" />;
+const VoiceRecording = dynamic(() => import("@/components/screens/VoiceRecording"), { loading: ScreenFallback });
+const CreateStory = dynamic(() => import("@/components/screens/CreateStory"), { loading: ScreenFallback });
+const StoryPlayer = dynamic(() => import("@/components/screens/StoryPlayer"), { loading: ScreenFallback });
+const Lullaby = dynamic(() => import("@/components/screens/Lullaby"), { loading: ScreenFallback });
+const Adventure = dynamic(() => import("@/components/screens/Adventure"), { loading: ScreenFallback });
+const VoiceLegacy = dynamic(() => import("@/components/screens/VoiceLegacy"), { loading: ScreenFallback });
+const Library = dynamic(() => import("@/components/screens/Library"), { loading: ScreenFallback });
+const VoiceProfiles = dynamic(() => import("@/components/screens/VoiceProfiles"), { loading: ScreenFallback });
+const Settings = dynamic(() => import("@/components/screens/Settings"), { loading: ScreenFallback });
+const StoryEditor = dynamic(() => import("@/components/screens/StoryEditor"), { loading: ScreenFallback });
+const UploadStory = dynamic(() => import("@/components/screens/UploadStory"), { loading: ScreenFallback });
+const AdminDashboard = dynamic(() => import("@/components/screens/AdminDashboard"), { loading: ScreenFallback });
+const AdminStories = dynamic(() => import("@/components/screens/AdminStories"), { loading: ScreenFallback });
+const AdminUsers = dynamic(() => import("@/components/screens/AdminUsers"), { loading: ScreenFallback });
+const AdminAnalytics = dynamic(() => import("@/components/screens/AdminAnalytics"), { loading: ScreenFallback });
+const AdminSettings = dynamic(() => import("@/components/screens/AdminSettings"), { loading: ScreenFallback });
+const AdminCategories = dynamic(() => import("@/components/screens/AdminCategories"), { loading: ScreenFallback });
+const AdminTemplates = dynamic(() => import("@/components/screens/AdminTemplates"), { loading: ScreenFallback });
+const Favorites = dynamic(() => import("@/components/screens/Favorites"), { loading: ScreenFallback });
+const Subscription = dynamic(() => import("@/components/screens/Subscription"), { loading: ScreenFallback });
+const Achievements = dynamic(() => import("@/components/screens/Achievements"), { loading: ScreenFallback });
+const ParentalControls = dynamic(() => import("@/components/screens/ParentalControls"), { loading: ScreenFallback });
+const ParentAnalytics = dynamic(() => import("@/components/screens/ParentAnalytics"), { loading: ScreenFallback });
+const Downloads = dynamic(() => import("@/components/screens/Downloads"), { loading: ScreenFallback });
+const Notifications = dynamic(() => import("@/components/screens/Notifications"), { loading: ScreenFallback });
+const ProfileEdit = dynamic(() => import("@/components/screens/ProfileEdit"), { loading: ScreenFallback });
+const DailyChallenges = dynamic(() => import("@/components/screens/DailyChallenges"), { loading: ScreenFallback });
+const Collections = dynamic(() => import("@/components/screens/Collections"), { loading: ScreenFallback });
+const ScanBook = dynamic(() => import("@/components/screens/ScanBook"), { loading: ScreenFallback });
+const DrawStory = dynamic(() => import("@/components/screens/DrawStory"), { loading: ScreenFallback });
+const VocabQuiz = dynamic(() => import("@/components/screens/VocabQuiz"), { loading: ScreenFallback });
+
+/** Kid tabs + the player first — warms the chunk cache while the browser is idle. */
+function prefetchScreens() {
+ const loaders = [
+ () => import("@/components/screens/Library"),
+ () => import("@/components/screens/CreateStory"),
+ () => import("@/components/screens/StoryPlayer"),
+ () => import("@/components/screens/VoiceProfiles"),
+ () => import("@/components/screens/Settings"),
+ () => import("@/components/screens/Lullaby"),
+ ];
+ for (const load of loaders) void load().catch(() => {});
+}
 
 interface ScreenState {
  screen: Screen;
@@ -88,11 +110,19 @@ const ADMIN_SCREENS: Screen[] = [
  "admin-templates",
 ];
 
-function AppContent() {
+function AppContent({ signedOut }: { signedOut: boolean }) {
  const { user, loading, isAdmin } = useAuth();
- const [history, setHistory] = useState<ScreenState[]>([
+ const [history, setHistoryState] = useState<ScreenState[]>([
  { screen: "onboarding" },
  ]);
+ // UI-12: the first screen (server-rendered onboarding / first screen after the
+ // splash) appears without the slide-in — an opacity-0 start would only delay
+ // the first contentful paint. Every later screen change animates.
+ const [animateScreens, setAnimateScreens] = useState(false);
+ const setHistory = useCallback((next: ScreenState[] | ((prev: ScreenState[]) => ScreenState[])) => {
+ setAnimateScreens(true);
+ setHistoryState(next);
+ }, []);
  const rawCurrent = history[history.length - 1];
  const onAuthScreen =
  rawCurrent.screen === "onboarding" ||
@@ -120,41 +150,57 @@ function AppContent() {
  if (kidLocked && isPlaying) pause();
  }, [kidLocked, isPlaying, pause]);
 
+ // UI-12: once signed in, warm the chunks of the kid tabs in the background
+ // (after first paint, when the browser is idle) so tab switches stay instant.
+ const signedInId = !loading ? user?.id : undefined;
+ useEffect(() => {
+ if (!signedInId) return;
+ let idle: number | undefined;
+ const timer = window.setTimeout(() => {
+ if ("requestIdleCallback" in window) idle = window.requestIdleCallback(prefetchScreens, { timeout: 5000 });
+ else prefetchScreens();
+ }, 2500);
+ return () => {
+ window.clearTimeout(timer);
+ if (idle !== undefined) window.cancelIdleCallback(idle);
+ };
+ }, [signedInId]);
+
  const navigate = useCallback(
  (screen: Screen, data?: Record<string, string>) => {
  setHistory((prev) => [...prev, { screen, data }]);
  },
- []
+ [setHistory]
  );
 
  const goBack = useCallback(() => {
  setHistory((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
- }, []);
+ }, [setHistory]);
 
  const handleTabChange = useCallback((tab: TabId) => {
  const screen = tabScreenMap[tab];
  // Leaving the parent area through a kid tab closes the gate again.
  if (!isParentArea(screen)) lockParent();
  setHistory([{ screen }]);
- }, [lockParent]);
+ }, [lockParent, setHistory]);
 
  const leaveGate = useCallback(() => {
  lockParent();
  setHistory([{ screen: "home" }]);
- }, [lockParent]);
+ }, [lockParent, setHistory]);
 
  const afterPinReset = useCallback(() => {
  unlockParent();
  setHistory([{ screen: "settings" }, { screen: "parental-controls" }]);
- }, [unlockParent]);
+ }, [unlockParent, setHistory]);
 
  const handleGetStarted = useCallback(() => {
  setHistory([{ screen: user ? "home" : "signup" }]);
- }, [user]);
+ }, [user, setHistory]);
 
  const handleGoToLogin = useCallback(() => {
  setHistory([{ screen: user ? "home" : "login" }]);
- }, [user]);
+ }, [user, setHistory]);
 
  const showTabBar =
  current.screen !== "onboarding" &&
@@ -178,17 +224,19 @@ function AppContent() {
  current.screen !== "draw-story" &&
  current.screen !== "vocab-quiz";
 
- if (loading) {
+ // Visitors (no auth cookie, see app/page.tsx) see onboarding while auth
+ // resolves; families get the splash so onboarding never flashes for them.
+ if (loading && !signedOut) {
  return (
- <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream">
+ <main className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream">
  <KidLoading fullScreen title="Đóm đang thức dậy…" />
- </div>
+ </main>
  );
  }
 
  return (
  <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream shadow-2xl shadow-black/10">
- <div className="screen-enter" key={gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : current.screen}>
+ <main id="main-content" className={animateScreens ? "screen-enter" : undefined} key={gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : current.screen}>
  {gateActive ? (
  <ParentGate onUnlock={unlockParent} onCancel={leaveGate} onPinReset={afterPinReset} />
  ) : kidLocked ? (
@@ -310,7 +358,7 @@ function AppContent() {
  )}
  </>
  )}
- </div>
+ </main>
 
  {showTabBar && !kidLocked && (
  <TabBar active={activeTab} onTabChange={handleTabChange} />
@@ -321,7 +369,7 @@ function AppContent() {
  );
 }
 
-export default function AppShell() {
+export default function AppShell({ signedOut = false }: { signedOut?: boolean }) {
  return (
  <AuthProvider>
  <SettingsProvider>
@@ -333,7 +381,7 @@ export default function AppShell() {
  <FeedbackProvider>
  <ToastProvider>
  <ParentalControlsProvider>
- <AppContent />
+ <AppContent signedOut={signedOut} />
  </ParentalControlsProvider>
  </ToastProvider>
  </FeedbackProvider>

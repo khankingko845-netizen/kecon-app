@@ -34,9 +34,9 @@ type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language";
 
 function SectionHeader({ title }: { title: string }) {
  return (
- <h3 className="font-parent text-[13px] font-semibold text-ink-2 dark:text-white/50 px-1 mt-6 mb-2">
+ <h2 className="font-parent text-[13px] font-semibold text-ink-2 dark:text-white/50 px-1 mt-6 mb-2">
  {title}
- </h3>
+ </h2>
  );
 }
 
@@ -51,10 +51,10 @@ function SettingsCard({ children }: { children: React.ReactNode }) {
 type RowTone = "brand" | "glow" | "success" | "danger";
 
 const ROW_TONE: Record<RowTone, string> = {
- brand: "bg-brand-soft text-brand",
+ brand: "bg-brand-soft text-brand-ink",
  glow: "bg-glow-soft text-[#9A6A00] dark:text-glow",
  success: "bg-success-soft text-success",
- danger: "bg-[#FDE7DF] text-cta-press dark:bg-cta/20 dark:text-cta",
+ danger: "bg-[#FDE7DF] text-cta-press dark:bg-cta/20 dark:text-cta-ink",
 };
 
 function SettingsRow({
@@ -80,7 +80,7 @@ function SettingsRow({
  <span className={`w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0 ${ROW_TONE[tone]}`}>
  <Icon size={20} weight="duotone" />
  </span>
- <span className={`flex-1 text-left font-parent text-[15px] font-semibold ${tone === "danger" ? "text-cta-press dark:text-cta" : "text-ink dark:text-white/90"}`}>
+ <span className={`flex-1 text-left font-parent text-[15px] font-semibold ${tone === "danger" ? "text-cta-press dark:text-cta-ink" : "text-ink dark:text-white/90"}`}>
  {label}
  </span>
  {badge === "ok" && (
@@ -442,7 +442,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  ? "Hệ thống đã sẵn sàng"
  : "Chưa cấu hình API"}
  </p>
- <p className="text-[12px] text-[#7A4A00]/80 dark:text-glow/70 mt-0.5">
+ <p className="text-[12px] text-[#7A4A00] dark:text-glow/70 mt-0.5">
  {systemStatus.hasElevenLabs && systemStatus.hasStoryProvider
  ? "Admin đã cấu hình API. Bạn có thể sử dụng ngay!"
  : "Vui lòng liên hệ admin để cấu hình hệ thống."}

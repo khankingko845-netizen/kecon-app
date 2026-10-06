@@ -71,7 +71,7 @@ export default function EmptyState({ type, query, onAction }: EmptyStateProps) {
  {cfg.actionLabel && onAction && (
  <button
  onClick={onAction}
- className="inline-flex items-center gap-2 px-6 min-h-tap-min rounded-btn bg-cta text-white font-display text-[17px] font-extrabold active:translate-y-0.5 active:shadow-none transition-all shadow-[0_4px_0_var(--color-cta-press)]"
+ className="inline-flex items-center gap-2 px-6 min-h-tap-min rounded-btn bg-cta text-white font-display text-[19px] font-extrabold active:translate-y-0.5 active:shadow-none transition-all shadow-[0_4px_0_var(--color-cta-press)]"
  >
  <Sparkles size={18} weight="fill" /> {cfg.actionLabel}
  </button>

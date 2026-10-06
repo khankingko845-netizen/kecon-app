@@ -122,7 +122,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  if (loading) {
  return (
  <div className="min-h-screen bg-parent-bg font-parent flex items-center justify-center" role="status" aria-label="Đang tải">
- <Loader2 size={24} className="animate-spin text-brand" />
+ <Loader2 size={24} className="animate-spin text-brand-ink" />
  </div>
  );
  }
@@ -135,7 +135,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  {/* PIN — always available: it guards the whole parent area (T19) */}
  <Card className="p-4">
  <div className="mb-1 flex items-center gap-2">
- <Lock size={18} className="text-brand" />
+ <Lock size={18} className="text-brand-ink" />
  <p className="text-[15px] font-semibold text-ink">Mã PIN phụ huynh</p>
  {pinStatus?.hasPin ? (
  <span className="ml-auto rounded-xl bg-success-soft px-2 py-1 text-[12px] font-semibold text-success">Đã đặt</span>
@@ -176,7 +176,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  className="h-12 w-full rounded-2xl bg-parent-bg px-4 text-center text-[18px] font-bold tracking-[0.5em] text-ink outline-none ring-brand placeholder:text-[14px] placeholder:font-medium placeholder:tracking-normal focus:ring-2"
  />
  {pinError && (
- <p role="alert" className="mt-2 text-[13px] font-semibold text-cta">
+ <p role="alert" className="mt-2 text-[13px] font-semibold text-cta-ink">
  {pinError}
  </p>
  )}
@@ -208,7 +208,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  {/* Daily Time Limit */}
  <Card className="p-4">
  <div className="mb-1 flex items-center gap-2">
- <Clock size={18} className="text-brand" />
+ <Clock size={18} className="text-brand-ink" />
  <p className="text-[15px] font-semibold text-ink">Thời gian dùng mỗi ngày</p>
  </div>
  <p className="mb-3 text-[12.5px] text-ink-2">Hết giờ, màn hình của bé khoá lại; bố mẹ nhập PIN để cho thêm 15–30 phút.</p>
@@ -239,7 +239,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  {/* Bedtime */}
  <Card className="p-4">
  <div className="mb-1 flex items-center gap-2">
- <Moon size={18} className="text-brand" />
+ <Moon size={18} className="text-brand-ink" />
  <p className="text-[15px] font-semibold text-ink">Giờ đi ngủ</p>
  </div>
  <p className="mb-3 text-[12.5px] text-ink-2">Trong khung giờ này app của bé khoá lại (có thể qua nửa đêm, ví dụ 21:00–06:00).</p>
@@ -279,7 +279,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  aria-pressed={blocked}
  onClick={() => toggleCategory(cat.id)}
  className={`flex flex-col items-center gap-1 rounded-2xl py-2.5 text-[12.5px] font-semibold transition-colors ${
- blocked ? "bg-[#FDE8E3] text-cta ring-1 ring-cta/30" : "bg-parent-bg text-ink-2"
+ blocked ? "bg-[#FDE8E3] text-cta-ink ring-1 ring-cta/30" : "bg-parent-bg text-ink-2"
  }`}
  >
  <CategoryIcon category={cat.id} size={28} className="rounded-lg" />

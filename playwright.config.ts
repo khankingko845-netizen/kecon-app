@@ -28,6 +28,15 @@ const appEnv: Record<string, string> = {
 const startCmd = `npm run start -- -p ${PORT} -H 127.0.0.1`;
 const command = process.env.E2E_SKIP_BUILD === "1" ? startCmd : `npm run build && ${startCmd}`;
 
+const mobileChromium = {
+  ...devices["Pixel 7"],
+  launchOptions: {
+    // Local sandbox: PLAYWRIGHT_CHROMIUM_PATH=$(which chromium).
+    // CI: leave unset and run `npx playwright install --with-deps chromium`.
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
+  },
+};
+
 export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: "./test-results",
@@ -44,14 +53,17 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-mobile",
-      use: {
-        ...devices["Pixel 7"],
-        launchOptions: {
-          // Local sandbox: PLAYWRIGHT_CHROMIUM_PATH=$(which chromium).
-          // CI: leave unset and run `npx playwright install --with-deps chromium`.
-          executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
-        },
-      },
+      testIgnore: /perf\.spec\.ts$/,
+      use: mobileChromium,
+    },
+    {
+      // UI-12: Web Vitals budgets are timing-sensitive — run them alone, after the
+      // smoke suite, so other workers don't steal CPU from the throttled page.
+      name: "perf",
+      testMatch: /perf\.spec\.ts$/,
+      dependencies: ["chromium-mobile"],
+      fullyParallel: false,
+      use: mobileChromium,
     },
   ],
   webServer: [

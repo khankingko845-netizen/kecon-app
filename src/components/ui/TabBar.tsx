@@ -76,7 +76,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
             }}
             aria-current={isActive ? "page" : undefined}
             className={`flex min-h-tap-min w-16 flex-col items-center gap-0.5 text-[12.5px] font-extrabold transition-[color,transform] duration-200 ${press} ${
-              isActive ? "text-brand dark:text-moon" : "text-[#9A93B8] dark:text-moon-2/70"
+              isActive ? "text-brand-ink dark:text-moon" : "text-ink-2 dark:text-moon-2"
             }`}
           >
             <Icon size={28} weight="duotone" />

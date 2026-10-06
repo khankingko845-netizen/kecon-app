@@ -106,7 +106,7 @@ function StateFrame({
         data-testid={testId}
         className={`flex min-h-screen flex-col items-center justify-center px-8 text-center ${night ? "bg-night" : "bg-cream dark:bg-night"} ${className}`}
       >
-        <Mascot state={mascot} size={size ?? 150} label={null} />
+        <Mascot state={mascot} size={size ?? 150} label={null} priority />
         <div className="mt-2 flex max-w-xs flex-col items-center">{text}</div>
       </div>
     );
