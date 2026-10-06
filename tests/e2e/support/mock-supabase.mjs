@@ -5,6 +5,7 @@
  *
  *   node tests/e2e/support/mock-supabase.mjs   # listens on :54321
  */
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.MOCK_SUPABASE_PORT ?? 54321);
@@ -215,10 +216,9 @@ const SECRET_SETTINGS = [
   ["gemini_api_key", "Google Gemini API Key", "ai"],
   ["openai_api_key", "OpenAI API Key", "ai"],
   ["dalle_api_key", "DALL·E API Key", "image"],
-  ["elevenlabs_api_key", "ElevenLabs API Key", "voice"],
 ];
 const vault = new Map([
-  ["elevenlabs_api_key", { value: "sk_e2e-stored-elevenlabs-x9Qz", updated_at: "2026-03-01T08:00:00+00:00", updated_by_email: adminUser.email }],
+  ["anthropic_api_key", { value: "sk-ant-e2e-stored-claude-x9Qz", updated_at: "2026-03-01T08:00:00+00:00", updated_by_email: adminUser.email }],
 ]);
 let secretsScan = false;
 export const plantedSecret = (key) => `sk-e2e-PLANTED-${key}-Zq7w`;
@@ -233,6 +233,166 @@ function secretStatuses() {
       updated_at: stored?.updated_at ?? null, updated_by_email: stored?.updated_by_email ?? null,
     };
   });
+}
+
+/**
+ * A-04b · voice key pool (migration 022): many ElevenLabs / Fish Audio keys,
+ * rotated by the Next server. The browser lists / adds / toggles / deletes
+ * (RPCs below, secrets.manage); only the service role reads secrets.
+ * Outside scan mode get_provider_key_pool returns [] so every other spec keeps
+ * "no voice keys" — the admin screen still shows the preset rows and
+ * "Kiểm tra" works (get_provider_key_secret → mock provider below).
+ * Scan mode serves a planted pool instead (secrets-scan.spec.ts): ElevenLabs key 1
+ * is out of quota at the provider, so TTS must fail over to key 2.
+ */
+const poolKey = (id, provider, label, secret, extra = {}) => ({
+  id, provider, label, secret, last4: last4(secret), enabled: true, status: "active", cooldown_until: null, last_error: null,
+  use_count: 0, char_count: 0, last_used_at: null, credit: null, credit_checked_at: null,
+  created_at: "2026-03-01T08:00:00+00:00", created_by_email: adminUser.email, updated_at: "2026-03-01T08:00:00+00:00", ...extra,
+});
+const providerKeys = [
+  poolKey("00000000-0000-4000-8000-0000000000e1", "elevenlabs", "Key chính (chuyển từ A-04)", "sk_e2e-stored-elevenlabs-x9Qz", {
+    use_count: 12, char_count: 3400, last_used_at: "2026-03-04T08:00:00+00:00", credit_checked_at: "2026-03-04T08:00:00+00:00",
+    credit: { unit: "characters", used: 1500, limit: 10000, remaining: 8500, reset_at: null },
+  }),
+  poolKey("00000000-0000-4000-8000-0000000000e2", "elevenlabs", "Tài khoản 2", "sk_e2e-pool-elevenlabs-quota-Ab12", {
+    status: "exhausted", cooldown_until: "2099-01-15T12:00:00+00:00", last_error: "ElevenLabs TTS lỗi 401: This request exceeds your quota",
+  }),
+];
+const scanPool = [
+  poolKey("00000000-0000-4000-8000-00000000a5c1", "elevenlabs", "Quét 1", plantedSecret("elevenlabs-quota")),
+  poolKey("00000000-0000-4000-8000-00000000a5c2", "elevenlabs", "Quét 2", plantedSecret("elevenlabs-2")),
+  poolKey("00000000-0000-4000-8000-00000000a5c3", "fishaudio", "Quét Fish", plantedSecret("fishaudio-1")),
+];
+const activePool = () => (secretsScan ? scanPool : providerKeys);
+const POOL_PROVIDERS = { elevenlabs: "ElevenLabs", fishaudio: "Fish Audio" };
+const publicKeyRow = (row) => Object.fromEntries(Object.entries(row).filter(([k]) => k !== "secret"));
+
+const SERVICE_RPCS = new Set([
+  "get_system_secret", "get_provider_key_pool", "get_provider_key_secret", "report_provider_key",
+  "record_provider_key_usage", "get_provider_voice_key", "bind_provider_voice",
+]);
+
+/** Service-role RPCs (the Next server). `undefined` = not a service-role function. */
+function serviceRpc(name, body) {
+  const pool = activePool();
+  const find = () => pool.find((k) => k.id === body?.p_id);
+  switch (name) {
+    case "get_system_secret": {
+      const key = body?.p_key;
+      return secretsScan && SECRET_SETTINGS.some(([k]) => k === key) ? plantedSecret(key) : null;
+    }
+    case "get_provider_key_pool":
+      if (!secretsScan) return [];
+      return pool
+        .filter((k) => k.provider === body?.p_provider && k.enabled && k.status !== "invalid")
+        .map(({ id, label, last4: l4, secret, status, cooldown_until }) => ({ id, label, last4: l4, secret, status, cooldown_until }));
+    case "get_provider_key_secret":
+      return find()?.secret ?? null;
+    case "report_provider_key": {
+      const k = find();
+      if (!k) return null;
+      if (body.p_status) k.status = body.p_status;
+      if (body.p_status === "active") k.cooldown_until = null;
+      if (body.p_cooldown_until) k.cooldown_until = body.p_cooldown_until;
+      if (body.p_error !== undefined) k.last_error = body.p_error;
+      if (body.p_credit) Object.assign(k, { credit: body.p_credit, credit_checked_at: new Date().toISOString() });
+      return { id: k.id, status: k.status, cooldown_until: k.cooldown_until };
+    }
+    case "record_provider_key_usage": {
+      const k = find();
+      if (k) Object.assign(k, { use_count: k.use_count + (body.p_uses ?? 0), char_count: k.char_count + (body.p_chars ?? 0), last_used_at: new Date().toISOString() });
+      if (k?.status === "exhausted") Object.assign(k, { status: "active", cooldown_until: null });
+      return null;
+    }
+    case "get_provider_voice_key":
+    case "bind_provider_voice":
+      return null;
+    default:
+      return undefined;
+  }
+}
+
+/** Admin RPCs on the pool (secrets.manage). */
+function poolRpc(name, sub, body, permissions) {
+  if (!permissions.includes("secrets.manage")) return rpcError(400, "42501", "Chỉ Super admin / Admin quản lý được kho key giọng nói");
+  const pool = activePool();
+  switch (name) {
+    case "list_provider_keys":
+      return pool.map(publicKeyRow);
+    case "add_provider_key": {
+      const provider = body?.p_provider;
+      if (!POOL_PROVIDERS[provider]) return rpcError(400, "22023", `Không có nhà cung cấp "${provider}"`);
+      const value = String(body?.p_value ?? "").trim();
+      if (value.length < 12 || /\s/.test(value)) return rpcError(400, "22023", "Key không hợp lệ (ít nhất 12 ký tự, không có khoảng trắng)");
+      if (pool.some((k) => k.provider === provider && k.secret === value)) {
+        return rpcError(400, "23505", `Key này đã có trong kho ${POOL_PROVIDERS[provider]} (…${last4(value)})`);
+      }
+      const now = new Date().toISOString();
+      const row = poolKey(randomUUID(), provider, String(body?.p_label ?? "").trim().slice(0, 60), value, {
+        created_at: now, updated_at: now, created_by_email: USERS[sub]?.email ?? null,
+      });
+      pool.push(row);
+      return { id: row.id, provider, label: row.label, last4: row.last4, enabled: true, status: row.status };
+    }
+    case "update_provider_key": {
+      const k = pool.find((r) => r.id === body?.p_id);
+      if (!k) return rpcError(400, "P0002", "Không tìm thấy key");
+      if (typeof body.p_label === "string") k.label = body.p_label.trim().slice(0, 60);
+      if (typeof body.p_enabled === "boolean") {
+        k.enabled = body.p_enabled;
+        if (body.p_enabled) Object.assign(k, { status: "active", cooldown_until: null, last_error: null });
+      }
+      k.updated_at = new Date().toISOString();
+      return { id: k.id, label: k.label, enabled: k.enabled, status: k.status };
+    }
+    case "delete_provider_key": {
+      const i = pool.findIndex((r) => r.id === body?.p_id);
+      if (i < 0) return rpcError(400, "P0002", "Không tìm thấy key");
+      pool.splice(i, 1);
+      return { id: body.p_id, deleted: true };
+    }
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Mock ElevenLabs / Fish Audio (ELEVENLABS_API_BASE / FISH_AUDIO_API_BASE in
+ * playwright.config.ts) so no spec ever calls a real provider. The key decides:
+ * "quota" → out of credit, "PLANTED" / known e2e keys → OK, anything else → invalid.
+ */
+const MOCK_AUDIO = Buffer.from("ID3-e2e-mock-mp3");
+function providerMock(req, res, path) {
+  const json = (status, body) => {
+    res.writeHead(status, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(body));
+  };
+  const audio = () => {
+    res.writeHead(200, { "Content-Type": "audio/mpeg" });
+    res.end(MOCK_AUDIO);
+  };
+  if (path.startsWith("/__provider/elevenlabs/")) {
+    const key = String(req.headers["xi-api-key"] ?? "");
+    const sub = path.slice("/__provider/elevenlabs".length);
+    if (key.includes("quota")) return json(401, { detail: { status: "quota_exceeded", message: "This request exceeds your quota" } });
+    if (!/PLANTED|x9Qz|e2e-eleven/.test(key)) return json(401, { detail: { status: "invalid_api_key", message: "Invalid API key" } });
+    if (sub === "/v1/user/subscription") return json(200, { tier: "starter", character_count: 1500, character_limit: 10000, next_character_count_reset_unix: 4102444800 });
+    if (sub === "/v1/voices") return json(200, { voices: [{ voice_id: "e2eVoice1", name: "Giọng mock", category: "premade", labels: {} }] });
+    if (sub.startsWith("/v1/text-to-speech/")) return audio();
+    return json(200, {});
+  }
+  if (path.startsWith("/__provider/fish/")) {
+    const key = String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
+    const sub = path.slice("/__provider/fish".length);
+    if (key.includes("quota")) return json(402, { message: "Insufficient credits", status: 402 });
+    if (!/PLANTED|e2e-fish/.test(key)) return json(401, { message: "Invalid Token", status: 401 });
+    if (sub === "/wallet/self/api-credit") return json(200, { credit: "5.5", has_free_credit: false });
+    if (sub === "/v1/tts") return audio();
+    if (sub.startsWith("/model/")) return json(200, { _id: decodeURIComponent(sub.slice(7)), title: "Giọng Fish mock", languages: ["vi"], visibility: "public" });
+    return json(404, { message: "not found", status: 404 });
+  }
+  return json(404, { message: "not found (mock provider)" });
 }
 
 /** Tables whose RLS needs a staff permission (mirrors the SELECT policies). */
@@ -276,10 +436,16 @@ function rpc(name, sub, body) {
       vault.set(key, entry);
       return { key, is_set: true, last4: last4(value), updated_at: entry.updated_at };
     }
-    case "get_system_secret":
-      // Never for a signed-in user (EXECUTE only for service_role) — see the service-role branch.
-      return rpcError(401, "42501", "permission denied for function get_system_secret");
+    case "consume_usage":
+      return { allowed: true };
+    case "list_provider_keys":
+    case "add_provider_key":
+    case "update_provider_key":
+    case "delete_provider_key":
+      return poolRpc(name, sub, body, permissions);
     default:
+      // Service-role-only functions (get_system_secret, get_provider_key_pool, …): EXECUTE is never granted to a signed-in user.
+      if (SERVICE_RPCS.has(name)) return rpcError(401, "42501", `permission denied for function ${name}`);
       return null;
   }
 }
@@ -365,6 +531,7 @@ createServer((req, res) => {
   const path = url.pathname;
   if (req.method === "OPTIONS") return send(res, 204);
   if (path === "/health") return send(res, 200, { ok: true });
+  if (path.startsWith("/__provider/")) return providerMock(req, res, path);
   if (path === "/__e2e/secrets-scan" && req.method === "POST") {
     readJson(req).then((body) => {
       secretsScan = Boolean(body?.on);
@@ -389,10 +556,8 @@ createServer((req, res) => {
       const name = path.slice("/rest/v1/rpc/".length);
       const isServiceRole = (req.headers.authorization ?? "") === `Bearer ${MOCK_SERVICE_ROLE_KEY}`;
       readJson(req).then((body) => {
-        if (isServiceRole && name === "get_system_secret") {
-          const key = body?.p_key;
-          return send(res, 200, secretsScan && SECRET_SETTINGS.some(([k]) => k === key) ? plantedSecret(key) : null);
-        }
+        const served = isServiceRole ? serviceRpc(name, body) : undefined;
+        if (served !== undefined) return send(res, 200, served);
         const out = authed ? rpc(name, sub, body) : null;
         if (out && typeof out === "object" && "__rpcError" in out) return send(res, out.__rpcError.status, out.__rpcError.body);
         send(res, 200, out);

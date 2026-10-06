@@ -83,7 +83,7 @@ afterAll(async () => {
 describe("021 · chuyển key cũ vào Vault", () => {
   it("app_settings không còn key chữ thường; Vault giữ bản mã hoá; server đọc lại đúng key (đã cắt khoảng trắng)", async () => {
     const { rows } = await db.query<{ key: string; value: string }>("SELECT key, value FROM public.app_settings WHERE is_secret ORDER BY key");
-    expect(rows.length).toBeGreaterThanOrEqual(6);
+    expect(rows.length).toBeGreaterThanOrEqual(5) // 6 ô key của 007, trừ elevenlabs_api_key (022 chuyển vào kho nhiều key);
     expect(rows.every((r) => r.value === "")).toBe(true);
     expect(await mentions("public.app_settings", LEGACY_KEY)).toBe(0);
     expect(await mentions("vault.secrets", LEGACY_KEY)).toBe(0);
@@ -209,8 +209,8 @@ describe("021 · set_system_secret (API chỉ-ghi)", () => {
 
   it("server / SQL editor (không có người dùng) đặt được, nhật ký nguồn 'system'", async () => {
     const from = await lastLogId();
-    await db.query("SELECT public.set_system_secret('elevenlabs_api_key', $1)", [NEW_KEY]);
-    await asService("SELECT public.set_system_secret('elevenlabs_api_key', '')");
+    await db.query("SELECT public.set_system_secret('anthropic_api_key', $1)", [NEW_KEY]);
+    await asService("SELECT public.set_system_secret('anthropic_api_key', '')");
     const logs = await logsSince(from);
     expect(logs.map((l) => [l.action, l.actor_id, l.source])).toEqual([
       ["secret.create", null, "system"],

@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
 import { auditAdmin } from "@/lib/admin-audit";
 import { getSystemSetting, isSafePublicBaseUrl, resolveApiKey } from "@/lib/server-settings";
+import { voiceKeyPool } from "@/lib/key-pool";
+import { elevenLabsBase } from "@/lib/elevenlabs";
+import { fishGetModel } from "@/lib/fishaudio";
+import { FISH_VOICE_PREFIX, isFishVoiceId, providerVoiceRef } from "@/lib/provider-keys";
 import { scrubSecret } from "@/lib/system-secrets";
 import { GEMINI_BASE_URL } from "@/lib/llm";
 import { z } from "zod";
@@ -26,13 +30,15 @@ const PROVIDER_LABEL: Record<z.infer<typeof TestProviderBody>["provider"], strin
 
 /** The key the platform would really use for this provider (Vault → env), like the generation routes. */
 async function storedKey(provider: z.infer<typeof TestProviderBody>["provider"]): Promise<string> {
+  // A-04b: ElevenLabs keys live in the rotating pool.
+  if (provider === "elevenlabs") return voiceKeyPool.pickSecret("elevenlabs");
   if (provider === "dalle") return (await resolveApiKey("dalle")) || (await resolveApiKey("openai"));
   return resolveApiKey(provider);
 }
 
 /**
  * GET /api/admin/test-provider?voice_id=xxx
- * Looks up a voice by ID from ElevenLabs. Uses system API key.
+ * Looks up a voice by ID from ElevenLabs (or `fish:<id>` from Fish Audio). Uses a key of the system pool.
  * Returns: { ok, voice: { voice_id, name, language, category, preview_url } }
  */
 export async function GET(request: NextRequest) {
@@ -49,8 +55,30 @@ export async function GET(request: NextRequest) {
   const auditFailed = await auditAdmin(supabase, request, { action: "voice.lookup", targetType: "voice", targetId: voiceId.slice(0, 100) });
   if (auditFailed) return auditFailed;
 
-  // Get ElevenLabs API key from system settings
-  const apiKey = await getSystemSetting("elevenlabs_api_key");
+  // A-04b: Fish Audio voice model (`fish:<reference_id>`).
+  if (isFishVoiceId(voiceId)) {
+    const fishKey = await voiceKeyPool.pickSecret("fishaudio");
+    if (!fishKey) return Response.json({ ok: false, error: "Fish Audio API key chưa được cài đặt" }, { status: 200 });
+    try {
+      const m = await fishGetModel(fishKey, providerVoiceRef(voiceId));
+      return Response.json({
+        ok: true,
+        voice: {
+          voice_id: `${FISH_VOICE_PREFIX}${m.id}`,
+          name: m.title,
+          language: m.languages[0] || "",
+          category: m.visibility === "private" ? "fish (riêng)" : "fish",
+          preview_url: null,
+          gender: null,
+        },
+      });
+    } catch (err) {
+      return Response.json({ ok: false, error: err instanceof Error ? scrubSecret(err.message, fishKey) : "Lookup failed" });
+    }
+  }
+
+  // A-04b: a key of the ElevenLabs pool.
+  const apiKey = await voiceKeyPool.pickSecret("elevenlabs");
   if (!apiKey) {
     return Response.json(
       { ok: false, error: "ElevenLabs API key chưa được cài đặt" },
@@ -60,7 +88,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Try fetching the voice directly (works for own voices + added from library)
-    const res = await fetch(`https://api.elevenlabs.io/v1/voices/${voiceId}`, {
+    const res = await fetch(`${elevenLabsBase()}/voices/${encodeURIComponent(voiceId)}`, {
       headers: { "xi-api-key": apiKey },
     });
 
@@ -89,7 +117,7 @@ export async function GET(request: NextRequest) {
     if (res.status === 400 || res.status === 404 || res.status === 422) {
       // Search shared voices by voice_id (use search= not voice_id= param)
       const sharedRes = await fetch(
-        `https://api.elevenlabs.io/v1/shared-voices?search=${voiceId}&page_size=5`,
+        `${elevenLabsBase()}/shared-voices?search=${encodeURIComponent(voiceId)}&page_size=5`,
         { headers: { "xi-api-key": apiKey } }
       );
       if (sharedRes.ok) {
@@ -266,7 +294,7 @@ export async function POST(request: NextRequest) {
 
       case "elevenlabs": {
         // 1. Fetch user's own voices (cloned + added)
-        const ownRes = await fetch("https://api.elevenlabs.io/v1/voices", {
+        const ownRes = await fetch(`${elevenLabsBase()}/voices`, {
           headers: { "xi-api-key": apiKey },
         });
         if (!ownRes.ok) {
@@ -308,7 +336,7 @@ export async function POST(request: NextRequest) {
           targetLanguages.map(async ({ code, label }) => {
             try {
               const searchUrl = new URL(
-                "https://api.elevenlabs.io/v1/shared-voices"
+                `${elevenLabsBase()}/shared-voices`
               );
               searchUrl.searchParams.set("language", code);
               searchUrl.searchParams.set("page_size", "15");

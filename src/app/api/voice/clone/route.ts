@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cloneVoice } from "@/lib/elevenlabs";
-import { resolveApiKey } from "@/lib/server-settings";
+import { keyPoolErrorResponse, voiceKeyPool } from "@/lib/key-pool";
+import { scrubSecret } from "@/lib/system-secrets";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
@@ -50,9 +51,8 @@ export async function POST(request: NextRequest) {
   const { name, apiKey: userKey, audio: audioFile } = fields.data;
   const language = fields.data.language || "vi";
 
-  // Resolve API key: user BYO → admin DB → env variable
-  const apiKey = await resolveApiKey("elevenlabs", userKey || undefined);
-  if (!apiKey) {
+  // A-04b: user BYO key, else the platform pool (many ElevenLabs keys, rotated).
+  if (!userKey && !(await voiceKeyPool.configured("elevenlabs"))) {
     return Response.json(
       { error: "Chưa cấu hình ElevenLabs API key. Admin cần thêm key trong Cài Đặt Hệ Thống." },
       { status: 400 }
@@ -62,11 +62,22 @@ export async function POST(request: NextRequest) {
   const usageBlocked = await guardUsage(supabase, "voice_clone", { byo: Boolean(userKey) });
   if (usageBlocked) return usageBlocked;
 
+  if (userKey) {
+    try {
+      return Response.json(await cloneVoice(userKey, name, audioFile, language));
+    } catch (err) {
+      const message = err instanceof Error ? scrubSecret(err.message, userKey) : "Voice cloning failed";
+      return Response.json({ error: message }, { status: 500 });
+    }
+  }
+
   try {
-    const result = await cloneVoice(apiKey, name, audioFile, language);
+    // The clone only exists in the account of the key that made it → remember that key for TTS.
+    const result = await voiceKeyPool.run("elevenlabs", (key) => cloneVoice(key, name, audioFile, language), {
+      bindVoiceFrom: (r) => r.voice_id,
+    });
     return Response.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Voice cloning failed";
-    return Response.json({ error: message }, { status: 500 });
+    return keyPoolErrorResponse(err, "Voice cloning failed");
   }
 }

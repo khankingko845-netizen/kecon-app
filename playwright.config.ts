@@ -7,7 +7,7 @@ const isCI = Boolean(process.env.CI);
 /**
  * Hermetic env for the app under test: a fake Supabase on :54321
  * (tests/e2e/support/mock-supabase.mjs — only accepts the token minted by
- * tests/e2e/support/fixtures.ts) and blanked provider keys. Values set here win over `.env.local`
+ * tests/e2e/support/fixtures.ts), blanked provider keys and mocked voice providers. Values set here win over `.env.local`
  * (Next only fills variables that are absent from process.env), so a local
  * `.env.local` with real keys is never used by the smoke tests.
  * NEXT_PUBLIC_* are inlined at build time → the build must see them too.
@@ -22,6 +22,11 @@ const appEnv: Record<string, string> = {
   GEMINI_API_KEY: "",
   ANTHROPIC_API_KEY: "",
   ELEVENLABS_API_KEY: "",
+  FISH_API_KEY: "",
+  FISH_AUDIO_API_KEY: "",
+  // A-04b: voice providers are mocked too (mock-supabase.mjs → /__provider/…), never the real APIs.
+  ELEVENLABS_API_BASE: "http://127.0.0.1:54321/__provider/elevenlabs",
+  FISH_AUDIO_API_BASE: "http://127.0.0.1:54321/__provider/fish",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 

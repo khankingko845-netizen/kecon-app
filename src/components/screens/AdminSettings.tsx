@@ -9,12 +9,16 @@ import {
 import TopBar from "@/components/ui/TopBar";
 import {
  getAppSettings,
+ listProviderKeys,
  listSystemSecrets,
  setSystemSecret,
  updateAppSettings,
  type AppSettingRow,
 } from "@/lib/db";
 import { isSecretSettingKey, secretStatusText, type SystemSecretStatus } from "@/lib/system-secrets";
+import type { ProviderKeyRow } from "@/lib/provider-keys";
+import { FISH_MODELS } from "@/lib/fishaudio";
+import ProviderKeyPool from "@/components/screens/ProviderKeyPool";
 
 interface AdminSettingsProps {
  onBack: () => void;
@@ -23,7 +27,6 @@ interface AdminSettingsProps {
 }
 
 const SECRET_LABELS: Record<string, string> = {
- elevenlabs_api_key: "ElevenLabs",
  openai_api_key: "OpenAI",
  gemini_api_key: "Gemini",
  anthropic_api_key: "Claude",
@@ -512,7 +515,7 @@ function DefaultVoicesManager({
  type="text"
  value={manualVoiceId}
  onChange={(e) => { setManualVoiceId(e.target.value); setLookupError(null); }}
- placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB)"
+ placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB hoặc fish:<id>)"
  className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-mono outline-none focus:border-accent transition-colors"
  autoFocus
  />
@@ -698,6 +701,8 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  const [original, setOriginal] = useState<Record<string, string>>({});
  // A-04: API keys — status only (never the value) + keys newly typed in this session.
  const [secrets, setSecrets] = useState<Record<string, SystemSecretStatus>>({});
+ // A-04b: voice key pools (ElevenLabs + Fish Audio) — statuses only.
+ const [providerKeys, setProviderKeys] = useState<ProviderKeyRow[]>([]);
  const [drafts, setDrafts] = useState<Record<string, string>>({});
  const [clearingKey, setClearingKey] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
@@ -724,8 +729,17 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
 
  // ── load settings + default voices ──
  const loadSecrets = useCallback(async () => {
- const list = await listSystemSecrets();
+ const [list, pool] = await Promise.all([listSystemSecrets(), listProviderKeys()]);
  setSecrets(Object.fromEntries(list.map((s) => [s.key, s])));
+ setProviderKeys(pool);
+ }, []);
+
+ const loadProviderKeys = useCallback(async () => {
+ try {
+ setProviderKeys(await listProviderKeys());
+ } catch (err) {
+ setError(err instanceof Error ? err.message : "Không tải được kho key");
+ }
  }, []);
 
  const load = useCallback(async () => {
@@ -844,15 +858,15 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  }
 
  async function handleTestElevenLabs() {
- const key = keyForTest("elevenlabs_api_key");
- if (key === null) {
- setElevenTest({ ok: false, error: "Nhập API key trước" });
+ // A-04b: the server uses a key of the pool (they never come to the browser).
+ if (canManageSecrets && !providerKeys.some((k) => k.provider === "elevenlabs" && k.enabled)) {
+ setElevenTest({ ok: false, error: "Thêm key ElevenLabs vào kho trước" });
  return;
  }
  setElevenTesting(true);
  setElevenTest(null);
  try {
- const result = await testProvider("elevenlabs", key);
+ const result = await testProvider("elevenlabs", undefined);
  setElevenTest(result);
  if (result.ok && result.voices) {
  setVoices(result.voices);
@@ -1000,7 +1014,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  <em>tất cả người dùng</em>. Người dùng có thể ghi đè bằng key riêng.
  </p>
  <p className="text-[12px] text-blue-800/80 mt-1 leading-relaxed">
- Key được mã hoá trong Vault: sau khi lưu chỉ còn hiện 4 ký tự cuối, không ai xem lại được — muốn đổi thì nhập key mới.
+ Key được mã hoá trong Vault: sau khi lưu chỉ còn hiện 4 ký tự cuối, không ai xem lại được — muốn đổi thì nhập key mới. Giọng nói (ElevenLabs, Fish Audio) nhận nhiều key, máy chủ tự xoay vòng và bù key hết credit.
  </p>
  </div>
 
@@ -1012,30 +1026,13 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  </h3>
  </div>
  <div className="bg-white dark:bg-white/[0.04] px-5 py-4 space-y-4">
- {/* API Key */}
- <div>
- <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
- API Key
- </label>
- <SecretInput
- settingKey="elevenlabs_api_key"
- status={secrets["elevenlabs_api_key"]}
- value={drafts["elevenlabs_api_key"] ?? ""}
- onChange={(v) => handleDraft("elevenlabs_api_key", v)}
- onClear={() => handleClearSecret("elevenlabs_api_key")}
- clearing={clearingKey === "elevenlabs_api_key"}
- placeholder="sk_..."
+ {/* A-04b: many keys, rotated + failover */}
+ <ProviderKeyPool
+ provider="elevenlabs"
+ rows={providerKeys.filter((k) => k.provider === "elevenlabs")}
+ onChanged={loadProviderKeys}
  locked={!canManageSecrets}
  />
- <a
- href="https://elevenlabs.io/app/settings/api-keys"
- target="_blank"
- rel="noopener noreferrer"
- className="inline-flex items-center gap-1.5 text-accent text-[12px] font-semibold mt-1.5"
- >
- Lấy API Key <ExternalLink size={12} />
- </a>
- </div>
 
  {/* Test */}
  <TestButton
@@ -1079,6 +1076,49 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  onRemove={handleRemoveDefaultVoice}
  loading={elevenTesting}
  />
+ </div>
+
+ {/* ═══════════ FISH AUDIO (A-04b) ═══════════ */}
+ <div className="flex items-center gap-2.5 px-5 mt-6 mb-2">
+ <SectionIcon icon={Mic} color="#00A3FF" />
+ <h3 className="text-[13px] font-bold uppercase tracking-widest text-txt-secondary dark:text-white/50">
+ Giọng Nói (Fish Audio)
+ </h3>
+ </div>
+ <div className="bg-white dark:bg-white/[0.04] px-5 py-4 space-y-4">
+ <ProviderKeyPool
+ provider="fishaudio"
+ rows={providerKeys.filter((k) => k.provider === "fishaudio")}
+ onChanged={loadProviderKeys}
+ locked={!canManageSecrets}
+ />
+ <div>
+ <label htmlFor="fishaudio-model" className="text-[12px] font-bold text-txt-secondary dark:text-white/50 mb-1.5 block">
+ Model TTS Fish Audio
+ </label>
+ <div className="relative">
+ <select
+ id="fishaudio-model"
+ value={settings["fishaudio_model_id"] || "s2.1-pro"}
+ onChange={(e) => handleChange("fishaudio_model_id", e.target.value)}
+ className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-semibold outline-none focus:border-accent transition-colors appearance-none pr-10"
+ >
+ {FISH_MODELS.map((m) => (
+ <option key={m.id} value={m.id}>
+ {m.name}
+ </option>
+ ))}
+ </select>
+ <ChevronDown
+ size={16}
+ className="absolute right-3 top-1/2 -translate-y-1/2 text-txt-secondary dark:text-white/50 pointer-events-none"
+ />
+ </div>
+ <p className="text-[11px] text-txt-secondary dark:text-white/40 mt-1.5 leading-relaxed">
+ Giọng Fish Audio dùng mã <code className="font-mono">fish:&lt;id giọng&gt;</code> (id lấy ở fish.audio → Voice Library / giọng của bạn) —
+ thêm vào &quot;Giọng mặc định&quot; ở trên bằng ô nhập thủ công.
+ </p>
+ </div>
  </div>
 
  {/* ═══════════ AI STORY PROVIDER ═══════════ */}

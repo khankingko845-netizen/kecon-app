@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { listVoices } from "@/lib/elevenlabs";
-import { resolveApiKey } from "@/lib/server-settings";
+import { keyPoolErrorResponse, voiceKeyPool } from "@/lib/key-pool";
+import { scrubSecret } from "@/lib/system-secrets";
 import { isAdminUser } from "@/lib/byo-key";
 
 /**
@@ -25,20 +26,15 @@ export async function GET(request: NextRequest) {
 
   const userKey = request.headers.get("x-elevenlabs-key")?.trim() || undefined;
 
-  // Resolve API key: user BYO → admin DB → env variable
-  const apiKey = await resolveApiKey("elevenlabs", userKey);
-  if (!apiKey) {
-    return Response.json(
-      { error: "Chưa cấu hình ElevenLabs API key. Admin cần thêm key trong Cài Đặt Hệ Thống." },
-      { status: 400 }
-    );
-  }
-
   try {
-    const voices = await listVoices(apiKey);
+    if (userKey) return Response.json({ voices: await listVoices(userKey) });
+    // A-04b: one key of the pool (each ElevenLabs account has its own clones).
+    const voices = await voiceKeyPool.run("elevenlabs", (key) => listVoices(key));
     return Response.json({ voices });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to list voices";
-    return Response.json({ error: message }, { status: 500 });
+    if (userKey) {
+      return Response.json({ error: err instanceof Error ? scrubSecret(err.message, userKey) : "Failed to list voices" }, { status: 500 });
+    }
+    return keyPoolErrorResponse(err, "Failed to list voices");
   }
 }

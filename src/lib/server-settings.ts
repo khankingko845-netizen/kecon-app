@@ -20,7 +20,8 @@ const CACHE_TTL = 60_000; // 1 minute
 
 let serviceClient: SupabaseClient | null = null;
 
-function getServiceClient(): SupabaseClient | null {
+/** Service-role client (server env only) — null when SUPABASE_SERVICE_ROLE_KEY is missing. */
+export function getServiceClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
@@ -114,7 +115,6 @@ export async function resolveApiKey(
     gemini: "gemini_api_key",
     anthropic: "anthropic_api_key",
     custom: "custom_provider_key",
-    elevenlabs: "elevenlabs_api_key",
     dalle: "dalle_api_key",
   };
   const dbKey = dbKeyMap[provider];
@@ -279,4 +279,9 @@ export async function resolveDefaultVoice(language?: string): Promise<string> {
   } catch {
     return "";
   }
+}
+
+/** Resolve the Fish Audio TTS model (admin setting → default). */
+export async function resolveFishAudioModel(): Promise<string> {
+  return (await getSystemSetting("fishaudio_model_id")) || "s2.1-pro";
 }
