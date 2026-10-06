@@ -69,6 +69,28 @@ _Nguồn Notion: https://app.notion.com/p/3ed4dea8214e473bbd09fa4916d0b044_
 | T27 | Tuân thủ: chính sách quyền riêng theo Luật 91/2025 + COPPA, khai báo Families/Kids, job xoá file ghi âm quá hạn | 🚀 Release + 🔍 BA | T11, T12 | Checklist store đạt; job xoá có test |
 | T28 | Phát hành store + retro G6 (cập nhật skill/quy trình) | 🚀 Release | T24, T26, T27 | App duyệt trên 2 store; biên bản retro |
 
+### UI v2 — Mascot Đóm & hệ thiết kế (xem `docs/design/ui-v2/`)
+
+Đã chốt: mascot **Đóm**; nhóm tuổi **3–5 trước**, UI "lớn cùng bé" sau; giữ chip "Không quảng cáo".
+
+| # | Ticket | Vai trò | Bị chặn bởi | Tiêu chí chấp nhận chính |
+| --- | --- | --- | --- | --- |
+| UI-01 | Chốt mascot & art direction | 🎨 UX/UI + 🔍 BA | — | ✅ Đã chốt Đóm; brief cho hoạ sĩ |
+| UI-02 | Design tokens v2 + font Baloo 2 / Nunito / Be Vietnam Pro (Tailwind `@theme`, `next/font`, theme Đêm) | 💻 Dev | UI-01 | Token mới đạt AA; build xanh |
+| UI-03 | Icon system: Phosphor thay lucide; `CategoryIcon` 3D thay emoji danh mục | 💻 Dev + 🎨 UX/UI | UI-02 | 0 import `lucide-react`; 0 emoji danh mục |
+| UI-04 | `<Mascot state>` v1 (8 pose WebP + animation CSS, tôn trọng reduced-motion) | 🎨 UX/UI + 💻 Dev | UI-01 | Dùng ở ≥ 6 màn |
+| UI-05 | Mascot v2: Rive state machine (mood, isTalking, isListening, audioLevel, progress) | 🎞️ Motion + 💻 Dev | UI-04 | `.riv` ≤ 150KB, lazy-load, có fallback |
+| UI-06 | Thư viện trạng thái Loading/Empty/Error/Success có Đóm; thay `Loader2` ở luồng bé | 💻 Dev | UI-04 | Không còn spinner trơn ở luồng bé |
+| UI-07 | Onboarding v2 + Home "Tối nay nghe gì?" | 🎨 UX/UI + 💻 Dev | UI-02 → UI-04 | = T20 |
+| UI-08 | Chế độ Đêm (Player, Lullaby, tự bật 19:30, hẹn giờ, tắt màn) | 🎨 UX/UI + 💻 Dev | UI-02 | Không có `#FFF` ở chế độ Đêm; E2E bật/tắt |
+| UI-09 | Wizard Tạo truyện 4 bước + nhập giọng nói | 🎨 UX/UI + 💻 Dev | UI-03, UI-04 | Bé 5 tuổi tạo được truyện không cần đọc chữ |
+| UI-10 | Tách giao diện Bé / Phụ huynh (font, nền, tab "Bố mẹ" sau PIN) | 🎨 UX/UI + 💻 Dev | T03, T19 | Một phần T19 |
+| UI-11 | Âm thanh, haptic + 10–15 câu thoại của Đóm | 🔊 Sound + 💻 Dev | UI-04 | Tắt được; im lặng ở chế độ Đêm |
+| UI-12 | QA accessibility + hiệu năng (axe, Lighthouse, dấu tiếng Việt) | 🧪 QA | tất cả | LCP dưới 2,5s (4G), CLS dưới 0,1 |
+| UI-13 | "Lớn cùng bé": nhóm tuổi 3–5 / 6–8 / 9–12 điều khiển mật độ chữ, cỡ nút, nhãn âm thanh | 🎨 UX/UI + 💻 Dev | UI-04, T09 | Đổi tuổi trong hồ sơ → UI đổi tương ứng; mặc định 3–5 |
+
+**Thứ tự:** Sprint 1 — UI-02, UI-03, UI-04 · Sprint 2 — UI-06, UI-07, UI-08 · Sprint 3 — UI-05, UI-09, UI-10, UI-11, UI-13 · UI-12 song song.
+
 ## Thứ tự & song song
 
 - **Bắt đầu ngay (không blocker):** T01, T17.
