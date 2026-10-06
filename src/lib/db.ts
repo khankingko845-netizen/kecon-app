@@ -1860,7 +1860,7 @@ export async function getUserChallengeProgress(userId: string): Promise<UserChal
 export interface ParentalControls {
   id: string;
   user_id: string;
-  pin_hash: string | null;
+  // PIN is no longer stored here — see src/lib/parent-pin.ts (migration 017).
   daily_limit_minutes: number;
   bedtime_start: string | null;
   bedtime_end: string | null;
