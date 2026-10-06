@@ -48,3 +48,42 @@ test.describe("Trang chủ (chưa đăng nhập)", () => {
     expect(pageErrors).toEqual([]);
   });
 });
+
+test.describe("Bảo mật (T05)", () => {
+  test("trả header CSP và trang không vi phạm CSP", async ({ page }) => {
+    const cspViolations: string[] = [];
+    page.on("console", (msg) => {
+      if (/Content Security Policy|Refused to/i.test(msg.text())) cspViolations.push(msg.text());
+    });
+    const pageErrors = trackPageErrors(page);
+
+    const res = await page.goto("/");
+    const headers = res?.headers() ?? {};
+    expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(headers["x-content-type-options"]).toBe("nosniff");
+
+    await expect(page.getByRole("heading", { level: 1, name: /Chào mừng đến KểCon!/ })).toBeVisible();
+    await page.getByRole("button", { name: "Bỏ qua" }).click();
+    await expect(page.getByRole("heading", { name: "Tạo tài khoản" })).toBeVisible();
+
+    expect(cspViolations).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("không còn API key trong localStorage (dữ liệu cũ bị xoá khi tải trang)", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem("seeded")) {
+        localStorage.setItem(
+          "kecon-settings",
+          JSON.stringify({ language: "vi", storyApiKey: "sk-old-secret", elevenLabsApiKey: "el-old-secret" })
+        );
+        sessionStorage.setItem("seeded", "1");
+      }
+    });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: /Chào mừng đến KểCon!/ })).toBeVisible();
+
+    const stored = await page.evaluate(() => localStorage.getItem("kecon-settings") ?? "");
+    expect(stored).not.toContain("secret");
+  });
+});

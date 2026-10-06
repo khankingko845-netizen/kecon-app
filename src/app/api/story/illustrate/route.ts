@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
 import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
@@ -25,6 +26,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, IllustrateBody);
   if (!parsed.ok) return parsed.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { prompt, apiKey: userKey, size } = parsed.data;
 
   // Try DALL-E specific key first, then fall back to OpenAI key

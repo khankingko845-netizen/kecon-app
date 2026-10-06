@@ -111,6 +111,9 @@ function ApiKeysPanel() {
 
  return (
  <div className="px-5 pb-10 space-y-5">
+ <p className="mt-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-[12px] text-amber-800 dark:text-amber-300">
+ Chỉ dành cho admin thử nhà cung cấp. Key chỉ được giữ trong bộ nhớ của tab này — không lưu trên thiết bị và sẽ mất khi tải lại trang. Key dùng cho mọi người hãy cấu hình trong Cài Đặt Hệ Thống.
+ </p>
  <SectionHeader title="ELEVENLABS — GIỌNG NÓI AI" />
  <SettingsCard>
  <div className="px-4 py-4 space-y-3">
@@ -417,7 +420,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  return <LanguagePanel onBack={() => setTab("main")} />;
  }
 
- if (tab === "api") {
+ if (tab === "api" && isAdmin) {
  return (
  <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
  <div className="px-5 pt-14 pb-3 flex items-center gap-3">
@@ -462,13 +465,15 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <p className="text-[12px] text-amber-700 dark:text-amber-400/70 mt-0.5">
  {systemStatus.hasElevenLabs && systemStatus.hasStoryProvider
  ? "Admin đã cấu hình API. Bạn có thể sử dụng ngay!"
- : "Thêm API keys hoặc liên hệ admin để cấu hình."}
+ : "Vui lòng liên hệ admin để cấu hình hệ thống."}
  </p>
  </div>
  </div>
  )}
 
- {/* AI Integration */}
+ {/* AI Integration — BYO keys are admin-only (T05) */}
+ {isAdmin && (
+ <>
  <SectionHeader title="TÍCH HỢP AI" />
  <SettingsCard>
  <SettingsRow
@@ -495,6 +500,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
  badge={hasStoryProvider ? "ok" : "warn"}
  />
  </SettingsCard>
+ </>
+ )}
 
  {/* App Settings */}
  <SectionHeader title="ỨNG DỤNG" />

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { generateAmbientSound, getAmbientCategory, matchAmbientCategory } from "@/lib/ambient-sounds";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
 import { optionalText, parseJsonBody } from "@/lib/api-validation";
 
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, AmbientBody);
   if (!parsed.ok) return parsed.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { sceneDescription, categoryId, customPrompt, apiKey: userKey, duration } = parsed.data;
 
   // Resolve ElevenLabs API key

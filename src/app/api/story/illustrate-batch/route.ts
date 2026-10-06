@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
 import { optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
 
@@ -38,6 +39,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, IllustrateBatchBody);
   if (!parsed.ok) return parsed.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { storyId, style, apiKey: userKey, pageNumbers } = parsed.data;
 
   // Resolve API key

@@ -101,3 +101,21 @@ describe("story/generate: body hợp lệ đi qua guard rồi gọi provider qua
     expect((init?.headers as Record<string, string>)["x-goog-api-key"]).toBe("platform-key");
   });
 });
+
+describe("BYO key (T05)", () => {
+  it("user thường gửi apiKey → 403 byo_key_disabled, không gọi provider/quota", async () => {
+    const chain = {
+      select: vi.fn(() => chain),
+      eq: vi.fn(() => chain),
+      maybeSingle: vi.fn(async () => ({ data: { role: "user" }, error: null })),
+    };
+    from.mockReturnValue(chain);
+
+    const { POST } = await import("@/app/api/story/generate/route");
+    const res = await POST(post({ theme: "dongvat", age: "4-6", apiKey: "sk-user", provider: "openai" }));
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("byo_key_disabled");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});

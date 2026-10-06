@@ -8,6 +8,8 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { readPersistedSettings, serializeSettings, SETTINGS_STORAGE_KEY } from "@/lib/settings-storage";
 
 export type StoryProvider = "openai" | "gemini" | "anthropic" | "custom";
 
@@ -82,19 +84,22 @@ const SettingsContext = createContext<SettingsContextValue>({
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("kecon-settings");
-      if (saved) {
-        try {
-          return { ...defaultSettings, ...JSON.parse(saved) };
-        } catch {
-          return defaultSettings;
-        }
-      }
-    }
-    return defaultSettings;
+  const { isAdmin } = useAuth();
+  const [storedSettings, setSettings] = useState<AppSettings>(() => {
+    if (typeof window === "undefined") return defaultSettings;
+    const { settings: loaded, hadSecrets } = readPersistedSettings(
+      localStorage.getItem(SETTINGS_STORAGE_KEY),
+      defaultSettings
+    );
+    // Older versions persisted API keys — rewrite storage without them.
+    if (hadSecrets) localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(loaded));
+    return loaded;
   });
+
+  // BYO keys are admin-only (server enforces it too); others always use the platform key.
+  const settings: AppSettings = isAdmin
+    ? storedSettings
+    : { ...storedSettings, elevenLabsApiKey: "", storyApiKey: "" };
 
   const [systemStatus, setSystemStatus] = useState<SystemStatus>(defaultSystemStatus);
 
@@ -110,7 +115,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
       if (typeof window !== "undefined") {
-        localStorage.setItem("kecon-settings", JSON.stringify(next));
+        // API keys stay in memory only — never persisted to the device.
+        localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(next));
       }
       return next;
     });
