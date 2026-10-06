@@ -1,9 +1,10 @@
 /**
  * Admin v2 · A-04 — quét tự động: không response nào tới trình duyệt chứa API key.
  *
- * The mock Vault is planted with a key in EVERY slot (`sk-e2e-PLANTED-<key>-Zq7w`)
- * and the Next server reads them with the service role, exactly like
- * production. Then every response the browser receives (HTML, RSC payloads,
+ * The mock Vault is planted with a key in EVERY slot (`sk-e2e-PLANTED-<key>-Zq7w`),
+ * plus a planted voice key pool (A-04b: 2 ElevenLabs keys — the first out of quota —
+ * and 1 Fish Audio key), and the Next server reads them with the service role,
+ * exactly like production. Then every response the browser receives (HTML, RSC payloads,
  * JS chunks, API JSON, PostgREST) is scanned for the marker.
  * Runs in its own serial project after every other spec (playwright.config.ts).
  */
@@ -37,8 +38,20 @@ test("không response nào (trang, RSC, API, PostgREST) chứa key — dù serve
   // 1. The server really holds the keys — otherwise the scan proves nothing.
   const status = await context.request.get("/api/system/status");
   const statusText = await status.text();
-  expect(JSON.parse(statusText)).toMatchObject({ hasElevenLabs: true, hasStoryProvider: true });
+  expect(JSON.parse(statusText)).toMatchObject({ hasElevenLabs: true, hasFishAudio: true, hasStoryProvider: true });
   expect(statusText).not.toContain(MARKER);
+
+  // 1b. A-04b: TTS goes through the pool (mock providers). ElevenLabs key 1 is out of quota →
+  // the request fails over to key 2 and key 1 is marked "exhausted"; Fish voices use the Fish pool.
+  for (let i = 0; i < 2; i++) {
+    const tts = await context.request.post("/api/voice/tts", { data: { voiceId: "e2eVoice1", text: `Xin chào ${i}` } });
+    expect(tts.status()).toBe(200);
+    expect(tts.headers()["content-type"]).toContain("audio/mpeg");
+    expect(await tts.text()).not.toContain(MARKER);
+  }
+  const fishTts = await context.request.post("/api/voice/tts", { data: { voiceId: "fish:e2efishvoice01", text: "Xin chào" } });
+  expect(fishTts.status()).toBe(200);
+  expect(await fishTts.text()).not.toContain(MARKER);
 
   // 2. Every admin screen.
   for (const url of ["/admin", "/admin/users", "/admin/audit", "/admin/settings"]) {
@@ -49,10 +62,15 @@ test("không response nào (trang, RSC, API, PostgREST) chứa key — dù serve
   }
 
   // 3. The settings screen shows status + last 4 only.
-  for (const key of ["elevenlabs_api_key", "openai_api_key", "dalle_api_key"]) {
+  for (const key of ["openai_api_key", "dalle_api_key"]) {
     await expect(page.getByTestId(`secret-status-${key}`)).toContainText("Đã đặt · …Zq7w");
   }
   await expect(page.getByLabel("API key OpenAI")).toHaveValue("");
+  const eleven = page.getByTestId("key-pool-elevenlabs");
+  await expect(eleven).toContainText("2 key · 1 đang dùng");
+  await expect(eleven.getByRole("listitem").filter({ hasText: "Quét 1" })).toContainText("Hết credit · thử lại");
+  await expect(eleven.getByRole("listitem").filter({ hasText: "Quét 2" })).toContainText("Đang dùng");
+  await expect(page.getByTestId("key-pool-fishaudio").getByRole("listitem")).toContainText("…Zq7w");
 
   // 4. "Test Kết Nối" with the stored key runs on the server; answers are scrubbed.
   await page.getByRole("button", { name: "Custom", exact: true }).click();

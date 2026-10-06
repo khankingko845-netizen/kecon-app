@@ -3,9 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
 import { z } from "zod";
 import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+import { VOICE_ID_PATTERN } from "@/lib/provider-keys";
 
 const DefaultVoiceBody = z.object({
-  voice_id: requiredText(120).regex(/^[\w-]+$/, "voice_id không hợp lệ"),
+  // ElevenLabs voice id, or `fish:<id>` for a Fish Audio voice (A-04b).
+  voice_id: requiredText(120).regex(VOICE_ID_PATTERN, "voice_id không hợp lệ"),
   name: requiredText(100),
   language: requiredText(10).regex(/^[a-z]{2,3}(-[a-zA-Z0-9]{2,8})*$/, "Mã ngôn ngữ không hợp lệ"),
   description: optionalText(500),

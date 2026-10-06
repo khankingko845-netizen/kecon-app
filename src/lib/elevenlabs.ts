@@ -1,4 +1,29 @@
-const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
+import { ProviderHttpError, providerHttpError } from "@/lib/provider-keys";
+
+/** `ELEVENLABS_API_BASE` overrides the host (tests point it at a local mock). */
+export function elevenLabsBase(): string {
+  return `${(process.env.ELEVENLABS_API_BASE || "https://api.elevenlabs.io").replace(/\/+$/, "")}/v1`;
+}
+
+/**
+ * fetch() to ElevenLabs; any failure becomes a {@link ProviderHttpError}
+ * (status + `detail.status` code such as `quota_exceeded`) so the key pool
+ * (src/lib/key-pool.ts) can tell "hết credit" from "key sai" from "giọng không có".
+ */
+export async function elevenFetch(path: string, apiKey: string, init: RequestInit = {}, what = "lỗi"): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(`${elevenLabsBase()}${path}`, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(120_000),
+      headers: { "xi-api-key": apiKey, ...(init.headers ?? {}) },
+    });
+  } catch (err) {
+    throw new ProviderHttpError("elevenlabs", 0, "network", `ElevenLabs không phản hồi (${err instanceof Error ? err.name : "lỗi mạng"})`);
+  }
+  if (!res.ok) throw await providerHttpError("elevenlabs", res, what);
+  return res;
+}
 
 export interface ElevenLabsVoice {
   voice_id: string;
@@ -13,12 +38,28 @@ export interface CloneVoiceResult {
 }
 
 export async function listVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
-  const res = await fetch(`${ELEVENLABS_BASE}/voices`, {
-    headers: { "xi-api-key": apiKey },
-  });
-  if (!res.ok) throw new Error(`ElevenLabs error: ${res.status}`);
+  const res = await elevenFetch("/voices", apiKey, {}, "lỗi");
   const data = await res.json();
   return data.voices;
+}
+
+export interface ElevenLabsSubscription {
+  tier: string | null;
+  character_count: number;
+  character_limit: number;
+  next_character_count_reset_unix: number | null;
+}
+
+/** Character quota of the key's account (needs the `user_read` permission on restricted keys). */
+export async function getSubscription(apiKey: string): Promise<ElevenLabsSubscription> {
+  const res = await elevenFetch("/user/subscription", apiKey, {}, "kiểm tra credit lỗi");
+  const d = (await res.json()) as Partial<ElevenLabsSubscription>;
+  return {
+    tier: d.tier ?? null,
+    character_count: Number(d.character_count ?? 0),
+    character_limit: Number(d.character_limit ?? 0),
+    next_character_count_reset_unix: d.next_character_count_reset_unix ?? null,
+  };
 }
 
 /**
@@ -64,15 +105,7 @@ export async function cloneVoice(
   // Remove the default accent detection — force the language
   form.append("remove_background_noise", "true");
 
-  const res = await fetch(`${ELEVENLABS_BASE}/voices/add`, {
-    method: "POST",
-    headers: { "xi-api-key": apiKey },
-    body: form,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail?.message || `Clone failed: ${res.status}`);
-  }
+  const res = await elevenFetch("/voices/add", apiKey, { method: "POST", body: form }, "clone giọng lỗi");
   return res.json();
 }
 
@@ -198,21 +231,12 @@ export async function textToSpeech(
     body.language_code = resolvedLang;
   }
 
-  const res = await fetch(
-    `${ELEVENLABS_BASE}/text-to-speech/${voiceId}/stream`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }
+  const res = await elevenFetch(
+    `/text-to-speech/${encodeURIComponent(voiceId)}/stream`,
+    apiKey,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+    "TTS lỗi"
   );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail?.message || `TTS failed: ${res.status}`);
-  }
   return res.blob();
 }
 
@@ -220,11 +244,7 @@ export async function deleteVoice(
   apiKey: string,
   voiceId: string
 ): Promise<void> {
-  const res = await fetch(`${ELEVENLABS_BASE}/voices/${voiceId}`, {
-    method: "DELETE",
-    headers: { "xi-api-key": apiKey },
-  });
-  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+  await elevenFetch(`/voices/${encodeURIComponent(voiceId)}`, apiKey, { method: "DELETE" }, "xoá giọng lỗi");
 }
 
 // ============================================================

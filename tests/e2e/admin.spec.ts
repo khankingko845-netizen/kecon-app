@@ -5,6 +5,7 @@
  * A-02 — vai trò hẹp (Biên tập) chỉ thấy / mở được mục mình có quyền.
  * A-03 — màn "Nhật ký" (super admin / admin) lọc theo người / hành động / thời gian.
  * A-04 — API key chỉ-ghi: màn Cài đặt chỉ hiện "Đã đặt · …abcd", key không bao giờ quay lại trình duyệt.
+ * A-04b — kho nhiều key ElevenLabs / Fish Audio: thêm, kiểm tra credit, tắt, xoá; chỉ thấy 4 ký tự cuối.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MOCK_ADMIN_USER_ID, MOCK_EDITOR_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
@@ -165,7 +166,7 @@ test.describe("A-03 · Nhật ký thao tác", () => {
 
 test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
   test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
-  const STORED_ELEVENLABS = "sk_e2e-stored-elevenlabs-x9Qz"; // mock Vault — must never reach the browser
+  const STORED_CLAUDE = "sk-ant-e2e-stored-claude-x9Qz"; // mock Vault — must never reach the browser
   const NEW_OPENAI = "sk-e2e-new-openai-key-7777";
 
   test.beforeEach(async ({ context, baseURL }) => {
@@ -177,12 +178,14 @@ test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
     page.on("response", (r) => bodies.push(r.text().catch(() => "")));
 
     await page.goto("/admin/settings");
-    const eleven = page.getByTestId("secret-status-elevenlabs_api_key");
-    await expect(eleven).toContainText("Đã đặt · …x9Qz");
-    await expect(eleven).toContainText("e2e-admin@kecon.test");
-    await expect(page.getByLabel("API key ElevenLabs")).toHaveValue("");
-    await expect(page.getByLabel("API key ElevenLabs")).toHaveAttribute("placeholder", /Nhập key mới để thay/);
+    await page.getByRole("button", { name: "Claude", exact: true }).click();
+    const claude = page.getByTestId("secret-status-anthropic_api_key");
+    await expect(claude).toContainText("Đã đặt · …x9Qz");
+    await expect(claude).toContainText("e2e-admin@kecon.test");
+    await expect(page.getByLabel("API key Claude")).toHaveValue("");
+    await expect(page.getByLabel("API key Claude")).toHaveAttribute("placeholder", /Nhập key mới để thay/);
 
+    await page.getByRole("button", { name: "OpenAI", exact: true }).click();
     const openai = page.getByTestId("secret-status-openai_api_key");
     await expect(openai).toHaveText("Chưa đặt");
     await page.getByLabel("API key OpenAI").fill(NEW_OPENAI);
@@ -198,8 +201,70 @@ test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
     await expect(openai).toHaveText("Chưa đặt");
 
     const all = (await Promise.all(bodies)).join("\n");
-    expect(all).not.toContain(STORED_ELEVENLABS);
+    expect(all).not.toContain(STORED_CLAUDE);
     expect(all).not.toContain(NEW_OPENAI);
+  });
+});
+
+test.describe("A-04b · kho nhiều key giọng nói (ElevenLabs + Fish Audio)", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  // mock pool (mock-supabase.mjs) — secrets must never reach the browser
+  const POOL_SECRETS = ["sk_e2e-stored-elevenlabs-x9Qz", "sk_e2e-pool-elevenlabs-quota-Ab12"];
+  const NEW_FISH = "e2e-fish-new-account-key-5555";
+
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
+  });
+
+  test("hiện kho key + credit; thêm key Fish → tự kiểm tra; tắt / xoá; key không quay lại trình duyệt", async ({ page }) => {
+    const bodies: Promise<string>[] = [];
+    page.on("response", (r) => bodies.push(r.text().catch(() => "")));
+
+    await page.goto("/admin/settings");
+    const eleven = page.getByTestId("key-pool-elevenlabs");
+    await expect(eleven).toContainText("2 key · 1 đang dùng");
+    const main = eleven.getByRole("listitem").filter({ hasText: "…x9Qz" });
+    await expect(main).toContainText("Key chính (chuyển từ A-04)");
+    await expect(main).toContainText("Đang dùng");
+    await expect(main).toContainText("Còn 8.500 / 10.000 ký tự");
+    const spare = eleven.getByRole("listitem").filter({ hasText: "…Ab12" });
+    await expect(spare).toContainText("Hết credit · thử lại 15/01"); // cooldown_until 2099-01-15 → date + time
+    await expect(spare).toContainText("exceeds your quota");
+    await expect(spare.getByRole("button", { name: "Bật lại" })).toBeVisible();
+
+    // "Kiểm tra" runs on the server against the provider (mocked) — status + credit only.
+    const checked = page.waitForResponse((r) => r.url().includes("/api/admin/provider-keys/check"));
+    await main.getByRole("button", { name: "Kiểm tra", exact: true }).click();
+    const checkBody = await (await checked).json();
+    expect(checkBody.results).toEqual([expect.objectContaining({ ok: true, status: "active" })]);
+    await expect(main).toContainText("Đang dùng");
+
+    // Add a Fish Audio key → it is checked right away.
+    const fish = page.getByTestId("key-pool-fishaudio");
+    await expect(fish).toContainText("Chưa có key nào");
+    await page.getByLabel("Tên key Fish Audio mới").fill("Tài khoản Fish 1");
+    await page.getByLabel("API key Fish Audio mới").fill(NEW_FISH);
+    await fish.getByRole("button", { name: "Thêm key" }).click();
+    await expect(fish).toContainText("Đã thêm key …5555 · kiểm tra OK");
+    const added = fish.getByRole("listitem").filter({ hasText: "…5555" });
+    await expect(added).toContainText("Tài khoản Fish 1");
+    await expect(added).toContainText("Số dư $5.50");
+    await expect(page.getByLabel("API key Fish Audio mới")).toHaveValue("");
+
+    // The same key twice → refused.
+    await page.getByLabel("API key Fish Audio mới").fill(NEW_FISH);
+    await fish.getByRole("button", { name: "Thêm key" }).click();
+    await expect(fish).toContainText("Key này đã có trong kho Fish Audio (…5555)");
+    await page.getByLabel("API key Fish Audio mới").fill("");
+
+    await added.getByRole("button", { name: "Tắt" }).click();
+    await expect(added).toContainText("Đã tắt");
+    page.once("dialog", (d) => d.accept());
+    await added.getByRole("button", { name: "Xoá" }).click();
+    await expect(fish).toContainText("Chưa có key nào");
+
+    const all = (await Promise.all(bodies)).join("\n");
+    for (const secret of [...POOL_SECRETS, NEW_FISH]) expect(all).not.toContain(secret);
   });
 });
 

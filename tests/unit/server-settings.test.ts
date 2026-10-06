@@ -238,13 +238,13 @@ describe("resolveApiKey", () => {
   });
 
   it("A-04: không có BYO → key admin giải mã từ Vault (service role) trước biến môi trường", async () => {
-    const service = withServiceRole({ openai_api_key: "sk-vault", elevenlabs_api_key: "el-vault" });
+    const service = withServiceRole({ openai_api_key: "sk-vault", anthropic_api_key: "an-vault" });
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
-    vi.stubEnv("ELEVENLABS_API_KEY", "el-env");
+    vi.stubEnv("ANTHROPIC_API_KEY", "an-env");
     const { resolveApiKey } = await loadModule();
 
     await expect(resolveApiKey("openai")).resolves.toBe("sk-vault");
-    await expect(resolveApiKey("elevenlabs", "")).resolves.toBe("el-vault");
+    await expect(resolveApiKey("anthropic", "")).resolves.toBe("an-vault");
     expect(service.rpc).toHaveBeenCalledWith("get_system_secret", { p_key: "openai_api_key" });
     // Keys are never read from app_settings any more (the column is always empty).
     expect(service.from).not.toHaveBeenCalled();

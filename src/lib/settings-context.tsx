@@ -33,6 +33,8 @@ export interface AppSettings {
 /** What the admin has configured server-side (no secrets exposed). */
 export interface SystemStatus {
   hasElevenLabs: boolean;
+  /** A-04b: Fish Audio keys in the pool (voices `fish:<id>`). */
+  hasFishAudio?: boolean;
   hasStoryProvider: boolean;
   defaultStoryProvider: string;
   defaultStoryModel: string;
@@ -56,6 +58,7 @@ const defaultSettings: AppSettings = {
 
 const defaultSystemStatus: SystemStatus = {
   hasElevenLabs: false,
+  hasFishAudio: false,
   hasStoryProvider: false,
   defaultStoryProvider: "",
   defaultStoryModel: "",

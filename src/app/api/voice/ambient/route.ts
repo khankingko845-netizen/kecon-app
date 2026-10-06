@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { resolveApiKey } from "@/lib/server-settings";
+import { keyPoolErrorResponse, voiceKeyPool } from "@/lib/key-pool";
+import { scrubSecret } from "@/lib/system-secrets";
 import { generateAmbientSound, getAmbientCategory, matchAmbientCategory } from "@/lib/ambient-sounds";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
@@ -27,9 +28,8 @@ export async function POST(request: NextRequest) {
   if (byoBlocked) return byoBlocked;
   const { sceneDescription, categoryId, customPrompt, apiKey: userKey, duration } = parsed.data;
 
-  // Resolve ElevenLabs API key
-  const apiKey = await resolveApiKey("elevenlabs", userKey);
-  if (!apiKey) {
+  // A-04b: user BYO key, else the platform pool (many ElevenLabs keys, rotated).
+  if (!userKey && !(await voiceKeyPool.configured("elevenlabs"))) {
     return Response.json(
       { error: "Chưa cấu hình ElevenLabs API key" },
       { status: 400 }
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
   if (usageBlocked) return usageBlocked;
 
   try {
-    const audioBlob = await generateAmbientSound(apiKey, prompt, duration || 10);
-    const arrayBuffer = await audioBlob.arrayBuffer();
+    const generate = async (key: string) => (await generateAmbientSound(key, prompt, duration || 10)).arrayBuffer();
+    const arrayBuffer = userKey ? await generate(userKey) : await voiceKeyPool.run("elevenlabs", generate);
 
     return new Response(arrayBuffer, {
       headers: {
@@ -71,7 +71,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Sound generation failed";
-    return Response.json({ error: message }, { status: 500 });
+    if (userKey) {
+      const message = err instanceof Error ? scrubSecret(err.message, userKey) : "Sound generation failed";
+      return Response.json({ error: message }, { status: 500 });
+    }
+    return keyPoolErrorResponse(err, "Sound generation failed");
   }
 }

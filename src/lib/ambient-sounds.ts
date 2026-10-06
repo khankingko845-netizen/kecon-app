@@ -5,6 +5,8 @@
  * and provides pre-built ambient sound URLs + ElevenLabs generation.
  */
 
+import { elevenFetch } from "@/lib/elevenlabs";
+
 export interface AmbientCategory {
   id: string;
   label: string;
@@ -147,23 +149,20 @@ export async function generateAmbientSound(
   prompt: string,
   durationSeconds: number = 10
 ): Promise<Blob> {
-  const res = await fetch("https://api.elevenlabs.io/v1/sound-generation", {
-    method: "POST",
-    headers: {
-      "xi-api-key": apiKey,
-      "Content-Type": "application/json",
+  const res = await elevenFetch(
+    "/sound-generation",
+    apiKey,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: prompt,
+        duration_seconds: durationSeconds,
+        prompt_influence: 0.3,
+      }),
     },
-    body: JSON.stringify({
-      text: prompt,
-      duration_seconds: durationSeconds,
-      prompt_influence: 0.3,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail?.message || `Sound generation failed: ${res.status}`);
-  }
+    "tạo âm thanh nền lỗi"
+  );
 
   return res.blob();
 }

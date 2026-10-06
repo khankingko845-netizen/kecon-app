@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/admin-permissions";
+import type { ProviderKeyCheckResult, ProviderKeyRow, VoiceProvider } from "@/lib/provider-keys";
 import { isSecretSettingKey, type SetSystemSecretResult, type SystemSecretStatus } from "@/lib/system-secrets";
 
 // ============================================================
@@ -1580,6 +1581,52 @@ export async function setSystemSecret(key: string, value: string, reason?: strin
   const { data, error } = await supabase.rpc("set_system_secret", { p_key: key, p_value: value, p_reason: reason ?? null });
   if (error) throw error;
   return data as SetSystemSecretResult;
+}
+
+/** A-04b · every key of the voice pools (status, last 4 chars, credit, usage) — never the keys. */
+export async function listProviderKeys(): Promise<ProviderKeyRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("list_provider_keys");
+  if (error) throw error;
+  return (data ?? []) as ProviderKeyRow[];
+}
+
+/** A-04b · write-only: add a key to a pool (stored in Vault; logged without the key). */
+export async function addProviderKey(provider: VoiceProvider, value: string, label?: string): Promise<{ id: string; last4: string | null }> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("add_provider_key", { p_provider: provider, p_value: value, p_label: label ?? null, p_reason: null });
+  if (error) throw error;
+  return data as { id: string; last4: string | null };
+}
+
+/** A-04b · rename / disable / re-enable (re-enabling also resets the status to "active"). */
+export async function updateProviderKey(id: string, patch: { label?: string; enabled?: boolean }): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("update_provider_key", {
+    p_id: id,
+    p_label: patch.label ?? null,
+    p_enabled: patch.enabled ?? null,
+    p_reason: null,
+  });
+  if (error) throw error;
+}
+
+export async function deleteProviderKey(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("delete_provider_key", { p_id: id, p_reason: null });
+  if (error) throw error;
+}
+
+/** A-04b · check one key (or a whole pool) on the server: validity + credit. */
+export async function checkProviderKeys(target: { id: string } | { provider: VoiceProvider }): Promise<ProviderKeyCheckResult[]> {
+  const res = await fetch("/api/admin/provider-keys/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(target),
+  });
+  const body = (await res.json().catch(() => ({}))) as { results?: ProviderKeyCheckResult[]; error?: string };
+  if (!res.ok) throw new Error(body.error || `Kiểm tra key lỗi ${res.status}`);
+  return body.results ?? [];
 }
 
 // ============================================================

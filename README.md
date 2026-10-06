@@ -101,7 +101,7 @@
 | `support` · Hỗ trợ | `dashboard.view`, `users.read` | Xem danh sách tài khoản, không sửa |
 | `analyst` · Phân tích | `dashboard.view`, `analytics.view` | Chỉ số liệu tổng hợp (`admin_usage_summary()`) |
 
-API key chỉ `secrets.manage` (super_admin, admin) đặt / xem trạng thái được — và từ A-04 (migration 021) key nằm mã hoá trong Supabase Vault, không ai (kể cả super admin) đọc lại được giá trị (mục 13f). Chỉ người có `stories.write` mới gắn / bỏ cờ truyện nền tảng (trigger `stories_guard_platform_content`). Rate limit ×5 / không giới hạn gói vẫn chỉ áp dụng cho `admin`/`super_admin`.
+API key chỉ `secrets.manage` (super_admin, admin) đặt / xem trạng thái được — và từ A-04 (migration 021) key nằm mã hoá trong Supabase Vault, không ai (kể cả super admin) đọc lại được giá trị (mục 13f); key giọng nói nằm trong kho nhiều key (A-04b, mục 13g). Chỉ người có `stories.write` mới gắn / bỏ cờ truyện nền tảng (trigger `stories_guard_platform_content`). Rate limit ×5 / không giới hạn gói vẫn chỉ áp dụng cho `admin`/`super_admin`.
 
 ### 2. Trang Chủ (Home)
 - Hiển thị tên gia đình, voice profiles, truyện gần đây
@@ -230,6 +230,16 @@ Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có tha
 - Sửa FK `app_settings.updated_by` → `ON DELETE SET NULL` (trước đây không xoá được tài khoản từng lưu cài đặt)
 - Test: `tests/db/admin-secrets.test.ts` (Vault / quyền / nhật ký / chuyển dữ liệu), E2E `tests/e2e/secrets-scan.spec.ts` — **quét tự động**: cắm key giả vào mọi ô Vault, server đọc bằng service role, rồi kiểm tra mọi response tới trình duyệt (HTML, RSC, JS, API, PostgREST) không chứa key
 
+#### 13g. Kho Nhiều Key Giọng Nói — ElevenLabs + Fish Audio (Admin v2 A-04b, migration `022_provider_key_pool.sql`)
+- Mỗi nhà cung cấp có một **kho key** (tối đa 50 key): bảng `provider_api_keys` giữ id Vault + 4 ký tự cuối + trạng thái (`active` / `exhausted` / `invalid`), giờ thử lại, lỗi gần nhất (đã lọc key), lượt dùng, số ký tự, credit lần kiểm tra cuối. Key mã hoá trong **Supabase Vault**; RLS bật và không cấp quyền bảng cho anon / authenticated
+- **Xoay vòng + bù key** (`src/lib/key-pool.ts`, dùng ở `/api/voice/tts`, `clone`, `list`, `ambient`, Test Kết Nối): request chia cho key đang ít request nhất rồi quay vòng → nhiều key chạy song song nhanh hơn. Key hết credit (ElevenLabs `quota_exceeded`, Fish 402) → bù ngay key kế tiếp, đánh dấu `exhausted`, 1 giờ sau thử lại (gọi thành công → tự về `active`); key sai (401) → `invalid`, rời kho; quá tải 429 / lỗi 5xx → nghỉ 5–15 giây ở máy chủ, không ghi DB; lỗi của chính request (400/422) → trả lỗi luôn, không thử key khác. Mọi thông báo lỗi được lọc key
+- **Giọng nhân bản thuộc tài khoản đã tạo nó**: clone giọng → `provider_voice_bindings` nhớ key "chủ"; đọc giọng đó luôn dùng key chủ trước. Giọng có sẵn (premade / thư viện) dùng key nào cũng được; tài khoản báo "không có giọng" → thử key khác và nhớ 30 phút
+- **Fish Audio**: id giọng dạng `fish:<reference_id>` (ô Voice ID mặc định, `voice_profiles`, `/api/voice/tts`); model chọn trong Cài đặt (`fishaudio_model_id`: `s1`, `s2-pro`, `s2.1-pro`, `s2.1-pro-free` — bản free không tốn credit, hợp với tài khoản số dư $0)
+- Màn Cài đặt → "Giọng Nói (ElevenLabs)" / "Giọng Nói (Fish Audio)": danh sách key (tên, `…abcd`, trạng thái, credit còn lại, lượt dùng), "Thêm key" (thêm xong tự kiểm tra), "Kiểm tra" / "Kiểm tra tất cả" (`POST /api/admin/provider-keys/check` — chạy ở server, ghi credit; key ElevenLabs bị giới hạn quyền không có `user_read` vẫn dùng được nhưng không xem được credit), "Tắt" / "Bật lại", "Xoá". Mọi thao tác ghi nhật ký `provider_key.*` (không có key); đổi trạng thái tự động ghi nguồn `system`
+- RPC: admin `list_provider_keys()`, `add_provider_key(provider, value, label?, reason?)`, `update_provider_key(id, label?, enabled?, reason?)`, `delete_provider_key(id, reason?)` (quyền `secrets.manage`); chỉ `service_role`: `get_provider_key_pool`, `get_provider_key_secret`, `report_provider_key`, `record_provider_key_usage`, `bind_provider_voice`, `get_provider_voice_key`. Migration chuyển key ElevenLabs của A-04 vào kho ("Key chính (chuyển từ A-04)") và gắn các giọng nhân bản sẵn có với key đó
+- Biến môi trường `ELEVENLABS_API_KEY`, `FISH_API_KEY` vẫn dùng được — là key dự phòng cuối cùng sau kho
+- Test: `tests/unit/key-pool.test.ts` (xoay vòng, bù key, nhận diện lỗi từng nhà cung cấp, giọng theo tài khoản), `tests/db/provider-keys.test.ts` (Vault / quyền / nhật ký / chuyển dữ liệu), E2E A-04b trong `tests/e2e/admin.spec.ts` + TTS bù key trong `secrets-scan.spec.ts` (nhà cung cấp giả, không gọi API thật)
+
 ### 14. Cài Đặt (Settings)
 - Cấu hình ElevenLabs API key + model (Multilingual v2, Turbo v2.5, Flash v2.5)
 - Chọn AI Provider: OpenAI / Gemini / Anthropic / **Custom (OpenAI-compatible)**
@@ -328,8 +338,10 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 # Vault (A-04) và chỉ service role đọc được; thiếu biến này → chỉ dùng key env / BYO.
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Tuỳ chọn — API keys cho AI (server-side only)
+# Tuỳ chọn — API keys cho AI (server-side only). Key giọng nói nên thêm vào kho
+# trong Cài Đặt Hệ Thống (A-04b); biến env chỉ là key dự phòng cuối cùng.
 ELEVENLABS_API_KEY=your-elevenlabs-key
+FISH_API_KEY=your-fish-audio-key
 OPENAI_API_KEY=your-openai-key
 GEMINI_API_KEY=your-gemini-key
 ANTHROPIC_API_KEY=your-anthropic-key
@@ -357,6 +369,7 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `019_admin_rbac.sql` | RBAC: `admin_roles` / `admin_permissions` / `admin_role_permissions`, `has_permission()`, `my_admin_permissions()`, `admin_usage_summary()`, policy cho vai trò hẹp, API key chỉ `secrets.manage`, chuyển `admin`/`super_admin` cũ |
 | `020_admin_audit_log.sql` | Nhật ký thao tác quản trị chỉ-thêm `admin_audit_log` + quyền `audit.read`, trigger `audit_<bảng>` cho bảng nhạy cảm, `log_admin_action()` cho API route |
 | `021_admin_secrets_vault.sql` | API key hệ thống vào Supabase Vault: `app_secrets`, `set_system_secret()` (chỉ-ghi, có nhật ký), `list_system_secrets()` (4 ký tự cuối), `get_system_secret()` chỉ service role; chuyển key cũ; CHECK cấm key chữ thường trong `app_settings`; FK `updated_by` ON DELETE SET NULL |
+| `022_provider_key_pool.sql` | Kho nhiều key giọng nói (A-04b): `provider_api_keys` (key trong Vault, trạng thái, credit, lượt dùng) + `provider_voice_bindings`; RPC admin thêm / sửa / xoá / liệt kê (có nhật ký), RPC chỉ service role để máy chủ xoay vòng + báo trạng thái; chuyển key ElevenLabs của A-04 vào kho; cài đặt `fishaudio_model_id` |
 
 ### Bảng chính:
 - `profiles` — User profiles (display_name, role, child_name, child_age...)
@@ -496,7 +509,8 @@ Tất cả external API calls đi qua Next.js API Routes để giữ key an toà
 | Route | Mô tả |
 |---|---|
 | `POST /api/voice/clone` | Clone giọng nói qua ElevenLabs |
-| `POST /api/voice/tts` | Text-to-Speech qua ElevenLabs |
+| `POST /api/voice/tts` | Text-to-Speech qua ElevenLabs hoặc Fish Audio (`fish:<id>`), xoay vòng kho key |
+| `POST /api/admin/provider-keys/check` | Admin: kiểm tra key giọng nói (hợp lệ + credit) ở server |
 | `GET /api/voice/list` | Danh sách voices từ ElevenLabs |
 | `POST /api/story/generate` | Tạo truyện bằng AI (OpenAI/Gemini/Claude/Custom) |
 | `POST /api/story/illustrate` | Tạo minh hoạ AI (DALL·E) |
