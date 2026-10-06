@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CategoryIcon } from "@/components/ui/Icon3D";
-import { ChevronLeft, Shield, Clock, Moon, Lock, Save, Loader2, Check } from "@/components/ui/icons";
+import { Shield, Clock, Moon, Lock, Save, Loader2, Check } from "@/components/ui/icons";
+import { Button3D, Card } from "@/components/ui/kit";
+import ParentHeader from "@/components/parent/ParentHeader";
+import { PARENTAL_CONTROLS_EVENT } from "@/lib/use-screen-time";
 import { useAuth } from "@/lib/auth-context";
 import { getParentalControls, upsertParentalControls } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
@@ -96,6 +99,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  blocked_categories: blockedCategories,
  max_age_rating: maxAge,
  });
+ window.dispatchEvent(new Event(PARENTAL_CONTROLS_EVENT));
  setSaved(true);
  setTimeout(() => setSaved(false), 2000);
  } catch {
@@ -110,59 +114,41 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  );
  };
 
+ const chip = (active: boolean) =>
+ `min-h-[44px] rounded-2xl px-2 text-[13px] font-semibold transition-colors ${
+ active ? "bg-brand text-white" : "bg-parent-bg text-ink-2 dark:text-white/60"
+ }`;
+
  if (loading) {
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] flex items-center justify-center">
- <Loader2 size={24} className="animate-spin text-accent" />
+ <div className="min-h-screen bg-parent-bg font-parent flex items-center justify-center" role="status" aria-label="Đang tải">
+ <Loader2 size={24} className="animate-spin text-brand" />
  </div>
  );
  }
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- <div className="px-5 pt-14">
- {/* Header */}
- <div className="flex items-center gap-3 mb-6">
- <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
- <ChevronLeft size={18} />
- </button>
- <h2 className="text-[24px] font-black tracking-tight">Kiểm Soát</h2>
- <Shield size={22} className="text-accent ml-1" />
- </div>
+ <div className="min-h-screen bg-parent-bg font-parent pb-28">
+ <ParentHeader title="Kiểm soát phụ huynh" subtitle="Khoá tab Bố mẹ, giới hạn giờ và nội dung cho bé" onBack={onBack} />
 
- {/* Enable Toggle */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm flex items-center justify-between">
- <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
- <Shield size={20} className="text-accent" />
- </div>
- <div>
- <p className="text-[14px] font-bold">Bật kiểm soát</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50">Giới hạn thời gian & nội dung cho bé</p>
- </div>
- </div>
- <button
- onClick={() => setEnabled(!enabled)}
- className={`w-12 h-7 rounded-full transition-colors ${enabled ? "bg-accent" : "bg-gray-200 dark:bg-white/[0.08]"}`}
- >
- <div className={`w-5 h-5 bg-white dark:bg-white/[0.04] rounded-full shadow-sm transform transition-transform mx-1 ${enabled ? "translate-x-5" : "translate-x-0"}`} />
- </button>
- </div>
-
- {enabled && (
- <>
- {/* PIN */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
- <div className="flex items-center gap-2 mb-3">
- <Lock size={16} className="text-txt-secondary dark:text-white/50" />
- <p className="text-[13px] font-bold">Mã PIN phụ huynh (4–6 số)</p>
- {pinStatus?.hasPin && (
- <span className="ml-auto text-[11px] font-semibold text-emerald-600">Đã đặt</span>
+ <div className="mt-2 space-y-3 px-5">
+ {/* PIN — always available: it guards the whole parent area (T19) */}
+ <Card className="p-4">
+ <div className="mb-1 flex items-center gap-2">
+ <Lock size={18} className="text-brand" />
+ <p className="text-[15px] font-semibold text-ink">Mã PIN phụ huynh</p>
+ {pinStatus?.hasPin ? (
+ <span className="ml-auto rounded-xl bg-success-soft px-2 py-1 text-[12px] font-semibold text-success">Đã đặt</span>
+ ) : (
+ <span className="ml-auto rounded-xl bg-glow-soft px-2 py-1 text-[12px] font-semibold text-[#7A4A00]">Chưa đặt</span>
  )}
  </div>
+ <p className="mb-3 text-[13px] leading-relaxed text-ink-2">
+ 4–6 chữ số, dùng để mở tab Bố mẹ và cho bé thêm giờ. Chưa có PIN thì app hỏi một phép tính dành cho người lớn.
+ </p>
  {pinStatus?.resetRequired && (
- <p className="mb-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-[12px] text-amber-800 dark:text-amber-300">
- Mã PIN cũ đã được xoá khi nâng cấp bảo mật. Vui lòng đặt mã PIN mới.
+ <p className="mb-3 rounded-2xl bg-glow-soft px-3 py-2 text-[13px] text-[#7A4A00]">
+ Mã PIN cũ đã được xoá (đặt lại hoặc nâng cấp bảo mật). Vui lòng đặt mã PIN mới.
  </p>
  )}
  {pinStatus?.hasPin && (
@@ -175,7 +161,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  aria-label="PIN hiện tại"
  value={currentPin}
  onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
- className="w-full mb-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-center text-[18px] tracking-[0.5em] font-bold"
+ className="mb-2 h-12 w-full rounded-2xl bg-parent-bg px-4 text-center text-[18px] font-bold tracking-[0.5em] text-ink outline-none ring-brand placeholder:text-[14px] placeholder:font-medium placeholder:tracking-normal focus:ring-2"
  />
  )}
  <input
@@ -183,36 +169,52 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  inputMode="numeric"
  autoComplete="new-password"
  maxLength={6}
- placeholder={pinStatus?.hasPin ? "PIN mới" : "Đặt mã PIN để mở khóa cài đặt"}
+ placeholder={pinStatus?.hasPin ? "PIN mới" : "Đặt mã PIN mới"}
  aria-label="PIN mới"
  value={pin}
  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
- className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-center text-[18px] tracking-[0.5em] font-bold"
+ className="h-12 w-full rounded-2xl bg-parent-bg px-4 text-center text-[18px] font-bold tracking-[0.5em] text-ink outline-none ring-brand placeholder:text-[14px] placeholder:font-medium placeholder:tracking-normal focus:ring-2"
  />
  {pinError && (
- <p role="alert" className="mt-2 text-[12px] font-semibold text-red-600">
+ <p role="alert" className="mt-2 text-[13px] font-semibold text-cta">
  {pinError}
  </p>
  )}
- </div>
+ </Card>
 
+ {/* Enable Toggle */}
+ <Card className="flex items-center gap-3 p-4">
+ <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-success-soft text-success">
+ <Shield size={20} />
+ </span>
+ <span className="flex-1">
+ <span className="block text-[15px] font-semibold text-ink">Giới hạn cho bé</span>
+ <span className="block text-[12.5px] text-ink-2">Thời gian/ngày, giờ đi ngủ, thể loại và độ tuổi</span>
+ </span>
+ <button
+ type="button"
+ role="switch"
+ aria-checked={enabled}
+ aria-label="Bật giới hạn cho bé"
+ onClick={() => setEnabled(!enabled)}
+ className={`h-8 w-14 shrink-0 rounded-full p-1 transition-colors ${enabled ? "bg-success" : "bg-ink/15"}`}
+ >
+ <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-6" : "translate-x-0"}`} />
+ </button>
+ </Card>
+
+ {enabled && (
+ <>
  {/* Daily Time Limit */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
- <div className="flex items-center gap-2 mb-3">
- <Clock size={16} className="text-txt-secondary dark:text-white/50" />
- <p className="text-[13px] font-bold">Giới hạn thời gian nghe / ngày</p>
+ <Card className="p-4">
+ <div className="mb-1 flex items-center gap-2">
+ <Clock size={18} className="text-brand" />
+ <p className="text-[15px] font-semibold text-ink">Thời gian dùng mỗi ngày</p>
  </div>
+ <p className="mb-3 text-[12.5px] text-ink-2">Hết giờ, màn hình của bé khoá lại; bố mẹ nhập PIN để cho thêm 15–30 phút.</p>
  <div className="grid grid-cols-4 gap-2">
  {[0, 15, 30, 60].map((mins) => (
- <button
- key={mins}
- onClick={() => setDailyLimit(mins)}
- className={`py-2.5 rounded-xl text-[12px] font-bold transition-all ${
- dailyLimit === mins
- ? "bg-accent text-white"
- : "bg-gray-50 dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
- }`}
- >
+ <button key={mins} type="button" aria-pressed={dailyLimit === mins} onClick={() => setDailyLimit(mins)} className={chip(dailyLimit === mins)}>
  {mins === 0 ? "Không giới hạn" : `${mins} phút`}
  </button>
  ))}
@@ -225,99 +227,87 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  max={180}
  step={5}
  value={dailyLimit}
+ aria-label="Số phút mỗi ngày"
  onChange={(e) => setDailyLimit(Number(e.target.value))}
- className="w-full accent-accent"
+ className="w-full accent-[var(--color-brand)]"
  />
- <p className="text-[11px] text-center text-txt-secondary dark:text-white/50 mt-1">
- {dailyLimit} phút / ngày
- </p>
+ <p className="mt-1 text-center text-[12.5px] font-medium text-ink-2">{dailyLimit} phút / ngày</p>
  </div>
  )}
- </div>
+ </Card>
 
  {/* Bedtime */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
- <div className="flex items-center gap-2 mb-3">
- <Moon size={16} className="text-txt-secondary dark:text-white/50" />
- <p className="text-[13px] font-bold">Giờ ngủ (không cho nghe)</p>
+ <Card className="p-4">
+ <div className="mb-1 flex items-center gap-2">
+ <Moon size={18} className="text-brand" />
+ <p className="text-[15px] font-semibold text-ink">Giờ đi ngủ</p>
  </div>
+ <p className="mb-3 text-[12.5px] text-ink-2">Trong khung giờ này app của bé khoá lại (có thể qua nửa đêm, ví dụ 21:00–06:00).</p>
  <div className="grid grid-cols-2 gap-3">
- <div>
- <label className="text-[11px] text-txt-secondary dark:text-white/50 mb-1 block">Bắt đầu</label>
+ <label className="block">
+ <span className="mb-1 block text-[12.5px] font-medium text-ink-2">Bắt đầu</span>
  <input
  type="time"
  value={bedtimeStart}
  onChange={(e) => setBedtimeStart(e.target.value)}
- className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-[13px] font-bold"
+ className="h-12 w-full rounded-2xl bg-parent-bg px-3 text-[15px] font-semibold text-ink"
  />
- </div>
- <div>
- <label className="text-[11px] text-txt-secondary dark:text-white/50 mb-1 block">Kết thúc</label>
+ </label>
+ <label className="block">
+ <span className="mb-1 block text-[12.5px] font-medium text-ink-2">Kết thúc</span>
  <input
  type="time"
  value={bedtimeEnd}
  onChange={(e) => setBedtimeEnd(e.target.value)}
- className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-[13px] font-bold"
+ className="h-12 w-full rounded-2xl bg-parent-bg px-3 text-[15px] font-semibold text-ink"
  />
+ </label>
  </div>
- </div>
- </div>
+ </Card>
 
  {/* Blocked Categories */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
- <p className="text-[13px] font-bold mb-3">Chặn thể loại</p>
+ <Card className="p-4">
+ <p className="mb-3 text-[15px] font-semibold text-ink">Chặn thể loại</p>
  <div className="grid grid-cols-3 gap-2">
  {CATEGORIES.map((cat) => {
  const blocked = blockedCategories.includes(cat.id);
  return (
  <button
  key={cat.id}
+ type="button"
+ aria-pressed={blocked}
  onClick={() => toggleCategory(cat.id)}
- className={`py-2.5 rounded-xl text-[11px] font-bold transition-all ${
- blocked
- ? "bg-red-50 text-red-600 ring-1 ring-red-200"
- : "bg-gray-50 dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
+ className={`flex flex-col items-center gap-1 rounded-2xl py-2.5 text-[12.5px] font-semibold transition-colors ${
+ blocked ? "bg-[#FDE8E3] text-cta ring-1 ring-cta/30" : "bg-parent-bg text-ink-2"
  }`}
  >
  <CategoryIcon category={cat.id} size={28} className="rounded-lg" />
- <br />
  {cat.label}
- {blocked && " ⛔"}
+ {blocked && <span className="text-[11px]">Đã chặn</span>}
  </button>
  );
  })}
  </div>
- </div>
+ </Card>
 
  {/* Age Rating */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
- <p className="text-[13px] font-bold mb-3">Độ tuổi tối đa</p>
+ <Card className="p-4">
+ <p className="mb-3 text-[15px] font-semibold text-ink">Độ tuổi tối đa</p>
  <div className="grid grid-cols-5 gap-2">
  {[3, 5, 7, 10, 99].map((age) => (
- <button
- key={age}
- onClick={() => setMaxAge(age)}
- className={`py-2.5 rounded-xl text-[12px] font-bold transition-all ${
- maxAge === age ? "bg-accent text-white" : "bg-gray-50 dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
- }`}
- >
- {age >= 99 ? "Tất cả" : `≤${age} tuổi`}
+ <button key={age} type="button" aria-pressed={maxAge === age} onClick={() => setMaxAge(age)} className={chip(maxAge === age)}>
+ {age >= 99 ? "Tất cả" : `≤${age}`}
  </button>
  ))}
  </div>
- </div>
+ </Card>
  </>
  )}
 
- {/* Save Button */}
- <button
- onClick={handleSave}
- disabled={saving}
- className="w-full py-4 rounded-2xl bg-accent text-white text-[15px] font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
- >
+ <Button3D tone="brand" size="md" block onClick={handleSave} disabled={saving} className="mt-2">
  {saving ? <Loader2 size={18} className="animate-spin" /> : saved ? <Check size={18} /> : <Save size={18} />}
  {saving ? "Đang lưu..." : saved ? "Đã lưu!" : "Lưu cài đặt"}
- </button>
+ </Button3D>
  </div>
  </div>
  );

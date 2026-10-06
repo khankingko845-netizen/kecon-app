@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Screen, TabId } from "@/lib/types";
 import { SettingsProvider } from "@/lib/settings-context";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
@@ -44,7 +44,12 @@ import DrawStory from "@/components/screens/DrawStory";
 import VocabQuiz from "@/components/screens/VocabQuiz";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
-import { AudioPlayerProvider } from "@/lib/audio-player-context";
+import { AudioPlayerProvider, useAudioPlayer } from "@/lib/audio-player-context";
+import ParentGate from "@/components/parent/ParentGate";
+import ScreenTimeLock from "@/components/parent/ScreenTimeLock";
+import { isParentArea } from "@/lib/parent-gate";
+import { useParentUnlock } from "@/lib/use-parent-unlock";
+import { useScreenTime } from "@/lib/use-screen-time";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -98,7 +103,19 @@ function AppContent() {
  (!loading && user && onAuthScreen) || blockedAdmin
  ? { screen: "home" }
  : rawCurrent;
- const activeTab: TabId = screenTabMap[current.screen] || "home";
+ // T19 / UI-10: parent area (tab "Bố mẹ" + everything under it) opens only
+ // through the parent gate; kid screens lock on daily limit / bedtime.
+ const inParentArea = isParentArea(current.screen);
+ const activeTab: TabId = screenTabMap[current.screen] || (inParentArea ? "settings" : "home");
+ const { unlocked: parentUnlocked, unlock: unlockParent, lock: lockParent } = useParentUnlock(inParentArea);
+ const gateActive = !loading && !!user && inParentArea && !parentUnlocked;
+ const screenTime = useScreenTime({ userId: user?.id, paused: inParentArea });
+ const kidLocked = !loading && !!user && !inParentArea && screenTime.verdict.blocked;
+ const lockReason = screenTime.verdict.blocked ? screenTime.verdict.reason : "limit";
+ const { pause, isPlaying } = useAudioPlayer();
+ useEffect(() => {
+ if (kidLocked && isPlaying) pause();
+ }, [kidLocked, isPlaying, pause]);
 
  const navigate = useCallback(
  (screen: Screen, data?: Record<string, string>) => {
@@ -113,8 +130,20 @@ function AppContent() {
 
  const handleTabChange = useCallback((tab: TabId) => {
  const screen = tabScreenMap[tab];
+ // Leaving the parent area through a kid tab closes the gate again.
+ if (!isParentArea(screen)) lockParent();
  setHistory([{ screen }]);
- }, []);
+ }, [lockParent]);
+
+ const leaveGate = useCallback(() => {
+ lockParent();
+ setHistory([{ screen: "home" }]);
+ }, [lockParent]);
+
+ const afterPinReset = useCallback(() => {
+ unlockParent();
+ setHistory([{ screen: "settings" }, { screen: "parental-controls" }]);
+ }, [unlockParent]);
 
  const handleGetStarted = useCallback(() => {
  setHistory([{ screen: user ? "home" : "signup" }]);
@@ -156,7 +185,13 @@ function AppContent() {
 
  return (
  <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream shadow-2xl shadow-black/10">
- <div className="screen-enter" key={current.screen}>
+ <div className="screen-enter" key={gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : current.screen}>
+ {gateActive ? (
+ <ParentGate onUnlock={unlockParent} onCancel={leaveGate} onPinReset={afterPinReset} />
+ ) : kidLocked ? (
+ <ScreenTimeLock reason={lockReason} onGrant={screenTime.grant} />
+ ) : (
+ <>
  {current.screen === "onboarding" && (
  <Onboarding
  onGetStarted={handleGetStarted}
@@ -270,13 +305,15 @@ function AppContent() {
  onNavigate={navigate}
  />
  )}
+ </>
+ )}
  </div>
 
- {showTabBar && (
+ {showTabBar && !kidLocked && (
  <TabBar active={activeTab} onTabChange={handleTabChange} />
  )}
  {user && <ComplianceLayer />}
- <MiniPlayer />
+ {!kidLocked && <MiniPlayer />}
  </div>
  );
 }

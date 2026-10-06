@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { pureWhiteElements, signInAsMockFamily } from "./support/fixtures";
+import { passParentGate, pureWhiteElements, signInAsMockFamily } from "./support/fixtures";
 
 /**
  * UI-08 — Chế độ ngủ (concept board): tự bật 19:30–6:00 cho Player/Ru ngủ (class `bedtime`),
@@ -55,6 +55,7 @@ test.describe("Chế độ ngủ (đã đăng nhập)", () => {
     expect(await isNight(page)).toBe(false);
 
     await page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("button", { name: "Bố mẹ", exact: true }).click();
+    await passParentGate(page);
     await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ" })).toBeVisible();
     const row = page.getByRole("button", { name: /Chế độ ngủ/ });
     await expect(row).toContainText("Tự động 19:30–6:00");
