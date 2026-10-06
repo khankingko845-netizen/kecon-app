@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
 import { z } from "zod";
 import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
@@ -40,6 +41,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, GenerateBody);
   if (!parsed.ok) return parsed.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const {
     theme,
     childName,

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { textToSpeech } from "@/lib/elevenlabs";
 import { resolveApiKey, resolveElevenLabsModel } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
 import { languageCode, modelId, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, TtsBody);
   if (!parsed.ok) return parsed.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { voiceId, text, modelId: userModelId, apiKey: userKey, language } = parsed.data;
 
   // Resolve API key: user BYO → admin DB → env variable

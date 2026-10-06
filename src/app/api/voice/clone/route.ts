@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cloneVoice } from "@/lib/elevenlabs";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { z } from "zod";
 import { languageCode, optionalText, parseValue, requiredText } from "@/lib/api-validation";
 
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     CloneFields
   );
   if (!fields.ok) return fields.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, fields.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { name, apiKey: userKey, audio: audioFile } = fields.data;
   const language = fields.data.language || "vi";
 

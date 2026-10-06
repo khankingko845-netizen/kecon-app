@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { guardUsage } from "@/lib/usage-guard";
+import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
 import { callLlmJson, type LlmTarget } from "@/lib/llm";
 import { z } from "zod";
@@ -112,6 +113,8 @@ export async function POST(request: NextRequest) {
 
   const parsedBody = await parseJsonBody(request, ExpertReviewBody);
   if (!parsedBody.ok) return parsedBody.response;
+  const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsedBody.data.apiKey);
+  if (byoBlocked) return byoBlocked;
   const { storyContent, storyTitle, targetAge, language, experts: requestedExperts } = parsedBody.data;
 
   const llm = await resolveLlmTarget(parsedBody.data);
