@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, Shield, Clock, Moon, Lock, Save, Loader2, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getParentalControls, upsertParentalControls } from "@/lib/db";
+import { createClient } from "@/lib/supabase/client";
+import { getParentPinStatus, pinErrorMessage, PIN_PATTERN, setParentPin, type PinStatus } from "@/lib/parent-pin";
 import type { Screen } from "@/lib/types";
 
 interface ParentalControlsProps {
@@ -28,6 +30,9 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
 
  const [enabled, setEnabled] = useState(false);
  const [pin, setPin] = useState("");
+ const [currentPin, setCurrentPin] = useState("");
+ const [pinStatus, setPinStatus] = useState<PinStatus | null>(null);
+ const [pinError, setPinError] = useState<string | null>(null);
  const [dailyLimit, setDailyLimit] = useState(0);
  const [bedtimeStart, setBedtimeStart] = useState("");
  const [bedtimeEnd, setBedtimeEnd] = useState("");
@@ -39,7 +44,11 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  if (!profileId) return;
  setLoading(true);
  try {
- const controls = await getParentalControls(profileId);
+ const [controls, status] = await Promise.all([
+ getParentalControls(profileId),
+ getParentPinStatus(createClient()),
+ ]);
+ setPinStatus(status);
  if (controls) {
  setEnabled(controls.is_enabled);
  setDailyLimit(controls.daily_limit_minutes);
@@ -58,11 +67,28 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
 
  const handleSave = async () => {
  if (!profile?.id) return;
+ setPinError(null);
+ if (pin && !PIN_PATTERN.test(pin)) {
+ setPinError("Mã PIN phải gồm 4–6 chữ số.");
+ return;
+ }
  setSaving(true);
  try {
+ // PIN is hashed + verified server-side (RPC); never stored by the client.
+ if (pin) {
+ const supabase = createClient();
+ const result = await setParentPin(supabase, pin, pinStatus?.hasPin ? currentPin : undefined);
+ if (!result.ok) {
+ setPinError(pinErrorMessage(result));
+ setSaving(false);
+ return;
+ }
+ setPin("");
+ setCurrentPin("");
+ setPinStatus(await getParentPinStatus(supabase));
+ }
  await upsertParentalControls(profile.id, {
  is_enabled: enabled,
- pin_hash: pin ? btoa(pin) : undefined,
  daily_limit_minutes: dailyLimit,
  bedtime_start: bedtimeStart || null,
  bedtime_end: bedtimeEnd || null,
@@ -128,16 +154,45 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 mb-4 shadow-sm">
  <div className="flex items-center gap-2 mb-3">
  <Lock size={16} className="text-txt-secondary dark:text-white/50" />
- <p className="text-[13px] font-bold">Mã PIN (4 số)</p>
+ <p className="text-[13px] font-bold">Mã PIN phụ huynh (4–6 số)</p>
+ {pinStatus?.hasPin && (
+ <span className="ml-auto text-[11px] font-semibold text-emerald-600">Đã đặt</span>
+ )}
  </div>
+ {pinStatus?.resetRequired && (
+ <p className="mb-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-[12px] text-amber-800 dark:text-amber-300">
+ Mã PIN cũ đã được xoá khi nâng cấp bảo mật. Vui lòng đặt mã PIN mới.
+ </p>
+ )}
+ {pinStatus?.hasPin && (
  <input
  type="password"
- maxLength={4}
- placeholder="Nhập mã PIN để mở khóa cài đặt"
+ inputMode="numeric"
+ autoComplete="current-password"
+ maxLength={6}
+ placeholder="PIN hiện tại (để đổi PIN)"
+ aria-label="PIN hiện tại"
+ value={currentPin}
+ onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
+ className="w-full mb-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-center text-[18px] tracking-[0.5em] font-bold"
+ />
+ )}
+ <input
+ type="password"
+ inputMode="numeric"
+ autoComplete="new-password"
+ maxLength={6}
+ placeholder={pinStatus?.hasPin ? "PIN mới" : "Đặt mã PIN để mở khóa cài đặt"}
+ aria-label="PIN mới"
  value={pin}
  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] text-center text-[18px] tracking-[0.5em] font-bold"
  />
+ {pinError && (
+ <p role="alert" className="mt-2 text-[12px] font-semibold text-red-600">
+ {pinError}
+ </p>
+ )}
  </div>
 
  {/* Daily Time Limit */}

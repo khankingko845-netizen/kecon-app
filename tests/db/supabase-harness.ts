@@ -92,18 +92,32 @@ export class MigrationError extends Error {
   }
 }
 
-/** Boot PGlite, install the Supabase stub and apply every migration in order. Throws on the first failure. */
-export async function createMigratedDb(): Promise<{ db: PGlite; applied: string[] }> {
+/** Apply one migration file to `db` (used to test data migrations step by step). */
+export async function applyMigrationFile(db: PGlite, file: string): Promise<void> {
+  const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+  try {
+    await db.exec(sql);
+  } catch (err) {
+    throw new MigrationError(file, err);
+  }
+}
+
+/**
+ * Boot PGlite, install the Supabase stub and apply every migration in order.
+ * Throws on the first failure. `stopBefore` (a file name) leaves that
+ * migration and later ones unapplied so a test can seed legacy data first.
+ */
+export async function createMigratedDb(opts: { stopBefore?: string } = {}): Promise<{ db: PGlite; applied: string[] }> {
   const db = await PGlite.create({ extensions: { pgcrypto, vector } });
   await db.exec(SUPABASE_STUB);
   const applied: string[] = [];
   for (const file of listMigrations()) {
-    const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+    if (opts.stopBefore && file >= opts.stopBefore) break;
     try {
-      await db.exec(sql);
+      await applyMigrationFile(db, file);
     } catch (err) {
       await db.close();
-      throw new MigrationError(file, err);
+      throw err;
     }
     applied.push(file);
   }
