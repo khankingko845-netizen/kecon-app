@@ -1,0 +1,21 @@
+# KểCon staging — một origin công khai duy nhất (Cloudflare quick tunnel → :8080).
+# Supabase API đi chung origin với app nên NEXT_PUBLIC_SUPABASE_URL = PUBLIC_URL.
+# Chỉ mở các API công khai của Supabase; Studio, Postgres, Inbucket… chỉ nghe trên localhost.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	bind 127.0.0.1
+	encode zstd gzip
+
+	@supabase path /auth/v1/* /rest/v1/* /storage/v1/* /realtime/v1/* /graphql/v1/*
+	handle @supabase {
+		reverse_proxy 127.0.0.1:54321
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}

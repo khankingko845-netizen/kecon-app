@@ -1,0 +1,16 @@
+[Unit]
+Description=KểCon staging — Supabase (CLI + Docker)
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=doppel
+Environment=HOME=/home/doppel
+ExecStart=/srv/kecon/current/deploy/prized/supabase-stack.sh
+ExecStop=/usr/bin/supabase stop --workdir /srv/kecon/supabase-stack
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
