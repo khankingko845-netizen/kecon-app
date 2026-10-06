@@ -25,6 +25,7 @@ export const PARENT_SCREENS: readonly Screen[] = [
   "admin-settings",
   "admin-categories",
   "admin-templates",
+  "admin-audit",
 ];
 
 export function isParentArea(screen: Screen): boolean {

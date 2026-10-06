@@ -93,8 +93,8 @@
 
 | Vai trò | Quyền | Ghi chú |
 |---|---|---|
-| `super_admin` · Super admin | tất cả | Người duy nhất đổi được vai trò (không tự đổi vai trò của mình) |
-| `admin` · Admin (đầy đủ) | tất cả trừ `roles.manage` | Vai trò cũ — giữ nguyên những gì làm được trước A-02 |
+| `super_admin` · Super admin | tất cả | Người duy nhất đổi được vai trò (không tự đổi vai trò của mình); xem Nhật ký (`audit.read`) |
+| `admin` · Admin (đầy đủ) | tất cả trừ `roles.manage` | Vai trò cũ — giữ nguyên những gì làm được trước A-02; xem Nhật ký (`audit.read`) |
 | `ops` · Vận hành | `dashboard.view`, `analytics.view`, `settings.read`, `settings.write`, `voices.manage`, `notifications.send` | Sửa cài đặt **không bí mật**; không đọc / đặt API key |
 | `editor` · Biên tập | `dashboard.view`, `stories.read`, `stories.write`, `categories.manage`, `templates.manage` | Chỉ truyện nền tảng (`is_platform_content`), không đụng truyện riêng của gia đình |
 | `moderator` · Kiểm duyệt | `dashboard.view`, `stories.read`, `moderation.manage` | Xem truyện nền tảng, hàng chờ kiểm duyệt |
@@ -183,7 +183,7 @@ API key (`app_settings.is_secret`) chỉ `secrets.manage` (super_admin, admin) �
 
 ### 13. Module Quản Trị (Admin) — Chỉ vai trò nhân sự
 
-Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có thanh mục ngang). Mỗi mục một URL: `/admin` (Tổng quan), `/admin/stories`, `/admin/users`, `/admin/analytics`, `/admin/categories`, `/admin/templates`, `/admin/settings` — map trong `src/lib/admin-routes.ts`. Server kiểm tra phiên + quyền (`my_admin_permissions()`) ở mọi request (`src/app/admin/[[...section]]/page.tsx`): không phải nhân sự hoặc thiếu quyền của mục (`admin-routes.ts` → `permission`) → 404 thường (không lộ tiêu đề / nội dung). Thanh bên chỉ hiện mục mình có quyền. E2E: `tests/e2e/admin.spec.ts`; RLS từng vai trò: `tests/db/admin-rbac.test.ts`.
+Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có thanh mục ngang). Mỗi mục một URL: `/admin` (Tổng quan), `/admin/stories`, `/admin/users`, `/admin/analytics`, `/admin/categories`, `/admin/templates`, `/admin/settings`, `/admin/audit` (Nhật ký) — map trong `src/lib/admin-routes.ts`. Server kiểm tra phiên + quyền (`my_admin_permissions()`) ở mọi request (`src/app/admin/[[...section]]/page.tsx`): không phải nhân sự hoặc thiếu quyền của mục (`admin-routes.ts` → `permission`) → 404 thường (không lộ tiêu đề / nội dung). Thanh bên chỉ hiện mục mình có quyền. E2E: `tests/e2e/admin.spec.ts`; RLS từng vai trò: `tests/db/admin-rbac.test.ts`.
 
 #### 13a. Admin Dashboard
 - 6 KPIs real-time: tổng truyện, đã xuất bản, lượt nghe, yêu thích, giọng nói, nháp
@@ -211,6 +211,15 @@ Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có tha
 - Đăng ký mới 7 ngày
 - Top 10 truyện được nghe nhiều nhất (bar chart)
 - Lượt nghe theo thể loại (bar chart)
+
+#### 13e. Nhật Ký Thao Tác (AdminAudit · Admin v2 A-03, migration `020_admin_audit_log.sql`)
+- Bảng `admin_audit_log` **chỉ thêm**: trigger chặn UPDATE / DELETE / TRUNCATE với mọi vai trò (kể cả `service_role` và chủ DB); `authenticated` không có quyền INSERT — chỉ hàm `SECURITY DEFINER` mới ghi được
+- Ghi gì: ai (id, email, vai trò lúc làm), hành động (`user.role_change`, `secret.update`, `story.trash`…), đối tượng, trước → sau (chỉ các cột đổi), lý do, IP, trình duyệt, nguồn (`db` / `api` / `system`)
+- Trigger `audit_<bảng>` trên `profiles` (vai trò, gói, sửa hồ sơ người khác), `app_settings`, `stories` (truyện nền tảng hoặc nhân sự sửa truyện người khác), `story_categories`, `story_templates`, `default_voices` — ghi cả khi gọi thẳng API Supabase, không qua app
+- **Không bao giờ lưu giá trị API key**: cài đặt bí mật ghi `[đã ẩn]`; route `/api/admin/test-provider` chỉ ghi host; `redactSecrets()` che mọi trường giống key / token / mật khẩu
+- Route nhân sự không đụng bảng trên (thử kết nối AI, tra giọng, gửi push, minh hoạ hộ) gọi `auditAdmin()` → `log_admin_action()` **trước** khi làm; không ghi được nhật ký → 503, không làm thao tác
+- Test tự kiểm `tests/unit/admin-audit.test.ts`: quét mọi handler trong `src/app/api/admin/**` và mọi route kiểm tra quyền nhân sự — thiếu `auditAdmin(` hoặc `// audit: db-trigger <bảng>` (có trigger thật) là đỏ. RLS / chỉ-thêm: `tests/db/admin-audit.test.ts`
+- Màn `/admin/audit` (chỉ `audit.read` = super_admin, admin): mới nhất trước, lọc theo người thực hiện (email), hành động, khoảng ngày; "Tải thêm" theo trang 50 dòng
 
 ### 14. Cài Đặt (Settings)
 - Cấu hình ElevenLabs API key + model (Multilingual v2, Turbo v2.5, Flash v2.5)
@@ -336,6 +345,7 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `016_security_hardening.sql` | Bảo vệ cột `role`/`current_plan`, khoá bộ đếm `usage_limits`, hàm `consume_usage()` (rate limit + hạn mức gói phía server) |
 | `017` → `018` | PIN phụ huynh bcrypt phía server, khoá sau 5 lần sai, đặt lại PIN bằng mật khẩu |
 | `019_admin_rbac.sql` | RBAC: `admin_roles` / `admin_permissions` / `admin_role_permissions`, `has_permission()`, `my_admin_permissions()`, `admin_usage_summary()`, policy cho vai trò hẹp, API key chỉ `secrets.manage`, chuyển `admin`/`super_admin` cũ |
+| `020_admin_audit_log.sql` | Nhật ký thao tác quản trị chỉ-thêm `admin_audit_log` + quyền `audit.read`, trigger `audit_<bảng>` cho bảng nhạy cảm, `log_admin_action()` cho API route |
 
 ### Bảng chính:
 - `profiles` — User profiles (display_name, role, child_name, child_age...)

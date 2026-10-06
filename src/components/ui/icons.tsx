@@ -40,6 +40,7 @@ import {
   CheckSquareIcon,
   CircleNotchIcon,
   ClockIcon,
+  ClockCounterClockwiseIcon,
   CloudMoonIcon,
   CloudRainIcon,
   CopyIcon,
@@ -227,6 +228,7 @@ export const RotateCcw = make(ArrowCounterClockwiseIcon, "RotateCcw");
 export const UserRound = make(UserCircleIcon, "UserRound");
 export const CheckCircle = make(CheckCircleIcon, "CheckCircle");
 export const Clock = make(ClockIcon, "Clock");
+export const History = make(ClockCounterClockwiseIcon, "History");
 export const Zap = make(LightningIcon, "Zap");
 export const TrendingUp = make(TrendUpIcon, "TrendingUp");
 export const CheckCircle2 = make(CheckCircleIcon, "CheckCircle2");

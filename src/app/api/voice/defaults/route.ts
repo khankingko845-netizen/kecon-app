@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
   // A-02: permission check shared with RLS (has_permission).
   const denied = await requirePermission(supabase, "voices.manage");
   if (denied) return denied;
+  // audit: db-trigger default_voices (A-03 — the write below runs as the caller, trigger logs it)
 
   const parsed = await parseJsonBody(request, DefaultVoiceBody);
   if (!parsed.ok) return parsed.response;
@@ -104,6 +105,7 @@ export async function DELETE(request: NextRequest) {
   // A-02: permission check shared with RLS (has_permission).
   const denied = await requirePermission(supabase, "voices.manage");
   if (denied) return denied;
+  // audit: db-trigger default_voices (A-03 — the write below runs as the caller, trigger logs it)
 
   const id = request.nextUrl.searchParams.get("id");
   if (!id) {

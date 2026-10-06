@@ -14,7 +14,8 @@ export type AdminScreen =
   | "admin-analytics"
   | "admin-categories"
   | "admin-templates"
-  | "admin-settings";
+  | "admin-settings"
+  | "admin-audit";
 
 export interface AdminSection {
   /** URL segment after `/admin` ("" = dashboard). */
@@ -35,6 +36,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { slug: "categories", screen: "admin-categories", label: "Danh mục", permission: "categories.manage" },
   { slug: "templates", screen: "admin-templates", label: "Mẫu truyện", permission: "templates.manage" },
   { slug: "settings", screen: "admin-settings", label: "Cài đặt hệ thống", permission: "settings.read" },
+  { slug: "audit", screen: "admin-audit", label: "Nhật ký", permission: "audit.read" },
 ];
 
 const BY_SCREEN = new Map<string, AdminSection>(ADMIN_SECTIONS.map((s) => [s.screen, s]));

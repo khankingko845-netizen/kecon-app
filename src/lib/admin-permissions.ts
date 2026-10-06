@@ -23,6 +23,7 @@ export const ADMIN_PERMISSIONS = [
   "voices.manage",
   "moderation.manage",
   "notifications.send",
+  "audit.read",
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 

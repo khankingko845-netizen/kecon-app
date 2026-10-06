@@ -871,6 +871,60 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
   }));
 }
 
+// ============================================================
+// Admin v2 · A-03 — nhật ký thao tác (admin_audit_log, migration 020)
+// ============================================================
+export interface AdminAuditRow {
+  id: number;
+  created_at: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  actor_role: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  reason: string | null;
+  ip: string | null;
+  source: "db" | "api" | "system";
+}
+
+export interface AdminAuditFilter {
+  /** Part of the actor's email (case-insensitive). */
+  actor?: string;
+  action?: string;
+  /** `YYYY-MM-DD`, inclusive (local day). */
+  from?: string;
+  to?: string;
+  /** Load rows older than this id (pagination). */
+  beforeId?: number;
+  limit?: number;
+}
+
+/** Newest first; RLS returns nothing without `audit.read`. */
+export async function listAdminAudit(filter: AdminAuditFilter = {}): Promise<AdminAuditRow[]> {
+  const supabase = createClient();
+  let q = supabase
+    .from("admin_audit_log")
+    .select("id, created_at, actor_id, actor_email, actor_role, action, target_type, target_id, before, after, reason, ip, source")
+    .order("id", { ascending: false })
+    .limit(filter.limit ?? 50);
+  const actor = filter.actor?.trim().replace(/[%*,()]/g, "");
+  if (actor) q = q.ilike("actor_email", `%${actor}%`);
+  if (filter.action) q = q.eq("action", filter.action);
+  if (filter.from) q = q.gte("created_at", new Date(`${filter.from}T00:00:00`).toISOString());
+  if (filter.to) {
+    const end = new Date(`${filter.to}T00:00:00`);
+    end.setDate(end.getDate() + 1);
+    q = q.lt("created_at", end.toISOString());
+  }
+  if (filter.beforeId) q = q.lt("id", filter.beforeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as AdminAuditRow[];
+}
+
 export async function updateUserRole(
   userId: string,
   role: UserRole
