@@ -315,6 +315,16 @@ body {
 }
 .dom-glow-fast { animation-duration: 1.1s; }
 .dom-glow-dim { --dom-glow-min: 0.18; --dom-glow-max: 0.32; animation-duration: 6s; }
+/* ── UI-13 "Lớn cùng bé": sizes per age band (mirrors src/lib/age-ui.ts) ── */
+/* :root = default band (3–5) so the first paint already has big targets. */
+:root { --kid-tap: 64px; --kid-btn-lg: 68px; --kid-btn-md: 56px; --kid-btn-sm: 48px; --dom-scale: 1; }
+html[data-age="3-5"] { --kid-tap: 64px; --kid-btn-lg: 68px; --kid-btn-md: 56px; --kid-btn-sm: 48px; --dom-scale: 1; }
+html[data-age="6-8"] { --kid-tap: 56px; --kid-btn-lg: 64px; --kid-btn-md: 48px; --kid-btn-sm: 44px; --dom-scale: 1; }
+html[data-age="9-12"] { --kid-tap: 48px; --kid-btn-lg: 56px; --kid-btn-md: 46px; --kid-btn-sm: 44px; --dom-scale: 0.78; }
+/* Text density: 3–5 hides secondary lines; extra detail only for 9–12. */
+html[data-density="low"] [data-kid-detail] { display: none !important; }
+html:not([data-density="high"]) [data-kid-extra] { display: none !important; }
+
 /* UI-11: Đóm's floating speech bubble pops in from the top */
 @keyframes dom-speech-in {
   from { opacity: 0; transform: translateY(-14px) scale(0.96); }

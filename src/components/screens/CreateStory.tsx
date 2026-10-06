@@ -65,6 +65,7 @@ function OptionCard({ selected, onClick, icon, label, sub, children }: { selecte
  type="button"
  onClick={onClick}
  aria-pressed={selected}
+ data-say={label}
  className={`relative w-full rounded-[24px] border-[3px] px-2.5 pb-3.5 pt-2.5 text-center transition-colors active:scale-[0.98] ${CARD_SHADOW} ${
  selected ? "border-brand bg-[#F5F3FF]" : "border-transparent bg-white"
  }`}

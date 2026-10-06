@@ -47,6 +47,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
             <button
               key={tab.id}
               type="button"
+              data-say={tab.id === "settings" ? undefined : tab.label /* the parent gate speaks for itself */}
               onClick={() => {
                 setTapped(tab.id);
                 onTabChange(tab.id);
@@ -68,6 +69,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
           <button
             key={tab.id}
             type="button"
+            data-say={tab.id === "settings" ? undefined : tab.label /* the parent gate speaks for itself */}
             onClick={() => {
               setTapped(tab.id);
               onTabChange(tab.id);

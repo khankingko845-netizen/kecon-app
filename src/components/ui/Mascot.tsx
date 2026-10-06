@@ -93,7 +93,8 @@ export default function Mascot({
   return (
     <span
       className={`${/(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className) ? "" : "relative "}inline-flex shrink-0 items-end justify-center ${className}`}
-      style={{ width: size, height: size, ...style }}
+      // UI-13: 9–12 shrinks Đóm into a companion (`--dom-scale`, globals.css).
+      style={{ width: `calc(${size}px * var(--dom-scale, 1))`, height: `calc(${size}px * var(--dom-scale, 1))`, ...style }}
       data-mascot={state}
       aria-hidden={decorative ? true : undefined}
     >

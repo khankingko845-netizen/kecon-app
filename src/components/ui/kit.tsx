@@ -28,9 +28,10 @@ export function Button3D({ tone = "cta", size = "lg", block, className, children
     glow: "bg-glow text-ink shadow-[0_5px_0_#D9A12A] active:shadow-[0_1px_0_#D9A12A]",
   } as const;
   const sizes = {
-    lg: "h-16 rounded-[22px] px-6 text-[22px] gap-2.5",
-    md: "h-12 rounded-[18px] px-5 text-[18px] gap-2",
-    sm: "h-11 rounded-2xl px-4 text-[17px] gap-1.5",
+    // UI-13: heights follow the child's age band (globals.css `html[data-age]`).
+    lg: "h-[var(--kid-btn-lg,64px)] rounded-[22px] px-6 text-[22px] gap-2.5",
+    md: "h-[var(--kid-btn-md,48px)] rounded-[18px] px-5 text-[18px] gap-2",
+    sm: "h-[var(--kid-btn-sm,44px)] rounded-2xl px-4 text-[17px] gap-1.5",
   } as const;
   return (
     <button

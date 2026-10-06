@@ -55,6 +55,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
 import { FeedbackProvider } from "@/lib/feedback-context";
+import { AgeUiProvider } from "@/lib/age-ui-context";
 
 interface ScreenState {
  screen: Screen;
@@ -328,6 +329,7 @@ export default function AppShell() {
  <AudioPlayerProvider>
  <I18nProvider>
  <ThemeProvider>
+ <AgeUiProvider>
  <FeedbackProvider>
  <ToastProvider>
  <ParentalControlsProvider>
@@ -335,6 +337,7 @@ export default function AppShell() {
  </ParentalControlsProvider>
  </ToastProvider>
  </FeedbackProvider>
+ </AgeUiProvider>
  </ThemeProvider>
  </I18nProvider>
  </AudioPlayerProvider>

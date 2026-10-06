@@ -13,6 +13,8 @@ export const MOCK_ACCESS_TOKEN_SUB = MOCK_USER_ID;
 /** Second family (T19): parent PIN 2468 + parental controls on, 30 phút/ngày, chặn Cổ tích. */
 export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 const MOCK_PIN = "2468";
+/** Third family (UI-13): its profile is writable so specs can change the child's age. */
+export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
 
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
@@ -31,7 +33,12 @@ const pinUser = {
   id: MOCK_PIN_USER_ID,
   email: "e2e-pin@kecon.test",
 };
-const USERS = { [MOCK_USER_ID]: user, [MOCK_PIN_USER_ID]: pinUser };
+const ageUser = {
+  ...user,
+  id: MOCK_AGE_USER_ID,
+  email: "e2e-age@kecon.test",
+};
+const USERS = { [MOCK_USER_ID]: user, [MOCK_PIN_USER_ID]: pinUser, [MOCK_AGE_USER_ID]: ageUser };
 
 const profile = {
   id: MOCK_USER_ID,
@@ -124,7 +131,9 @@ const parentalControls = [
   },
 ];
 
-const TABLES = { profiles: [profile, pinProfile], stories, story_pages: pages, parental_controls: parentalControls };
+const ageProfile = { ...profile, id: MOCK_AGE_USER_ID, email: ageUser.email, family_name: "Gia đình Mèo", child_name: "Mít" };
+
+const TABLES = { profiles: [profile, pinProfile, ageProfile], stories, story_pages: pages, parental_controls: parentalControls };
 
 /** Parent-PIN RPCs (017/018), stateless so parallel specs can't interfere. */
 function pinRpc(name, sub, body) {
@@ -223,6 +232,15 @@ createServer((req, res) => {
       return;
     }
     const table = path.slice("/rest/v1/".length);
+    if (req.method === "PATCH" && table === "profiles" && sub === MOCK_AGE_USER_ID) {
+      // Only the UI-13 family may edit (its own row), so other specs stay stateless.
+      readJson(req).then((body) => {
+        const rows = filterRows(TABLES.profiles, url.searchParams).filter((r) => r.id === sub);
+        for (const r of rows) Object.assign(r, body ?? {}, { id: r.id });
+        send(res, 204);
+      });
+      return;
+    }
     if (req.method !== "GET" && req.method !== "HEAD") {
       return send(res, req.method === "DELETE" ? 204 : 201, req.method === "DELETE" ? undefined : []);
     }

@@ -10,6 +10,8 @@
  * - `cue("success")` for moments without a click (KidSuccess, toasts…).
  * - `say("story-end")` shows Đóm's bubble and reads the line aloud with the
  *   device's Vietnamese voice (none installed → bubble only).
+ * - `data-say="Cổ tích"` on an icon button: read aloud on tap when the age
+ *   band asks for spoken labels (UI-13, `html[data-say-labels]`).
  */
 import {
   createContext,
@@ -263,10 +265,13 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       if (!el || el.matches(":disabled") || el.getAttribute("aria-disabled") === "true") return;
       const c = cueFromAttr(el.closest("[data-sfx]")?.getAttribute("data-sfx"));
       if (c) cue(c);
+      // UI-13: for pre-readers (3–5) Đóm reads the tapped icon's name.
+      const label = el.getAttribute("data-say");
+      if (label && document.documentElement.dataset.sayLabels === "1" && channelsRef.current.voice && !hidden()) speak(label);
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [cue]);
+  }, [cue, speak]);
 
   /* Bubble auto-hides after a reading-friendly delay. */
   useEffect(() => {
