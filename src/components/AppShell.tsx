@@ -54,6 +54,7 @@ import { ParentalControlsProvider } from "@/lib/parental-controls-context";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
+import { FeedbackProvider } from "@/lib/feedback-context";
 
 interface ScreenState {
  screen: Screen;
@@ -327,11 +328,13 @@ export default function AppShell() {
  <AudioPlayerProvider>
  <I18nProvider>
  <ThemeProvider>
+ <FeedbackProvider>
  <ToastProvider>
  <ParentalControlsProvider>
  <AppContent />
  </ParentalControlsProvider>
  </ToastProvider>
+ </FeedbackProvider>
  </ThemeProvider>
  </I18nProvider>
  </AudioPlayerProvider>

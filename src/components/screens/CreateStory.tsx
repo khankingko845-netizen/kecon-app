@@ -14,6 +14,8 @@ import { storyThemes } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { generateStoryApi } from "@/lib/api-client";
+import { DOM_LINES } from "@/lib/dom-lines";
+import { useFeedback } from "@/lib/feedback-context";
 import type { Screen } from "@/lib/types";
 
 interface DefaultVoice {
@@ -108,6 +110,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [character, setCharacter] = useState<string | null>(null);
  const [genProgress, setGenProgress] = useState(0);
  const speech = useSpeechInput(storyLocaleFor(settings.language));
+ const { cue, say } = useFeedback();
 
  // Language & narrator voice
  const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
@@ -203,6 +206,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  setIsGenerating(true);
  setGenProgress(6);
  setError(null);
+ // UI-11: Đóm báo đang nghĩ truyện (màn chờ đã có Đóm → chỉ giọng nói).
+ say("thinking", { bubble: false });
 
  try {
  const story = await generateStoryApi({
@@ -228,6 +233,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  });
 
  await refreshStories();
+ cue("celebrate");
+ say("created");
 
  if (story.storyId) {
  onNavigate("player", { storyId: story.storyId });
@@ -238,6 +245,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  onNavigate("player", { storyId: "__generated__" });
  }
  } catch (err) {
+ cue("oops");
  setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
  } finally {
  setIsGenerating(false);
@@ -266,7 +274,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <Icon3D name="mic" size={54} className="-m-[9%] max-w-none" />
  </span>
  <span className="min-w-0 flex-1">
- {speech.listening ? "Đóm đang nghe bé nói…" : speech.transcript ? `“${speech.transcript}”` : hint}
+ {speech.listening ? DOM_LINES.listen.text : speech.transcript ? `“${speech.transcript}”` : hint}
  </span>
  {speech.listening ? <GlowDots size={6} className="text-cta" /> : <ChevronRight size={22} />}
  </button>

@@ -47,6 +47,8 @@
 | 7 | `oops` | Lỗi, không có kết quả | `mood=oops` |
 | 8 | `thinking` | AI đang tạo | `mood=thinking`, `progress` |
 
+**Âm thanh, rung & câu thoại (UI-11):** 15 câu thoại (mỗi khoảnh khắc một câu, ≤ 12 từ, xưng "tớ – bé") nằm trong `src/lib/dom-lines.ts`; Đóm hiện bong bóng và đọc to bằng giọng tiếng Việt của máy (không có giọng tiếng Việt → chỉ hiện chữ; không nói khi mic đang mở hay truyện đang đọc). Âm chạm/chuông là Web Audio tổng hợp (không file), rung 6–28 ms qua `navigator.vibrate`. Bố mẹ tắt từng kênh trong tab Bố mẹ → "Âm thanh & rung"; Chế độ ngủ tắt âm + giọng, bong bóng chuyển tông đêm. Bản sau: thu âm giọng Đóm thật thay TTS của máy.
+
 > Ảnh trong thư mục này là **concept do AI tạo** để chốt hướng. Bản production cần hoạ sĩ vẽ lại vector + rig Rive.
 
 Phương án đã cân nhắc: [mascot-options-abc.jpg](concepts/mascot-options-abc.jpg) (A Đóm · B Cú mèo · C Nghé).

@@ -126,6 +126,7 @@ import {
   WarningIcon,
   WarningCircleIcon,
   WaveformIcon,
+  VibrateIcon,
   WavesIcon,
   WifiHighIcon,
   WifiSlashIcon,
@@ -308,6 +309,7 @@ export const Books = make(BooksIcon, "Books");
 export const MoonStars = make(MoonStarsIcon, "MoonStars");
 export const Timer = make(TimerIcon, "Timer");
 export const Waveform = make(WaveformIcon, "Waveform");
+export const Vibrate = make(VibrateIcon, "Vibrate");
 export const EyeSlash = make(EyeSlashIcon, "EyeSlash");
 export const RotateCw = make(ArrowClockwiseIcon, "RotateCw");
 export const ArrowLeft = make(ArrowLeftIcon, "ArrowLeft", "bold");

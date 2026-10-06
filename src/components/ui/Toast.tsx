@@ -2,6 +2,7 @@
 
 import { useState, useCallback, createContext, useContext } from "react";
 import { CheckCircle2, AlertCircle, Info, X, Loader2 } from "@/components/ui/icons";
+import { useFeedback } from "@/lib/feedback-context";
 
 type ToastType = "success" | "error" | "info" | "loading";
 
@@ -47,14 +48,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
  setToasts((prev) => prev.filter((t) => t.id !== id));
  }, []);
 
+ const { cue } = useFeedback();
+
  const toast = useCallback((type: ToastType, message: string, duration = 3000) => {
  const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+ // UI-11: soft chime / "hmm?" glide + light vibration (muted in Chế độ ngủ).
+ if (type === "success") cue("success");
+ else if (type === "error") cue("oops");
  setToasts((prev) => [...prev.slice(-4), { id, type, message, duration }]);
  if (type !== "loading" && duration > 0) {
  setTimeout(() => dismiss(id), duration);
  }
  return id;
- }, [dismiss]);
+ }, [dismiss, cue]);
 
  const showPrompt = useCallback((title: string, placeholder?: string, defaultValue?: string): Promise<string | null> => {
  return new Promise((resolve) => {

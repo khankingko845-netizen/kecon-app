@@ -15,6 +15,11 @@ import { Card, ProgressBar, SectionHeader, CARD_SHADOW } from "@/components/ui/k
 import { HomeSkeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 import { heroFor } from "@/lib/home-hero";
+import { greetingMoment } from "@/lib/dom-lines";
+import { useFeedback } from "@/lib/feedback-context";
+
+/** Đóm greets once per app session (sessionStorage), not on every return to Home. */
+const GREETED_KEY = "kecon-dom-greeted";
 
 interface HomeProps {
   onNavigate: (screen: Screen, data?: Record<string, string>) => void;
@@ -40,6 +45,7 @@ export default function Home({ onNavigate }: HomeProps) {
   const [forYou, setForYou] = useState<ScoredStory[]>([]);
   const [streak, setStreak] = useState(0);
   const [last, setLast] = useState<LastPlayed | null>(null);
+  const { say } = useFeedback();
 
   const now = useMemo(() => new Date(), []);
   const hero = heroFor(now.getHours());
@@ -53,11 +59,23 @@ export default function Home({ onNavigate }: HomeProps) {
   }, [settings.childAge, stories.length, contentRules]);
 
   useEffect(() => {
+    const greet = (nights: number) => {
+      try {
+        if (sessionStorage.getItem(GREETED_KEY)) return;
+        sessionStorage.setItem(GREETED_KEY, "1");
+      } catch {
+        return;
+      }
+      say(greetingMoment(new Date().getHours(), nights));
+    };
     getReadingStreak()
-      .then((s) => setStreak(s?.current_streak ?? 0))
-      .catch(() => {});
+      .then((s) => {
+        setStreak(s?.current_streak ?? 0);
+        greet(s?.current_streak ?? 0);
+      })
+      .catch(() => greet(0));
     setLast(getLastPlayed());
-  }, []);
+  }, [say]);
 
   // "Nghe tiếp": last story on this device, else the newest story in the library.
   const resume = useMemo(() => {
@@ -125,7 +143,16 @@ export default function Home({ onNavigate }: HomeProps) {
         >
           <Wand2 size={16} weight="fill" /> {hero.cta}
         </button>
-        <Mascot state={hero.mascot} size={150} priority label={null} className="pointer-events-none absolute -bottom-3.5 -right-1.5" />
+        {/* UI-11: chạm Đóm → Đóm nói (bubble + giọng), có rung nhẹ */}
+        <button
+          type="button"
+          data-sfx="pop"
+          onClick={() => say("poke")}
+          aria-label="Chạm để nghe Đóm nói"
+          className="absolute -bottom-3.5 -right-1.5 h-[150px] w-[150px] rounded-full active:scale-95"
+        >
+          <Mascot state={hero.mascot} size={150} priority label={null} />
+        </button>
       </section>
 
       {/* Nghe tiếp (board `.cont`) */}

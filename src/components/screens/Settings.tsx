@@ -21,6 +21,7 @@ import { useTheme } from "@/lib/theme-context";
 import { SLEEP_TIMER_OPTIONS } from "@/lib/night-mode";
 import type { Screen } from "@/lib/types";
 import ParentHeader from "@/components/parent/ParentHeader";
+import FeedbackSettings from "@/components/parent/FeedbackSettings";
 
 interface SettingsProps {
  onNavigate: (screen: Screen) => void;
@@ -543,6 +544,10 @@ export default function Settings({ onNavigate }: SettingsProps) {
  onClick={() => onNavigate("subscription")}
  />
  </SettingsCard>
+
+ {/* UI-11: sound, haptics, Đóm's voice */}
+ <SectionHeader title="Âm thanh & rung" />
+ <FeedbackSettings nightPref={nightPref} />
 
  {/* Family */}
  <SectionHeader title="Gia đình & bé" />

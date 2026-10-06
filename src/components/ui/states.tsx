@@ -13,6 +13,8 @@ import type { ReactNode } from "react";
 import { Button3D, ProgressBar } from "@/components/ui/kit";
 import Mascot, { type MascotState } from "@/components/ui/Mascot";
 import { RotateCcw } from "@/components/ui/icons";
+import { DOM_LINES } from "@/lib/dom-lines";
+import { useFeedbackOnMount } from "@/lib/feedback-context";
 
 type Tone = "day" | "night";
 
@@ -179,7 +181,7 @@ export function KidLoading({
 
 export function KidError({
   title = "Ối, có chút trục trặc",
-  message = "Đóm chưa tải được. Bé thử lại nhé!",
+  message,
   tag = "Có lỗi",
   onRetry,
   retryLabel = "Thử lại",
@@ -198,11 +200,13 @@ export function KidError({
   fullScreen?: boolean;
   className?: string;
 }) {
+  // UI-11: gentle "hmm?" + Đóm reads its default line (custom messages stay silent).
+  useFeedbackOnMount("oops", { say: message === undefined ? "oops" : undefined, bubble: false });
   return (
     <StateFrame
       mascot="oops"
       title={title}
-      message={message}
+      message={message ?? DOM_LINES.oops.text}
       tag={tag}
       size={size}
       tone={tone}
@@ -238,6 +242,7 @@ export function KidSuccess({
   tone?: Tone;
   className?: string;
 }) {
+  useFeedbackOnMount("celebrate");
   return (
     <StateFrame
       mascot="celebrate"
