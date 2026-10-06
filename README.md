@@ -89,13 +89,13 @@
 - Tự động tạo profile khi đăng ký (trigger SQL)
 - 3 vai trò: `user` → `admin` → `super_admin`
 - Hàm `is_admin()` SQL dùng trong RLS
-- UI gating: màn hình admin bị chặn cho user thường (cả ở AppShell lẫn RLS)
+- Trang quản trị là route riêng `/admin` (Admin v2 · A-01): guard phía server (`src/lib/admin-guard.ts`) — chưa đăng nhập / user thường nhận 404 kể cả gõ URL; RLS `is_admin()` vẫn chặn ở DB
 
 ### 2. Trang Chủ (Home)
 - Hiển thị tên gia đình, voice profiles, truyện gần đây
 - Quick actions: tạo truyện, ghi âm, thư viện
 - Gợi ý AI cá nhân hóa (theo tuổi bé, truyện đã nghe, thời gian trong ngày)
-- Nút "Quản trị" chỉ hiện cho admin/super_admin
+- Không còn ô "Quản trị" trên Trang chủ của bé — admin mở "Trang quản trị" trong tab Bố mẹ (sau cổng phụ huynh) hoặc vào thẳng `/admin`
 
 ### 3. Ghi Âm & Clone Giọng Nói
 - Ghi âm mic trực tiếp trên trình duyệt (MediaRecorder API)
@@ -170,6 +170,8 @@
 - Gợi ý cho gia đình (truyện chưa ai nghe)
 
 ### 13. Module Quản Trị (Admin) — Chỉ admin/super_admin
+
+Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có thanh mục ngang). Mỗi mục một URL: `/admin` (Tổng quan), `/admin/stories`, `/admin/users`, `/admin/analytics`, `/admin/categories`, `/admin/templates`, `/admin/settings` — map trong `src/lib/admin-routes.ts`. Server kiểm tra phiên + `profiles.role` ở mọi request (`src/app/admin/[[...section]]/page.tsx`), không phải admin → 404 thường (không lộ tiêu đề / nội dung). E2E: `tests/e2e/admin.spec.ts`.
 
 #### 13a. Admin Dashboard
 - 6 KPIs real-time: tổng truyện, đã xuất bản, lượt nghe, yêu thích, giọng nói, nháp

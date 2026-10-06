@@ -7,7 +7,16 @@ export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 export const MOCK_PIN = "2468";
 /** Family whose profile (child's age) can be edited — UI-13 "Lớn cùng bé". */
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
+/** The only mock account with `profiles.role = "admin"` (Admin v2 · A-01). */
+export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
+
+const MOCK_EMAILS: Record<string, string> = {
+  [MOCK_USER_ID]: "e2e@kecon.test",
+  [MOCK_PIN_USER_ID]: "e2e-pin@kecon.test",
+  [MOCK_AGE_USER_ID]: "e2e-age@kecon.test",
+  [MOCK_ADMIN_USER_ID]: "e2e-admin@kecon.test",
+};
 
 const b64url = (v: string) => Buffer.from(v).toString("base64url");
 
@@ -31,8 +40,7 @@ export async function signInAsMockFamily(
   { userId = MOCK_USER_ID }: { userId?: string } = {}
 ): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
-  const email =
-    userId === MOCK_PIN_USER_ID ? "e2e-pin@kecon.test" : userId === MOCK_AGE_USER_ID ? "e2e-age@kecon.test" : "e2e@kecon.test";
+  const email = MOCK_EMAILS[userId] ?? "e2e@kecon.test";
   const session = {
     access_token: mockAccessToken(userId, email),
     token_type: "bearer",

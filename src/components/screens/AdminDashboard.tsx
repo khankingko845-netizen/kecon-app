@@ -23,7 +23,8 @@ import {
 import type { Screen } from "@/lib/types";
 
 interface AdminDashboardProps {
- onBack: () => void;
+ /** A-01: the dashboard is the console's home — no back button by default. */
+ onBack?: () => void;
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
 

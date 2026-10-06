@@ -587,8 +587,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SettingsCard>
  <SettingsRow
  icon={LayoutDashboard}
- label="Admin Dashboard"
- 
+ label="Trang quản trị"
  onClick={() => onNavigate("admin")}
  />
  </SettingsCard>

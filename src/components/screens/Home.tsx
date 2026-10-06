@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Flame, FolderOpen, Heart, LayoutDashboard, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
+import { Camera, Flame, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useKidStories } from "@/lib/parental-controls-context";
 import { filterAllowed, isCategoryAllowed } from "@/lib/content-filter";
@@ -40,7 +40,7 @@ const TOPICS: { id: string; label: string; icon: Icon3DName }[] = [
 ];
 
 export default function Home({ onNavigate }: HomeProps) {
-  const { isAdmin, profile } = useAuth();
+  const { profile } = useAuth();
   // T19: only stories the parent allows (blocked categories / age cap removed).
  const { stories, loading, contentRules } = useKidStories();
   const { settings } = useSettings();
@@ -110,14 +110,13 @@ export default function Home({ onNavigate }: HomeProps) {
   // behind a placeholder of the same height so nothing shifts (CLS).
   const pendingStories = loading && stories.length === 0;
 
-  const more: { label: string; screen: Screen; icon: typeof Upload; show?: boolean }[] = [
+  const more: { label: string; screen: Screen; icon: typeof Upload }[] = [
     { label: "Yêu thích", screen: "favorites", icon: Heart },
     { label: "Thử thách", screen: "daily-challenges", icon: Flame },
     { label: "Chụp sách", screen: "scan-book", icon: Camera },
     { label: "Vẽ truyện", screen: "draw-story", icon: Palette },
     { label: "Bộ sưu tập", screen: "collections", icon: FolderOpen },
     { label: "Tải truyện", screen: "upload", icon: Upload },
-    { label: "Quản trị", screen: "admin", icon: LayoutDashboard, show: isAdmin },
   ];
 
   return (
@@ -261,7 +260,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {/* Khám phá thêm */}
       <SectionHeader title="Khám phá thêm" />
       <div data-testid="home-explore" className="grid grid-cols-2 gap-2.5">
-        {exploreFor(more.filter((m) => m.show !== false), ageUi)
+        {exploreFor(more, ageUi)
           .map(({ label, screen, icon: Icon }) => (
             <button
               key={screen}
