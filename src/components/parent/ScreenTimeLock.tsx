@@ -10,17 +10,13 @@ import { Bubble, Button3D, Card } from "@/components/ui/kit";
 import { Clock, LockKey, MoonStars } from "@/components/ui/icons";
 import ParentGate from "@/components/parent/ParentGate";
 import { GRANT_OPTIONS } from "@/lib/screen-time";
+import { DOM_LINES, type DomMoment } from "@/lib/dom-lines";
+import { useFeedbackOnMount } from "@/lib/feedback-context";
 
 const COPY = {
-  limit: {
-    title: "Hết giờ nghe truyện hôm nay rồi!",
-    bubble: "Mình nghỉ mắt một chút nhé. Mai Đóm kể tiếp cho bé nghe!",
-  },
-  bedtime: {
-    title: "Đến giờ đi ngủ rồi!",
-    bubble: "Đóm cũng buồn ngủ rồi. Chúc bé ngủ thật ngon nhé!",
-  },
-} as const;
+  limit: { title: "Hết giờ nghe truyện hôm nay rồi!", line: "time-up" },
+  bedtime: { title: "Đến giờ đi ngủ rồi!", line: "bedtime" },
+} as const satisfies Record<string, { title: string; line: DomMoment }>;
 
 export default function ScreenTimeLock({
   reason,
@@ -31,6 +27,7 @@ export default function ScreenTimeLock({
 }) {
   const [phase, setPhase] = useState<"locked" | "gate" | "grant">("locked");
   const copy = COPY[reason];
+  useFeedbackOnMount(null, { say: copy.line, bubble: false });
 
   if (phase === "gate") {
     return (
@@ -49,7 +46,7 @@ export default function ScreenTimeLock({
       <Mascot state="sleepy" size={176} priority />
       <h1 className="mt-4 font-display text-[28px] font-bold leading-tight text-ink">{copy.title}</h1>
       <Bubble tail="none" className="mt-4 text-[17px] leading-snug">
-        {copy.bubble}
+        {DOM_LINES[copy.line].text}
       </Bubble>
 
       {phase === "locked" ? (

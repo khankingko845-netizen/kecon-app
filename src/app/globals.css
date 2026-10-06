@@ -315,8 +315,14 @@ body {
 }
 .dom-glow-fast { animation-duration: 1.1s; }
 .dom-glow-dim { --dom-glow-min: 0.18; --dom-glow-max: 0.32; animation-duration: 6s; }
+/* UI-11: Đóm's floating speech bubble pops in from the top */
+@keyframes dom-speech-in {
+  from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.dom-speech-in { animation: dom-speech-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 @media (prefers-reduced-motion: reduce) {
-  .dom-anim-float, .dom-anim-bounce, .dom-anim-breathe, .dom-anim-wiggle, .dom-glow { animation: none !important; }
+  .dom-anim-float, .dom-anim-bounce, .dom-anim-breathe, .dom-anim-wiggle, .dom-glow, .dom-speech-in { animation: none !important; }
 }
 
 /* ── UI-06: inline loader dots (GlowDots) ── */

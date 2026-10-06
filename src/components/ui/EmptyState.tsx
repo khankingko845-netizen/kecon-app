@@ -2,6 +2,7 @@
 
 import { Sparkles } from "@/components/ui/icons";
 import Mascot, { type MascotState } from "@/components/ui/Mascot";
+import { DOM_LINES } from "@/lib/dom-lines";
 
 type EmptyType = "library" | "favorites" | "search" | "voices" | "collections" | "generic";
 
@@ -49,7 +50,7 @@ const configs: Record<EmptyType, {
  generic: {
  mascot: "hello",
  title: "Chưa có gì ở đây",
- subtitle: "Hãy bắt đầu khám phá cùng Đóm!",
+ subtitle: DOM_LINES.empty.text,
  },
 };
 

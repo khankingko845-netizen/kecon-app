@@ -28,6 +28,8 @@ import {
   type AdultChallenge,
 } from "@/lib/parent-gate";
 import Mascot from "@/components/ui/Mascot";
+import { DOM_LINES } from "@/lib/dom-lines";
+import { useFeedback, useFeedbackOnMount } from "@/lib/feedback-context";
 import { Bubble, Button3D, Card, KidHeader } from "@/components/ui/kit";
 import { Loader2, LockKey, ShieldCheck } from "@/components/ui/icons";
 import Keypad from "@/components/parent/Keypad";
@@ -51,9 +53,11 @@ export default function ParentGate({
   onCancel,
   onPinReset,
   title = "Khu vực của bố mẹ",
-  bubble = "Chỗ này dành cho bố mẹ nhé! Bé nhờ bố mẹ mở giúp nha.",
+  bubble,
   cancelLabel = "Về trang chủ",
 }: ParentGateProps) {
+  // UI-11: pre-readers hear why the door is closed (custom bubbles stay silent).
+  useFeedbackOnMount(null, { say: bubble === undefined ? "parent-only" : undefined, bubble: false });
   const [mode, setMode] = useState<Mode>("loading");
   const [hasPin, setHasPin] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
@@ -80,7 +84,7 @@ export default function ParentGate({
       <KidHeader title={title} onBack={onCancel} backLabel={cancelLabel} />
       <div className="mt-3 flex items-end gap-3">
         <Mascot state="thinking" size={92} label="Đóm đang giữ cửa khu vực của bố mẹ" />
-        <Bubble className="mb-4 flex-1 text-[16px] leading-snug">{bubble}</Bubble>
+        <Bubble className="mb-4 flex-1 text-[16px] leading-snug">{bubble ?? DOM_LINES["parent-only"].text}</Bubble>
       </div>
 
       <Card className="mt-4 p-5">
@@ -146,6 +150,7 @@ function PinStep({
   onForgot: () => void;
 }) {
   const [pin, setPin] = useState("");
+  const { cue } = useFeedback();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(
     lockedUntil ? unlockErrorMessage({ ok: false, reason: "locked", lockedUntil }) : null
@@ -164,9 +169,11 @@ function PinStep({
     setBusy(false);
     setPin("");
     if (result.ok) {
+      cue("success");
       onUnlock();
       return;
     }
+    cue("oops");
     if (result.reason === "locked") onLocked(result.lockedUntil ?? new Date(Date.now() + 15 * 60_000));
     setError(unlockErrorMessage(result));
   };
@@ -204,6 +211,7 @@ function PinStep({
 
 function MathStep({ onUnlock }: { onUnlock: () => void }) {
   const [challenge, setChallenge] = useState<AdultChallenge>(() => createAdultChallenge());
+  const { cue } = useFeedback();
   const [answer, setAnswer] = useState("");
   const [misses, setMisses] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -231,9 +239,11 @@ function MathStep({ onUnlock }: { onUnlock: () => void }) {
     e?.preventDefault();
     if (coolingDown || !answer) return;
     if (isChallengeAnswerCorrect(challenge, answer)) {
+      cue("success");
       onUnlock();
       return;
     }
+    cue("oops");
     const n = misses + 1;
     setAnswer("");
     setChallenge(createAdultChallenge());

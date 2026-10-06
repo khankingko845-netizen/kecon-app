@@ -13,6 +13,7 @@ import { CHIP, ScreenOff, ScreenOffButton, SleepTimerButton, useSleepTimer } fro
 import Mascot from "@/components/ui/Mascot";
 import { saveLastPlayed } from "@/lib/last-played";
 import { useTheme } from "@/lib/theme-context";
+import { useFeedback } from "@/lib/feedback-context";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
@@ -139,9 +140,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const { settings, hasElevenLabs } = useSettings();
  // UI-08 night mode: bedtime palette, sleep timer, screen-off.
  const { isBedtime } = useTheme();
+ const { cue, say } = useFeedback();
  // Sleep mode follows the 19:30–06:00 window (or the parent's choice); the pill overrides it for this story.
  const [sleepOverride, setSleepOverride] = useState<boolean | null>(null);
  const isNight = sleepOverride ?? isBedtime;
+ const isNightRef = useRef(isNight);
+ useEffect(() => {
+ isNightRef.current = isNight;
+ }, [isNight]);
  const [showMore, setShowMore] = useState(false);
  const [screenOff, setScreenOff] = useState(false);
  const { voiceProfiles } = useData();
@@ -648,12 +654,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setProgress(100);
  setMergeStatus("ready");
  if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
+ if (!isNightRef.current) {
+ cue("celebrate");
+ say("story-end");
+ }
  };
 
  audio.play().catch(() => {});
  setIsPlaying(true);
  setMergeStatus("playing");
- }, [currentPage, storyId, isGenerated]);
+ }, [currentPage, storyId, isGenerated, cue, say]);
 
  const playWithTTS = useCallback(async () => {
  if (!hasElevenLabs || !currentText) {
@@ -708,6 +718,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setIsPlaying(false);
  setProgress(100);
  if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
+ // UI-11: Đóm khen khi nghe hết truyện — im lặng khi đang ở Chế độ ngủ.
+ if (!isNightRef.current) {
+ cue("celebrate");
+ say("story-end");
+ }
  }
  };
 
@@ -733,7 +748,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  } finally {
  setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
@@ -862,6 +877,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  try {
  const result = await toggleFavorite(storyId);
  setIsFav(result);
+ // UI-11: Đóm vui cùng bé; không nói chen khi truyện đang đọc.
+ if (result && !isNight) say("favorite", { quiet: isPlaying });
  } catch {}
  setFavLoading(false);
  };
@@ -1075,7 +1092,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const categoryLabel = story?.category ? CATEGORY_LABEL[story.category] : undefined;
 
  return (
- <div className="relative flex min-h-screen flex-col overflow-hidden bg-night text-moon">
+ <div className="relative flex min-h-screen flex-col overflow-hidden bg-night text-moon" data-sfx={isNight ? "off" : undefined}>
  {/* Scene (board `.pbg` + `.pov`): the page illustration, else the night sky */}
  <div aria-hidden className="absolute inset-0">
  {currentIllustration ? (
@@ -1296,7 +1313,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Controls (board `.ctl`) */}
  <div className="mt-2.5 flex items-center justify-center gap-10">
- <button type="button" onClick={() => skip(-1)} aria-label={audioClock ? "Lùi 15 giây" : "Trang trước"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
+ <button type="button" data-sfx="page" onClick={() => skip(-1)} aria-label={audioClock ? "Lùi 15 giây" : "Trang trước"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
  <RotateCcw size={36} weight="bold" />
  </button>
  <button
@@ -1314,7 +1331,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <Play size={40} weight="fill" className="ml-1 text-night" />
  )}
  </button>
- <button type="button" onClick={() => skip(1)} aria-label={audioClock ? "Tới 15 giây" : "Trang sau"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
+ <button type="button" data-sfx="page" onClick={() => skip(1)} aria-label={audioClock ? "Tới 15 giây" : "Trang sau"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
  <RotateCw size={36} weight="bold" />
  </button>
  </div>
