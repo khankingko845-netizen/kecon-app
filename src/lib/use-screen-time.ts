@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getParentalControls } from "@/lib/db";
+import { useParentalControls, PARENTAL_CONTROLS_EVENT } from "@/lib/parental-controls-context";
 import { useAudioPlayer } from "@/lib/audio-player-context";
 import {
   addUsage,
@@ -10,12 +10,11 @@ import {
   parseUsage,
   SCREEN_TIME_KEY,
   TICK_SECONDS,
-  type ScreenTimeRules,
   type ScreenTimeVerdict,
 } from "@/lib/screen-time";
 
 /** Fired by Parental controls after saving so limits apply without a reload. */
-export const PARENTAL_CONTROLS_EVENT = "kecon:parental-controls-changed";
+export { PARENTAL_CONTROLS_EVENT };
 
 function readUsage(now: Date) {
   try {
@@ -44,43 +43,12 @@ const same = (a: ScreenTimeVerdict, b: ScreenTimeVerdict) =>
 export function useScreenTime({ userId, paused }: { userId?: string; paused: boolean }) {
   const { isPlaying } = useAudioPlayer();
   const playing = useRef(isPlaying);
-  const [rules, setRules] = useState<ScreenTimeRules | null>(null);
+  const { screenRules: rules } = useParentalControls();
   const [verdict, setVerdict] = useState<ScreenTimeVerdict>({ blocked: false });
 
   useEffect(() => {
     playing.current = isPlaying;
   }, [isPlaying]);
-
-  useEffect(() => {
-    if (!userId) {
-      setRules(null);
-      return;
-    }
-    let alive = true;
-    const load = () => {
-      getParentalControls(userId)
-        .then((c) => {
-          if (!alive) return;
-          setRules(
-            c
-              ? {
-                  is_enabled: Boolean(c.is_enabled),
-                  daily_limit_minutes: Number(c.daily_limit_minutes) || 0,
-                  bedtime_start: c.bedtime_start ?? null,
-                  bedtime_end: c.bedtime_end ?? null,
-                }
-              : null
-          );
-        })
-        .catch(() => {});
-    };
-    load();
-    window.addEventListener(PARENTAL_CONTROLS_EVENT, load);
-    return () => {
-      alive = false;
-      window.removeEventListener(PARENTAL_CONTROLS_EVENT, load);
-    };
-  }, [userId]);
 
   const evaluate = useCallback(() => {
     const now = new Date();

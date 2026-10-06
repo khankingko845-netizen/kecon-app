@@ -10,7 +10,7 @@ import { createServer } from "node:http";
 const PORT = Number(process.env.MOCK_SUPABASE_PORT ?? 54321);
 export const MOCK_USER_ID = "00000000-0000-4000-8000-00000000e2e1";
 export const MOCK_ACCESS_TOKEN_SUB = MOCK_USER_ID;
-/** Second family (T19): parent PIN 2468 + parental controls on, 30 phút/ngày. */
+/** Second family (T19): parent PIN 2468 + parental controls on, 30 phút/ngày, chặn Cổ tích. */
 export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 const MOCK_PIN = "2468";
 
@@ -117,7 +117,7 @@ const parentalControls = [
     daily_limit_minutes: 30,
     bedtime_start: null,
     bedtime_end: null,
-    blocked_categories: [],
+    blocked_categories: ["fairy_tale"],
     max_age_rating: 99,
     created_at: now,
     updated_at: now,

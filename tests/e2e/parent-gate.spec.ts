@@ -139,4 +139,17 @@ test.describe("Cổng phụ huynh — có PIN + giới hạn 30 phút/ngày", ()
     await expect(nav(page)).toBeVisible();
     await expect(page.locator("[data-screen-time-lock]")).toHaveCount(0);
   });
+
+  test("thể loại bố mẹ chặn (Cổ tích) biến mất khỏi Trang chủ và Thư viện", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("Sóc Nhỏ tìm hạt dẻ").first()).toBeVisible();
+    await expect(page.getByText("Chú Cuội và cây đa")).toHaveCount(0);
+
+    await nav(page).getByRole("button", { name: "Thư viện", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Thư viện" })).toBeVisible();
+    await expect(page.getByText("Sóc Nhỏ tìm hạt dẻ").first()).toBeVisible();
+    await expect(page.getByText("Chú Cuội và cây đa")).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Cổ tích" })).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Động vật" })).toBeVisible();
+  });
 });

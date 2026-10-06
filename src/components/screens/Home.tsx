@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Camera, Flame, FolderOpen, Heart, LayoutDashboard, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
-import { useData } from "@/lib/data-context";
+import { useKidStories } from "@/lib/parental-controls-context";
+import { filterAllowed, isCategoryAllowed } from "@/lib/content-filter";
 import { useSettings } from "@/lib/settings-context";
 import { getReadingStreak } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
@@ -33,7 +34,8 @@ const TOPICS: { id: string; label: string; icon: Icon3DName }[] = [
 
 export default function Home({ onNavigate }: HomeProps) {
   const { isAdmin, profile } = useAuth();
-  const { stories, loading } = useData();
+  // T19: only stories the parent allows (blocked categories / age cap removed).
+ const { stories, loading, contentRules } = useKidStories();
   const { settings } = useSettings();
   const [forYou, setForYou] = useState<ScoredStory[]>([]);
   const [streak, setStreak] = useState(0);
@@ -46,9 +48,9 @@ export default function Home({ onNavigate }: HomeProps) {
 
   useEffect(() => {
     getRecommendations({ childAge: settings.childAge })
-      .then((rec) => setForYou(rec.forYou))
+      .then((rec) => setForYou(filterAllowed(rec.forYou, contentRules, (r) => r.story)))
       .catch(() => {});
-  }, [settings.childAge, stories.length]);
+  }, [settings.childAge, stories.length, contentRules]);
 
   useEffect(() => {
     getReadingStreak()
@@ -163,7 +165,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {/* Chủ đề (board `.cats`) */}
       <SectionHeader title="Chủ đề" action="Xem tất cả" onAction={() => onNavigate("library")} />
       <div className="grid grid-cols-3 gap-2.5">
-        {TOPICS.map((t) => (
+        {TOPICS.filter((t) => isCategoryAllowed(t.id, contentRules)).map((t) => (
           <button
             key={t.id}
             type="button"

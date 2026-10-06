@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Heart, Play, Star, Trash2 } from "@/components/ui/icons";
 import { GlowDots, KidLoading } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import { getUserFavorites, toggleFavorite, gradientFor, type StoryRow } from "@/lib/db";
+import { useParentalControls } from "@/lib/parental-controls-context";
+import { filterAllowed } from "@/lib/content-filter";
 import type { Screen } from "@/lib/types";
 
 interface FavoritesProps {
@@ -13,7 +15,10 @@ interface FavoritesProps {
 }
 
 export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
- const [favorites, setFavorites] = useState<StoryRow[]>([]);
+ const [allFavorites, setFavorites] = useState<StoryRow[]>([]);
+ const { contentRules } = useParentalControls();
+ // T19: hidden stories stay hidden here too.
+ const favorites = useMemo(() => filterAllowed(allFavorites, contentRules), [allFavorites, contentRules]);
  const [loading, setLoading] = useState(true);
  const [removing, setRemoving] = useState<string | null>(null);
 

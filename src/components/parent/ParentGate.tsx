@@ -306,10 +306,17 @@ function ForgotStep({ onDone, onBack }: { onDone: () => void; onBack: () => void
   }, [onDone]);
 
   useEffect(() => {
+    // Email accounts always re-type the password here — a fresh login alone
+    // isn't enough (a kid could tap "Quên mã PIN?" right after the parent
+    // signed in). Google-only accounts come back from a re-login, so a session
+    // that signed in within the last 10 minutes may reset straight away.
+    if (canUsePassword) {
+      setPhase("password");
+      return;
+    }
     let alive = true;
-    // A session that signed in within the last 10 minutes may reset right away.
     tryReset().then((ok) => {
-      if (alive && !ok) setPhase(canUsePassword ? "password" : "oauth");
+      if (alive && !ok) setPhase("oauth");
     });
     return () => {
       alive = false;
