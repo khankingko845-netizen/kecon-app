@@ -16,7 +16,8 @@ const appEnv: Record<string, string> = {
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "e2e-fake-anon-key",
   NEXT_PUBLIC_SITE_URL: BASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: "",
+  // A-04: the server reads API keys from (mock) Vault with the service role — see MOCK_SERVICE_ROLE_KEY.
+  SUPABASE_SERVICE_ROLE_KEY: "e2e-fake-service-role-key",
   OPENAI_API_KEY: "",
   GEMINI_API_KEY: "",
   ANTHROPIC_API_KEY: "",
@@ -53,7 +54,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-mobile",
-      testIgnore: /perf\.spec\.ts$/,
+      testIgnore: /(perf|secrets-scan)\.spec\.ts$/,
       use: mobileChromium,
     },
     {
@@ -62,6 +63,15 @@ export default defineConfig({
       name: "perf",
       testMatch: /perf\.spec\.ts$/,
       dependencies: ["chromium-mobile"],
+      fullyParallel: false,
+      use: mobileChromium,
+    },
+    {
+      // A-04: plants an API key in every (mock) Vault slot → runs alone, last, so no
+      // other spec ever sees "keys configured".
+      name: "secrets-scan",
+      testMatch: /secrets-scan\.spec\.ts$/,
+      dependencies: ["perf"],
       fullyParallel: false,
       use: mobileChromium,
     },

@@ -9,18 +9,27 @@ import {
 import TopBar from "@/components/ui/TopBar";
 import {
  getAppSettings,
+ listSystemSecrets,
+ setSystemSecret,
  updateAppSettings,
  type AppSettingRow,
 } from "@/lib/db";
-
-/** `app_settings` rows flagged `is_secret` (migration 007): every `*_api_key` + the custom provider key. */
-const SECRET_KEY_PATTERN = /(_api_key|_provider_key)$/;
+import { isSecretSettingKey, secretStatusText, type SystemSecretStatus } from "@/lib/system-secrets";
 
 interface AdminSettingsProps {
  onBack: () => void;
  /** A-02: `secrets.manage` — false → API key fields are locked and never saved. */
  canManageSecrets?: boolean;
 }
+
+const SECRET_LABELS: Record<string, string> = {
+ elevenlabs_api_key: "ElevenLabs",
+ openai_api_key: "OpenAI",
+ gemini_api_key: "Gemini",
+ anthropic_api_key: "Claude",
+ custom_provider_key: "Custom provider",
+ dalle_api_key: "DALL·E",
+};
 
 /* ──────────────── types ──────────────── */
 interface VoiceOption {
@@ -77,36 +86,87 @@ function SectionIcon({ icon: Icon, color }: { icon: typeof Mic; color: string })
  );
 }
 
+/**
+ * A-04 · write-only API key field. The stored key never comes back to the
+ * browser: the field shows its status ("Đã đặt · …abcd") and the input only
+ * holds a NEW key typed by the admin (saved to Vault on "Lưu Cài Đặt").
+ */
 function SecretInput({
+ settingKey,
+ status,
  value,
  onChange,
  placeholder,
  locked = false,
+ onClear,
+ clearing = false,
 }: {
+ settingKey: string;
+ status?: SystemSecretStatus;
+ /** Newly typed key (draft) — empty = keep the stored key. */
  value: string;
  onChange: (v: string) => void;
  placeholder: string;
  /** A-02: roles without `secrets.manage` can't read or set keys. */
  locked?: boolean;
+ onClear?: () => void;
+ clearing?: boolean;
 }) {
  const [show, setShow] = useState(false);
+ const label = SECRET_LABELS[settingKey] ?? settingKey;
  return (
+ <div>
  <div className="flex gap-2">
  <input
  type={show ? "text" : "password"}
  value={value}
  onChange={(e) => onChange(e.target.value)}
- placeholder={locked ? "Chỉ Super admin / Admin đặt được key" : placeholder}
+ aria-label={`API key ${label}`}
+ autoComplete="off"
+ spellCheck={false}
+ placeholder={
+ locked
+ ? "Chỉ Super admin / Admin đặt được key"
+ : status?.is_set
+ ? "Nhập key mới để thay (key hiện tại được giữ kín)"
+ : placeholder
+ }
  disabled={locked}
  className="flex-1 px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent transition-colors"
  />
  <button
  type="button"
  onClick={() => setShow(!show)}
+ aria-label={show ? "Ẩn key đang nhập" : "Hiện key đang nhập"}
  className="px-3 py-3 rounded-xl border border-gray-200 dark:border-white/10 text-txt-secondary dark:text-white/50 hover:bg-gray-50 dark:bg-white/[0.04] transition-colors"
  >
  {show ? <EyeOff size={16} /> : <Eye size={16} />}
  </button>
+ </div>
+ {!locked && (
+ <div className="flex items-center gap-2 flex-wrap mt-1.5 text-[12px]" data-testid={`secret-status-${settingKey}`}>
+ <span className={status?.is_set ? "font-semibold text-emerald-600" : "text-txt-secondary dark:text-white/50"}>
+ {secretStatusText(status)}
+ </span>
+ {status?.is_set && status.updated_at && (
+ <span className="text-txt-secondary dark:text-white/50">
+ · {new Date(status.updated_at).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+ {status.updated_by_email ? ` · ${status.updated_by_email}` : ""}
+ </span>
+ )}
+ {status?.is_set && onClear && (
+ <button
+ type="button"
+ onClick={onClear}
+ disabled={clearing}
+ className="inline-flex items-center gap-1 font-semibold text-red-500 hover:underline disabled:opacity-50"
+ >
+ {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+ Xoá key
+ </button>
+ )}
+ </div>
+ )}
  </div>
  );
 }
@@ -636,6 +696,10 @@ function VoiceRow({
 export default function AdminSettings({ onBack, canManageSecrets = true }: AdminSettingsProps) {
  const [settings, setSettings] = useState<Record<string, string>>({});
  const [original, setOriginal] = useState<Record<string, string>>({});
+ // A-04: API keys — status only (never the value) + keys newly typed in this session.
+ const [secrets, setSecrets] = useState<Record<string, SystemSecretStatus>>({});
+ const [drafts, setDrafts] = useState<Record<string, string>>({});
+ const [clearingKey, setClearingKey] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
  const [saving, setSaving] = useState(false);
  const [saved, setSaved] = useState(false);
@@ -659,16 +723,23 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  const selectedProvider = settings["default_ai_provider"] || "openai";
 
  // ── load settings + default voices ──
+ const loadSecrets = useCallback(async () => {
+ const list = await listSystemSecrets();
+ setSecrets(Object.fromEntries(list.map((s) => [s.key, s])));
+ }, []);
+
  const load = useCallback(async () => {
  setLoading(true);
  try {
  const [rows, dvRes] = await Promise.all([
  getAppSettings(),
  fetch("/api/voice/defaults").then((r) => r.json()),
+ canManageSecrets ? loadSecrets() : Promise.resolve(),
  ]);
  const map: Record<string, string> = {};
  rows.forEach((r: AppSettingRow) => {
- map[r.key] = r.value;
+ // A-04: key rows hold no value any more — their status comes from list_system_secrets().
+ if (!isSecretSettingKey(r.key)) map[r.key] = r.value;
  });
  setSettings(map);
  setOriginal(map);
@@ -680,7 +751,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  } finally {
  setLoading(false);
  }
- }, []);
+ }, [canManageSecrets, loadSecrets]);
 
  useEffect(() => {
  load();
@@ -691,9 +762,41 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  setSaved(false);
  };
 
- const hasChanges = Object.keys(settings).some(
- (k) => settings[k] !== (original[k] ?? "")
- );
+ const handleDraft = (key: string, value: string) => {
+ setDrafts((prev) => ({ ...prev, [key]: value }));
+ setSaved(false);
+ };
+
+ const pendingSecrets = canManageSecrets
+ ? Object.entries(drafts).filter(([, v]) => v.trim() !== "")
+ : [];
+
+ const hasChanges =
+ pendingSecrets.length > 0 ||
+ Object.keys(settings).some((k) => settings[k] !== (original[k] ?? ""));
+
+ /** Key to send to "Test Kết Nối": the newly typed one, `undefined` = the stored one (server side), `null` = none. */
+ function keyForTest(key: string): string | undefined | null {
+ const typed = drafts[key]?.trim();
+ if (typed) return typed;
+ return secrets[key]?.is_set ? undefined : null;
+ }
+
+ async function handleClearSecret(key: string) {
+ const label = SECRET_LABELS[key] ?? key;
+ if (!window.confirm(`Xoá API key ${label}? Tính năng dùng key này sẽ ngừng chạy (trừ khi máy chủ có key trong biến môi trường).`)) return;
+ setClearingKey(key);
+ setError(null);
+ try {
+ await setSystemSecret(key, "");
+ setDrafts((prev) => ({ ...prev, [key]: "" }));
+ await loadSecrets();
+ } catch (err) {
+ setError(err instanceof Error ? err.message : "Xoá key thất bại");
+ } finally {
+ setClearingKey(null);
+ }
+ }
 
  // ── Default Voice CRUD ──
  async function handleAddDefaultVoice(voice: {
@@ -728,7 +831,8 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  // ── test provider ──
  async function testProvider(
  provider: string,
- apiKey: string,
+ /** undefined → the server tests the stored key (it never comes to the browser). */
+ apiKey: string | undefined,
  baseUrl?: string
  ): Promise<TestResult> {
  const res = await fetch("/api/admin/test-provider", {
@@ -740,8 +844,8 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  }
 
  async function handleTestElevenLabs() {
- const key = settings["elevenlabs_api_key"];
- if (!key) {
+ const key = keyForTest("elevenlabs_api_key");
+ if (key === null) {
  setElevenTest({ ok: false, error: "Nhập API key trước" });
  return;
  }
@@ -767,9 +871,14 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  anthropic: "anthropic_api_key",
  custom: "custom_provider_key",
  };
- const key = settings[providerKeyMap[selectedProvider] || ""];
- if (!key) {
+ const key = keyForTest(providerKeyMap[selectedProvider] || "");
+ if (key === null) {
  setAiTest({ ok: false, error: "Nhập API key trước" });
+ return;
+ }
+ if (key === undefined && selectedProvider === "custom" && settings["custom_provider_url"] !== original["custom_provider_url"]) {
+ // The stored key is only ever sent to the SAVED base URL.
+ setAiTest({ ok: false, error: "Lưu Base URL trước khi thử key đã lưu (hoặc nhập lại key)" });
  return;
  }
  setAiTesting(true);
@@ -778,7 +887,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  const result = await testProvider(
  selectedProvider,
  key,
- selectedProvider === "custom" ? settings["custom_provider_url"] : undefined
+ selectedProvider === "custom" && key ? settings["custom_provider_url"] : undefined
  );
  setAiTest(result);
  if (result.ok && result.models) {
@@ -792,8 +901,10 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  }
 
  async function handleTestDalle() {
- const key = settings["dalle_api_key"];
- if (!key) {
+ // Like illustration: no DALL·E key → the OpenAI key is used.
+ let key = keyForTest("dalle_api_key");
+ if (key === null && secrets["openai_api_key"]?.is_set) key = undefined;
+ if (key === null) {
  setDalleTest({ ok: false, error: "Nhập API key trước" });
  return;
  }
@@ -813,11 +924,12 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  const handleSave = async () => {
  setSaving(true);
  setError(null);
+ let touchedSecrets = false;
  try {
  const changed: Record<string, string> = {};
  for (const [k, v] of Object.entries(settings)) {
- // A-02: without secrets.manage the DB refuses key rows anyway — never send them.
- if (!canManageSecrets && SECRET_KEY_PATTERN.test(k)) continue;
+ // API keys never go through app_settings (A-04: Vault only).
+ if (isSecretSettingKey(k)) continue;
  if (v !== (original[k] ?? "")) {
  changed[k] = v;
  }
@@ -826,11 +938,18 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  await updateAppSettings(changed);
  }
  setOriginal({ ...settings });
+ // A-04: write-only — each new key goes straight to Vault, only its status comes back.
+ for (const [k, v] of pendingSecrets) {
+ touchedSecrets = true;
+ await setSystemSecret(k, v);
+ setDrafts((prev) => ({ ...prev, [k]: "" }));
+ }
  setSaved(true);
  setTimeout(() => setSaved(false), 3000);
  } catch (err) {
  setError(err instanceof Error ? err.message : "Lưu thất bại");
  } finally {
+ if (touchedSecrets) await loadSecrets().catch(() => {});
  setSaving(false);
  }
  };
@@ -880,6 +999,9 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  <strong>API Keys hệ thống</strong> — cấu hình tại đây áp dụng cho{" "}
  <em>tất cả người dùng</em>. Người dùng có thể ghi đè bằng key riêng.
  </p>
+ <p className="text-[12px] text-blue-800/80 mt-1 leading-relaxed">
+ Key được mã hoá trong Vault: sau khi lưu chỉ còn hiện 4 ký tự cuối, không ai xem lại được — muốn đổi thì nhập key mới.
+ </p>
  </div>
 
  {/* ═══════════ ELEVENLABS ═══════════ */}
@@ -896,8 +1018,12 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  API Key
  </label>
  <SecretInput
- value={settings["elevenlabs_api_key"] ?? ""}
- onChange={(v) => handleChange("elevenlabs_api_key", v)}
+ settingKey="elevenlabs_api_key"
+ status={secrets["elevenlabs_api_key"]}
+ value={drafts["elevenlabs_api_key"] ?? ""}
+ onChange={(v) => handleDraft("elevenlabs_api_key", v)}
+ onClear={() => handleClearSecret("elevenlabs_api_key")}
+ clearing={clearingKey === "elevenlabs_api_key"}
  placeholder="sk_..."
  locked={!canManageSecrets}
  />
@@ -1015,8 +1141,13 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  API Key — {AI_PROVIDERS.find((p) => p.id === selectedProvider)?.label}
  </label>
  <SecretInput
- value={settings[aiKeyField().key] ?? ""}
- onChange={(v) => handleChange(aiKeyField().key, v)}
+ key={aiKeyField().key}
+ settingKey={aiKeyField().key}
+ status={secrets[aiKeyField().key]}
+ value={drafts[aiKeyField().key] ?? ""}
+ onChange={(v) => handleDraft(aiKeyField().key, v)}
+ onClear={() => handleClearSecret(aiKeyField().key)}
+ clearing={clearingKey === aiKeyField().key}
  placeholder={aiKeyField().placeholder}
  locked={!canManageSecrets}
  />
@@ -1072,8 +1203,12 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  OpenAI API Key (DALL·E)
  </label>
  <SecretInput
- value={settings["dalle_api_key"] ?? ""}
- onChange={(v) => handleChange("dalle_api_key", v)}
+ settingKey="dalle_api_key"
+ status={secrets["dalle_api_key"]}
+ value={drafts["dalle_api_key"] ?? ""}
+ onChange={(v) => handleDraft("dalle_api_key", v)}
+ onClear={() => handleClearSecret("dalle_api_key")}
+ clearing={clearingKey === "dalle_api_key"}
  placeholder="sk-..."
  locked={!canManageSecrets}
  />
@@ -1124,7 +1259,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
 
  <div className="px-5 mt-3 flex items-center gap-2 text-[12px] text-txt-secondary dark:text-white/50">
  <RefreshCw size={12} />
- <span>Thay đổi có hiệu lực ngay, không cần khởi động lại.</span>
+ <span>Thay đổi có hiệu lực trong vòng 1 phút, không cần khởi động lại.</span>
  </div>
  </div>
  );

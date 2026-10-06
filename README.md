@@ -101,7 +101,7 @@
 | `support` · Hỗ trợ | `dashboard.view`, `users.read` | Xem danh sách tài khoản, không sửa |
 | `analyst` · Phân tích | `dashboard.view`, `analytics.view` | Chỉ số liệu tổng hợp (`admin_usage_summary()`) |
 
-API key (`app_settings.is_secret`) chỉ `secrets.manage` (super_admin, admin) đọc / ghi được. Chỉ người có `stories.write` mới gắn / bỏ cờ truyện nền tảng (trigger `stories_guard_platform_content`). Rate limit ×5 / không giới hạn gói vẫn chỉ áp dụng cho `admin`/`super_admin`.
+API key chỉ `secrets.manage` (super_admin, admin) đặt / xem trạng thái được — và từ A-04 (migration 021) key nằm mã hoá trong Supabase Vault, không ai (kể cả super admin) đọc lại được giá trị (mục 13f). Chỉ người có `stories.write` mới gắn / bỏ cờ truyện nền tảng (trigger `stories_guard_platform_content`). Rate limit ×5 / không giới hạn gói vẫn chỉ áp dụng cho `admin`/`super_admin`.
 
 ### 2. Trang Chủ (Home)
 - Hiển thị tên gia đình, voice profiles, truyện gần đây
@@ -221,6 +221,15 @@ Route riêng `/admin` (desktop-first, thanh bên; điện thoại/tablet có tha
 - Test tự kiểm `tests/unit/admin-audit.test.ts`: quét mọi handler trong `src/app/api/admin/**` và mọi route kiểm tra quyền nhân sự — thiếu `auditAdmin(` hoặc `// audit: db-trigger <bảng>` (có trigger thật) là đỏ. RLS / chỉ-thêm: `tests/db/admin-audit.test.ts`
 - Màn `/admin/audit` (chỉ `audit.read` = super_admin, admin): mới nhất trước, lọc theo người thực hiện (email), hành động, khoảng ngày; "Tải thêm" theo trang 50 dòng
 
+#### 13f. API Key Hệ Thống trong Vault (Admin v2 A-04, migration `021_admin_secrets_vault.sql`)
+- Key mã hoá trong **Supabase Vault** (`vault.secrets`); bảng `app_secrets` chỉ giữ id Vault + 4 ký tự cuối (chỉ khi key ≥ 12 ký tự) + ai / lúc nào đặt. `app_settings.value` của dòng bí mật luôn rỗng — CHECK `app_settings_secret_not_plaintext` chặn ghi key thật kể cả từ SQL editor
+- **API chỉ-ghi**: `set_system_secret(key, value, reason?)` (quyền `secrets.manage`; giá trị rỗng = xoá key) trả về trạng thái, không bao giờ trả key; ghi nhật ký `secret.create` / `secret.update` / `secret.delete` với `is_set` + `…abcd`. `list_system_secrets()` chỉ trả "đã đặt" + 4 ký tự cuối
+- **Chỉ server đọc key**: `get_system_secret(key)` chỉ `service_role` execute được (`src/lib/server-settings.ts`, cache 60 giây; key vừa đặt lần đầu dùng được ngay). anon / authenticated không có quyền trên schema `vault`, bảng `app_secrets` hay hàm đọc
+- Màn Cài đặt: ô key luôn trống, hiện "Đã đặt · …abcd · ngày · người đặt"; nhập key mới để thay, nút "Xoá key". "Test Kết Nối" không nhập key → server tự thử key đã lưu (Custom chỉ gửi tới Base URL **đã lưu**); lỗi từ nhà cung cấp được lọc key (`scrubSecret`) trước khi trả về
+- Key chữ thường cũ được migration chuyển vào Vault (nhật ký `secret.update`, nguồn `system`). Đặt key bằng SQL: `select public.set_system_secret('openai_api_key', 'sk-...');`
+- Sửa FK `app_settings.updated_by` → `ON DELETE SET NULL` (trước đây không xoá được tài khoản từng lưu cài đặt)
+- Test: `tests/db/admin-secrets.test.ts` (Vault / quyền / nhật ký / chuyển dữ liệu), E2E `tests/e2e/secrets-scan.spec.ts` — **quét tự động**: cắm key giả vào mọi ô Vault, server đọc bằng service role, rồi kiểm tra mọi response tới trình duyệt (HTML, RSC, JS, API, PostgREST) không chứa key
+
 ### 14. Cài Đặt (Settings)
 - Cấu hình ElevenLabs API key + model (Multilingual v2, Turbo v2.5, Flash v2.5)
 - Chọn AI Provider: OpenAI / Gemini / Anthropic / **Custom (OpenAI-compatible)**
@@ -314,8 +323,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Bắt buộc — URL redirect auth
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Khuyến nghị — Service role key (CHỈ server-side, không có tiền tố NEXT_PUBLIC_)
-# Cho phép API route đọc API key admin cấu hình trong Cài Đặt Hệ Thống cho mọi user.
+# Bắt buộc nếu dùng API key đặt trong Cài Đặt Hệ Thống — Service role key
+# (CHỈ server-side, không có tiền tố NEXT_PUBLIC_). Key admin nằm trong Supabase
+# Vault (A-04) và chỉ service role đọc được; thiếu biến này → chỉ dùng key env / BYO.
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Tuỳ chọn — API keys cho AI (server-side only)
@@ -346,6 +356,7 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `017` → `018` | PIN phụ huynh bcrypt phía server, khoá sau 5 lần sai, đặt lại PIN bằng mật khẩu |
 | `019_admin_rbac.sql` | RBAC: `admin_roles` / `admin_permissions` / `admin_role_permissions`, `has_permission()`, `my_admin_permissions()`, `admin_usage_summary()`, policy cho vai trò hẹp, API key chỉ `secrets.manage`, chuyển `admin`/`super_admin` cũ |
 | `020_admin_audit_log.sql` | Nhật ký thao tác quản trị chỉ-thêm `admin_audit_log` + quyền `audit.read`, trigger `audit_<bảng>` cho bảng nhạy cảm, `log_admin_action()` cho API route |
+| `021_admin_secrets_vault.sql` | API key hệ thống vào Supabase Vault: `app_secrets`, `set_system_secret()` (chỉ-ghi, có nhật ký), `list_system_secrets()` (4 ký tự cuối), `get_system_secret()` chỉ service role; chuyển key cũ; CHECK cấm key chữ thường trong `app_settings`; FK `updated_by` ON DELETE SET NULL |
 
 ### Bảng chính:
 - `profiles` — User profiles (display_name, role, child_name, child_age...)

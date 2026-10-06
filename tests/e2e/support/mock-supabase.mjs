@@ -200,6 +200,41 @@ const TABLES = {
   admin_audit_log: adminAuditLog,
 };
 
+/**
+ * A-04 · API keys "in Vault" (migration 021). The browser only gets statuses
+ * (list_system_secrets) and writes keys (set_system_secret); the Next server
+ * reads them with the service role (get_system_secret).
+ * Outside scan mode the server reads nothing, so every other spec keeps the
+ * "no system keys" state. Scan mode (POST /__e2e/secrets-scan, used by the
+ * serial secrets-scan project) plants a key in every slot.
+ */
+export const MOCK_SERVICE_ROLE_KEY = "e2e-fake-service-role-key";
+const SECRET_SETTINGS = [
+  ["anthropic_api_key", "Anthropic Claude API Key", "ai"],
+  ["custom_provider_key", "Custom Provider Key", "ai"],
+  ["gemini_api_key", "Google Gemini API Key", "ai"],
+  ["openai_api_key", "OpenAI API Key", "ai"],
+  ["dalle_api_key", "DALL·E API Key", "image"],
+  ["elevenlabs_api_key", "ElevenLabs API Key", "voice"],
+];
+const vault = new Map([
+  ["elevenlabs_api_key", { value: "sk_e2e-stored-elevenlabs-x9Qz", updated_at: "2026-03-01T08:00:00+00:00", updated_by_email: adminUser.email }],
+]);
+let secretsScan = false;
+export const plantedSecret = (key) => `sk-e2e-PLANTED-${key}-Zq7w`;
+const last4 = (v) => (v.length >= 12 ? v.slice(-4) : null);
+const rpcError = (status, code, message) => ({ __rpcError: { status, body: { code, details: null, hint: null, message } } });
+
+function secretStatuses() {
+  return SECRET_SETTINGS.map(([key, label, category]) => {
+    const stored = secretsScan ? { value: plantedSecret(key), updated_at: now, updated_by_email: null } : vault.get(key);
+    return {
+      key, label, category, is_set: Boolean(stored), last4: stored ? last4(stored.value) : null,
+      updated_at: stored?.updated_at ?? null, updated_by_email: stored?.updated_by_email ?? null,
+    };
+  });
+}
+
 /** Tables whose RLS needs a staff permission (mirrors the SELECT policies). */
 const TABLE_PERMISSION = { admin_audit_log: "audit.read" };
 
@@ -225,6 +260,25 @@ function rpc(name, sub, body) {
     case "reset_parent_pin":
       // Mock tokens carry no fresh `amr` → the app must ask for the password.
       return { ok: false, reason: "reauth_required" };
+    case "list_system_secrets":
+      if (!permissions.includes("secrets.manage")) return rpcError(400, "42501", "Chỉ Super admin / Admin xem được trạng thái API key");
+      return secretStatuses();
+    case "set_system_secret": {
+      if (!permissions.includes("secrets.manage")) return rpcError(400, "42501", "Chỉ Super admin / Admin đặt được API key");
+      const key = body?.p_key;
+      if (!SECRET_SETTINGS.some(([k]) => k === key)) return rpcError(400, "22023", `Không có API key "${key}"`);
+      const value = String(body?.p_value ?? "").trim();
+      if (!value) {
+        vault.delete(key);
+        return { key, is_set: false, last4: null, updated_at: null };
+      }
+      const entry = { value, updated_at: new Date().toISOString(), updated_by_email: USERS[sub]?.email ?? null };
+      vault.set(key, entry);
+      return { key, is_set: true, last4: last4(value), updated_at: entry.updated_at };
+    }
+    case "get_system_secret":
+      // Never for a signed-in user (EXECUTE only for service_role) — see the service-role branch.
+      return rpcError(401, "42501", "permission denied for function get_system_secret");
     default:
       return null;
   }
@@ -311,6 +365,13 @@ createServer((req, res) => {
   const path = url.pathname;
   if (req.method === "OPTIONS") return send(res, 204);
   if (path === "/health") return send(res, 200, { ok: true });
+  if (path === "/__e2e/secrets-scan" && req.method === "POST") {
+    readJson(req).then((body) => {
+      secretsScan = Boolean(body?.on);
+      send(res, 200, { secretsScan });
+    });
+    return;
+  }
 
   // ── Auth ──
   if (path === "/auth/v1/user") {
@@ -326,7 +387,16 @@ createServer((req, res) => {
     const authed = Boolean(USERS[sub]);
     if (path.startsWith("/rest/v1/rpc/")) {
       const name = path.slice("/rest/v1/rpc/".length);
-      readJson(req).then((body) => send(res, 200, authed ? rpc(name, sub, body) : null));
+      const isServiceRole = (req.headers.authorization ?? "") === `Bearer ${MOCK_SERVICE_ROLE_KEY}`;
+      readJson(req).then((body) => {
+        if (isServiceRole && name === "get_system_secret") {
+          const key = body?.p_key;
+          return send(res, 200, secretsScan && SECRET_SETTINGS.some(([k]) => k === key) ? plantedSecret(key) : null);
+        }
+        const out = authed ? rpc(name, sub, body) : null;
+        if (out && typeof out === "object" && "__rpcError" in out) return send(res, out.__rpcError.status, out.__rpcError.body);
+        send(res, 200, out);
+      });
       return;
     }
     const table = path.slice("/rest/v1/".length);

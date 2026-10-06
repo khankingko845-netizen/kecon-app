@@ -148,8 +148,11 @@ vi.mock("@/lib/supabase/server", () => ({
     from,
   })),
 }));
+/** A-04: what the server would read from Vault / saved settings (never sent to the browser). */
+const STORED: Record<string, string> = {};
 vi.mock("@/lib/server-settings", () => ({
-  getSystemSetting: vi.fn(async () => ""),
+  getSystemSetting: vi.fn(async (key: string) => STORED[key] ?? ""),
+  resolveApiKey: vi.fn(async (provider: string) => STORED[`${provider === "custom" ? "custom_provider_key" : `${provider}_api_key`}`] ?? ""),
   isSafePublicBaseUrl: vi.fn(async () => true),
 }));
 
@@ -206,5 +209,44 @@ describe("A-03 · route ghi nhật ký trước khi thao tác", () => {
     const blocked = await POST(post({ provider: "openai", apiKey: "sk-test-NEVER-LOG" }));
     expect(blocked.status).toBe(503);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("A-04 · admin/test-provider POST không gửi key: thử key đã lưu ở server, không trả key về trình duyệt", async () => {
+    const stored = "sk-proj-STORED-IN-VAULT-1234";
+    Object.assign(STORED, { openai_api_key: stored, custom_provider_key: stored, custom_provider_url: "https://saved-llm.example.com/v1" });
+    try {
+      rpcWith({ error: null });
+      fetchMock.mockResolvedValue(new Response(JSON.stringify({ data: [{ id: "gpt-4o" }] }), { status: 200 }));
+      const { POST } = await import("@/app/api/admin/test-provider/route");
+      const ok = await POST(post({ provider: "openai" }));
+      const okText = await ok.text();
+      expect(JSON.parse(okText)).toEqual({ ok: true, models: ["gpt-4o"] });
+      expect(okText).not.toContain(stored);
+      expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ Authorization: `Bearer ${stored}` });
+      expect(rpc).toHaveBeenCalledWith("log_admin_action", expect.objectContaining({ p_after: { host: null, key_source: "stored" } }));
+      expect(JSON.stringify(rpc.mock.calls)).not.toContain(stored);
+
+      // Custom: the stored key only goes to the SAVED base URL, never to one sent by the browser.
+      fetchMock.mockClear();
+      await POST(post({ provider: "custom", baseUrl: "https://attacker.example.com/v1" }));
+      expect(String(fetchMock.mock.calls[0][0])).toBe("https://saved-llm.example.com/v1/models");
+
+      // Provider errors that echo the key are scrubbed.
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify({ error: { message: `Incorrect API key provided: ${stored}.` } }), { status: 401 })
+      );
+      const bad = await POST(post({ provider: "openai" }));
+      const badText = await bad.text();
+      expect(JSON.parse(badText)).toEqual({ ok: false, error: "Incorrect API key provided: [đã ẩn]." });
+
+      // Nothing stored → clear message, no provider call.
+      for (const k of Object.keys(STORED)) delete STORED[k];
+      fetchMock.mockClear();
+      const none = await POST(post({ provider: "gemini" }));
+      expect(await none.json()).toEqual({ ok: false, error: "Chưa đặt API key Gemini" });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      for (const k of Object.keys(STORED)) delete STORED[k];
+    }
   });
 });

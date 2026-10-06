@@ -18,8 +18,12 @@ vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createServiceClien
 
 type Settings = Record<string, string>;
 
-/** Minimal stand-in for `supabase.from("app_settings").select().eq().maybeSingle()`. */
-function fakeSettingsClient(settings: Settings, error: { message: string } | null = null) {
+/**
+ * Minimal stand-in for a Supabase client:
+ * - `from("app_settings").select().eq().maybeSingle()` for plain settings;
+ * - `rpc("get_system_secret", { p_key })` for API keys in Vault (A-04).
+ */
+function fakeSettingsClient(settings: Settings, error: { message: string } | null = null, secrets: Settings = {}) {
   const from = vi.fn((table: string) => {
     if (table !== "app_settings") throw new Error(`unexpected table ${table}`);
     return {
@@ -33,7 +37,11 @@ function fakeSettingsClient(settings: Settings, error: { message: string } | nul
       }),
     };
   });
-  return { from };
+  const rpc = vi.fn(async (name: string, args: { p_key: string }) => {
+    if (name !== "get_system_secret") throw new Error(`unexpected rpc ${name}`);
+    return error ? { data: null, error } : { data: secrets[args.p_key] ?? null, error: null };
+  });
+  return { from, rpc };
 }
 
 /**
@@ -213,30 +221,39 @@ describe("resolveCustomBaseUrl", () => {
 });
 
 describe("resolveApiKey", () => {
+  const withServiceRole = (secrets: Settings, error: { message: string } | null = null) => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-secret");
+    const service = fakeSettingsClient({}, error, secrets);
+    mocks.createServiceClient.mockReturnValue(service);
+    return service;
+  };
+
   it("ưu tiên key BYO của người dùng, không đọc DB", async () => {
-    const session = fakeSettingsClient({ openai_api_key: "sk-db" });
-    mocks.createSessionClient.mockResolvedValue(session);
+    const service = withServiceRole({ openai_api_key: "sk-db" });
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
     const { resolveApiKey } = await loadModule();
 
     await expect(resolveApiKey("openai", "sk-user")).resolves.toBe("sk-user");
-    expect(session.from).not.toHaveBeenCalled();
+    expect(service.rpc).not.toHaveBeenCalled();
   });
 
-  it("không có BYO → dùng key admin trong DB trước biến môi trường", async () => {
-    mocks.createSessionClient.mockResolvedValue(
-      fakeSettingsClient({ openai_api_key: "sk-db", elevenlabs_api_key: "el-db" })
-    );
+  it("A-04: không có BYO → key admin giải mã từ Vault (service role) trước biến môi trường", async () => {
+    const service = withServiceRole({ openai_api_key: "sk-vault", elevenlabs_api_key: "el-vault" });
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
     vi.stubEnv("ELEVENLABS_API_KEY", "el-env");
     const { resolveApiKey } = await loadModule();
 
-    await expect(resolveApiKey("openai")).resolves.toBe("sk-db");
-    await expect(resolveApiKey("elevenlabs", "")).resolves.toBe("el-db");
+    await expect(resolveApiKey("openai")).resolves.toBe("sk-vault");
+    await expect(resolveApiKey("elevenlabs", "")).resolves.toBe("el-vault");
+    expect(service.rpc).toHaveBeenCalledWith("get_system_secret", { p_key: "openai_api_key" });
+    // Keys are never read from app_settings any more (the column is always empty).
+    expect(service.from).not.toHaveBeenCalled();
+    expect(mocks.createServiceClient).toHaveBeenCalledWith("http://127.0.0.1:54321", "service-role-secret", expect.anything());
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
   });
 
-  it("DB không có key → fallback biến môi trường", async () => {
-    mocks.createSessionClient.mockResolvedValue(fakeSettingsClient({}));
+  it("Vault chưa có key → fallback biến môi trường", async () => {
+    withServiceRole({});
     vi.stubEnv("GEMINI_API_KEY", "gm-env");
     vi.stubEnv("ANTHROPIC_API_KEY", "an-env");
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
@@ -247,8 +264,8 @@ describe("resolveApiKey", () => {
     await expect(resolveApiKey("dalle")).resolves.toBe("sk-env"); // DALL·E dùng key OpenAI
   });
 
-  it("lỗi khi đọc DB (vd: RLS/ mạng) → fallback biến môi trường, không ném lỗi", async () => {
-    mocks.createSessionClient.mockResolvedValue(fakeSettingsClient({}, { message: "permission denied" }));
+  it("lỗi khi đọc Vault (mạng / quyền) → fallback biến môi trường, không ném lỗi", async () => {
+    withServiceRole({ openai_api_key: "sk-vault" }, { message: "permission denied for function get_system_secret" });
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
     const { resolveApiKey } = await loadModule();
 
@@ -256,7 +273,7 @@ describe("resolveApiKey", () => {
   });
 
   it("provider custom/không xác định không có fallback env → chuỗi rỗng", async () => {
-    mocks.createSessionClient.mockResolvedValue(fakeSettingsClient({}));
+    withServiceRole({});
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
     const { resolveApiKey } = await loadModule();
 
@@ -264,29 +281,49 @@ describe("resolveApiKey", () => {
     await expect(resolveApiKey("unknown-provider")).resolves.toBe("");
   });
 
-  it("có SUPABASE_SERVICE_ROLE_KEY → đọc key admin bằng service client", async () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-secret");
-    mocks.createServiceClient.mockReturnValue(fakeSettingsClient({ openai_api_key: "sk-db-service" }));
-    const { resolveApiKey } = await loadModule();
+  it("key từ Vault được cache 1 phút (không gọi DB mỗi request); clearSystemSettingCache xoá cache", async () => {
+    const service = withServiceRole({ openai_api_key: "sk-vault" });
+    const { resolveApiKey, clearSystemSettingCache } = await loadModule();
 
-    await expect(resolveApiKey("openai")).resolves.toBe("sk-db-service");
-    expect(mocks.createServiceClient).toHaveBeenCalledWith(
-      "http://127.0.0.1:54321",
-      "service-role-secret",
-      expect.anything()
-    );
-    expect(mocks.createSessionClient).not.toHaveBeenCalled();
+    await resolveApiKey("openai");
+    await resolveApiKey("openai");
+    expect(service.rpc).toHaveBeenCalledTimes(1);
+    clearSystemSettingCache("openai_api_key");
+    await resolveApiKey("openai");
+    expect(service.rpc).toHaveBeenCalledTimes(2);
   });
 
-  it("không có service role → không cache kết quả giữa các người dùng khác nhau", async () => {
-    // Lần 1: admin (RLS cho đọc key). Lần 2: user thường (RLS ẩn key).
-    mocks.createSessionClient
-      .mockResolvedValueOnce(fakeSettingsClient({ openai_api_key: "sk-db" }))
-      .mockResolvedValueOnce(fakeSettingsClient({}));
+  it("không có service role → không đọc được key trong Vault (không hỏi bằng phiên người dùng) → biến môi trường", async () => {
+    mocks.createSessionClient.mockResolvedValue(fakeSettingsClient({ openai_api_key: "sk-legacy-plaintext" }));
     vi.stubEnv("OPENAI_API_KEY", "sk-env");
     const { resolveApiKey } = await loadModule();
 
-    await expect(resolveApiKey("openai")).resolves.toBe("sk-db");
     await expect(resolveApiKey("openai")).resolves.toBe("sk-env");
+    await expect(resolveApiKey("custom")).resolves.toBe("");
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("SUPABASE_SERVICE_ROLE_KEY"));
+  });
+
+  it("không có service role → cài đặt thường đọc bằng phiên người gọi, không cache giữa các người dùng", async () => {
+    mocks.createSessionClient
+      .mockResolvedValueOnce(fakeSettingsClient({ elevenlabs_model_id: "eleven_v3" }))
+      .mockResolvedValueOnce(fakeSettingsClient({}));
+    const { resolveElevenLabsModel } = await loadModule();
+
+    await expect(resolveElevenLabsModel()).resolves.toBe("eleven_v3");
+    await expect(resolveElevenLabsModel()).resolves.toBe("eleven_multilingual_v2");
+  });
+});
+
+describe("scrubSecret (A-04)", () => {
+  it("xoá key và chuỗi trông như key khỏi thông báo lỗi của provider", async () => {
+    const { scrubSecret } = await import("@/lib/system-secrets");
+    expect(scrubSecret("Incorrect API key provided: sk-proj-abc123def456. See docs", "sk-proj-abc123def456")).toBe(
+      "Incorrect API key provided: [đã ẩn]. See docs"
+    );
+    expect(scrubSecret("Incorrect API key provided: sk-abc12**********wxyz.")).toBe("Incorrect API key provided: [đã ẩn].");
+    expect(scrubSecret("API key not valid: AIzaSyD-xyz_123")).toBe("API key not valid: [đã ẩn]");
+    expect(scrubSecret("my-weird-key-123 rejected", "my-weird-key-123")).toBe("[đã ẩn] rejected");
+    expect(scrubSecret("OpenAI returned 401")).toBe("OpenAI returned 401");
   });
 });

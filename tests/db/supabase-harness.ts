@@ -6,7 +6,10 @@
  *   (including `CREATE EXTENSION` and pgcrypto's `gen_random_bytes`).
  * - Stubs for the parts of Supabase the migrations depend on: roles
  *   (anon/authenticated/service_role), Supabase's default grants, `auth.users`,
- *   `auth.uid()` (reads the JWT claims GUC like the real one), `storage.*`.
+ *   `auth.uid()` (reads the JWT claims GUC like the real one), `storage.*`,
+ *   and Supabase Vault (`vault.secrets`, `vault.decrypted_secrets`,
+ *   `vault.create_secret` / `vault.update_secret`) with the same signatures and
+ *   grants as supabase_vault 0.3 (only service_role may touch it).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -78,6 +81,52 @@ BEGIN
   SELECT string_to_array(name, '/') INTO _parts;
   RETURN _parts[1 : array_length(_parts, 1) - 1];
 END $$;
+
+-- Supabase Vault stand-in. The real extension encrypts with libsodium; here the
+-- stored text is base64(reverse(secret)) — enough to prove nothing stores or
+-- returns the plaintext outside \`decrypted_secrets\`.
+CREATE SCHEMA vault;
+CREATE TABLE vault.secrets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text,
+  description text NOT NULL DEFAULT '',
+  secret text NOT NULL,
+  key_id uuid,
+  nonce bytea,
+  created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX secrets_name_idx ON vault.secrets (name) WHERE name IS NOT NULL;
+CREATE VIEW vault.decrypted_secrets AS
+  SELECT s.id, s.name, s.description, s.secret,
+         reverse(convert_from(decode(s.secret, 'base64'), 'utf8')) AS decrypted_secret,
+         s.key_id, s.nonce, s.created_at, s.updated_at
+    FROM vault.secrets s;
+CREATE FUNCTION vault.create_secret(new_secret text, new_name text DEFAULT NULL, new_description text DEFAULT '', new_key_id uuid DEFAULT NULL)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_id uuid;
+BEGIN
+  INSERT INTO vault.secrets (secret, name, description, key_id)
+  VALUES (encode(convert_to(reverse(new_secret), 'utf8'), 'base64'), new_name, new_description, new_key_id)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END $$;
+CREATE FUNCTION vault.update_secret(secret_id uuid, new_secret text DEFAULT NULL, new_name text DEFAULT NULL, new_description text DEFAULT NULL, new_key_id uuid DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  UPDATE vault.secrets s
+     SET secret = CASE WHEN new_secret IS NULL THEN s.secret ELSE encode(convert_to(reverse(new_secret), 'utf8'), 'base64') END,
+         name = coalesce(new_name, s.name),
+         description = coalesce(new_description, s.description),
+         updated_at = now()
+   WHERE s.id = secret_id;
+END $$;
+REVOKE ALL ON SCHEMA vault FROM PUBLIC;
+REVOKE ALL ON ALL TABLES IN SCHEMA vault FROM PUBLIC;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA vault FROM PUBLIC;
+GRANT USAGE ON SCHEMA vault TO service_role;
+GRANT SELECT, DELETE ON vault.secrets, vault.decrypted_secrets TO service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA vault TO service_role;
 `;
 
 export function listMigrations(): string[] {
@@ -125,7 +174,7 @@ export async function createMigratedDb(opts: { stopBefore?: string } = {}): Prom
 }
 
 export type Tx = Transaction;
-type Role = "anon" | "authenticated";
+type Role = "anon" | "authenticated" | "service_role";
 
 /**
  * Run `fn` inside a transaction as a PostgREST request would: `SET LOCAL ROLE`

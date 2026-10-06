@@ -2,16 +2,33 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
 import { auditAdmin } from "@/lib/admin-audit";
-import { getSystemSetting, isSafePublicBaseUrl } from "@/lib/server-settings";
+import { getSystemSetting, isSafePublicBaseUrl, resolveApiKey } from "@/lib/server-settings";
+import { scrubSecret } from "@/lib/system-secrets";
 import { GEMINI_BASE_URL } from "@/lib/llm";
 import { z } from "zod";
-import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+import { optionalText, parseJsonBody } from "@/lib/api-validation";
 
 const TestProviderBody = z.object({
   provider: z.enum(["openai", "dalle", "gemini", "anthropic", "elevenlabs", "custom"]),
-  apiKey: requiredText(512),
+  /** A-04: omit to test the key already stored in Vault (it never leaves the server). */
+  apiKey: optionalText(512),
   baseUrl: optionalText(2048).pipe(z.url().optional()),
 });
+
+const PROVIDER_LABEL: Record<z.infer<typeof TestProviderBody>["provider"], string> = {
+  openai: "OpenAI",
+  dalle: "DALL·E",
+  gemini: "Gemini",
+  anthropic: "Claude",
+  elevenlabs: "ElevenLabs",
+  custom: "Custom",
+};
+
+/** The key the platform would really use for this provider (Vault → env), like the generation routes. */
+async function storedKey(provider: z.infer<typeof TestProviderBody>["provider"]): Promise<string> {
+  if (provider === "dalle") return (await resolveApiKey("dalle")) || (await resolveApiKey("openai"));
+  return resolveApiKey(provider);
+}
 
 /**
  * GET /api/admin/test-provider?voice_id=xxx
@@ -112,16 +129,19 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     return Response.json({
       ok: false,
-      error: err instanceof Error ? err.message : "Lookup failed",
+      error: err instanceof Error ? scrubSecret(err.message, apiKey) : "Lookup failed",
     });
   }
 }
 
 /**
  * POST /api/admin/test-provider
- * Tests an API key + fetches available models from a provider.
- * Body: { provider, apiKey, baseUrl? }
- * Returns: { ok, models?, voices?, error? }
+ * Tests an API key + fetches available models from a provider — server side.
+ * Body: { provider, apiKey?, baseUrl? }
+ *  - apiKey given: test that (newly typed) key; custom → the given baseUrl.
+ *  - apiKey omitted (A-04): test the stored key; custom → the SAVED base URL
+ *    only, so a stored key can never be sent to a host chosen by the browser.
+ * Returns: { ok, models?, voices?, error? } — never the key (errors are scrubbed).
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -131,15 +151,24 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, TestProviderBody);
   if (!parsed.ok) return parsed.response;
-  const { provider, apiKey, baseUrl } = parsed.data;
-  // A-03: the key itself is never logged — only which provider / host was tried.
+  const { provider } = parsed.data;
+  const usingStored = !parsed.data.apiKey;
+  const baseUrl = usingStored
+    ? provider === "custom" ? (await getSystemSetting("custom_provider_url")) || undefined : undefined
+    : parsed.data.baseUrl;
+  // A-03: the key itself is never logged — only which provider / host / key source was tried.
   const auditFailed = await auditAdmin(supabase, request, {
     action: "provider.test",
     targetType: "provider",
     targetId: provider,
-    after: { host: baseUrl ? new URL(baseUrl).host : null },
+    after: { host: baseUrl ? safeHost(baseUrl) : null, key_source: usingStored ? "stored" : "typed" },
   });
   if (auditFailed) return auditFailed;
+
+  const apiKey = parsed.data.apiKey ?? (await storedKey(provider));
+  if (!apiKey) {
+    return Response.json({ ok: false, error: `Chưa đặt API key ${PROVIDER_LABEL[provider]}` }, { status: 200 });
+  }
 
   try {
     switch (provider) {
@@ -330,7 +359,7 @@ export async function POST(request: NextRequest) {
 
       case "custom": {
         if (!baseUrl) {
-          throw new Error("Base URL required for custom provider");
+          throw new Error(usingStored ? "Chưa lưu Base URL cho Custom provider" : "Base URL required for custom provider");
         }
         if (!(await isSafePublicBaseUrl(baseUrl))) {
           throw new Error("Base URL không hợp lệ hoặc trỏ tới địa chỉ nội bộ");
@@ -358,6 +387,15 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Connection failed";
-    return Response.json({ ok: false, error: message }, { status: 200 });
+    // A-04: providers sometimes echo (part of) the key — scrub before it reaches the browser.
+    return Response.json({ ok: false, error: scrubSecret(message, apiKey) }, { status: 200 });
+  }
+}
+
+function safeHost(url: string): string | null {
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
   }
 }

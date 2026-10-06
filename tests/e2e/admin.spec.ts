@@ -4,6 +4,7 @@
  * layout desktop có thanh bên; Trang chủ của bé không còn ô "Quản trị".
  * A-02 — vai trò hẹp (Biên tập) chỉ thấy / mở được mục mình có quyền.
  * A-03 — màn "Nhật ký" (super admin / admin) lọc theo người / hành động / thời gian.
+ * A-04 — API key chỉ-ghi: màn Cài đặt chỉ hiện "Đã đặt · …abcd", key không bao giờ quay lại trình duyệt.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MOCK_ADMIN_USER_ID, MOCK_EDITOR_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
@@ -159,6 +160,46 @@ test.describe("A-03 · Nhật ký thao tác", () => {
     await page.getByRole("main").getByRole("button", { name: "Nhật ký" }).click();
     await expect(page).toHaveURL(/\/admin\/audit$/);
     await expect(page.getByRole("heading", { name: "Nhật ký", exact: true })).toBeVisible();
+  });
+});
+
+test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  const STORED_ELEVENLABS = "sk_e2e-stored-elevenlabs-x9Qz"; // mock Vault — must never reach the browser
+  const NEW_OPENAI = "sk-e2e-new-openai-key-7777";
+
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
+  });
+
+  test("hiện trạng thái + 4 ký tự cuối; đặt key mới rồi xoá; key không quay lại trình duyệt", async ({ page }) => {
+    const bodies: Promise<string>[] = [];
+    page.on("response", (r) => bodies.push(r.text().catch(() => "")));
+
+    await page.goto("/admin/settings");
+    const eleven = page.getByTestId("secret-status-elevenlabs_api_key");
+    await expect(eleven).toContainText("Đã đặt · …x9Qz");
+    await expect(eleven).toContainText("e2e-admin@kecon.test");
+    await expect(page.getByLabel("API key ElevenLabs")).toHaveValue("");
+    await expect(page.getByLabel("API key ElevenLabs")).toHaveAttribute("placeholder", /Nhập key mới để thay/);
+
+    const openai = page.getByTestId("secret-status-openai_api_key");
+    await expect(openai).toHaveText("Chưa đặt");
+    await page.getByLabel("API key OpenAI").fill(NEW_OPENAI);
+    const saved = page.waitForResponse((r) => r.url().includes("/rest/v1/rpc/set_system_secret"));
+    await page.getByRole("button", { name: "Lưu Cài Đặt" }).click();
+    expect(await (await saved).text()).not.toContain(NEW_OPENAI); // write-only: only the status comes back
+    await expect(openai).toContainText("Đã đặt · …7777");
+    await expect(page.getByLabel("API key OpenAI")).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Đã lưu thành công!" })).toBeVisible();
+
+    page.once("dialog", (d) => d.accept());
+    await openai.getByRole("button", { name: "Xoá key" }).click();
+    await expect(openai).toHaveText("Chưa đặt");
+
+    const all = (await Promise.all(bodies)).join("\n");
+    expect(all).not.toContain(STORED_ELEVENLABS);
+    expect(all).not.toContain(NEW_OPENAI);
   });
 });
 
