@@ -97,6 +97,12 @@ export class ProviderHttpError extends Error {
 }
 
 /** Build a {@link ProviderHttpError} from a failed response (ElevenLabs `{detail}` / Fish Audio `{message, status}` bodies). */
+/** Provider error codes worth explaining in Vietnamese (shown as "Lỗi gần nhất" in the key pool). */
+const PROVIDER_CODE_HINTS: Record<string, string> = {
+  detected_unusual_activity:
+    "ElevenLabs đã khoá Free Tier của tài khoản này (phát hiện bất thường: VPN / proxy hoặc nhiều tài khoản free) — cần nâng cấp gói trả phí hoặc dùng tài khoản khác",
+};
+
 export async function providerHttpError(provider: VoiceProvider, res: Response, what: string): Promise<ProviderHttpError> {
   const text = await res.text().catch(() => "");
   let body: unknown = null;
@@ -124,6 +130,8 @@ export async function providerHttpError(provider: VoiceProvider, res: Response, 
     detail = text.trim();
   }
   const label = VOICE_PROVIDER_INFO[provider].label;
+  const hint = code ? PROVIDER_CODE_HINTS[code] : undefined;
+  if (hint) detail = hint;
   return new ProviderHttpError(provider, res.status, code, `${label} ${what} ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`);
 }
 

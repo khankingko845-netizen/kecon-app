@@ -80,7 +80,7 @@ describe("story/generate: body hợp lệ đi qua guard rồi gọi provider qua
   it("Gemini key đi bằng header, không nằm trong URL", async () => {
     const settings = await import("@/lib/server-settings");
     vi.mocked(settings.getSystemSetting).mockImplementation(async (k: string) =>
-      k === "default_story_provider" ? "gemini" : k === "default_ai_model" ? "gemini-2.0-flash" : ""
+      k === "default_ai_provider" ? "gemini" : k === "default_ai_model" ? "gemini-2.0-flash" : ""
     );
     rpc.mockResolvedValue({ data: { allowed: true }, error: null });
     fetchMock.mockResolvedValue(

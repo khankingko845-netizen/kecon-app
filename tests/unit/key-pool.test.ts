@@ -281,6 +281,13 @@ describe("provider-keys helpers", () => {
     expect(e1).toMatchObject({ status: 401, code: "quota_exceeded", message: "ElevenLabs TTS lỗi 401: Hết quota" });
     const e2 = await providerHttpError("fishaudio", new Response(JSON.stringify({ message: "Invalid Token", status: 401 }), { status: 401 }), "TTS lỗi");
     expect(e2).toMatchObject({ status: 401, code: null, message: "Fish Audio TTS lỗi 401: Invalid Token" });
+    const blocked = await providerHttpError(
+      "elevenlabs",
+      new Response(JSON.stringify({ detail: { status: "detected_unusual_activity", message: "Unusual activity has been detected on your account" } }), { status: 401 }),
+      "TTS lỗi"
+    );
+    expect(blocked.code).toBe("detected_unusual_activity");
+    expect(blocked.message).toContain("ElevenLabs TTS lỗi 401: ElevenLabs đã khoá Free Tier của tài khoản này");
     const e3 = await providerHttpError("fishaudio", new Response("<html>bad gateway</html>", { status: 502 }), "TTS lỗi");
     expect(e3.message).toBe("Fish Audio TTS lỗi 502");
   });

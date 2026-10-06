@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe("resolveLlmTarget — key nền tảng", () => {
   it("bỏ qua provider client gửi, dùng provider mặc định của admin", async () => {
-    settings.default_story_provider = "gemini";
+    settings.default_ai_provider = "gemini"; // Cài Đặt Hệ Thống → AI Provider
     settings.default_ai_model = "gemini-2.0-flash";
     keys.gemini = "platform-gemini";
     keys.openai = "platform-openai";
@@ -42,7 +42,7 @@ describe("resolveLlmTarget — key nền tảng", () => {
   });
 
   it("không dùng baseUrl của client khi không có key riêng", async () => {
-    settings.default_story_provider = "custom";
+    settings.default_ai_provider = "custom";
     settings.default_ai_model = "llama-3";
     settings.custom_provider_url = "https://admin-llm.example.com/v1";
     keys.custom = "platform-custom";
@@ -52,6 +52,21 @@ describe("resolveLlmTarget — key nền tảng", () => {
     expect(r.ok && r.target.model).toBe("llama-3");
   });
 
+  it("đọc đúng cài đặt màn admin lưu (default_ai_provider); tên cũ default_story_provider chỉ là dự phòng", async () => {
+    keys.custom = "platform-custom";
+    keys.anthropic = "platform-claude";
+    settings.custom_provider_url = "https://api.cometapi.com/v1";
+    settings.default_ai_provider = "custom";
+    settings.default_story_provider = "anthropic";
+    const r = await resolveLlmTarget();
+    expect(r.ok && r.target.provider).toBe("custom");
+    expect(r.ok && r.target.baseUrl).toBe("https://api.cometapi.com/v1");
+
+    delete settings.default_ai_provider;
+    const legacy = await resolveLlmTarget();
+    expect(legacy.ok && legacy.target.provider).toBe("anthropic");
+  });
+
   it("chưa cấu hình key → 400", async () => {
     const r = await resolveLlmTarget();
     expect(r.ok).toBe(false);
@@ -59,7 +74,7 @@ describe("resolveLlmTarget — key nền tảng", () => {
   });
 
   it("provider admin không hợp lệ → về openai", async () => {
-    settings.default_story_provider = "nonsense";
+    settings.default_ai_provider = "nonsense";
     keys.openai = "k";
     const r = await resolveLlmTarget();
     expect(r.ok && r.target.provider).toBe("openai");

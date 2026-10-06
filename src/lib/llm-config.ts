@@ -4,8 +4,9 @@
  *
  * - BYO key (client supplied its own key): the client's provider, model and
  *   base URL are honoured — the user pays for it.
- * - Platform key: provider comes from the admin setting
- *   `default_story_provider`; the client may only pick a model from the
+ * - Platform key: provider comes from the admin setting `default_ai_provider`
+ *   (Cài Đặt Hệ Thống → "AI Provider"; legacy name `default_story_provider` is
+ *   still read as a fallback); the client may only pick a model from the
  *   provider's catalogue (otherwise the admin default is used), so nobody can
  *   spend the platform key on an arbitrary/expensive model or host.
  */
@@ -48,7 +49,9 @@ export async function resolveLlmTarget(selection: LlmSelection = {}): Promise<Re
   const userKey = selection.apiKey?.trim() || undefined;
   const byo = Boolean(userKey);
 
-  const adminProviderRaw = await getSystemSetting("default_story_provider");
+  // The admin screen saves `default_ai_provider` (migration 007). Older code read
+  // `default_story_provider`, which no migration creates → the admin's choice was ignored.
+  const adminProviderRaw = (await getSystemSetting("default_ai_provider")) || (await getSystemSetting("default_story_provider"));
   const adminProvider: LlmProvider = isLlmProvider(adminProviderRaw) ? adminProviderRaw : FALLBACK_PROVIDER;
   const adminModel = await getSystemSetting("default_ai_model");
 
