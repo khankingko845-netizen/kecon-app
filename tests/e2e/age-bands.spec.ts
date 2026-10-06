@@ -9,13 +9,18 @@ import { MOCK_AGE_USER_ID, mockAccessToken, passParentGate, signInAsMockFamily }
 
 const AGE_EMAIL = "e2e-age@kecon.test";
 
+const PROFILE_URL = `http://127.0.0.1:54321/rest/v1/profiles?id=eq.${MOCK_AGE_USER_ID}`;
+const authHeader = () => ({ Authorization: `Bearer ${mockAccessToken(MOCK_AGE_USER_ID, AGE_EMAIL)}` });
+
 /** Put the UI-13 family's child back to 4 tuổi (mock keeps rows in memory). */
 async function setChildAge(request: APIRequestContext, age: number) {
-  const res = await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?id=eq.${MOCK_AGE_USER_ID}`, {
-    headers: { Authorization: `Bearer ${mockAccessToken(MOCK_AGE_USER_ID, AGE_EMAIL)}` },
-    data: { child_age: age },
-  });
+  const res = await request.patch(PROFILE_URL, { headers: authHeader(), data: { child_age: age, family_name: "Gia đình Mèo" } });
   expect(res.status()).toBe(204);
+}
+
+async function storedProfile(request: APIRequestContext) {
+  const res = await request.get(PROFILE_URL, { headers: authHeader() });
+  return ((await res.json()) as { child_age: number | null; family_name: string }[])[0];
 }
 
 async function listenToDom(page: Page) {
@@ -72,7 +77,7 @@ test.describe("UI-13 · Lớn cùng bé", () => {
     await setChildAge(request, 4);
   });
 
-  test("3–5 mặc định → đổi sang 10 tuổi trong Hồ sơ gia đình → UI 9–12", async ({ page }) => {
+  test("3–5 mặc định → đổi sang 10 tuổi trong Hồ sơ gia đình → UI 9–12", async ({ page, request }) => {
     await page.goto("/");
     // ── 3–5 "Mầm": ít chữ, nút to, chạm biểu tượng là Đóm đọc tên ──
     await expect(html(page)).toHaveAttribute("data-age", "3-5");
@@ -104,8 +109,12 @@ test.describe("UI-13 · Lớn cùng bé", () => {
     await page.getByRole("button", { name: "10", exact: true }).click();
     await expect(summary).toHaveAttribute("data-band", "9-12");
     await expect(summary).toContainText("Lá · 9–12 tuổi");
+    // Tên gia đình để trống vẫn lưu được (cột NOT NULL → gửi "" chứ không phải null)
+    await page.getByPlaceholder("VD: Gia đình Gấu, Nhà Mít...").fill("");
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
     await expect(page.getByRole("button", { name: "Đã lưu", exact: true })).toBeVisible();
+    await expect(page.getByTestId("profile-save-error")).toHaveCount(0);
+    expect(await storedProfile(request)).toMatchObject({ child_age: 10, family_name: "" });
 
     // ── 9–12 "Lá": nhiều chữ hơn, nút gọn, Đóm nhỏ lại, không đọc nhãn ──
     await expect(html(page)).toHaveAttribute("data-age", "9-12");

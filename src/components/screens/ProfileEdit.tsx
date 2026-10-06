@@ -5,6 +5,7 @@ import { ChevronLeft, Check, User, Users, Baby, Calendar, Globe, Loader2 } from 
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/settings-context";
 import { ageUiFor } from "@/lib/age-ui";
+import { buildProfileUpdate } from "@/lib/profile-form";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";
 
@@ -25,25 +26,26 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  const [locale, setLocale] = useState(profile?.locale || "vi");
  const [saving, setSaving] = useState(false);
  const [saved, setSaved] = useState(false);
+ const [saveError, setSaveError] = useState(false);
 
  const handleSave = async () => {
  if (!profile?.id) return;
  setSaving(true);
+ setSaveError(false);
  try {
  const supabase = createClient();
- await supabase.from("profiles").update({
- display_name: displayName.trim() || null,
- family_name: familyName.trim() || null,
- avatar_emoji: selectedAvatar,
- child_age: childAge ? parseInt(childAge) : null,
- locale,
- }).eq("id", profile.id);
+ const update = buildProfileUpdate({ displayName, familyName, avatarEmoji: selectedAvatar, childAge, locale });
+ // `.select` so an update that matched no row (RLS) is not reported as saved.
+ const { data, error } = await supabase.from("profiles").update(update).eq("id", profile.id).select("id");
+ if (error || !data?.length) throw error ?? new Error("profile not updated");
  // UI-13: the kid screens follow the new age band right away.
- if (childAge) updateSettings({ childAge: ageUiFor(parseInt(childAge)).band });
+ if (update.child_age) updateSettings({ childAge: ageUiFor(update.child_age).band });
  await refreshProfile();
  setSaved(true);
  setTimeout(() => setSaved(false), 2000);
- } catch { /* ignore */ }
+ } catch {
+ setSaveError(true);
+ }
  setSaving(false);
  };
 
@@ -67,6 +69,12 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  {saved ? "Đã lưu" : "Lưu"}
  </button>
  </div>
+
+ {saveError && (
+ <p role="alert" data-testid="profile-save-error" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-300">
+ Chưa lưu được hồ sơ — kiểm tra mạng rồi bấm Lưu lại nhé.
+ </p>
+ )}
 
  {/* Avatar */}
  <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
