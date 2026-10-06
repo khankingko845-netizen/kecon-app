@@ -58,6 +58,9 @@ describe("generateStory", () => {
     );
     await expect(generateStory("gemini", "g-key", "gemini-2.0-flash", params)).resolves.toEqual(story);
     expect(String(fetchMock.mock.calls[0][0])).toContain("models/gemini-2.0-flash:generateContent");
+    // Key goes in a header, never in the URL
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain("key=");
+    expect((fetchMock.mock.calls[0][1]?.headers as Record<string, string>)["x-goog-api-key"]).toBe("g-key");
 
     fetchMock.mockResolvedValueOnce(jsonResponse({ content: [{ text: JSON.stringify(story) }] }));
     await expect(generateStory("anthropic", "a-key", "claude", params)).resolves.toEqual(story);
@@ -69,9 +72,9 @@ describe("generateStory", () => {
     await expect(generateStory("openai", "bad", "m", params)).rejects.toThrow("Invalid API key");
   });
 
-  it("response không có JSON → 'Invalid JSON response from AI'", async () => {
+  it("response không có JSON → 'AI không trả về JSON hợp lệ'", async () => {
     fetchMock.mockResolvedValue(openAIReply("Xin lỗi, tôi không thể viết truyện này."));
-    await expect(generateStory("openai", "k", "m", params)).rejects.toThrow("Invalid JSON response from AI");
+    await expect(generateStory("openai", "k", "m", params)).rejects.toThrow("AI không trả về JSON hợp lệ");
   });
 
   it("JSON thiếu title/pages → 'Story format invalid'", async () => {

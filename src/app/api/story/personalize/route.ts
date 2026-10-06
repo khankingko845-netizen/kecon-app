@@ -1,13 +1,26 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { resolveApiKey, resolveCustomBaseUrl, getSystemSetting } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { resolveLlmTarget } from "@/lib/llm-config";
+import { callLlmJson } from "@/lib/llm";
+import { z } from "zod";
+import { llmSelectionFields, optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
 
 /**
  * Personalize a story for a specific child.
  * POST { storyId, childName, childAge, interests?, petName?, petType? }
  * Creates a new personalized copy of the story.
  */
+const PersonalizeBody = z.object({
+  ...llmSelectionFields,
+  storyId: uuid,
+  childName: requiredText(60),
+  childAge: z.union([optionalText(20), z.number().int().min(0).max(18).transform(String)]),
+  interests: optionalText(300),
+  petName: optionalText(60),
+  petType: optionalText(60),
+});
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -17,23 +30,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const {
-    storyId,
-    childName,
-    childAge,
-    interests,
-    petName,
-    petType,
-    provider: userProvider,
-    model: userModel,
-    apiKey: userKey,
-    baseUrl: userBaseUrl,
-  } = body;
-
-  if (!storyId || !childName) {
-    return Response.json({ error: "Cần storyId và tên bé" }, { status: 400 });
-  }
+  const parsedBody = await parseJsonBody(request, PersonalizeBody);
+  if (!parsedBody.ok) return parsedBody.response;
+  const { storyId, childName, childAge, interests, petName, petType } = parsedBody.data;
 
   // Get original story + pages
   const { data: story } = await supabase
@@ -54,27 +53,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Truyện không có nội dung" }, { status: 404 });
   }
 
-  // Resolve AI provider
-  const provider = userProvider || await getSystemSetting("default_story_provider") || "openai";
-  const model = userModel || await getSystemSetting("default_ai_model") || "gpt-4o-mini";
-  const apiKey = await resolveApiKey(provider, userKey);
-  if (!apiKey) {
-    return Response.json(
-      { error: `Chưa cấu hình API key cho ${provider}` },
-      { status: 400 }
-    );
-  }
+  const llm = await resolveLlmTarget(parsedBody.data);
+  if (!llm.ok) return llm.response;
 
-  const baseUrl = provider === "custom"
-    ? await resolveCustomBaseUrl(userBaseUrl, userKey)
-    : provider === "openai"
-    ? "https://api.openai.com/v1"
-    : null;
-  if (provider === "custom" && !baseUrl) {
-    return Response.json({ error: "Custom provider cần Base URL hợp lệ" }, { status: 400 });
-  }
-
-  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: llm.byo });
   if (usageBlocked) return usageBlocked;
 
   // Build personalization context
@@ -110,69 +92,13 @@ ${originalContent}
 Hãy cá nhân hóa truyện này cho bé ${childName}. Trả về JSON.`;
 
   try {
-    let raw: string;
-
-    if (provider === "gemini") {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature: 0.7, responseMimeType: "application/json" },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Gemini error");
-      raw = data.candidates[0].content.parts[0].text;
-    } else if (provider === "anthropic") {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Anthropic error");
-      raw = data.content[0].text;
-    } else {
-      const endpoint = baseUrl
-        ? `${baseUrl.replace(/\/+$/, "")}/chat/completions`
-        : "https://api.openai.com/v1/chat/completions";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        redirect: "error",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.7,
-          response_format: { type: "json_object" },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "AI error");
-      raw = data.choices[0].message.content;
-    }
-
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid JSON");
-    const parsed = JSON.parse(jsonMatch[0]);
+    const { data } = await callLlmJson({
+      ...llm.target,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.7,
+    });
+    const parsed = data as { title?: string; pages?: { text: string; sceneDescription?: string }[] };
 
     // Create personalized copy
     const { data: newStory, error: insertErr } = await supabase

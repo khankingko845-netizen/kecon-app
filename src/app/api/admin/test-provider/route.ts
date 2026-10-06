@@ -1,6 +1,15 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSystemSetting } from "@/lib/server-settings";
+import { getSystemSetting, isSafePublicBaseUrl } from "@/lib/server-settings";
+import { GEMINI_BASE_URL } from "@/lib/llm";
+import { z } from "zod";
+import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+
+const TestProviderBody = z.object({
+  provider: z.enum(["openai", "dalle", "gemini", "anthropic", "elevenlabs", "custom"]),
+  apiKey: requiredText(512),
+  baseUrl: optionalText(2048).pipe(z.url().optional()),
+});
 
 /**
  * GET /api/admin/test-provider?voice_id=xxx
@@ -141,16 +150,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Admin only" }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { provider, apiKey, baseUrl } = body as {
-    provider: string;
-    apiKey: string;
-    baseUrl?: string;
-  };
-
-  if (!apiKey) {
-    return Response.json({ error: "API key is required" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, TestProviderBody);
+  if (!parsed.ok) return parsed.response;
+  const { provider, apiKey, baseUrl } = parsed.data;
 
   try {
     switch (provider) {
@@ -181,9 +183,9 @@ export async function POST(request: NextRequest) {
       }
 
       case "gemini": {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-        );
+        const res = await fetch(`${GEMINI_BASE_URL}/models`, {
+          headers: { "x-goog-api-key": apiKey },
+        });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(
@@ -343,8 +345,12 @@ export async function POST(request: NextRequest) {
         if (!baseUrl) {
           throw new Error("Base URL required for custom provider");
         }
+        if (!(await isSafePublicBaseUrl(baseUrl))) {
+          throw new Error("Base URL không hợp lệ hoặc trỏ tới địa chỉ nội bộ");
+        }
         const url = baseUrl.replace(/\/+$/, "") + "/models";
         const res = await fetch(url, {
+          redirect: "error",
           headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) {

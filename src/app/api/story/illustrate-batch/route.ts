@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { z } from "zod";
+import { optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
 
 /**
  * Batch-illustrate all pages of a story using DALL·E 3.
@@ -17,6 +19,13 @@ const ILLUSTRATION_STYLES: Record<string, string> = {
   flat: "flat design illustration, geometric shapes, modern minimalist",
 };
 
+const IllustrateBatchBody = z.object({
+  storyId: uuid,
+  style: z.enum(["watercolor", "cartoon", "3d", "storybook", "flat"]).default("watercolor"),
+  apiKey: optionalText(512),
+  pageNumbers: z.array(z.number().int().min(1).max(500)).max(50).nullish(),
+});
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -27,10 +36,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { storyId, style = "watercolor", apiKey: userKey, pageNumbers } = await request.json();
-  if (!storyId) {
-    return Response.json({ error: "Thiếu storyId" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, IllustrateBatchBody);
+  if (!parsed.ok) return parsed.response;
+  const { storyId, style, apiKey: userKey, pageNumbers } = parsed.data;
 
   // Resolve API key
   let apiKey = await resolveApiKey("dalle", userKey);
@@ -71,7 +79,7 @@ export async function POST(request: NextRequest) {
     .eq("story_id", storyId)
     .order("page_number");
 
-  if (pageNumbers && Array.isArray(pageNumbers) && pageNumbers.length > 0) {
+  if (pageNumbers && pageNumbers.length > 0) {
     query = query.in("page_number", pageNumbers);
   }
 
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Filter pages that need illustration (no existing url, unless forced via pageNumbers)
-  const toIllustrate = pageNumbers
+  const toIllustrate = pageNumbers?.length
     ? pages
     : pages.filter((p) => !p.illustration_url);
 

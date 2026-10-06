@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { callLlmJson, type FetchLike, type LlmProvider, type LlmResult, type LlmTarget } from "@/lib/llm";
+
 export interface GeneratedCharacter {
   name: string;
   description: string;
@@ -17,7 +20,26 @@ export interface StoryPage {
   sceneDescription: string;
 }
 
-interface StoryParams {
+/** Shape we require from the model; extra fields are kept (passthrough). */
+export const GeneratedStorySchema = z.looseObject({
+  title: z.string().min(1),
+  summary: z.string().default(""),
+  characters: z
+    .array(
+      z.looseObject({
+        name: z.string().min(1),
+        description: z.string().default(""),
+        personality: z.string().default(""),
+        emoji: z.string().optional(),
+      })
+    )
+    .optional(),
+  pages: z
+    .array(z.looseObject({ text: z.string(), sceneDescription: z.string().default("") }))
+    .min(1),
+});
+
+export interface StoryParams {
   theme: string;
   childName: string;
   age: string;
@@ -86,181 +108,36 @@ Yêu cầu:
 - Lời kể bao bọc trong [narrator], lời thoại trong [character:Tên]`;
 }
 
-// Works with OpenAI and any OpenAI-compatible endpoint (OpenRouter, Groq,
-// Together, Azure-style gateways, local LM Studio/Ollama, etc.).
-async function callOpenAICompatible(
-  baseUrl: string,
-  apiKey: string,
-  model: string,
-  systemPrompt: string,
-  userPrompt: string
-): Promise<string> {
-  const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    redirect: "error", // never follow redirects from custom base URLs (SSRF)
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.8,
-      response_format: { type: "json_object" },
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Provider error: ${res.status}`);
-  }
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    throw new Error("Provider trả về định dạng không hợp lệ");
-  }
-  return content;
-}
-
-async function callGemini(
-  apiKey: string,
-  model: string,
-  systemPrompt: string,
-  userPrompt: string
-): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ parts: [{ text: userPrompt }] }],
-      generationConfig: {
-        temperature: 0.8,
-        responseMimeType: "application/json",
-      },
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      err.error?.message || `Gemini error: ${res.status}`
-    );
-  }
-  const data = await res.json();
-  return data.candidates[0].content.parts[0].text;
-}
-
-async function callAnthropic(
-  apiKey: string,
-  model: string,
-  systemPrompt: string,
-  userPrompt: string
-): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "Content-Type": "application/json",
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      err.error?.message || `Anthropic error: ${res.status}`
-    );
-  }
-  const data = await res.json();
-  return data.content[0].text;
-}
-
 export async function generateStory(
-  provider: "openai" | "gemini" | "anthropic" | "custom",
+  provider: LlmProvider,
   apiKey: string,
   model: string,
   params: StoryParams,
-  baseUrl?: string
+  baseUrl?: string,
+  fetchImpl?: FetchLike
 ): Promise<GeneratedStory> {
-  const userPrompt = buildUserPrompt(params);
-
-  let raw: string;
-  switch (provider) {
-    case "openai":
-      raw = await callOpenAICompatible(
-        "https://api.openai.com/v1",
-        apiKey,
-        model,
-        SYSTEM_PROMPT,
-        userPrompt
-      );
-      break;
-    case "custom":
-      if (!baseUrl) throw new Error("Thiếu Base URL cho custom provider");
-      raw = await callOpenAICompatible(
-        baseUrl,
-        apiKey,
-        model,
-        SYSTEM_PROMPT,
-        userPrompt
-      );
-      break;
-    case "gemini":
-      raw = await callGemini(apiKey, model, SYSTEM_PROMPT, userPrompt);
-      break;
-    case "anthropic":
-      raw = await callAnthropic(apiKey, model, SYSTEM_PROMPT, userPrompt);
-      break;
-  }
-
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Invalid JSON response from AI");
-
-  const parsed = JSON.parse(jsonMatch[0]);
-  if (!parsed.title || !Array.isArray(parsed.pages)) {
-    throw new Error("Story format invalid");
-  }
-
-  return parsed as GeneratedStory;
+  const { story } = await generateStoryWithUsage({ provider, apiKey, model, baseUrl }, params, fetchImpl);
+  return story;
 }
 
-export const PROVIDER_MODELS: Record<string, { label: string; models: { id: string; name: string }[] }> = {
-  openai: {
-    label: "OpenAI",
-    models: [
-      { id: "gpt-4o-mini", name: "GPT-4o Mini (nhanh, rẻ)" },
-      { id: "gpt-4o", name: "GPT-4o (chất lượng cao)" },
-      { id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
-      { id: "gpt-4.1", name: "GPT-4.1" },
-    ],
-  },
-  gemini: {
-    label: "Google Gemini",
-    models: [
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (nhanh)" },
-      { id: "gemini-2.5-flash-preview-05-20", name: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro-preview-05-06", name: "Gemini 2.5 Pro" },
-    ],
-  },
-  anthropic: {
-    label: "Anthropic Claude",
-    models: [
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
-      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku (nhanh)" },
-    ],
-  },
-  custom: {
-    label: "Custom",
-    models: [],
-  },
-};
+/** Same as generateStory but also returns provider usage (for cost tracking). */
+export async function generateStoryWithUsage(
+  target: LlmTarget,
+  params: StoryParams,
+  fetchImpl?: FetchLike
+): Promise<{ story: GeneratedStory; result: LlmResult }> {
+  const { data, result } = await callLlmJson(
+    {
+      ...target,
+      system: SYSTEM_PROMPT,
+      prompt: buildUserPrompt(params),
+      temperature: 0.8,
+    },
+    fetchImpl
+  );
+  const parsed = GeneratedStorySchema.safeParse(data);
+  if (!parsed.success) throw new Error("Story format invalid");
+  return { story: parsed.data as GeneratedStory, result };
+}
+
+export { PROVIDER_MODELS } from "@/lib/llm";

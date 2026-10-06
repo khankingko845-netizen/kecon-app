@@ -1,5 +1,17 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+
+const DefaultVoiceBody = z.object({
+  voice_id: requiredText(120).regex(/^[\w-]+$/, "voice_id không hợp lệ"),
+  name: requiredText(100),
+  language: requiredText(10).regex(/^[a-z]{2,3}(-[a-zA-Z0-9]{2,8})*$/, "Mã ngôn ngữ không hợp lệ"),
+  description: optionalText(500),
+  preview_url: optionalText(2048).pipe(z.url().optional()),
+  gender: optionalText(20),
+});
+
 
 /**
  * GET /api/voice/defaults?language=vi
@@ -60,15 +72,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Admin only" }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { voice_id, name, language, description, preview_url, gender } = body;
-
-  if (!voice_id || !name || !language) {
-    return Response.json(
-      { error: "voice_id, name, and language are required" },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, DefaultVoiceBody);
+  if (!parsed.ok) return parsed.response;
+  const { voice_id, name, language, description, preview_url, gender } = parsed.data;
 
   // Get max sort_order for this language
   const { data: existing } = await supabase

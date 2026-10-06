@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
-import { resolveApiKey, resolveCustomBaseUrl, getSystemSetting } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { resolveLlmTarget } from "@/lib/llm-config";
+import { z } from "zod";
+import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
 const CATEGORY_MAP: Record<string, string> = {
   cotich: "fairy_tale",
@@ -12,6 +14,19 @@ const CATEGORY_MAP: Record<string, string> = {
   hocchoi: "educational",
   tuviet: "custom",
 };
+
+const GenerateBody = z.object({
+  ...llmSelectionFields,
+  theme: requiredText(40),
+  age: z.union([requiredText(20), z.number().int().min(0).max(18).transform(String)]),
+  childName: optionalText(60),
+  language: languageCode,
+  extraPrompt: optionalText(1000),
+  voiceId: optionalText(120),
+  narratorVoiceId: optionalText(120),
+  narratorVoiceName: optionalText(120),
+  persist: z.boolean().default(true),
+});
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -23,10 +38,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const parsed = await parseJsonBody(request, GenerateBody);
+  if (!parsed.ok) return parsed.response;
   const {
-    provider,
-    model,
     theme,
     childName,
     age,
@@ -35,47 +49,22 @@ export async function POST(request: NextRequest) {
     voiceId,
     narratorVoiceId,
     narratorVoiceName,
-    apiKey: userKey,
-    baseUrl: userBaseUrl,
-    persist = true,
-  } = body;
+    persist,
+  } = parsed.data;
 
-  // Resolve model: user BYO → admin DB → provider default
-  const resolvedModel = model || await getSystemSetting("default_ai_model") || "gpt-4o-mini";
+  // Provider/model/key/base URL: BYO → client choice; platform key → admin defaults
+  const llm = await resolveLlmTarget(parsed.data);
+  if (!llm.ok) return llm.response;
+  const { target } = llm;
 
-  if (!provider || !resolvedModel || !theme || !age) {
-    return Response.json({ error: "Missing required fields" }, { status: 400 });
-  }
-
-  // Resolve API key: user BYO → admin DB → env variable
-  const apiKey = await resolveApiKey(provider, userKey);
-  if (!apiKey) {
-    return Response.json(
-      { error: `Chưa cấu hình API key cho ${provider}. Admin cần thêm key trong Cài Đặt Hệ Thống.` },
-      { status: 400 }
-    );
-  }
-
-  // Resolve base URL for custom provider (client URL only honoured with BYO key)
-  const baseUrl = provider === "custom"
-    ? await resolveCustomBaseUrl(userBaseUrl, userKey)
-    : undefined;
-
-  if (provider === "custom" && !baseUrl) {
-    return Response.json(
-      { error: "Custom provider cần Base URL hợp lệ (OpenAI-compatible, không trỏ tới địa chỉ nội bộ)" },
-      { status: 400 }
-    );
-  }
-
-  const usageBlocked = await guardUsage(supabase, "story", { byo: Boolean(userKey) });
+  const usageBlocked = await guardUsage(supabase, "story", { byo: llm.byo });
   if (usageBlocked) return usageBlocked;
 
   try {
     const story = await generateStory(
-      provider,
-      apiKey,
-      resolvedModel,
+      target.provider,
+      target.apiKey,
+      target.model,
       {
         theme,
         childName: childName || "",
@@ -83,7 +72,7 @@ export async function POST(request: NextRequest) {
         language: language || "vi",
         extraPrompt,
       },
-      baseUrl
+      target.baseUrl
     );
 
     let storyId: string | null = null;
@@ -143,7 +132,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         action_type: "create",
         story_id: storyId,
-        metadata: { theme, provider, model },
+        metadata: { theme, provider: target.provider, model: target.model },
       });
     }
 

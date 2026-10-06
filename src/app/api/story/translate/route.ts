@@ -1,13 +1,23 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { resolveApiKey, getSystemSetting, resolveCustomBaseUrl } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { resolveLlmTarget } from "@/lib/llm-config";
+import { callLlmJson } from "@/lib/llm";
+import { z } from "zod";
+import { optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
 
 /**
  * Translate a story to another language.
  * POST { storyId, targetLanguage, apiKey? }
  * Creates a new translated copy of the story.
  */
+const TranslateBody = z.object({
+  storyId: uuid,
+  targetLanguage: z.enum(["vi", "en", "ja", "ko", "zh", "fr", "de", "es", "th"]),
+  apiKey: optionalText(512),
+  bilingual: z.boolean().default(false),
+});
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -17,12 +27,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { storyId, targetLanguage, apiKey: userKey, bilingual = false } = body;
-
-  if (!storyId || !targetLanguage) {
-    return Response.json({ error: "Cần storyId và ngôn ngữ đích" }, { status: 400 });
-  }
+  const parsedBody = await parseJsonBody(request, TranslateBody);
+  if (!parsedBody.ok) return parsedBody.response;
+  const { storyId, targetLanguage, apiKey: userKey, bilingual } = parsedBody.data;
 
   // Get original story + pages
   const { data: story } = await supabase
@@ -43,15 +50,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Truyện không có nội dung" }, { status: 404 });
   }
 
-  // Resolve AI provider
-  const provider = await getSystemSetting("default_story_provider") || "openai";
-  const model = await getSystemSetting("default_ai_model") || "gpt-4o-mini";
-  const apiKey = await resolveApiKey(provider, userKey);
-  if (!apiKey) {
-    return Response.json({ error: "Chưa cấu hình API key" }, { status: 400 });
-  }
+  // Platform key → admin default provider/model; BYO key → admin default provider with the user's key
+  const llm = await resolveLlmTarget({ apiKey: userKey });
+  if (!llm.ok) return llm.response;
 
-  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: llm.byo });
   if (usageBlocked) return usageBlocked;
 
   const langNames: Record<string, string> = {
@@ -95,68 +98,13 @@ Trả về JSON: { "title": "...", "pages": [{ "text": "...", "sceneDescription"
   const userPrompt = `Dịch truyện "${story.title}" từ ${sourceLang} sang ${targetLang}${bilingual ? " (chế độ song ngữ)" : ""}:\n\n${originalContent}`;
 
   try {
-    let raw: string;
-
-    if (provider === "gemini") {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature: 0.5, responseMimeType: "application/json" },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Gemini error");
-      raw = data.candidates[0].content.parts[0].text;
-    } else if (provider === "anthropic") {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Error");
-      raw = data.content[0].text;
-    } else {
-      const baseUrl = provider === "custom"
-        ? await resolveCustomBaseUrl()
-        : "https://api.openai.com/v1";
-      const res = await fetch(`${baseUrl?.replace(/\/+$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.5,
-          response_format: { type: "json_object" },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Error");
-      raw = data.choices[0].message.content;
-    }
-
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid JSON");
-    const parsed = JSON.parse(jsonMatch[0]);
+    const { data } = await callLlmJson({
+      ...llm.target,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.5,
+    });
+    const parsed = data as { title?: string; pages?: { text: string; sceneDescription?: string }[] };
 
     // Create translated copy
     const newLocale = bilingual ? `${story.locale}-${targetLanguage}` : targetLanguage;

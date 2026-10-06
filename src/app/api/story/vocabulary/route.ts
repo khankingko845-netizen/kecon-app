@@ -1,13 +1,22 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { resolveApiKey, getSystemSetting } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { resolveLlmTarget } from "@/lib/llm-config";
+import { callLlmJson } from "@/lib/llm";
+import { z } from "zod";
+import { optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
 
 /**
  * Analyze story vocabulary and generate quiz questions.
  * POST { storyId, childAge?, apiKey? }
  * Returns { vocabulary: [...], quiz: [...] }
  */
+const VocabularyBody = z.object({
+  storyId: uuid,
+  childAge: z.union([optionalText(20), z.number().int().min(0).max(18).transform(String)]),
+  apiKey: optionalText(512),
+});
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -17,10 +26,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { storyId, childAge, apiKey: userKey } = await request.json();
-  if (!storyId) {
-    return Response.json({ error: "Thiếu storyId" }, { status: 400 });
-  }
+  const parsedBody = await parseJsonBody(request, VocabularyBody);
+  if (!parsedBody.ok) return parsedBody.response;
+  const { storyId, childAge, apiKey: userKey } = parsedBody.data;
 
   // Get story + pages
   const { data: story } = await supabase
@@ -39,15 +47,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Truyện không có nội dung" }, { status: 404 });
   }
 
-  // Resolve AI provider
-  const provider = await getSystemSetting("default_story_provider") || "openai";
-  const model = await getSystemSetting("default_ai_model") || "gpt-4o-mini";
-  const apiKey = await resolveApiKey(provider, userKey);
-  if (!apiKey) {
-    return Response.json({ error: "Chưa cấu hình API key" }, { status: 400 });
-  }
+  const llm = await resolveLlmTarget({ apiKey: userKey });
+  if (!llm.ok) return llm.response;
 
-  const usageBlocked = await guardUsage(supabase, "ai", { byo: Boolean(userKey) });
+  const usageBlocked = await guardUsage(supabase, "ai", { byo: llm.byo });
   if (usageBlocked) return usageBlocked;
 
   const storyContent = pages
@@ -90,71 +93,14 @@ Yêu cầu:
   const userPrompt = `Truyện: "${story?.title || ""}"\nNội dung:\n${storyContent.slice(0, 3000)}`;
 
   try {
-    let raw: string;
-
-    if (provider === "gemini") {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature: 0.5, responseMimeType: "application/json" },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Gemini error");
-      raw = data.candidates[0].content.parts[0].text;
-    } else {
-      const endpoint = provider === "anthropic"
-        ? "https://api.anthropic.com/v1/messages"
-        : "https://api.openai.com/v1/chat/completions";
-
-      if (provider === "anthropic") {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "x-api-key": apiKey,
-            "Content-Type": "application/json",
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model,
-            max_tokens: 2048,
-            system: systemPrompt,
-            messages: [{ role: "user", content: userPrompt }],
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || "Error");
-        raw = data.content[0].text;
-      } else {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0.5,
-            response_format: { type: "json_object" },
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || "Error");
-        raw = data.choices[0].message.content;
-      }
-    }
-
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid JSON");
-    const parsed = JSON.parse(jsonMatch[0]);
+    const { data } = await callLlmJson({
+      ...llm.target,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.5,
+      maxTokens: 2048,
+    });
+    const parsed = data as { vocabulary?: unknown[]; quiz?: unknown[] };
 
     return Response.json({
       vocabulary: parsed.vocabulary || [],
