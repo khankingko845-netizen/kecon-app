@@ -10,6 +10,9 @@ import { createServer } from "node:http";
 const PORT = Number(process.env.MOCK_SUPABASE_PORT ?? 54321);
 export const MOCK_USER_ID = "00000000-0000-4000-8000-00000000e2e1";
 export const MOCK_ACCESS_TOKEN_SUB = MOCK_USER_ID;
+/** Second family (T19): parent PIN 2468 + parental controls on, 30 phút/ngày. */
+export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
+const MOCK_PIN = "2468";
 
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
@@ -22,6 +25,13 @@ const user = {
   created_at: now,
   updated_at: now,
 };
+
+const pinUser = {
+  ...user,
+  id: MOCK_PIN_USER_ID,
+  email: "e2e-pin@kecon.test",
+};
+const USERS = { [MOCK_USER_ID]: user, [MOCK_PIN_USER_ID]: pinUser };
 
 const profile = {
   id: MOCK_USER_ID,
@@ -98,7 +108,54 @@ const pages = stories.flatMap((s) =>
   }))
 );
 
-const TABLES = { profiles: [profile], stories, story_pages: pages };
+const pinProfile = { ...profile, id: MOCK_PIN_USER_ID, email: pinUser.email, family_name: "Gia đình Thỏ", child_name: "Na" };
+const parentalControls = [
+  {
+    id: "00000000-0000-4000-8000-0000000c0e01",
+    user_id: MOCK_PIN_USER_ID,
+    is_enabled: true,
+    daily_limit_minutes: 30,
+    bedtime_start: null,
+    bedtime_end: null,
+    blocked_categories: [],
+    max_age_rating: 99,
+    created_at: now,
+    updated_at: now,
+  },
+];
+
+const TABLES = { profiles: [profile, pinProfile], stories, story_pages: pages, parental_controls: parentalControls };
+
+/** Parent-PIN RPCs (017/018), stateless so parallel specs can't interfere. */
+function pinRpc(name, sub, body) {
+  const hasPin = sub === MOCK_PIN_USER_ID;
+  switch (name) {
+    case "parent_pin_status":
+      return { ok: true, has_pin: hasPin, reset_required: false, locked_until: null };
+    case "verify_parent_pin":
+      if (!hasPin) return { ok: false, reason: "no_pin" };
+      return body?.p_pin === MOCK_PIN ? { ok: true } : { ok: false, reason: "invalid", attempts_left: 4 };
+    case "reset_parent_pin":
+      // Mock tokens carry no fresh `amr` → the app must ask for the password.
+      return { ok: false, reason: "reauth_required" };
+    default:
+      return null;
+  }
+}
+
+function readJson(req) {
+  return new Promise((resolve) => {
+    let raw = "";
+    req.on("data", (c) => (raw += c));
+    req.on("end", () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : null);
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
 
 function tokenSub(auth) {
   const token = (auth ?? "").replace(/^Bearer\s+/i, "");
@@ -150,17 +207,21 @@ createServer((req, res) => {
 
   // ── Auth ──
   if (path === "/auth/v1/user") {
-    return tokenSub(req.headers.authorization) === MOCK_USER_ID
-      ? send(res, 200, user)
-      : send(res, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
+    const known = USERS[tokenSub(req.headers.authorization)];
+    return known ? send(res, 200, known) : send(res, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
   }
   if (path.startsWith("/auth/v1/logout")) return send(res, 204);
   if (path.startsWith("/auth/v1/")) return send(res, 400, { error: "invalid_grant", error_description: "mock" });
 
   // ── PostgREST ──
   if (path.startsWith("/rest/v1/")) {
-    const authed = tokenSub(req.headers.authorization) === MOCK_USER_ID;
-    if (path.startsWith("/rest/v1/rpc/")) return send(res, 200, null);
+    const sub = tokenSub(req.headers.authorization);
+    const authed = Boolean(USERS[sub]);
+    if (path.startsWith("/rest/v1/rpc/")) {
+      const name = path.slice("/rest/v1/rpc/".length);
+      readJson(req).then((body) => send(res, 200, authed ? pinRpc(name, sub, body) : null));
+      return;
+    }
     const table = path.slice("/rest/v1/".length);
     if (req.method !== "GET" && req.method !== "HEAD") {
       return send(res, req.method === "DELETE" ? 204 : 201, req.method === "DELETE" ? undefined : []);

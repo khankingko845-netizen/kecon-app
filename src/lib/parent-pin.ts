@@ -10,6 +10,7 @@ export type PinFailureReason =
   | "locked"
   | "invalid_format"
   | "unauthenticated"
+  | "reauth_required"
   | "unavailable";
 
 export interface PinResult {
@@ -79,6 +80,27 @@ export async function verifyParentPin(supabase: SupabaseClient, pin: string): Pr
   return toResult(data as RawPinResult | null, error);
 }
 
+/**
+ * Forgot-PIN (T19, migration 018): clears the PIN server-side, but only when
+ * the current session signed in again within the last 10 minutes (JWT `amr`).
+ * Otherwise returns `reauth_required` — sign in with the account first.
+ */
+export async function resetParentPin(supabase: SupabaseClient): Promise<PinResult> {
+  const { data, error } = await supabase.rpc("reset_parent_pin");
+  return toResult(data as RawPinResult | null, error);
+}
+
+/** Message for a failed unlock attempt at the parent gate. */
+export function unlockErrorMessage(result: PinResult, now: Date = new Date()): string {
+  if (result.reason === "invalid") {
+    return result.attemptsLeft !== undefined
+      ? `Mã PIN chưa đúng. Còn ${result.attemptsLeft} lần thử trước khi bị khoá.`
+      : "Mã PIN chưa đúng.";
+  }
+  if (result.reason === "unavailable") return "Không kiểm tra được mã PIN, vui lòng thử lại.";
+  return pinErrorMessage(result, now);
+}
+
 /** Vietnamese, parent-facing message for a failed PIN operation. */
 export function pinErrorMessage(result: PinResult, now: Date = new Date()): string {
   switch (result.reason) {
@@ -98,6 +120,8 @@ export function pinErrorMessage(result: PinResult, now: Date = new Date()): stri
       return "Chưa đặt mã PIN.";
     case "unauthenticated":
       return "Phiên đăng nhập đã hết, vui lòng đăng nhập lại.";
+    case "reauth_required":
+      return "Vui lòng xác minh lại tài khoản để đặt lại mã PIN.";
     default:
       return "Không lưu được mã PIN, vui lòng thử lại.";
   }

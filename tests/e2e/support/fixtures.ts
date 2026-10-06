@@ -1,17 +1,20 @@
-import type { BrowserContext, Page } from "@playwright/test";
+import { expect, type BrowserContext, type Page } from "@playwright/test";
 
 /** Must match tests/e2e/support/mock-supabase.mjs. */
 export const MOCK_USER_ID = "00000000-0000-4000-8000-00000000e2e1";
+/** Family with parent PIN {@link MOCK_PIN} and a 30-minute daily limit. */
+export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
+export const MOCK_PIN = "2468";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
 
 const b64url = (v: string) => Buffer.from(v).toString("base64url");
 
 /** Unsigned JWT accepted by the mock (only `sub` is checked). */
-export function mockAccessToken(): string {
+export function mockAccessToken(sub: string = MOCK_USER_ID, email = "e2e@kecon.test"): string {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
   return [
     b64url(JSON.stringify({ alg: "HS256", typ: "JWT" })),
-    b64url(JSON.stringify({ sub: MOCK_USER_ID, role: "authenticated", aud: "authenticated", exp, email: "e2e@kecon.test" })),
+    b64url(JSON.stringify({ sub, role: "authenticated", aud: "authenticated", exp, email })),
     "mock-signature",
   ].join(".");
 }
@@ -20,19 +23,24 @@ export function mockAccessToken(): string {
  * Sign in as the mock family: writes the @supabase/ssr session cookie
  * (`sb-127-auth-token`, base64-encoded JSON) and accepts the consent banner.
  */
-export async function signInAsMockFamily(context: BrowserContext, baseURL: string): Promise<void> {
+export async function signInAsMockFamily(
+  context: BrowserContext,
+  baseURL: string,
+  { userId = MOCK_USER_ID }: { userId?: string } = {}
+): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
+  const email = userId === MOCK_PIN_USER_ID ? "e2e-pin@kecon.test" : "e2e@kecon.test";
   const session = {
-    access_token: mockAccessToken(),
+    access_token: mockAccessToken(userId, email),
     token_type: "bearer",
     expires_in: 3600 * 24,
     expires_at: exp,
     refresh_token: "mock-refresh-token",
     user: {
-      id: MOCK_USER_ID,
+      id: userId,
       aud: "authenticated",
       role: "authenticated",
-      email: "e2e@kecon.test",
+      email,
       app_metadata: { provider: "email" },
       user_metadata: {},
       created_at: "2025-01-01T12:00:00Z",
@@ -49,6 +57,24 @@ export async function signInAsMockFamily(context: BrowserContext, baseURL: strin
   await context.addInitScript(() => {
     localStorage.setItem("kecon-consent-v1", JSON.stringify({ at: Date.now(), accepted: true }));
   });
+}
+
+/**
+ * Pass the parent gate (T19) as an adult: answers the multiplication shown
+ * when no PIN is set, or types `pin` on the keypad.
+ */
+export async function passParentGate(page: Page, pin?: string): Promise<void> {
+  const gate = page.locator("[data-parent-gate]");
+  await expect(gate).not.toHaveAttribute("data-parent-gate", "loading");
+  if (pin) {
+    for (const d of pin) await gate.getByRole("button", { name: d, exact: true }).click();
+  } else {
+    const question = await gate.locator("[data-challenge]").getAttribute("data-challenge");
+    const [a, b] = (question ?? "").split("×").map((n) => Number(n.trim()));
+    await gate.getByLabel("Kết quả phép tính").fill(String(a * b));
+  }
+  await gate.getByRole("button", { name: "Mở khoá" }).click();
+  await expect(gate).toHaveCount(0);
 }
 
 /** Elements whose computed text/background is pure white (#FFF). */

@@ -132,15 +132,21 @@ type Role = "anon" | "authenticated";
  * plus JWT claims (so `auth.uid()` works). Everything resets on commit/rollback;
  * errors roll back and are re-thrown.
  */
-export function asRole<T>(db: PGlite, role: Role, uid: string | null, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export function asRole<T>(
+  db: PGlite,
+  role: Role,
+  uid: string | null,
+  fn: (tx: Tx) => Promise<T>,
+  extraClaims: Record<string, unknown> = {}
+): Promise<T> {
   return db.transaction(async (tx) => {
-    const claims = uid ? { sub: uid, role } : { role };
+    const claims = uid ? { ...extraClaims, sub: uid, role } : { ...extraClaims, role };
     await tx.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify(claims)]);
     await tx.exec(`SET LOCAL ROLE ${role}`);
     return fn(tx);
   });
 }
 
-export const asUser = <T>(db: PGlite, uid: string, fn: (tx: Tx) => Promise<T>) =>
-  asRole(db, "authenticated", uid, fn);
+export const asUser = <T>(db: PGlite, uid: string, fn: (tx: Tx) => Promise<T>, extraClaims?: Record<string, unknown>) =>
+  asRole(db, "authenticated", uid, fn, extraClaims);
 export const asAnon = <T>(db: PGlite, fn: (tx: Tx) => Promise<T>) => asRole(db, "anon", null, fn);
