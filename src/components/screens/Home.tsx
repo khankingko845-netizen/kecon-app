@@ -17,6 +17,8 @@ import type { Screen } from "@/lib/types";
 import { heroFor } from "@/lib/home-hero";
 import { greetingMoment } from "@/lib/dom-lines";
 import { useFeedback } from "@/lib/feedback-context";
+import { useAgeUi } from "@/lib/age-ui-context";
+import { exploreFor } from "@/lib/age-ui";
 
 /** Đóm greets once per app session (sessionStorage), not on every return to Home. */
 const GREETED_KEY = "kecon-dom-greeted";
@@ -46,6 +48,7 @@ export default function Home({ onNavigate }: HomeProps) {
   const [streak, setStreak] = useState(0);
   const [last, setLast] = useState<LastPlayed | null>(null);
   const { say } = useFeedback();
+  const ageUi = useAgeUi();
 
   const now = useMemo(() => new Date(), []);
   const hero = heroFor(now.getHours());
@@ -119,7 +122,7 @@ export default function Home({ onNavigate }: HomeProps) {
           <h1 className="truncate font-display text-[24px] font-bold leading-[1.05] text-ink">
             {childName ? `Chào bé ${childName}!` : "Chào bé!"}
           </h1>
-          <p className="text-[14px] font-bold text-ink-2">{dateLine}</p>
+          <p data-kid-detail className="text-[14px] font-bold text-ink-2">{dateLine}</p>
         </div>
         <button
           type="button"
@@ -149,7 +152,7 @@ export default function Home({ onNavigate }: HomeProps) {
           data-sfx="pop"
           onClick={() => say("poke")}
           aria-label="Chạm để nghe Đóm nói"
-          className="absolute -bottom-3.5 -right-1.5 h-[150px] w-[150px] rounded-full active:scale-95"
+          className="absolute -bottom-3.5 -right-1.5 flex h-[150px] w-[150px] items-end justify-end rounded-full active:scale-95"
         >
           <Mascot state={hero.mascot} size={150} priority label={null} />
         </button>
@@ -169,7 +172,7 @@ export default function Home({ onNavigate }: HomeProps) {
               </span>
               <span className="min-w-0 flex-1">
                 <b className="block truncate text-[17px] font-black text-ink">{resume.title}</b>
-                <small className="block truncate text-[13.5px] font-bold text-ink-2">
+                <small data-kid-detail className="block truncate text-[13.5px] font-bold text-ink-2">
                   {resume.page > 0
                     ? `${resume.voice ? `${resume.voice} · ` : ""}Trang ${resume.page}/${resume.totalPages}`
                     : `Chưa nghe · ${resume.totalPages} trang`}
@@ -191,18 +194,20 @@ export default function Home({ onNavigate }: HomeProps) {
 
       {/* Chủ đề (board `.cats`) */}
       <SectionHeader title="Chủ đề" action="Xem tất cả" onAction={() => onNavigate("library")} />
-      <div className="grid grid-cols-3 gap-2.5">
+      {/* UI-13: 3–5 → 2 cột ô to (chạm là Đóm đọc tên); 9–12 → ô gọn */}
+      <div data-testid="home-topics" data-cols={ageUi.topicColumns} className={`grid gap-2.5 ${ageUi.topicColumns === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
         {TOPICS.filter((t) => isCategoryAllowed(t.id, contentRules)).map((t) => (
           <button
             key={t.id}
             type="button"
+            data-say={t.label}
             onClick={() => onNavigate("library", { category: t.id })}
             className={`rounded-[22px] bg-white px-1.5 pb-2.5 pt-2 text-center active:scale-95 ${CARD_SHADOW}`}
           >
-            <span className="mx-auto block h-[70px] w-[70px] overflow-hidden rounded-[20px]">
-              <Icon3D name={t.icon} size={83} className="-m-[9%] max-w-none" />
+            <span className="mx-auto block overflow-hidden rounded-[20px]" style={{ width: ageUi.topicIcon, height: ageUi.topicIcon }}>
+              <Icon3D name={t.icon} size={Math.round(ageUi.topicIcon * 1.19)} className="-m-[9%] max-w-none" />
             </span>
-            <span className="mt-1 block text-[15px] font-black text-ink">{t.label}</span>
+            <span className={`mt-1 block font-black text-ink ${ageUi.topicColumns === 2 ? "text-[18px]" : ageUi.density === "high" ? "text-[14px]" : "text-[15px]"}`}>{t.label}</span>
           </button>
         ))}
       </div>
@@ -223,7 +228,10 @@ export default function Home({ onNavigate }: HomeProps) {
                   <CategoryIcon category={story.category} size={64} />
                 </span>
                 <b className="mt-1.5 block truncate px-1 text-[14px] font-black text-ink">{story.title}</b>
-                <small className="block truncate px-1 text-[12px] font-bold text-brand">{reason}</small>
+                <small data-kid-detail className="block truncate px-1 text-[12px] font-bold text-brand">{reason}</small>
+                {story.description && (
+                  <small data-kid-extra className="line-clamp-2 px-1 pt-0.5 text-[11.5px] font-semibold leading-snug text-ink-2">{story.description}</small>
+                )}
               </button>
             ))}
           </div>
@@ -232,15 +240,15 @@ export default function Home({ onNavigate }: HomeProps) {
 
       {/* Khám phá thêm */}
       <SectionHeader title="Khám phá thêm" />
-      <div className="grid grid-cols-2 gap-2.5">
-        {more
-          .filter((m) => m.show !== false)
+      <div data-testid="home-explore" className="grid grid-cols-2 gap-2.5">
+        {exploreFor(more.filter((m) => m.show !== false), ageUi)
           .map(({ label, screen, icon: Icon }) => (
             <button
               key={screen}
               type="button"
+              data-say={label}
               onClick={() => onNavigate(screen)}
-              className={`flex min-h-[56px] items-center gap-2.5 rounded-[20px] bg-white px-3 text-left active:scale-[0.98] ${CARD_SHADOW}`}
+              className={`flex min-h-[var(--kid-tap,56px)] items-center gap-2.5 rounded-[20px] bg-white px-3 text-left active:scale-[0.98] ${CARD_SHADOW}`}
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
                 <Icon size={20} weight="duotone" />

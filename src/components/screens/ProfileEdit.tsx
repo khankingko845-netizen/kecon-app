@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ChevronLeft, Check, User, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
+import { ageUiFor } from "@/lib/age-ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";
 
@@ -15,6 +17,7 @@ const avatarEmojis = ["👨‍👩‍👧", "👨‍👩‍👦", "👩‍👧",
 
 export default function ProfileEdit({ onBack }: ProfileEditProps) {
  const { profile, refreshProfile } = useAuth();
+ const { updateSettings } = useSettings();
  const [displayName, setDisplayName] = useState(profile?.display_name || "");
  const [familyName, setFamilyName] = useState(profile?.family_name || "");
  const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_emoji || "👨‍👩‍👧");
@@ -35,6 +38,8 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  child_age: childAge ? parseInt(childAge) : null,
  locale,
  }).eq("id", profile.id);
+ // UI-13: the kid screens follow the new age band right away.
+ if (childAge) updateSettings({ childAge: ageUiFor(parseInt(childAge)).band });
  await refreshProfile();
  setSaved(true);
  setTimeout(() => setSaved(false), 2000);
@@ -124,6 +129,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <button
  key={age}
  onClick={() => setChildAge(age)}
+ aria-pressed={childAge === age}
  className={`w-10 h-10 rounded-xl text-[13px] font-bold flex items-center justify-center transition-all ${
  childAge === age
  ? "bg-accent text-white"
@@ -134,6 +140,14 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  </button>
  ))}
  </div>
+ {childAge && (() => {
+   const ui = ageUiFor(parseInt(childAge));
+   return (
+     <p data-testid="age-band-summary" data-band={ui.band} className="mt-3 rounded-xl bg-accent/10 px-3 py-2.5 text-[12px] font-semibold leading-snug text-txt dark:text-white">
+       Nhóm <b>{ui.short} · {ui.label}</b>: {ui.summary}.
+     </p>
+   );
+ })()}
  </div>
 
  {/* Language */}

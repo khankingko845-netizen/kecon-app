@@ -188,6 +188,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  type="button"
  role="tab"
  aria-selected={activeFilter === f.id}
+ data-say={f.label}
  onClick={() => setActiveFilter(f.id)}
  className={`flex min-h-[48px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl pl-1.5 pr-3.5 text-[14px] font-black transition-colors ${
  activeFilter === f.id ? "bg-brand text-white shadow-[0_4px_0_var(--color-brand-press)]" : `bg-white text-ink ${CARD_SHADOW}`
@@ -198,7 +199,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  ))}
  </div>
 
- <p className="mb-1 mt-2.5 text-[13px] font-bold text-ink-2">
+ <p data-kid-detail className="mb-1 mt-2.5 text-[13px] font-bold text-ink-2">
  {filtered.length} truyện
  {sortBy !== "newest" && ` · ${SORT_LABEL[sortBy]}`}
  </p>
@@ -243,9 +244,12 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  <CategoryIcon category={story.category} size={80} />
  </span>
  <b className="mt-2 block truncate px-1 text-[15px] font-black leading-tight text-ink">{story.title}</b>
- <small className="block truncate px-1 pb-1 text-[12.5px] font-bold text-ink-2">
+ <small data-kid-detail className="block truncate px-1 pb-1 text-[12.5px] font-bold text-ink-2">
  {story.page_count} trang · {categoryLabels[story.category] || (story.source === "ai" ? "Đóm sáng tác" : "Truyện")}
  </small>
+ {story.description && (
+ <small data-kid-extra className="line-clamp-2 px-1 pb-1 text-[12px] font-semibold leading-snug text-ink-2">{story.description}</small>
+ )}
  </button>
  <button
  type="button"

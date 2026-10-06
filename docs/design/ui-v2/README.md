@@ -92,6 +92,19 @@ Token dán vào `@theme` của Tailwind v4: [`kecon-tokens.css`](kecon-tokens.cs
 
 Nhóm tuổi lấy từ hồ sơ của bé; phụ huynh đổi được. Tránh nội dung "trẻ con hơn tuổi" (NN/g).
 
+**Đã làm (UI-13):** `src/lib/age-ui.ts` (`AGE_UI`) + `AgeUiProvider` đặt `html[data-age|data-density|data-say-labels]` từ tuổi trong **Bố mẹ → Hồ sơ gia đình** (mặc định 3–5; đồng bộ sang `settings.childAge` để Tạo truyện / Vẽ truyện / gợi ý dùng cùng nhóm).
+
+| | 3–5 "Mầm" | 6–8 "Chồi" | 9–12 "Lá" |
+| --- | --- | --- | --- |
+| Chạm tối thiểu `--kid-tap` | 64px | 56px | 48px |
+| `Button3D` lg / md / sm | 68 / 56 / 48 | 64 / 48 / 44 | 56 / 46 / 44 |
+| Mật độ chữ | thấp — ẩn `[data-kid-detail]` | vừa | cao — hiện thêm `[data-kid-extra]` (mô tả truyện) |
+| Chạm `[data-say]` → Đóm đọc tên | ✅ | — | — |
+| Trang chủ: Chủ đề / Khám phá thêm | 2 cột ô to · 3 lối tắt | 3 cột · tất cả | 3 cột gọn · tất cả |
+| Đóm (`--dom-scale`) | 1 | 1 | 0.78 |
+
+Màn mới: gắn `data-say="Tên"` cho nút biểu tượng của bé, `data-kid-detail` cho dòng phụ, `data-kid-extra` cho mô tả dài. Test: `tests/unit/age-ui.test.ts`, `tests/e2e/age-bands.spec.ts`.
+
 ## 7. Mockup
 
 ![Board](mockups/board.jpg)
