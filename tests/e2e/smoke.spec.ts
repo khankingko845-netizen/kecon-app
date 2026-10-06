@@ -69,6 +69,54 @@ test.describe("Trang chủ (chưa đăng nhập)", () => {
   });
 });
 
+/** Hold every JS chunk until `release()` — the page shows only the server-rendered HTML. */
+async function holdScripts(page: Page): Promise<() => void> {
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(/\/_next\/static\/.+\.js(\?.*)?$/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  return release;
+}
+
+test.describe("UI-12 · chạm trước khi JS tải xong", () => {
+  test("'Bỏ qua' chạm sớm vẫn mở màn tạo tài khoản", async ({ page }) => {
+    const pageErrors = trackPageErrors(page);
+    const release = await holdScripts(page);
+    await page.goto("/", { waitUntil: "commit" });
+
+    const skip = page.getByRole("button", { name: "Bỏ qua" });
+    await expect(skip).toBeVisible();
+    await skip.click();
+    // Not hydrated yet: still the server-rendered onboarding.
+    await expect(page.getByRole("heading", { level: 1, name: /Mỗi tối, Đóm thắp sáng/ })).toBeVisible();
+
+    release();
+    await expect(page.getByRole("heading", { name: "Tạo tài khoản" })).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("'Bắt đầu nào!' chạm sớm (kể cả 2 lần) → đúng bước 2, không nhảy quá", async ({ page }) => {
+    const pageErrors = trackPageErrors(page);
+    const release = await holdScripts(page);
+    await page.goto("/", { waitUntil: "commit" });
+
+    const start = page.getByRole("button", { name: /Bắt đầu nào!/ });
+    await expect(start).toBeVisible();
+    await start.click();
+    await start.click();
+
+    release();
+    await expect(page.getByRole("heading", { level: 1, name: /Nghe truyện bằng giọng bố mẹ/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Bước 2:/ })).toHaveAttribute("aria-current", "step");
+    // After hydration the buttons work normally (no stale replay).
+    await page.getByRole("button", { name: /Tiếp tục/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /An toàn, không quảng cáo/ })).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  });
+});
+
 test.describe("Bảo mật (T05)", () => {
   test("trả header CSP và trang không vi phạm CSP", async ({ page }) => {
     const cspViolations: string[] = [];
