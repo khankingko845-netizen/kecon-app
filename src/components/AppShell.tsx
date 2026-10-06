@@ -3,9 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { Screen, TabId } from "@/lib/types";
-import { SettingsProvider } from "@/lib/settings-context";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
-import { DataProvider } from "@/lib/data-context";
+import { useAuth } from "@/lib/auth-context";
 import TabBar from "@/components/ui/TabBar";
 import { KidLoading } from "@/components/ui/states";
 import Onboarding from "@/components/screens/Onboarding";
@@ -14,18 +12,14 @@ import Signup from "@/components/screens/Signup";
 import Home from "@/components/screens/Home";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
-import { AudioPlayerProvider, useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioPlayer } from "@/lib/audio-player-context";
 import ParentGate from "@/components/parent/ParentGate";
 import ScreenTimeLock from "@/components/parent/ScreenTimeLock";
 import { isParentArea } from "@/lib/parent-gate";
 import { useParentUnlock } from "@/lib/use-parent-unlock";
 import { useScreenTime } from "@/lib/use-screen-time";
-import { ParentalControlsProvider } from "@/lib/parental-controls-context";
-import { I18nProvider } from "@/lib/i18n";
-import { ToastProvider } from "@/components/ui/Toast";
-import { ThemeProvider } from "@/lib/theme-context";
-import { FeedbackProvider } from "@/lib/feedback-context";
-import { AgeUiProvider } from "@/lib/age-ui-context";
+import AppProviders from "@/components/AppProviders";
+import { adminPath, isAdminScreen } from "@/lib/admin-routes";
 
 /**
  * UI-12 (hiệu năng): only the entry screens (onboarding, login, signup, home)
@@ -45,13 +39,6 @@ const VoiceProfiles = dynamic(() => import("@/components/screens/VoiceProfiles")
 const Settings = dynamic(() => import("@/components/screens/Settings"), { loading: ScreenFallback });
 const StoryEditor = dynamic(() => import("@/components/screens/StoryEditor"), { loading: ScreenFallback });
 const UploadStory = dynamic(() => import("@/components/screens/UploadStory"), { loading: ScreenFallback });
-const AdminDashboard = dynamic(() => import("@/components/screens/AdminDashboard"), { loading: ScreenFallback });
-const AdminStories = dynamic(() => import("@/components/screens/AdminStories"), { loading: ScreenFallback });
-const AdminUsers = dynamic(() => import("@/components/screens/AdminUsers"), { loading: ScreenFallback });
-const AdminAnalytics = dynamic(() => import("@/components/screens/AdminAnalytics"), { loading: ScreenFallback });
-const AdminSettings = dynamic(() => import("@/components/screens/AdminSettings"), { loading: ScreenFallback });
-const AdminCategories = dynamic(() => import("@/components/screens/AdminCategories"), { loading: ScreenFallback });
-const AdminTemplates = dynamic(() => import("@/components/screens/AdminTemplates"), { loading: ScreenFallback });
 const Favorites = dynamic(() => import("@/components/screens/Favorites"), { loading: ScreenFallback });
 const Subscription = dynamic(() => import("@/components/screens/Subscription"), { loading: ScreenFallback });
 const Achievements = dynamic(() => import("@/components/screens/Achievements"), { loading: ScreenFallback });
@@ -100,18 +87,8 @@ const screenTabMap: Partial<Record<Screen, TabId>> = {
  settings: "settings",
 };
 
-const ADMIN_SCREENS: Screen[] = [
- "admin",
- "admin-stories",
- "admin-users",
- "admin-analytics",
- "admin-settings",
- "admin-categories",
- "admin-templates",
-];
-
 function AppContent({ signedOut }: { signedOut: boolean }) {
- const { user, loading, isAdmin } = useAuth();
+ const { user, loading } = useAuth();
  const [history, setHistoryState] = useState<ScreenState[]>([
  { screen: "onboarding" },
  ]);
@@ -129,13 +106,8 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  rawCurrent.screen === "login" ||
  rawCurrent.screen === "signup";
  // Authenticated users should never see auth screens (e.g. on reload).
- // Non-admin users must never reach admin screens (defense in depth on top of RLS).
- const blockedAdmin =
- !loading && !isAdmin && ADMIN_SCREENS.includes(rawCurrent.screen);
  const current: ScreenState =
- (!loading && user && onAuthScreen) || blockedAdmin
- ? { screen: "home" }
- : rawCurrent;
+ !loading && user && onAuthScreen ? { screen: "home" } : rawCurrent;
  // T19 / UI-10: parent area (tab "Bố mẹ" + everything under it) opens only
  // through the parent gate; kid screens lock on daily limit / bedtime.
  const inParentArea = isParentArea(current.screen);
@@ -168,6 +140,12 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
 
  const navigate = useCallback(
  (screen: Screen, data?: Record<string, string>) => {
+ // A-01: the admin console is its own route (`/admin`, guarded on the
+ // server) — it never renders inside the kid app.
+ if (isAdminScreen(screen)) {
+ window.location.assign(adminPath(screen));
+ return;
+ }
  setHistory((prev) => [...prev, { screen, data }]);
  },
  [setHistory]
@@ -213,13 +191,6 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  current.screen !== "adventure" &&
  current.screen !== "editor" &&
  current.screen !== "upload" &&
- current.screen !== "admin" &&
- current.screen !== "admin-stories" &&
- current.screen !== "admin-users" &&
- current.screen !== "admin-analytics" &&
- current.screen !== "admin-settings" &&
- current.screen !== "admin-categories" &&
- current.screen !== "admin-templates" &&
  current.screen !== "legacy" &&
  current.screen !== "draw-story" &&
  current.screen !== "vocab-quiz";
@@ -291,27 +262,6 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  {current.screen === "upload" && (
  <UploadStory onBack={goBack} onNavigate={navigate} />
  )}
- {current.screen === "admin" && (
- <AdminDashboard onBack={goBack} onNavigate={navigate} />
- )}
- {current.screen === "admin-stories" && (
- <AdminStories onBack={goBack} onNavigate={navigate} />
- )}
- {current.screen === "admin-users" && (
- <AdminUsers onBack={goBack} />
- )}
- {current.screen === "admin-analytics" && (
- <AdminAnalytics onBack={goBack} />
- )}
- {current.screen === "admin-settings" && (
- <AdminSettings onBack={goBack} />
- )}
- {current.screen === "admin-categories" && (
- <AdminCategories onBack={goBack} />
- )}
- {current.screen === "admin-templates" && (
- <AdminTemplates onBack={goBack} onNavigate={navigate} />
- )}
  {current.screen === "favorites" && (
  <Favorites onBack={goBack} onNavigate={navigate} />
  )}
@@ -371,26 +321,8 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
 
 export default function AppShell({ signedOut = false }: { signedOut?: boolean }) {
  return (
- <AuthProvider>
- <SettingsProvider>
- <DataProvider>
- <AudioPlayerProvider>
- <I18nProvider>
- <ThemeProvider>
- <AgeUiProvider>
- <FeedbackProvider>
- <ToastProvider>
- <ParentalControlsProvider>
+ <AppProviders>
  <AppContent signedOut={signedOut} />
- </ParentalControlsProvider>
- </ToastProvider>
- </FeedbackProvider>
- </AgeUiProvider>
- </ThemeProvider>
- </I18nProvider>
- </AudioPlayerProvider>
- </DataProvider>
- </SettingsProvider>
- </AuthProvider>
+ </AppProviders>
  );
 }

@@ -80,11 +80,11 @@ describe("resolveChildBand / ageUiFor", () => {
 
 describe("exploreFor", () => {
   const items: { screen: Screen }[] = (
-    ["favorites", "daily-challenges", "scan-book", "draw-story", "collections", "upload", "admin"] as Screen[]
+    ["favorites", "daily-challenges", "scan-book", "draw-story", "collections", "upload"] as Screen[]
   ).map((screen) => ({ screen }));
 
-  it("3–5: a few big shortcuts, order kept, admin always stays", () => {
-    expect(exploreFor(items, AGE_UI["3-5"]).map((i) => i.screen)).toEqual(["favorites", "scan-book", "draw-story", "admin"]);
+  it("3–5: a few big shortcuts, order kept", () => {
+    expect(exploreFor(items, AGE_UI["3-5"]).map((i) => i.screen)).toEqual(["favorites", "scan-book", "draw-story"]);
   });
 
   it("6–8 and 9–12: everything", () => {

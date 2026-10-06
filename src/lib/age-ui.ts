@@ -102,9 +102,9 @@ export function resolveChildBand(profileAge: number | null | undefined, settings
   return settingsAge ? normalizeAgeBand(settingsAge) : DEFAULT_AGE_BAND;
 }
 
-/** Filter Home shortcuts for the band (admin entry always stays). */
+/** Filter Home shortcuts for the band. */
 export function exploreFor<T extends { screen: Screen }>(items: readonly T[], ui: AgeUi): T[] {
   if (!ui.explore) return [...items];
-  const allowed = new Set<Screen>([...ui.explore, "admin"]);
+  const allowed = new Set<Screen>(ui.explore);
   return items.filter((i) => allowed.has(i.screen));
 }

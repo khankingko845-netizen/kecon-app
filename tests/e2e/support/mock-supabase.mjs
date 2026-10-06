@@ -15,6 +15,8 @@ export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 const MOCK_PIN = "2468";
 /** Third family (UI-13): its profile is writable so specs can change the child's age. */
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
+/** Admin v2 · A-01: the only mock account whose profile role is "admin". */
+export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
@@ -38,7 +40,17 @@ const ageUser = {
   id: MOCK_AGE_USER_ID,
   email: "e2e-age@kecon.test",
 };
-const USERS = { [MOCK_USER_ID]: user, [MOCK_PIN_USER_ID]: pinUser, [MOCK_AGE_USER_ID]: ageUser };
+const adminUser = {
+  ...user,
+  id: MOCK_ADMIN_USER_ID,
+  email: "e2e-admin@kecon.test",
+};
+const USERS = {
+  [MOCK_USER_ID]: user,
+  [MOCK_PIN_USER_ID]: pinUser,
+  [MOCK_AGE_USER_ID]: ageUser,
+  [MOCK_ADMIN_USER_ID]: adminUser,
+};
 
 const profile = {
   id: MOCK_USER_ID,
@@ -133,7 +145,9 @@ const parentalControls = [
 
 const ageProfile = { ...profile, id: MOCK_AGE_USER_ID, email: ageUser.email, family_name: "Gia đình Mèo", child_name: "Mít" };
 
-const TABLES = { profiles: [profile, pinProfile, ageProfile], stories, story_pages: pages, parental_controls: parentalControls };
+const adminProfile = { ...profile, id: MOCK_ADMIN_USER_ID, email: adminUser.email, family_name: "Đội KểCon", display_name: "Admin E2E", role: "admin" };
+
+const TABLES = { profiles: [profile, pinProfile, ageProfile, adminProfile], stories, story_pages: pages, parental_controls: parentalControls };
 
 /** Parent-PIN RPCs (017/018), stateless so parallel specs can't interfere. */
 function pinRpc(name, sub, body) {
