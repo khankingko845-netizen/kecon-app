@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
  CheckCircle, XCircle, Loader2, ChevronRight,
  Trophy, Star, Sparkles,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import type { Screen } from "@/lib/types";
 

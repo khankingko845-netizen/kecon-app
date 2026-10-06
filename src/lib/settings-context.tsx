@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { readPersistedSettings, serializeSettings, SETTINGS_STORAGE_KEY } from "@/lib/settings-storage";
+import { DEFAULT_AGE_BAND, normalizeAgeBand } from "@/lib/age-bands";
 
 export type StoryProvider = "openai" | "gemini" | "anthropic" | "custom";
 
@@ -50,7 +51,7 @@ const defaultSettings: AppSettings = {
   autoPlay: true,
   sleepTimerDefault: 15,
   childName: "",
-  childAge: "4-6",
+  childAge: DEFAULT_AGE_BAND,
 };
 
 const defaultSystemStatus: SystemStatus = {
@@ -92,8 +93,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       defaultSettings
     );
     // Older versions persisted API keys — rewrite storage without them.
-    if (hadSecrets) localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(loaded));
-    return loaded;
+    // Age bands v2 (UI-13): map legacy values like "4-6" → "3-5".
+    const childAge = normalizeAgeBand(loaded.childAge);
+    const migrated = childAge !== loaded.childAge ? { ...loaded, childAge } : loaded;
+    if (hadSecrets || migrated !== loaded) localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(migrated));
+    return migrated;
   });
 
   // BYO keys are admin-only (server enforces it too); others always use the platform key.

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { callLlmJson, type FetchLike, type LlmProvider, type LlmResult, type LlmTarget } from "@/lib/llm";
+import { getAgeBand } from "@/lib/age-bands";
 
 export interface GeneratedCharacter {
   name: string;
@@ -84,12 +85,14 @@ function buildUserPrompt(params: StoryParams): string {
   const forChild = params.childName
     ? `cho bé ${params.childName}, ${params.age} tuổi`
     : `cho trẻ ${params.age} tuổi`;
+  const band = getAgeBand(params.age);
   return `Viết một câu chuyện ${forChild}.
 Chủ đề: ${themeMap[params.theme] || params.theme}
 Ngôn ngữ: ${langMap[params.language] || params.language}
+Phong cách theo độ tuổi (${band.label}): ${band.tone}
 ${params.extraPrompt ? `Yêu cầu thêm: ${params.extraPrompt}` : ""}
 
-Trả về JSON với format sau (8-12 trang):
+Trả về JSON với format sau (${band.pages[0]}-${band.pages[1]} trang):
 {
   "title": "Tên truyện",
   "summary": "Tóm tắt ngắn 1-2 câu",

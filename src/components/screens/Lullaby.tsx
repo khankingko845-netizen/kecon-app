@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Clock, Moon, CloudRain, Waves, Music, Bug, Volume2, Wind, Flame, Trees } from "lucide-react";
+import { ChevronLeft, Clock, Moon, CloudRain, Waves, Music, Bug, Volume2, Wind, Flame, Trees } from "@/components/ui/icons";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
+import Mascot from "@/components/ui/Mascot";
 
 interface LullabyProps {
  onBack: () => void;
@@ -87,7 +88,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
  return (
- <div className="min-h-screen bg-gradient-to-b from-[#0C1445] to-[#070B2E] flex flex-col items-center text-white relative overflow-hidden">
+ <div className="min-h-screen bg-gradient-to-b from-night to-[#0E0B26] flex flex-col items-center text-moon relative overflow-hidden">
  {/* Stars */}
  {[
  { top: "10%", left: "15%", delay: "0s" },
@@ -113,30 +114,33 @@ export default function Lullaby({ onBack }: LullabyProps) {
  <div className="w-full flex justify-between items-center px-5 pt-14 pb-2 z-10">
  <button
  onClick={onBack}
- className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
+ aria-label="Quay lại"
+ className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center"
  >
- <ChevronLeft size={20} className="text-white/50" />
+ <ChevronLeft size={22} className="text-moon-2" />
  </button>
- <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/5 text-xs font-bold text-white/40">
+ <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/5 text-xs font-bold text-moon-2">
  <Clock size={14} /> {remaining !== null ? fmt(remaining) : "Hẹn giờ"}
  </div>
  </div>
 
- {/* Moon */}
+ {/* Moon + Đóm buồn ngủ (UI v2, night mode) */}
+ <div className="relative w-48 h-44 mt-6 mb-4 z-10 flex items-end justify-center">
  <div
- className="w-28 h-28 rounded-full flex items-center justify-center mt-10 mb-5 z-10"
+ aria-hidden
+ className="absolute right-2 top-0 w-24 h-24 rounded-full"
  style={{
- background: "radial-gradient(circle at 40% 35%, #FEF3C7, #FBBF24)",
- boxShadow: "0 0 50px 15px rgba(251,191,36,0.1)",
+ background: "radial-gradient(circle at 40% 35%, #F3E9D2, #E8D6A8)",
+ boxShadow: "0 0 50px 15px rgba(243,233,210,0.10)",
  }}
- >
- <Moon size={48} className="text-amber-800" />
+ />
+ <Mascot state="sleepy" size={150} priority className="relative" />
  </div>
 
- <h2 className="text-[22px] font-extrabold tracking-tight z-10 mb-1">
- Chế Độ Ru Ngủ
+ <h2 className="font-display text-[26px] font-extrabold tracking-tight text-moon z-10 mb-1">
+ Ru ngủ cùng Đóm
  </h2>
- <p className="text-[13px] text-white/35 font-medium z-10 mb-7">
+ <p className="text-[14px] text-moon-2 font-medium z-10 mb-7">
  Chạm chọn nhiều âm nền · trộn theo ý thích
  </p>
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
  Loader2, Plus, Pencil, Trash2, GripVertical, X, Check, Eye, EyeOff,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import {
  getStoryCategories,

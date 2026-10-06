@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const parsedBody = await parseJsonBody(request, FromDrawingBody);
   if (!parsedBody.ok) return parsedBody.response;
   const { imageData, childName } = parsedBody.data;
-  const age = parsedBody.data.age || "4-6";
+  const age = parsedBody.data.age || "3-5";
   const language = parsedBody.data.language || "vi";
 
   // Platform key + admin default provider/model for both steps (all providers support images)

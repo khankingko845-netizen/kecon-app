@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Search, Shield, ShieldCheck, User as UserIcon, BookOpen, Mic } from "lucide-react";
+import { Loader2, Search, Shield, ShieldCheck, User as UserIcon, BookOpen, Mic } from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import {

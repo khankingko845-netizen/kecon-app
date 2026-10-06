@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
  ChevronLeft, BarChart3, Clock, BookOpen, Headphones, TrendingUp,
  Calendar, Loader2, Flame,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { getUsageHistory, getReadingStreak, type DailyUsage } from "@/lib/db";
 import type { Screen } from "@/lib/types";

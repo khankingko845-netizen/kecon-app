@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Flame, BookOpen, Headphones, Trophy, Zap } from "lucide-react";
+import { Flame, BookOpen, Headphones, Trophy, Zap } from "@/components/ui/icons";
 import { getReadingStreak, type ReadingStreakRow } from "@/lib/db";
 
 /* ── XP & Level calculations ── */

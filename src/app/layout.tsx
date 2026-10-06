@@ -1,10 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Baloo_2, Be_Vietnam_Pro, Nunito } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// UI v2 typography (docs/design/ui-v2): Nunito for child UI, Baloo 2 for
+// display headings, Be Vietnam Pro for parent/admin screens. All three ship
+// the Vietnamese subset so stacked diacritics (ễ, ặ, ẫ) render correctly.
+const nunito = Nunito({
   subsets: ["latin", "vietnamese"],
-  variable: "--font-inter",
+  weight: ["400", "600", "700", "800", "900"],
+  variable: "--font-nunito",
+  display: "swap",
+});
+const baloo = Baloo_2({
+  subsets: ["latin", "vietnamese"],
+  weight: ["600", "700", "800"],
+  variable: "--font-baloo",
+  display: "swap",
+});
+const beVietnam = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-be-vietnam",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -17,7 +34,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0A0A0F",
+  themeColor: "#FFF8EE",
 };
 
 export default function RootLayout({
@@ -26,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={inter.variable}>
+    <html lang="vi" className={`${nunito.variable} ${baloo.variable} ${beVietnam.variable}`}>
       <body className="min-h-full">
         {children}
       </body>

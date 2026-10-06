@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
  ChevronLeft, Download, Trash2, Loader2, Wifi, WifiOff, HardDrive,
  Play, CheckCircle,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import {
  getDownloadedStories, removeDownloadedStory, markStoryDownloaded,

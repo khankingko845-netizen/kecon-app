@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
   const userPrompt = `Đánh giá câu chuyện thiếu nhi sau:
 
 Tiêu đề: ${storyTitle || "Không có tiêu đề"}
-Độ tuổi mục tiêu: ${targetAge || "4-6"}
+Độ tuổi mục tiêu: ${targetAge || "3-5"}
 Ngôn ngữ: ${language || "vi"}
 
 NỘI DUNG TRUYỆN:

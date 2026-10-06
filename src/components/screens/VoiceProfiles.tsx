@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Plus, User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "lucide-react";
+import { Plus, User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "@/components/ui/icons";
 import { useData } from "@/lib/data-context";
 import { deleteVoiceProfile, updateVoiceProfile, gradientFor } from "@/lib/db";
 import { useSettings } from "@/lib/settings-context";

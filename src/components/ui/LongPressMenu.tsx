@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Play, Pencil, Heart, Share2, Trash2 } from "lucide-react";
+import { Play, Pencil, Heart, Share2, Trash2 } from "@/components/ui/icons";
 
 interface MenuItem {
  id: string;

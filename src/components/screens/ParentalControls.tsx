@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Shield, Clock, Moon, Lock, Save, Loader2, Check } from "lucide-react";
+import { CategoryIcon } from "@/components/ui/Icon3D";
+import { ChevronLeft, Shield, Clock, Moon, Lock, Save, Loader2, Check } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { getParentalControls, upsertParentalControls } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
@@ -14,12 +15,12 @@ interface ParentalControlsProps {
 }
 
 const CATEGORIES = [
- { id: "fairy_tale", label: "Cổ tích", icon: "🏰" },
- { id: "adventure", label: "Phiêu lưu", icon: "🚀" },
- { id: "bedtime", label: "Ru ngủ", icon: "🌙" },
- { id: "animal", label: "Động vật", icon: "🐾" },
- { id: "educational", label: "Học chơi", icon: "📚" },
- { id: "custom", label: "Tùy chỉnh", icon: "✨" },
+ { id: "fairy_tale", label: "Cổ tích" },
+ { id: "adventure", label: "Phiêu lưu" },
+ { id: "bedtime", label: "Ru ngủ" },
+ { id: "animal", label: "Động vật" },
+ { id: "educational", label: "Học chơi" },
+ { id: "custom", label: "Tùy chỉnh" },
 ];
 
 export default function ParentalControls({ onBack }: ParentalControlsProps) {
@@ -278,7 +279,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  : "bg-gray-50 dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
  }`}
  >
- <span className="text-lg">{cat.icon}</span>
+ <CategoryIcon category={cat.id} size={28} className="rounded-lg" />
  <br />
  {cat.label}
  {blocked && " ⛔"}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { Star } from "@/components/ui/icons";
 
 interface RatingStarsProps {
  value: number; // 0-5, can be fractional for display

@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
- Sparkles, Castle, Rocket, Moon, PawPrint, Blocks, Pencil,
- User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic, Volume2, Square,
-} from "lucide-react";
+ Sparkles, User, UserRound, Loader2, AlertCircle, Settings, Globe, Mic, Volume2, Square, PenLine, Camera,
+} from "@/components/ui/icons";
 import TopBar from "@/components/ui/TopBar";
+import Mascot from "@/components/ui/Mascot";
+import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
+import { AGE_BANDS, normalizeAgeBand } from "@/lib/age-bands";
 import { storyThemes } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
@@ -30,22 +32,22 @@ interface CreateStoryProps {
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
 
-const iconMap: Record<string, typeof Castle> = {
- castle: Castle,
- rocket: Rocket,
- moon: Moon,
- paw: PawPrint,
- blocks: Blocks,
- pencil: Pencil,
+/** Theme → 3D tile (UI v2). */
+const THEME_ICON3D: Record<string, Icon3DName> = {
+ castle: "castle",
+ rocket: "rocket",
+ moon: "moon",
+ paw: "paw",
+ blocks: "blocks",
+ pencil: "brush",
 };
 
-const ageOptions = ["2-3", "4-6", "7-9", "10+"];
 
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const { settings, systemStatus } = useSettings();
  const { voiceProfiles, refreshStories } = useData();
  const [selectedTheme, setSelectedTheme] = useState("cotich");
- const [selectedAge, setSelectedAge] = useState(settings.childAge || "4-6");
+ const [selectedAge, setSelectedAge] = useState<string>(normalizeAgeBand(settings.childAge));
  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
  const [childName, setChildName] = useState(settings.childName || "");
  const [extraPrompt, setExtraPrompt] = useState("");
@@ -171,8 +173,34 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  };
 
  return (
- <div className="min-h-screen bg-white dark:bg-white/[0.04]">
- <TopBar title="Tạo Truyện Mới" onBack={onBack} />
+ <div className="min-h-screen bg-white dark:bg-night">
+ <TopBar title="Tạo truyện mới" onBack={onBack} />
+
+ {/* Generating state — Đóm suy nghĩ (UI-06) */}
+ {isGenerating && (
+ <div
+ role="status"
+ aria-live="polite"
+ className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-cream/95 dark:bg-night/95 backdrop-blur-sm px-8 text-center"
+ >
+ <Mascot state="thinking" size={180} label="Đóm đang suy nghĩ để viết truyện" priority />
+ <p className="mt-4 font-display text-[24px] font-extrabold text-ink dark:text-moon">
+ Đóm đang viết truyện cho bé…
+ </p>
+ <p className="mt-1.5 text-[15px] text-ink-2 dark:text-moon-2 max-w-xs">
+ Thường mất khoảng 15–30 giây. Ba mẹ chờ Đóm một chút nhé!
+ </p>
+ <div className="mt-5 flex gap-2" aria-hidden>
+ {[0, 1, 2].map((i) => (
+ <span
+ key={i}
+ className="h-3 w-3 rounded-full bg-glow animate-bounce"
+ style={{ animationDelay: `${i * 0.15}s` }}
+ />
+ ))}
+ </div>
+ </div>
+ )}
 
  <div className="px-5 pt-2 pb-10">
  {/* API Status */}
@@ -201,27 +229,23 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </label>
  <div className="grid grid-cols-3 gap-2">
  {storyThemes.map((theme) => {
- const Icon = iconMap[theme.icon] || Castle;
+ const icon3d = THEME_ICON3D[theme.icon] ?? "book";
  const selected = selectedTheme === theme.id;
  return (
  <button
  key={theme.id}
  onClick={() => setSelectedTheme(theme.id)}
- className={`rounded-[14px] py-3.5 px-1.5 text-center border-2 transition-all ${
+ aria-pressed={selected}
+ className={`rounded-tile py-3 px-1.5 text-center border-2 transition-all active:scale-95 ${
  selected
- ? "border-accent bg-orange-50"
- : "border-transparent bg-surface"
+ ? "border-brand bg-brand-soft dark:bg-white/10"
+ : "border-transparent bg-cream dark:bg-white/[0.04]"
  }`}
  >
- <Icon
- size={24}
- className={`mx-auto mb-1 ${
- selected ? "text-accent" : "text-gray-500 dark:text-white/40"
- }`}
- />
+ <Icon3D name={icon3d} size={48} className="mx-auto mb-1.5" />
  <div
- className={`text-[11px] font-bold ${
- selected ? "text-accent" : "text-txt dark:text-white"
+ className={`text-[12px] font-extrabold ${
+ selected ? "text-brand dark:text-moon" : "text-ink dark:text-white"
  }`}
  >
  {theme.name}
@@ -253,17 +277,18 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  Độ Tuổi
  </label>
  <div className="flex gap-2">
- {ageOptions.map((age) => (
+ {AGE_BANDS.map(({ id: age, label }) => (
  <button
  key={age}
  onClick={() => setSelectedAge(age)}
+ aria-pressed={selectedAge === age}
  className={`flex-1 py-3 rounded-xl border-[1.5px] text-sm font-bold text-center transition-all ${
  selectedAge === age
  ? "border-accent bg-orange-50 text-accent"
  : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
  }`}
  >
- {age}
+ {label}
  </button>
  ))}
  </div>
@@ -443,17 +468,17 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <button
  onClick={handleGenerate}
  disabled={isGenerating}
- className="w-full py-[18px] rounded-[14px] bg-gradient-to-r from-accent to-pink-500 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-accent/35 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:active:scale-100"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white font-extrabold text-[17px] flex items-center justify-center gap-2 shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none transition disabled:opacity-60"
  >
  {isGenerating ? (
  <>
  <Loader2 size={20} className="animate-spin" />
- Đang tạo truyện...
+ Đóm đang viết truyện…
  </>
  ) : (
  <>
- <Sparkles size={20} />
- {hasStoryKey ? "Tạo Truyện AI" : "Cấu Hình API Trước"}
+ <Sparkles size={22} weight="fill" />
+ {hasStoryKey ? "Tạo truyện cùng Đóm" : "Cấu hình AI trước"}
  </>
  )}
  </button>
@@ -470,13 +495,13 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  onClick={() => onNavigate("draw-story")}
  className="w-full py-3.5 rounded-[14px] bg-white dark:bg-white/[0.04] border-2 border-dashed border-violet-300 text-violet-600 font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
  >
- ✏️ Vẽ Truyện — Bé Vẽ, AI Kể
+ <PenLine size={18} /> Vẽ truyện — bé vẽ, Đóm kể
  </button>
  <button
  onClick={() => onNavigate("scan-book")}
  className="w-full py-3.5 rounded-[14px] bg-white dark:bg-white/[0.04] border-2 border-dashed border-accent/30 text-accent font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
  >
- 📸 Chụp Truyện Từ Sách
+ <Camera size={18} /> Chụp truyện từ sách
  </button>
  <p className="text-[11px] text-txt-secondary dark:text-white/50 text-center">
  Chụp ảnh trang sách → AI tự động nhận dạng nội dung

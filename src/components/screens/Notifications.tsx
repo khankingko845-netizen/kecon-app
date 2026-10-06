@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Bell, Check, Trash2, BookOpen, Mic, Trophy, Star, Loader2 } from "lucide-react";
+import { ChevronLeft, Bell, Check, Trash2, BookOpen, Mic, Trophy, Star, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";

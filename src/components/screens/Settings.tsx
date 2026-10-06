@@ -5,7 +5,7 @@ import {
  ChevronRight, Key, Mic, BookOpen, Globe, Bell,
  Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3,
  Download, Trash2, Crown, LayoutDashboard, User,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
