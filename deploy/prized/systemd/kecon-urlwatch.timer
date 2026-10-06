@@ -1,0 +1,9 @@
+[Unit]
+Description=KểCon staging — kiểm tra URL tunnel mỗi phút
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+
+[Install]
+WantedBy=timers.target
