@@ -39,12 +39,12 @@ export default function LyricsText({ text, progress, isPlaying }: LyricsTextProp
  return (
  <span
  key={i}
- className={`transition-all duration-300 ${
+ className={`transition-colors duration-300 ${
  isCurrent
- ? "text-white font-semibold scale-[1.02] inline-block"
+ ? "rounded-md bg-amber/[0.14] px-[3px] text-amber"
  : isPast
- ? "text-white/70"
- : "text-white/30"
+ ? "opacity-55"
+ : ""
  }`}
  >
  {word}

@@ -91,7 +91,7 @@ _Nguồn Notion: https://app.notion.com/p/3ed4dea8214e473bbd09fa4916d0b044_
 
 **Thứ tự:** Sprint 1 — UI-02, UI-03, UI-04 · Sprint 2 — UI-06, UI-07, UI-08 · Sprint 3 — UI-05, UI-09, UI-10, UI-11, UI-13 · UI-12 song song.
 
-**Tiến độ:** ✅ Sprint 1 (UI-02/03/04, PR #7) · ✅ Sprint 2: UI-06 `KidLoading`/`KidError`/`KidSuccess` (`src/components/ui/states.tsx`), UI-07 Home "Tối nay nghe gì?", UI-08 Chế độ Đêm (`src/lib/night-mode.ts`, `NightControls.tsx`; E2E `tests/e2e/night-mode.spec.ts`) · ⏭️ Sprint 3.
+**Tiến độ:** ✅ Sprint 1 (UI-02/03/04, PR #7) · ✅ Sprint 2: UI-06 `KidLoading`/`KidError`/`KidSuccess` (`src/components/ui/states.tsx`), UI-07 Home "Tối nay nghe gì?", UI-08 Chế độ Đêm (`src/lib/night-mode.ts`, `NightControls.tsx`; E2E `tests/e2e/night-mode.spec.ts`) (PR #8) · ✅ Fidelity pass theo concept board (PR #9): kit dùng chung `src/components/ui/kit.tsx`, Onboarding 3 bước, Home bé, Player "Chế độ ngủ", UI-09 wizard Tạo truyện 4 bước, Ghi giọng bố mẹ, Thư viện, Giọng đọc, tab "Bố mẹ" (một phần UI-10) · ⏭️ Sprint 3: UI-05 Rive, UI-10 khoá PIN cho tab Bố mẹ, UI-11 âm thanh/haptics, UI-13, UI-12 QA.
 
 ## Thứ tự & song song
 

@@ -57,6 +57,10 @@ export function useSleepTimer(onExpire: () => void) {
 }
 
 /** Overlays render at <body> level so parent stacking contexts (z-10 bars) can't cover them. */
+/** Player chip (concept board `.chips span`). */
+export const CHIP =
+  "flex h-11 items-center gap-1.5 whitespace-nowrap rounded-2xl border border-moon/[0.12] bg-moon/[0.08] px-3 text-[13.5px] font-extrabold text-[#DCD3EE]";
+
 function BodyPortal({ children }: { children: ReactNode }) {
   return typeof document === "undefined"
     ? null
@@ -68,11 +72,14 @@ export function SleepTimerButton({
   onStart,
   onCancel,
   className = "",
+  variant = "icon",
 }: {
   remaining: number | null;
   onStart: (minutes: number) => void;
   onCancel: () => void;
   className?: string;
+  /** "chip" = labelled pill used in the Player chip row (concept board screen 3). */
+  variant?: "icon" | "chip";
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -86,13 +93,21 @@ export function SleepTimerButton({
             : "Hẹn giờ ngủ"
         }
         data-testid="sleep-timer-button"
-        className={`h-11 min-w-11 px-3 rounded-xl flex items-center justify-center gap-1.5 text-[13px] font-bold ${
-          remaining !== null ? "bg-glow/20 text-glow" : "bg-white/5 text-moon-2"
-        } ${className}`}
+        className={
+          variant === "chip"
+            ? `${CHIP} ${className}`
+            : `h-11 min-w-11 px-3 rounded-xl flex items-center justify-center gap-1.5 text-[13px] font-bold ${
+                remaining !== null ? "bg-glow/20 text-glow" : "bg-white/5 text-moon-2"
+              } ${className}`
+        }
       >
-        <Timer size={18} />
-        {remaining !== null && (
-          <span className="tabular-nums">{formatCountdown(remaining)}</span>
+        <Timer size={18} weight="fill" className={variant === "chip" ? "text-amber" : ""} />
+        {variant === "chip" ? (
+          <span className="tabular-nums">
+            {remaining !== null ? `Tắt sau ${formatCountdown(remaining)}` : "Hẹn giờ"}
+          </span>
+        ) : (
+          remaining !== null && <span className="tabular-nums">{formatCountdown(remaining)}</span>
         )}
       </button>
 
@@ -181,10 +196,26 @@ export function NightToggle({ className = "" }: { className?: string }) {
 export function ScreenOffButton({
   onClick,
   className = "",
+  variant = "icon",
 }: {
   onClick: () => void;
   className?: string;
+  variant?: "icon" | "chip";
 }) {
+  if (variant === "chip") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Tắt màn hình (vẫn phát âm thanh)"
+        data-testid="screen-off-button"
+        className={`${CHIP} ${className}`}
+      >
+        <EyeSlash size={18} weight="fill" className="text-amber" />
+        Tắt màn
+      </button>
+    );
+  }
   return (
     <button
       type="button"

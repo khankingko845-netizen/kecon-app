@@ -369,6 +369,8 @@ body {
 .night :is(.text-amber-800, .text-amber-700, .text-orange-700, .text-orange-800) { color: var(--color-amber); }
 .night :is(.text-red-700, .text-red-600, .text-red-800) { color: #FCA5A5; }
 .night :is(.text-green-700, .text-emerald-700, .text-green-800) { color: #6EE7B7; }
+.night .text-success { color: #8EE3C8; }
+.night :is(.text-\[\#7A4A00\], .text-\[\#9A6A00\]) { color: var(--color-glow); }
 .night :is(.text-violet-700, .text-violet-600, .text-purple-700, .text-indigo-700) { color: #C4B5FD; }
 .night :is(.text-gray-900, .text-gray-800, .text-black) { color: var(--color-moon); }
 .night :is(.text-gray-700, .text-gray-600, .text-gray-500) { color: var(--color-moon-2); }
@@ -385,4 +387,14 @@ body {
   justify-content: center;
   padding-bottom: 56px;
   color: rgba(185, 174, 214, 0.35);
+}
+
+/* Voice recording waveform (concept board `.wave`) */
+@keyframes kid-wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.45); }
+}
+.kid-wave { animation: kid-wave 0.9s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) {
+  .kid-wave { animation: none; }
 }

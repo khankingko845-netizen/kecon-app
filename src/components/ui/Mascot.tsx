@@ -92,7 +92,7 @@ export default function Mascot({
   const alt = decorative ? "" : (label ?? ALT[state]);
   return (
     <span
-      className={`relative inline-flex shrink-0 items-end justify-center ${className}`}
+      className={`${/(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className) ? "" : "relative "}inline-flex shrink-0 items-end justify-center ${className}`}
       style={{ width: size, height: size, ...style }}
       data-mascot={state}
       aria-hidden={decorative ? true : undefined}

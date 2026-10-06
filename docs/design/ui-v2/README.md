@@ -99,3 +99,11 @@ Mở [`mockups/board.html`](mockups/board.html) bằng trình duyệt để xem 
 ## 8. Kế hoạch
 
 Xem mục **UI v2** trong [`docs/plan.md`](../../plan.md) — ticket UI-01 → UI-13.
+
+## Chế độ ngủ — ngữ nghĩa (PR #9)
+
+- **Tự động (mặc định, 19:30–6:00):** chỉ làm tối các màn "giờ ngủ" — Player (pill "Chế độ ngủ" bật sẵn, Đóm `sleepy`) và Ru ngủ. `<html>` có class `bedtime`; Trang chủ và các màn khác giữ nền kem như concept "Home bé 19:45".
+- **Luôn bật** (tab Bố mẹ → Chế độ ngủ) hoặc **Giao diện tối**: toàn app dùng bảng màu đêm (class `night`), không phần tử nào trắng tinh `#FFF`.
+- Trong Player, bé/bố mẹ có thể bật/tắt "Chế độ ngủ" cho riêng lần nghe đó bằng pill trên cùng.
+- Ảnh so sánh concept ↔ app: [screens/v2-fidelity.jpg](screens/v2-fidelity.jpg).
+

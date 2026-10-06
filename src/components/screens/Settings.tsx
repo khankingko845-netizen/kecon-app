@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import {
- ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer,
+ ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer, ArrowLeft, ShieldCheck, Mail,
 } from "@/components/ui/icons";
+import { CARD_SHADOW } from "@/components/ui/kit";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -30,7 +31,7 @@ type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language";
 
 function SectionHeader({ title }: { title: string }) {
  return (
- <h3 className="text-[11px] font-bold uppercase tracking-widest text-txt-secondary/60 dark:text-white/30 px-1 mt-6 mb-2">
+ <h3 className="font-parent text-[13px] font-semibold text-ink-2 dark:text-white/50 px-1 mt-6 mb-2">
  {title}
  </h3>
  );
@@ -38,64 +39,87 @@ function SectionHeader({ title }: { title: string }) {
 
 function SettingsCard({ children }: { children: React.ReactNode }) {
  return (
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100/80 dark:border-white/[0.06] overflow-hidden divide-y divide-gray-50 dark:divide-white/[0.04]">
+ <div className={`bg-white dark:bg-white/[0.05] rounded-[20px] overflow-hidden divide-y divide-[#F1EEF8] dark:divide-white/[0.06] ${CARD_SHADOW}`}>
  {children}
  </div>
  );
 }
+
+type RowTone = "brand" | "glow" | "success" | "danger";
+
+const ROW_TONE: Record<RowTone, string> = {
+ brand: "bg-brand-soft text-brand",
+ glow: "bg-glow-soft text-[#9A6A00] dark:text-glow",
+ success: "bg-success-soft text-success",
+ danger: "bg-[#FDE7DF] text-cta-press dark:bg-cta/20 dark:text-cta",
+};
 
 function SettingsRow({
  icon: Icon,
  label,
  value,
  onClick,
- color,
+ tone = "brand",
  badge,
 }: {
  icon: typeof Key;
  label: string;
  value?: string;
  onClick?: () => void;
- color?: string;
+ tone?: RowTone;
  badge?: "ok" | "warn";
- isFirst?: boolean;
- isLast?: boolean;
 }) {
  return (
  <button
  onClick={onClick}
- className="w-full flex items-center gap-3.5 px-4 py-3.5 active:bg-gray-50/50 dark:active:bg-white/[0.03] transition-colors"
+ className="w-full min-h-[60px] flex items-center gap-3.5 px-4 py-3 active:bg-brand-soft/50 dark:active:bg-white/[0.03] transition-colors"
  >
- <div
- className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
- style={{
- background: color
- ? `linear-gradient(135deg, ${color}, ${color}dd)`
- : undefined,
- }}
- >
- <Icon size={17} className={color ? "text-white" : "text-txt-secondary dark:text-white/50"} />
- </div>
- <span className="flex-1 text-left text-[15px] font-semibold text-txt dark:text-white/90">
+ <span className={`w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0 ${ROW_TONE[tone]}`}>
+ <Icon size={20} weight="duotone" />
+ </span>
+ <span className={`flex-1 text-left font-parent text-[15px] font-semibold ${tone === "danger" ? "text-cta-press dark:text-cta" : "text-ink dark:text-white/90"}`}>
  {label}
  </span>
  {badge === "ok" && (
- <span className="w-[22px] h-[22px] rounded-full bg-emerald-500/90 flex items-center justify-center shadow-sm shadow-emerald-500/20">
+ <span className="w-[22px] h-[22px] rounded-full bg-success flex items-center justify-center">
  <Check size={12} className="text-white" strokeWidth={3} />
  </span>
  )}
  {badge === "warn" && (
- <span className="w-[22px] h-[22px] rounded-full bg-amber-400 flex items-center justify-center shadow-sm shadow-amber-400/20">
+ <span className="w-[22px] h-[22px] rounded-full bg-amber-400 flex items-center justify-center">
  <AlertCircle size={12} className="text-white" strokeWidth={3} />
  </span>
  )}
  {value && (
- <span className="text-[13px] text-txt-secondary/70 dark:text-white/35 font-medium max-w-[130px] truncate">
+ <span className="font-parent text-[13px] text-ink-2 dark:text-white/45 font-medium max-w-[150px] truncate">
  {value}
  </span>
  )}
- <ChevronRight size={15} className="text-gray-300 dark:text-white/15 shrink-0" />
+ <ChevronRight size={16} className="text-[#C9C3DD] dark:text-white/20 shrink-0" />
  </button>
+ );
+}
+
+function ParentHeader({ title, onBack, subtitle }: { title: string; onBack?: () => void; subtitle?: string }) {
+ return (
+ <header className="px-5 pt-12 pb-2">
+ <div className="flex items-center gap-3">
+ {onBack && (
+ <button
+ onClick={onBack}
+ aria-label="Quay lại"
+ className={`w-11 h-11 -ml-1 rounded-[14px] bg-white dark:bg-white/[0.06] flex items-center justify-center text-ink dark:text-white ${CARD_SHADOW}`}
+ >
+ <ArrowLeft size={22} weight="bold" />
+ </button>
+ )}
+ <h1 className="font-parent text-[24px] font-bold tracking-tight text-ink dark:text-white">{title}</h1>
+ <span className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-success-soft px-2.5 py-1.5 font-parent text-[12.5px] font-semibold text-success">
+ <ShieldCheck size={15} weight="fill" /> Phụ huynh
+ </span>
+ </div>
+ {subtitle && <p className="mt-1 font-parent text-[13px] text-ink-2 dark:text-white/45">{subtitle}</p>}
+ </header>
  );
 }
 
@@ -113,7 +137,7 @@ function ApiKeysPanel() {
  <p className="mt-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-[12px] text-amber-800 dark:text-amber-300">
  Chỉ dành cho admin thử nhà cung cấp. Key chỉ được giữ trong bộ nhớ của tab này — không lưu trên thiết bị và sẽ mất khi tải lại trang. Key dùng cho mọi người hãy cấu hình trong Cài Đặt Hệ Thống.
  </p>
- <SectionHeader title="ELEVENLABS — GIỌNG NÓI AI" />
+ <SectionHeader title="ElevenLabs — giọng nói AI" />
  <SettingsCard>
  <div className="px-4 py-4 space-y-3">
  <div>
@@ -167,7 +191,7 @@ function ApiKeysPanel() {
  </div>
  </SettingsCard>
 
- <SectionHeader title="AI TẠO CỐT TRUYỆN" />
+ <SectionHeader title="AI tạo cốt truyện" />
  <SettingsCard>
  <div className="px-4 py-4 space-y-3">
  <div>
@@ -324,15 +348,8 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
  ];
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- <div className="px-5 pt-14 pb-3 flex items-center gap-3">
- <button onClick={onBack} className="text-accent text-sm font-semibold">
- ‹ Quay lại
- </button>
- <h2 className="text-[22px] font-black tracking-tight flex-1 dark:text-white">
- Ngôn Ngữ
- </h2>
- </div>
+ <div className="min-h-screen bg-parent-bg font-parent pb-24">
+ <ParentHeader title="Ngôn ngữ" onBack={onBack} />
  <div className="px-5">
  <SettingsCard>
  {languages.map((lang) => (
@@ -421,47 +438,29 @@ export default function Settings({ onNavigate }: SettingsProps) {
 
  if (tab === "api" && isAdmin) {
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- <div className="px-5 pt-14 pb-3 flex items-center gap-3">
- <button
- onClick={() => setTab("main")}
- className="text-accent text-sm font-semibold"
- >
- ‹ Quay lại
- </button>
- <h2 className="text-[22px] font-black tracking-tight flex-1 dark:text-white">
- API Keys
- </h2>
- </div>
+ <div className="min-h-screen bg-parent-bg font-parent pb-24">
+ <ParentHeader title="API Keys" onBack={() => setTab("main")} />
  <ApiKeysPanel />
  </div>
  );
  }
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- {/* Header */}
- <div className="px-5 pt-14 pb-1">
- <h2 className="font-display text-[28px] font-extrabold tracking-tight mb-0.5 text-ink dark:text-white">
- Cài đặt
- </h2>
- <p className="text-[13px] text-txt-secondary dark:text-white/35 font-medium">
- Quản lý ứng dụng & API
- </p>
- </div>
+ <div className="min-h-screen bg-parent-bg font-parent pb-28">
+ <ParentHeader title="Bố mẹ" subtitle="Cài đặt, giờ ngủ và an toàn của bé" />
 
  <div className="px-5">
  {/* Status Banner */}
  {!isConfigured && (
- <div className="mt-4 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-start gap-2.5">
- <AlertCircle size={18} className="text-amber-500 mt-0.5 shrink-0" />
+ <div className="mt-4 p-3.5 rounded-[20px] bg-glow-soft flex items-start gap-2.5">
+ <AlertCircle size={18} className="text-[#9A6A00] dark:text-glow mt-0.5 shrink-0" />
  <div>
- <p className="text-[13px] font-bold text-amber-800 dark:text-amber-300">
+ <p className="text-[13px] font-bold text-[#7A4A00] dark:text-glow">
  {systemStatus.hasElevenLabs || systemStatus.hasStoryProvider
  ? "Hệ thống đã sẵn sàng"
  : "Chưa cấu hình API"}
  </p>
- <p className="text-[12px] text-amber-700 dark:text-amber-400/70 mt-0.5">
+ <p className="text-[12px] text-[#7A4A00]/80 dark:text-glow/70 mt-0.5">
  {systemStatus.hasElevenLabs && systemStatus.hasStoryProvider
  ? "Admin đã cấu hình API. Bạn có thể sử dụng ngay!"
  : "Vui lòng liên hệ admin để cấu hình hệ thống."}
@@ -473,12 +472,12 @@ export default function Settings({ onNavigate }: SettingsProps) {
  {/* AI Integration — BYO keys are admin-only (T05) */}
  {isAdmin && (
  <>
- <SectionHeader title="TÍCH HỢP AI" />
+ <SectionHeader title="Tích hợp AI" />
  <SettingsCard>
  <SettingsRow
  icon={Key}
  label="API Keys"
- color="#FF6B3D"
+ 
  onClick={() => setTab("api")}
  badge={isConfigured ? "ok" : "warn"}
  />
@@ -486,15 +485,15 @@ export default function Settings({ onNavigate }: SettingsProps) {
  icon={Mic}
  label="ElevenLabs Voice"
  value={hasElevenLabs ? "Đã kết nối" : "Chưa cấu hình"}
- color="#7B61FF"
+ 
  onClick={() => setTab("api")}
  badge={hasElevenLabs ? "ok" : "warn"}
  />
  <SettingsRow
  icon={BookOpen}
- label="AI Cốt Truyện"
+ label="AI cốt truyện"
  value={PROVIDER_MODELS[settings.storyProvider]?.label}
- color="#00D68F"
+ 
  onClick={() => setTab("api")}
  badge={hasStoryProvider ? "ok" : "warn"}
  />
@@ -503,34 +502,34 @@ export default function Settings({ onNavigate }: SettingsProps) {
  )}
 
  {/* App Settings */}
- <SectionHeader title="ỨNG DỤNG" />
+ <SectionHeader title="Ứng dụng" />
  <SettingsCard>
  <SettingsRow
  icon={Globe}
- label="Ngôn Ngữ"
+ label="Ngôn ngữ"
  value={LOCALE_LABELS[locale]}
- color="#3B82F6"
+ 
  onClick={() => setTab("language")}
  />
  <SettingsRow
  icon={Moon}
- label="Chế độ tối"
+ label="Giao diện tối"
  value={themeMode === "system" ? "Hệ thống" : isDark ? "Bật" : "Tắt"}
- color="#6366F1"
+ 
  onClick={() => setThemeMode(themeMode === "light" ? "dark" : themeMode === "dark" ? "system" : "light")}
  />
  <SettingsRow
  icon={MoonStars}
- label="Chế độ Đêm"
+ label="Chế độ ngủ"
  value={nightPref === "auto" ? "Tự động 19:30–6:00" : nightPref === "on" ? "Luôn bật" : "Tắt"}
- color="#5B4BDB"
+ 
  onClick={() => setNightPref(nightPref === "auto" ? "on" : nightPref === "on" ? "off" : "auto")}
  />
  <SettingsRow
  icon={Timer}
  label="Hẹn giờ ngủ"
  value={`${settings.sleepTimerDefault || 15} phút`}
- color="#B9441C"
+ tone="glow"
  onClick={() => {
  const opts = SLEEP_TIMER_OPTIONS as readonly number[];
  const i = opts.indexOf(settings.sleepTimerDefault);
@@ -539,7 +538,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  />
  <SettingsRow
  icon={Bell}
- label="Thông Báo"
+ label="Nhắc giờ đọc truyện"
  value={
  !isPushSupported()
  ? "Không hỗ trợ"
@@ -547,7 +546,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  ? "Đã bật"
  : "Tắt"
  }
- color="#F59E0B"
+ tone="glow"
  onClick={async () => {
  if (!isPushSupported()) return;
  if (getPermissionState() === "granted") {
@@ -559,37 +558,38 @@ export default function Settings({ onNavigate }: SettingsProps) {
  />
  <SettingsRow
  icon={Crown}
- label="Gói Cước"
+ label="Gói cước"
  value="Xem chi tiết"
- color="#F59E0B"
+ tone="glow"
  onClick={() => onNavigate("subscription")}
  />
  </SettingsCard>
 
  {/* Family */}
- <SectionHeader title="GIA ĐÌNH" />
+ <SectionHeader title="Gia đình & bé" />
  <SettingsCard>
- <SettingsRow icon={Trophy} label="Thành Tích & Huy Hiệu" color="#F59E0B" onClick={() => onNavigate("achievements")} />
- <SettingsRow icon={Shield} label="Kiểm Soát Phụ Huynh" color="#8B5CF6" onClick={() => onNavigate("parental-controls")} />
- <SettingsRow icon={User} label="Hồ Sơ Gia Đình" color="#6366F1" onClick={() => onNavigate("profile-edit")} />
- <SettingsRow icon={BarChart3} label="Thống Kê Bé" color="#10B981" onClick={() => onNavigate("parent-analytics")} />
+ <SettingsRow icon={Mail} label="Thông báo" onClick={() => onNavigate("notifications")} />
+ <SettingsRow icon={Trophy} label="Thành tích & huy hiệu" tone="glow" onClick={() => onNavigate("achievements")} />
+ <SettingsRow icon={Shield} label="Kiểm soát phụ huynh" tone="success" onClick={() => onNavigate("parental-controls")} />
+ <SettingsRow icon={User} label="Hồ sơ gia đình" onClick={() => onNavigate("profile-edit")} />
+ <SettingsRow icon={BarChart3} label="Thống kê của bé" onClick={() => onNavigate("parent-analytics")} />
  </SettingsCard>
 
  {/* Privacy & Data */}
- <SectionHeader title="QUYỀN RIÊNG TƯ & DỮ LIỆU" />
+ <SectionHeader title="Quyền riêng tư & dữ liệu" />
  <SettingsCard>
  <SettingsRow
  icon={Download}
- label="Xuất Dữ Liệu (GDPR)"
+ label="Xuất dữ liệu (GDPR)"
  value={busy === "export" ? "Đang xuất..." : "JSON"}
- color="#0EA5E9"
+ 
  onClick={handleExport}
  />
  <SettingsRow
  icon={Trash2}
- label="Xoá Toàn Bộ Dữ Liệu"
+ label="Xoá toàn bộ dữ liệu"
  value={busy === "delete" ? "Đang xoá..." : undefined}
- color="#EF4444"
+ tone="danger"
  onClick={handleDelete}
  />
  </SettingsCard>
@@ -597,12 +597,12 @@ export default function Settings({ onNavigate }: SettingsProps) {
  {/* Admin */}
  {isAdmin && (
  <>
- <SectionHeader title="QUẢN TRỊ" />
+ <SectionHeader title="Quản trị" />
  <SettingsCard>
  <SettingsRow
  icon={LayoutDashboard}
  label="Admin Dashboard"
- color="#7C3AED"
+ 
  onClick={() => onNavigate("admin")}
  />
  </SettingsCard>
@@ -610,12 +610,12 @@ export default function Settings({ onNavigate }: SettingsProps) {
  )}
 
  {/* Other */}
- <SectionHeader title="KHÁC" />
+ <SectionHeader title="Khác" />
  <SettingsCard>
- <SettingsRow icon={Shield} label="Bảo Mật & Quyền Riêng Tư" color="#64748B" onClick={() => {}} />
- <SettingsRow icon={Info} label="Về KểCon" value="v1.0.0" color="#94A3B8" onClick={() => {}} />
+ <SettingsRow icon={Shield} label="Bảo mật & quyền riêng tư" onClick={() => {}} />
+ <SettingsRow icon={Info} label="Về KểCon" value="v1.0.0" onClick={() => {}} />
  {user && (
- <SettingsRow icon={LogOut} label="Đăng Xuất" color="#EF4444" onClick={handleSignOut} />
+ <SettingsRow icon={LogOut} label="Đăng xuất" tone="danger" onClick={handleSignOut} />
  )}
  </SettingsCard>
 

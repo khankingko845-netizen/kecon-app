@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
- ChevronLeft, ChevronDown, MoreHorizontal, Play, Pause,
- SkipBack, SkipForward, Moon, Shuffle, Heart, SlidersHorizontal, Mic,
- Volume2, X, Sparkles, Share2, Star, MessageSquare, Send,
- Bookmark, Pencil,
+ ChevronDown, MoreHorizontal, Play, Pause, Moon, MoonStars, Shuffle, Heart,
+ SlidersHorizontal, Volume2, X, Sparkles, Share2, Star, MessageSquare, Send,
+ Bookmark, Pencil, RotateCcw, RotateCw, Waveform, Headphones,
 } from "@/components/ui/icons";
 import { GlowDots, KidLoading } from "@/components/ui/states";
-import { NightToggle, ScreenOff, ScreenOffButton, SleepTimerButton, useSleepTimer } from "@/components/ui/NightControls";
+import { CHIP, ScreenOff, ScreenOffButton, SleepTimerButton, useSleepTimer } from "@/components/ui/NightControls";
+import Mascot from "@/components/ui/Mascot";
+import { saveLastPlayed } from "@/lib/last-played";
 import { useTheme } from "@/lib/theme-context";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
@@ -36,7 +37,6 @@ import {
  logPlaySession,
  logBehavior,
  likeStory,
- gradientFor,
  getStoryRating,
  rateStory,
  getStoryReviews,
@@ -124,10 +124,23 @@ function formatClock(seconds: number): string {
  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 }
 
+const CATEGORY_LABEL: Record<string, string> = {
+ fairy_tale: "Cổ tích",
+ adventure: "Phiêu lưu",
+ bedtime: "Ru ngủ",
+ animal: "Động vật",
+ educational: "Học chơi",
+ folk: "Dân gian",
+};
+
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
  const { settings, hasElevenLabs } = useSettings();
  // UI-08 night mode: bedtime palette, sleep timer, screen-off.
- const { isNight } = useTheme();
+ const { isBedtime } = useTheme();
+ // Sleep mode follows the 19:30–06:00 window (or the parent's choice); the pill overrides it for this story.
+ const [sleepOverride, setSleepOverride] = useState<boolean | null>(null);
+ const isNight = sleepOverride ?? isBedtime;
+ const [showMore, setShowMore] = useState(false);
  const [screenOff, setScreenOff] = useState(false);
  const { voiceProfiles } = useData();
  const globalPlayer = useAudioPlayer();
@@ -358,12 +371,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  : storyVoice?.name
  ? storyVoice.name
  : selectedDefault?.name || "Giọng mẫu";
-
- const gradient = isGenerated
- ? "from-accent-2 to-accent"
- : story
- ? gradientFor(story.id)
- : "from-accent-2 to-accent";
 
  // Log play session on unmount.
  const flushSession = useCallback(() => {
@@ -765,6 +772,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  engineRef.current?.stopAll();
  }, []);
  const sleep = useSleepTimer(pauseForSleep);
+ // "Nghe tiếp" on Home
+ useEffect(() => {
+ if (isGenerated || !storyId || !story) return;
+ saveLastPlayed({ storyId, title: story.title, page: currentPage + 1, totalPages, voice: voiceLabel, category: story.category });
+ }, [isGenerated, storyId, story, currentPage, totalPages, voiceLabel]);
 
  const togglePlay = () => {
  // At bedtime, starting playback arms the default sleep timer (parent can change/cancel it).
@@ -931,22 +943,32 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setTimeout(() => setAiMessage(null), 4000);
  };
 
- const actions = [
- { icon: Moon, label: "Ru Ngủ", action: () => onNavigate("lullaby"), active: false },
- {
- icon: Shuffle,
- label: "Rẽ Nhánh",
- action: () =>
- onNavigate(
- "adventure",
- story?.is_branching && storyId ? { storyId } : undefined
- ),
- active: false,
- },
- { icon: Bookmark, label: "Lưu", action: handleToggleFavorite, active: isFav, loading: favLoading },
- { icon: Share2, label: "Chia Sẻ", action: () => setShowShare(true), active: false },
- { icon: Sparkles, label: "AI ✨", action: () => setShowAIMenu(true), active: false },
+ type MoreId = "lullaby" | "adventure" | "save" | "share" | "mixer" | "ai" | "rating" | "edit";
+ const moreItems: { id: MoreId; icon: typeof Moon; label: string; active?: boolean; loading?: boolean }[] = [
+ { id: "lullaby", icon: Moon, label: "Ru ngủ" },
+ { id: "adventure", icon: Shuffle, label: "Rẽ nhánh" },
+ { id: "save", icon: Bookmark, label: isFav ? "Đã lưu" : "Lưu", active: isFav, loading: favLoading },
+ { id: "share", icon: Share2, label: "Chia sẻ" },
+ { id: "mixer", icon: SlidersHorizontal, label: "Trộn âm" },
+ { id: "ai", icon: Sparkles, label: "Đóm AI" },
+ { id: "rating", icon: Star, label: ratingCount > 0 ? `Đánh giá ${avgRating.toFixed(1)}` : "Đánh giá" },
+ ...(!isGenerated && storyId ? [{ id: "edit" as const, icon: Pencil, label: "Chỉnh sửa" }] : []),
  ];
+
+ function runMore(id: MoreId) {
+ setShowMore(false);
+ if (id === "lullaby") onNavigate("lullaby");
+ else if (id === "adventure") onNavigate("adventure", story?.is_branching && storyId ? { storyId } : undefined);
+ else if (id === "save") handleToggleFavorite();
+ else if (id === "share") setShowShare(true);
+ else if (id === "mixer") setShowMixer(true);
+ else if (id === "ai") setShowAIMenu(true);
+ else if (id === "rating") setShowRating(true);
+ else if (id === "edit" && storyId) {
+ audioRef.current?.pause();
+ onNavigate("editor", { storyId });
+ }
+ }
 
  if (loading) {
  return (
@@ -954,15 +976,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  );
  }
 
- return (
- <div className={`relative min-h-screen overflow-hidden bg-gradient-to-b ${isNight ? "from-night to-[#0B0920]" : "from-[#1A0F3A] to-[#0F0628]"} flex flex-col text-white`}>
- {/* Scene-matched visual effects (particles), behind all content */}
- <SceneEffects effect={activeEffect} active={isPlaying && !isNight} />
-
- {/* Top Bar */}
- <div className="relative z-10 flex justify-between items-center px-5 pt-14 pb-2">
- <button
- onClick={() => {
+ const handleBack = () => {
  // Hand off playing audio to MiniPlayer for background playback
  if (audioRef.current && !audioRef.current.paused && story) {
  // If merged audio is playing, it's a single continuous track
@@ -988,248 +1002,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Clean up merge refs but don't revoke blob (MiniPlayer may use it)
  mergeAbortRef.current = true;
  onBack();
- }}
- aria-label="Quay lại"
- className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center"
- >
- <ChevronLeft size={22} className="text-white/60" />
- </button>
- <div className="flex items-center gap-1.5">
- <SleepTimerButton remaining={sleep.remaining} onStart={sleep.start} onCancel={sleep.cancel} />
- <NightToggle />
- {isNight && <ScreenOffButton onClick={() => setScreenOff(true)} />}
- {/* Rating badge */}
- {ratingCount > 0 && (
- <button
- onClick={() => setShowRating(true)}
- className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-[10px] font-bold text-amber-400 flex items-center gap-1"
- >
- <Star size={10} fill="currentColor" /> {avgRating.toFixed(1)}
- </button>
- )}
- {!isGenerated && storyId && (
- <button
- onClick={() => {
- audioRef.current?.pause();
- onNavigate("editor", { storyId });
- }}
- className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
- title="Chỉnh sửa truyện"
- >
- <Pencil size={16} className="text-white/60" />
- </button>
- )}
- <button
- onClick={() => setShowRating(!showRating)}
- className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"
- >
- <MoreHorizontal size={20} className="text-white/60" />
- </button>
- </div>
- </div>
+ };
 
- {/* Album Art — now shows illustration if available */}
- <div
- className="relative z-10 flex-1 flex flex-col items-center px-7 pt-5"
- onTouchStart={onSwipeStart}
- onTouchEnd={onSwipeEnd}
- >
- <div
- key={`art-${currentPage}`}
- className={`w-64 h-64 rounded-[28px] ${
- currentIllustration ? "" : `bg-gradient-to-br ${gradient}`
- } flex items-center justify-center text-white mb-7 shadow-2xl shadow-black/50 relative fx-page-enter overflow-hidden`}
- >
- {currentIllustration ? (
- // eslint-disable-next-line @next/next/no-img-element
- <img
- src={currentIllustration}
- alt={`Minh hoạ trang ${currentPage + 1}`}
- className="absolute inset-0 w-full h-full object-cover night-dim"
- />
- ) : (
- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 opacity-80">
- <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
- <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
- </svg>
- )}
- <span className="absolute bottom-3 right-4 px-3 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white/70">
- Trang {currentPage + 1}/{totalPages}
- </span>
- {/* Favorite heart overlay */}
- <button
- onClick={handleLike}
- className="absolute top-3 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
- >
- <Heart
- size={16}
- className={liked ? "text-red-400" : "text-white/60"}
- fill={liked ? "currentColor" : "none"}
- />
- </button>
- </div>
-
- <h2 className="text-2xl font-extrabold tracking-tight mb-1 text-center">
- {title}
- </h2>
- {isGenerated ? (
- <p className="text-sm text-white/40 font-medium flex items-center gap-1.5 mb-2">
- <Mic size={14} /> AI Generated
- </p>
- ) : (
- <div className="relative mb-2">
- <button
- onClick={() => setShowVoicePicker(!showVoicePicker)}
- className="text-sm text-white/50 font-medium flex items-center gap-1.5 hover:text-white/70 transition-colors"
- >
- <Mic size={14} />
- Giọng đọc: {voiceLabel}
- {(defaultVoices.length > 0 || voiceProfiles.length > 0) && (
- <ChevronDown size={12} className={`transition-transform ${showVoicePicker ? "rotate-180" : ""}`} />
- )}
- </button>
- {showVoicePicker && (
- <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
- {/* User's cloned voices */}
- {voiceProfiles.filter((v) => v.elevenlabs_voice_id).length > 0 && (
- <>
- <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">Giọng của bạn</div>
- {voiceProfiles.filter((v) => v.elevenlabs_voice_id).map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.elevenlabs_voice_id!, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-white/70"
- }`}
- >
- 🎙️ {v.name}
- </button>
- ))}
- </>
- )}
- {/* Default voices for this locale */}
- {defaultsForLocale.length > 0 && (
- <>
- <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">
- Giọng {storyLocale === "vi" ? "Tiếng Việt" : storyLocale === "ja" ? "日本語" : "English"}
- </div>
- {defaultsForLocale.map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.voice_id, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
- }`}
- >
- ⭐ {v.name}
- </button>
- ))}
- </>
- )}
- {/* Default voices for other languages */}
- {defaultVoices.filter((v) => v.language !== storyLocale).length > 0 && (
- <>
- <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">Ngôn ngữ khác</div>
- {defaultVoices.filter((v) => v.language !== storyLocale).map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.voice_id, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-white/70"
- }`}
- >
- {v.language === "vi" ? "🇻🇳" : v.language === "ja" ? "🇯🇵" : "🇺🇸"} {v.name}
- </button>
- ))}
- </>
- )}
- </div>
- )}
- </div>
- )}
-
- {/* Continuous playback indicator */}
- {mergeStatus !== "idle" && mergeStatus !== "playing" && (
- <div className="mb-2">
- {mergeStatus === "ready" ? (
- <button
- onClick={switchToMerged}
- className="text-[11px] font-bold text-accent-2 bg-accent-2/15 px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform"
- >
- 🎧 Bật phát liên tục
- </button>
- ) : (
- <span className="text-[10px] text-white/30 flex items-center gap-1.5">
- <GlowDots size={3} /> {mergeProgress}
- </span>
- )}
- </div>
- )}
- {mergeStatus === "playing" && (
- <span className="text-[10px] font-bold text-accent-2 bg-accent-2/10 px-2.5 py-0.5 rounded-full mb-2 inline-flex items-center gap-1">
- 🎧 Phát liên tục
- </span>
- )}
-
- {/* Inline rating stars */}
- {!isGenerated && storyId && (
- <button
- onClick={() => setShowRating(true)}
- className="mb-2 flex items-center gap-2"
- >
- <RatingStars value={userRating || avgRating} size={16} readonly dark />
- <span className="text-[11px] text-white/40">
- {ratingCount > 0 ? `(${ratingCount})` : "Đánh giá"}
- </span>
- </button>
- )}
-
- {/* Active visual-effect indicator */}
- {activeEffect && (
- <span className="mb-3 px-3 py-1 rounded-full bg-white/[0.08] text-[11px] font-bold text-white/70 flex items-center gap-1.5">
- <Sparkles size={11} className="text-accent-2" />
- Hiệu ứng: {EFFECT_LABELS[activeEffect]}
- </span>
- )}
-
- {/* Current speaker indicator */}
- {currentSpeaker && (
- <div className="flex items-center gap-1.5 mb-1.5">
- {(() => {
- const char = storyCharacters.find((c) => c.name === currentSpeaker);
- return (
- <>
- <span className="text-sm">{char?.emoji || "💬"}</span>
- <span className="text-[11px] font-bold text-white/60">{currentSpeaker}</span>
- </>
- );
- })()}
- </div>
- )}
-
- {/* Text Preview — Lyrics-style word highlight */}
- <div
- key={`txt-${currentPage}`}
- className="fx-page-enter w-full px-[18px] py-3.5 bg-white/[0.04] rounded-[14px] border border-white/[0.06] text-sm italic leading-relaxed mb-5 max-h-[120px] overflow-y-auto no-scrollbar"
- >
- {displayText ? (
- <LyricsText
- text={`\u201C${displayText}\u201D`}
- progress={progress}
- isPlaying={isPlaying}
- />
- ) : <span className="text-white/50">...</span>}
- </div>
-
- {/* Seek Bar — draggable */}
- <div className="w-full mb-1">
- <div
- className="w-full h-2.5 bg-white/[0.08] rounded-full relative cursor-pointer group"
- role="slider"
- aria-valuemin={0}
- aria-valuemax={100}
- aria-valuenow={Math.round(progress)}
- onPointerDown={(e) => {
+ const onSeekPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
  const bar = e.currentTarget;
  const rect = bar.getBoundingClientRect();
 
@@ -1263,7 +1038,225 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
  bar.addEventListener("pointermove", onMove);
  bar.addEventListener("pointerup", onUp);
- }}
+ };
+
+ /** ⟲ / ⟳ — skip 15s inside the audio; before audio exists they turn the page. */
+ const skip = (dir: -1 | 1) => {
+ const a = audioRef.current;
+ if (a && a.duration && audioClock) {
+ a.currentTime = Math.max(0, Math.min(a.duration - 0.25, a.currentTime + dir * 15));
+ if (mergeStatus === "playing" && mergedRef.current) {
+ setCurrentPage(getPageAtTime(a.currentTime, mergedRef.current.pageMarkers));
+ }
+ return;
+ }
+ goPage(dir);
+ };
+
+ const activeAmbient = AMBIENT_OPTIONS.find(({ type }) => ambientOn[type]);
+ const categoryLabel = story?.category ? CATEGORY_LABEL[story.category] : undefined;
+
+ return (
+ <div className="relative flex min-h-screen flex-col overflow-hidden bg-night text-moon">
+ {/* Scene (board `.pbg` + `.pov`): the page illustration, else the night sky */}
+ <div aria-hidden className="absolute inset-0">
+ {currentIllustration ? (
+ // eslint-disable-next-line @next/next/no-img-element
+ <img
+ key={`art-${currentPage}`}
+ src={currentIllustration}
+ alt=""
+ className="fx-page-enter h-full w-full object-cover"
+ style={{ filter: isNight ? "brightness(.62) saturate(.85)" : "brightness(.9)" }}
+ />
+ ) : (
+ <div
+ className="h-full w-full bg-cover bg-center"
+ style={{ backgroundImage: "url(/images/night-bg.webp)", filter: isNight ? "brightness(.8) saturate(.9)" : "brightness(1.05) saturate(1.05)" }}
+ />
+ )}
+ <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,18,51,0.15)_0%,rgba(21,18,51,0.1)_38%,rgba(21,18,51,0.88)_62%,#151233_100%)]" />
+ </div>
+ <SceneEffects effect={activeEffect} active={isPlaying && !isNight} />
+
+ {/* Top bar (board `.ptop`) */}
+ <div className="relative z-10 flex items-center justify-between px-4 pt-12">
+ <button type="button" onClick={handleBack} aria-label="Quay lại" className="flex h-11 w-11 items-center justify-center rounded-2xl text-moon/85 active:bg-moon/10">
+ <ChevronDown size={26} />
+ </button>
+ <button
+ type="button"
+ onClick={() => setSleepOverride(!isNight)}
+ aria-pressed={isNight}
+ data-testid="sleep-mode-pill"
+ className={`flex h-10 items-center gap-1.5 rounded-[14px] border px-3 text-[14px] font-extrabold transition-colors ${
+ isNight ? "border-amber/35 bg-amber/[0.16] text-amber" : "border-moon/15 bg-night/30 text-moon-2"
+ }`}
+ >
+ <MoonStars size={18} weight="fill" /> Chế độ ngủ
+ </button>
+ <button type="button" onClick={() => setShowMore(true)} aria-label="Thêm tuỳ chọn" className="flex h-11 w-11 items-center justify-center rounded-2xl text-moon/85 active:bg-moon/10">
+ <MoreHorizontal size={26} />
+ </button>
+ </div>
+
+ {/* Đóm (board `.sleepy` + `.zz`) — swipe area for pages */}
+ <div className="relative z-10 min-h-[170px] flex-1" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+ {isNight && (
+ <span aria-hidden className="absolute bottom-[136px] right-[30px] font-display text-[22px] font-bold text-amber/70">
+ z z
+ </span>
+ )}
+ <Mascot
+ state={isNight ? "sleepy" : "story"}
+ size={122}
+ label={null}
+ className={`absolute bottom-1 right-[26px] ${isNight ? "brightness-[.82]" : ""}`}
+ />
+ </div>
+
+ <div className="relative z-10 px-[22px] pb-9">
+ {/* Title + meta (board `.ptitle`) */}
+ <h2 className="font-display text-[31px] font-bold leading-[1.1] text-moon">{title}</h2>
+ <div className="relative mt-1 flex flex-wrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
+ <button type="button" onClick={handleLike} aria-pressed={liked} aria-label={liked ? "Bỏ thích" : "Thích truyện"} className="-ml-1 flex h-9 w-8 items-center justify-center">
+ <Heart size={16} weight="fill" className={liked ? "text-[#FF8FA3]" : "text-moon-2"} />
+ </button>
+ {isGenerated ? (
+ <span>Đóm sáng tác</span>
+ ) : (
+ <button
+ type="button"
+ onClick={() => setShowVoicePicker(!showVoicePicker)}
+ aria-expanded={showVoicePicker}
+ className="flex min-h-[36px] items-center gap-1"
+ >
+ Giọng: {voiceLabel}
+ {(defaultVoices.length > 0 || voiceProfiles.length > 0) && (
+ <ChevronDown size={12} className={`transition-transform ${showVoicePicker ? "rotate-180" : ""}`} />
+ )}
+ </button>
+ )}
+ {categoryLabel && <span>· {categoryLabel}</span>}
+ <span>· Trang {currentPage + 1}/{totalPages}</span>
+ {showVoicePicker && (
+ <div className="absolute top-full left-0 right-0 mt-1 bg-night-card/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
+ {/* User's cloned voices */}
+ {voiceProfiles.filter((v) => v.elevenlabs_voice_id).length > 0 && (
+ <>
+ <div className="px-3 py-1.5 text-[10px] font-bold text-moon/30 uppercase tracking-wider">Giọng của bạn</div>
+ {voiceProfiles.filter((v) => v.elevenlabs_voice_id).map((v) => (
+ <button
+ key={v.id}
+ onClick={() => handleVoiceSelect(v.elevenlabs_voice_id!, v.name)}
+ className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+ resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-moon/70"
+ }`}
+ >
+ 🎙️ {v.name}
+ </button>
+ ))}
+ </>
+ )}
+ {/* Default voices for this locale */}
+ {defaultsForLocale.length > 0 && (
+ <>
+ <div className="px-3 py-1.5 text-[10px] font-bold text-moon/30 uppercase tracking-wider">
+ Giọng {storyLocale === "vi" ? "Tiếng Việt" : storyLocale === "ja" ? "日本語" : "English"}
+ </div>
+ {defaultsForLocale.map((v) => (
+ <button
+ key={v.id}
+ onClick={() => handleVoiceSelect(v.voice_id, v.name)}
+ className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+ resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-moon/70"
+ }`}
+ >
+ ⭐ {v.name}
+ </button>
+ ))}
+ </>
+ )}
+ {/* Default voices for other languages */}
+ {defaultVoices.filter((v) => v.language !== storyLocale).length > 0 && (
+ <>
+ <div className="px-3 py-1.5 text-[10px] font-bold text-moon/30 uppercase tracking-wider">Ngôn ngữ khác</div>
+ {defaultVoices.filter((v) => v.language !== storyLocale).map((v) => (
+ <button
+ key={v.id}
+ onClick={() => handleVoiceSelect(v.voice_id, v.name)}
+ className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
+ resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-moon/70"
+ }`}
+ >
+ {v.language === "vi" ? "🇻🇳" : v.language === "ja" ? "🇯🇵" : "🇺🇸"} {v.name}
+ </button>
+ ))}
+ </>
+ )}
+ </div>
+ )}
+ </div>
+
+ {/* Status chips: continuous playback, scene effect, speaker */}
+ {(mergeStatus !== "idle" || activeEffect || currentSpeaker) && (
+ <div className="mt-2 flex flex-wrap items-center gap-1.5">
+ {mergeStatus === "ready" && (
+ <button type="button" onClick={switchToMerged} className="flex min-h-[32px] items-center gap-1.5 rounded-full bg-amber/15 px-3 text-[12px] font-bold text-amber active:scale-95">
+ <Headphones size={14} /> Bật phát liên tục
+ </button>
+ )}
+ {(mergeStatus === "generating" || mergeStatus === "merging") && (
+ <span className="flex items-center gap-1.5 text-[11px] text-moon-2/70">
+ <GlowDots size={3} /> {mergeProgress}
+ </span>
+ )}
+ {mergeStatus === "playing" && (
+ <span className="flex items-center gap-1 rounded-full bg-amber/10 px-2.5 py-1 text-[11px] font-bold text-amber">
+ <Headphones size={12} /> Phát liên tục
+ </span>
+ )}
+ {activeEffect && (
+ <span className="flex items-center gap-1.5 rounded-full bg-moon/[0.08] px-2.5 py-1 text-[11px] font-bold text-moon-2">
+ <Sparkles size={11} className="text-amber" /> {EFFECT_LABELS[activeEffect]}
+ </span>
+ )}
+ {/* Current speaker indicator */}
+ {currentSpeaker && (
+ <div className="flex items-center gap-1.5 mb-1.5">
+ {(() => {
+ const char = storyCharacters.find((c) => c.name === currentSpeaker);
+ return (
+ <>
+ <span className="text-sm">{char?.emoji || "💬"}</span>
+ <span className="text-[11px] font-bold text-moon/60">{currentSpeaker}</span>
+ </>
+ );
+ })()}
+ </div>
+ )}
+
+
+ </div>
+ )}
+
+ {/* Karaoke text (board `.kar`) */}
+ <div
+ key={`txt-${currentPage}`}
+ className="fx-page-enter mt-4 max-h-[150px] overflow-y-auto rounded-[22px] border border-moon/[0.08] bg-[rgba(34,28,74,0.72)] px-[18px] py-4 text-[19px] font-bold leading-[1.6] text-[#CFC6E6] no-scrollbar"
+ >
+ {displayText ? <LyricsText text={displayText} progress={progress} isPlaying={isPlaying} /> : <span className="text-moon-2/60">…</span>}
+ </div>
+
+ {/* Progress (board `.prog` + `.times`) */}
+ <div
+ className="relative mt-[18px] h-1.5 cursor-pointer touch-none rounded-full bg-moon/15"
+ role="slider"
+ aria-label="Tiến độ"
+ aria-valuemin={0}
+ aria-valuemax={100}
+ aria-valuenow={Math.round(progress)}
+ onPointerDown={onSeekPointerDown}
  >
  {/* Page markers (tick marks) for merged mode */}
  {mergeStatus === "playing" && mergedResult && mergedResult.pageMarkers.length > 1 && (
@@ -1275,74 +1268,82 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  />
  ))
  )}
- <div
- className="h-full bg-gradient-to-r from-accent-2 to-accent rounded-full transition-[width] duration-150"
- style={{ width: `${progress}%` }}
- />
- <div
- className="absolute top-[-3px] w-4 h-4 rounded-full bg-white dark:bg-white/[0.04] shadow-md shadow-black/30 group-active:scale-125 transition-transform"
- style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
- />
+ <i className="block h-full rounded-full bg-amber transition-[width] duration-150" style={{ width: `${progress}%` }} />
+ <i className="absolute -top-[5px] block h-4 w-4 -translate-x-1/2 rounded-full bg-amber" style={{ left: `${Math.max(0, Math.min(progress, 100))}%` }} />
  </div>
- {/* Time display */}
- <div className="flex justify-between text-xs font-semibold text-white/30 mt-2">
- <span>
- {audioClock
- ? formatClock(audioClock.currentTime)
- : `${currentPage + 1}/${totalPages}`
- }
- </span>
- <span>
- {audioClock
- ? formatClock(audioClock.duration)
- : isGenerated ? "AI Story" : `${totalPages} trang`
- }
- </span>
- </div>
+ <div className="mt-2 flex justify-between text-[13px] font-bold text-[#9F95C2]">
+ <span>{audioClock ? formatClock(audioClock.currentTime) : `Trang ${currentPage + 1}`}</span>
+ <span>{audioClock ? `-${formatClock(Math.max(0, audioClock.duration - audioClock.currentTime))}` : `${totalPages} trang`}</span>
  </div>
 
- {/* Controls */}
- <div className="flex items-center justify-center gap-7 mt-4">
- <button onClick={() => goPage(-1)} aria-label="Trang trước" className="text-white/40 h-11 w-11 flex items-center justify-center">
- <SkipBack size={22} />
+ {/* Controls (board `.ctl`) */}
+ <div className="mt-2.5 flex items-center justify-center gap-10">
+ <button type="button" onClick={() => skip(-1)} aria-label={audioClock ? "Lùi 15 giây" : "Trang trước"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
+ <RotateCcw size={36} weight="bold" />
  </button>
- <span className="text-xs font-bold text-white/40">Trước</span>
  <button
+ type="button"
  onClick={togglePlay}
  disabled={isTTSLoading}
  aria-label={isPlaying ? "Tạm dừng" : "Phát"}
- className="w-[72px] h-[72px] rounded-full bg-glow flex items-center justify-center shadow-lg shadow-glow/30 active:scale-95 transition-transform disabled:opacity-60"
+ className="flex h-[86px] w-[86px] items-center justify-center rounded-full bg-amber shadow-[0_0_40px_rgba(255,181,71,0.35)] transition-transform active:scale-95 disabled:opacity-70"
  >
  {isTTSLoading ? (
- <GlowDots size={7} className="text-night" label="Đang chuẩn bị giọng đọc" />
+ <GlowDots size={8} className="text-night" label="Đang chuẩn bị giọng đọc" />
  ) : isPlaying ? (
- <Pause size={28} weight="fill" className="text-night" />
+ <Pause size={40} weight="fill" className="text-night" />
  ) : (
- <Play size={28} weight="fill" className="text-night ml-0.5" />
+ <Play size={40} weight="fill" className="ml-1 text-night" />
  )}
  </button>
- <span className="text-xs font-bold text-white/40">Sau</span>
- <button onClick={() => goPage(1)} aria-label="Trang sau" className="text-white/40 h-11 w-11 flex items-center justify-center">
- <SkipForward size={22} />
+ <button type="button" onClick={() => skip(1)} aria-label={audioClock ? "Tới 15 giây" : "Trang sau"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
+ <RotateCw size={36} weight="bold" />
  </button>
+ </div>
+
+ {/* Bedtime chips (board `.chips`) */}
+ <div className="mt-[22px] flex justify-center gap-1.5">
+ <SleepTimerButton variant="chip" remaining={sleep.remaining} onStart={sleep.start} onCancel={sleep.cancel} />
+ <button type="button" onClick={() => setShowMixer(true)} className={CHIP}>
+ <Waveform size={18} weight="fill" className="text-amber" /> {activeAmbient ? activeAmbient.label : "Âm nền"}
+ </button>
+ <ScreenOffButton variant="chip" onClick={() => setScreenOff(true)} />
  </div>
  </div>
 
- {/* Bottom Actions */}
- <div className="relative z-10 flex justify-around px-5 pt-5 pb-10">
- {actions.map((a) => (
- <button key={a.label} onClick={a.action} className="text-center" disabled={"loading" in a && a.loading}>
- <a.icon
- size={20}
- className={`mx-auto ${a.active ? "text-accent" : "text-white/40"}`}
- fill={a.active ? "currentColor" : "none"}
- />
- <span className="text-[10px] font-semibold text-white/30 mt-1 block">
- {a.label}
- </span>
+ {/* "⋯" sheet: everything that used to crowd the player */}
+ {showMore && (
+ <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowMore(false)}>
+ <div
+ role="dialog"
+ aria-modal="true"
+ aria-label="Tuỳ chọn truyện"
+ className="w-full max-w-[430px] rounded-t-[28px] bg-night-card px-5 pb-10 pt-5 animate-[slideUp_0.3s_ease]"
+ onClick={(e) => e.stopPropagation()}
+ >
+ <div className="mb-4 flex items-center justify-between">
+ <h3 className="font-display text-[20px] font-bold text-moon">Tuỳ chọn</h3>
+ <button type="button" onClick={() => setShowMore(false)} aria-label="Đóng" className="flex h-11 w-11 items-center justify-center rounded-full bg-moon/10 text-moon">
+ <X size={18} />
+ </button>
+ </div>
+ <div className="grid grid-cols-3 gap-2.5">
+ {moreItems.map((m) => (
+ <button
+ key={m.id}
+ type="button"
+ disabled={m.loading}
+ onClick={() => runMore(m.id)}
+ className="flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[20px] bg-moon/[0.06] px-2 text-[13px] font-extrabold text-moon active:scale-95 disabled:opacity-50"
+ >
+ <m.icon size={26} weight={m.active ? "fill" : "duotone"} className="text-amber" />
+ {m.label}
  </button>
  ))}
  </div>
+ </div>
+ </div>
+ )}
 
  {/* Rating & Reviews Panel */}
  {showRating && (
@@ -1354,7 +1355,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </h3>
  <button
  onClick={() => setShowRating(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+ className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
  >
  <X size={16} />
  </button>
@@ -1362,18 +1363,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Overall rating */}
  <div className="text-center mb-5">
- <p className="text-4xl font-black text-white mb-1">
+ <p className="text-4xl font-black text-moon mb-1">
  {avgRating > 0 ? avgRating.toFixed(1) : "—"}
  </p>
  <RatingStars value={avgRating} size={28} readonly dark />
- <p className="text-[12px] text-white/40 mt-1">
+ <p className="text-[12px] text-moon/40 mt-1">
  {ratingCount} đánh giá
  </p>
  </div>
 
  {/* User's rating */}
  <div className="bg-white/5 rounded-2xl p-4 mb-5">
- <p className="text-[13px] font-bold text-white/70 mb-3">
+ <p className="text-[13px] font-bold text-moon/70 mb-3">
  Đánh giá của bạn
  </p>
  <div className="flex justify-center">
@@ -1383,7 +1384,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Write review */}
  <div className="bg-white/5 rounded-2xl p-4 mb-5">
- <p className="text-[13px] font-bold text-white/70 mb-3 flex items-center gap-1.5">
+ <p className="text-[13px] font-bold text-moon/70 mb-3 flex items-center gap-1.5">
  <MessageSquare size={14} /> Viết nhận xét
  </p>
  <textarea
@@ -1391,7 +1392,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onChange={(e) => setReviewText(e.target.value)}
  placeholder="Chia sẻ cảm nhận của bạn..."
  rows={3}
- className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[13px] text-white placeholder-white/30 outline-none focus:border-accent-2/50 resize-none"
+ className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[13px] text-moon placeholder-moon/30 outline-none focus:border-accent-2/50 resize-none"
  />
  <button
  onClick={handleSubmitReview}
@@ -1409,11 +1410,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Reviews list */}
  <div>
- <p className="text-[13px] font-bold text-white/70 mb-3">
+ <p className="text-[13px] font-bold text-moon/70 mb-3">
  Nhận xét ({reviews.length})
  </p>
  {reviews.length === 0 ? (
- <p className="text-[12px] text-white/30 text-center py-4">
+ <p className="text-[12px] text-moon/30 text-center py-4">
  Chưa có nhận xét nào. Hãy là người đầu tiên!
  </p>
  ) : (
@@ -1421,17 +1422,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  {reviews.map((r) => (
  <div key={r.id} className="bg-white/5 rounded-xl p-3">
  <div className="flex items-center gap-2 mb-1.5">
- <span className="text-[12px] font-bold text-white/60">
+ <span className="text-[12px] font-bold text-moon/60">
  {r.display_name || "Phụ huynh"}
  </span>
  {r.rating && (
  <RatingStars value={r.rating} size={12} readonly dark />
  )}
- <span className="text-[10px] text-white/30 ml-auto">
+ <span className="text-[10px] text-moon/30 ml-auto">
  {new Date(r.created_at).toLocaleDateString("vi-VN")}
  </span>
  </div>
- <p className="text-[13px] text-white/50 leading-relaxed">
+ <p className="text-[13px] text-moon/50 leading-relaxed">
  {r.content}
  </p>
  </div>
@@ -1465,7 +1466,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </h3>
  <button
  onClick={() => setShowMixer(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+ className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
  >
  <X size={16} />
  </button>
@@ -1476,7 +1477,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
  autoAmbient
  ? "bg-accent-2/20 text-accent-2"
- : "bg-white/5 text-white/50"
+ : "bg-white/5 text-moon/50"
  }`}
  >
  <Volume2 size={14} />
@@ -1492,7 +1493,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <button
  onClick={() => toggleAmbient(type, !on)}
  className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
- on ? "bg-accent text-white" : "bg-white/5 text-white/50"
+ on ? "bg-accent text-moon" : "bg-white/5 text-moon/50"
  }`}
  >
  {label}
@@ -1526,7 +1527,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  autoEffect && !manualEffect
  ? "bg-accent-2 text-[#0F0628]"
- : "bg-white/5 text-white/50"
+ : "bg-white/5 text-moon/50"
  }`}
  >
  AI tự chọn
@@ -1538,8 +1539,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }}
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  !autoEffect && !manualEffect
- ? "bg-accent text-white"
- : "bg-white/5 text-white/50"
+ ? "bg-accent text-moon"
+ : "bg-white/5 text-moon/50"
  }`}
  >
  Tắt
@@ -1550,8 +1551,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onClick={() => setManualEffect(type)}
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  manualEffect === type
- ? "bg-accent text-white"
- : "bg-white/5 text-white/50"
+ ? "bg-accent text-moon"
+ : "bg-white/5 text-moon/50"
  }`}
  >
  {EFFECT_LABELS[type]}
@@ -1559,7 +1560,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  ))}
  </div>
  {autoEffect && !manualEffect && (
- <p className="text-[11px] text-white/30 mt-2">
+ <p className="text-[11px] text-moon/30 mt-2">
  {autoMatchedEffect
  ? `Đang khớp cảnh: ${EFFECT_LABELS[autoMatchedEffect]}`
  : "Trang này chưa khớp hiệu ứng nào"}
@@ -1571,7 +1572,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  )}
  {/* AI Feature Toast */}
  {aiMessage && (
- <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl bg-violet-600/95 backdrop-blur-sm text-white text-sm font-bold shadow-xl shadow-violet-900/50 max-w-[380px] text-center animate-[slideDown_0.3s_ease]">
+ <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl bg-violet-600/95 backdrop-blur-sm text-moon text-sm font-bold shadow-xl shadow-violet-900/50 max-w-[380px] text-center animate-[slideDown_0.3s_ease]">
  {(isIllustrating || isPersonalizing || isTranslating) && (
  <GlowDots size={4} className="mr-2" />
  )}
@@ -1589,7 +1590,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </h3>
  <button
  onClick={() => setShowAIMenu(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70"
+ className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
  >
  <X size={16} />
  </button>
@@ -1603,8 +1604,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
  >
  <div className="text-2xl mb-2">🎨</div>
- <div className="text-sm font-bold text-white">Tạo Minh Hoạ</div>
- <div className="text-[11px] text-white/50 mt-0.5">AI vẽ hình cho mỗi trang</div>
+ <div className="text-sm font-bold text-moon">Tạo Minh Hoạ</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">AI vẽ hình cho mỗi trang</div>
  </button>
 
  {/* Personalize */}
@@ -1614,8 +1615,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
  >
  <div className="text-2xl mb-2">🧒</div>
- <div className="text-sm font-bold text-white">Cá Nhân Hoá</div>
- <div className="text-[11px] text-white/50 mt-0.5">Đưa tên bé vào truyện</div>
+ <div className="text-sm font-bold text-moon">Cá Nhân Hoá</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">Đưa tên bé vào truyện</div>
  </button>
 
  {/* Vocabulary & Quiz */}
@@ -1629,8 +1630,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
  >
  <div className="text-2xl mb-2">📚</div>
- <div className="text-sm font-bold text-white">Từ Vựng & Quiz</div>
- <div className="text-[11px] text-white/50 mt-0.5">Học từ mới + trả lời quiz</div>
+ <div className="text-sm font-bold text-moon">Từ Vựng & Quiz</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">Học từ mới + trả lời quiz</div>
  </button>
 
  {/* Translate */}
@@ -1648,8 +1649,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
  >
  <div className="text-2xl mb-2">🌍</div>
- <div className="text-sm font-bold text-white">Dịch Truyện</div>
- <div className="text-[11px] text-white/50 mt-0.5">Dịch sang ngôn ngữ khác</div>
+ <div className="text-sm font-bold text-moon">Dịch Truyện</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">Dịch sang ngôn ngữ khác</div>
  </button>
 
  {/* Ambient Sounds */}
@@ -1658,8 +1659,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
  >
  <div className="text-2xl mb-2">🎵</div>
- <div className="text-sm font-bold text-white">Âm Nền</div>
- <div className="text-[11px] text-white/50 mt-0.5">Nhạc + âm thanh môi trường</div>
+ <div className="text-sm font-bold text-moon">Âm Nền</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">Nhạc + âm thanh môi trường</div>
  </button>
 
  {/* Edit Story */}
@@ -1672,8 +1673,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left active:scale-[0.97] transition-transform"
  >
  <div className="text-2xl mb-2">✏️</div>
- <div className="text-sm font-bold text-white">Chỉnh Sửa</div>
- <div className="text-[11px] text-white/50 mt-0.5">Sửa nội dung truyện</div>
+ <div className="text-sm font-bold text-moon">Chỉnh Sửa</div>
+ <div className="text-[11px] text-moon/50 mt-0.5">Sửa nội dung truyện</div>
  </button>
  )}
  </div>
