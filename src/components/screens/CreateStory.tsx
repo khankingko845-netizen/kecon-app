@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
- Sparkles, User, UserRound, AlertCircle, Settings, Globe, Mic, Volume2, Square, PenLine, Camera,
+ Sparkles, AlertCircle, ArrowRight, ChevronRight, Volume2, Square, PenLine, Camera, Check,
 } from "@/components/ui/icons";
-import { GlowDots } from "@/components/ui/states";
-import TopBar from "@/components/ui/TopBar";
-import Mascot from "@/components/ui/Mascot";
+import { GlowDots, KidLoading } from "@/components/ui/states";
+import Mascot, { type MascotState } from "@/components/ui/Mascot";
+import { Bubble, Button3D, KidHeader, CARD_SHADOW } from "@/components/ui/kit";
+import { useSpeechInput } from "@/lib/use-speech-input";
 import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
 import { AGE_BANDS, normalizeAgeBand } from "@/lib/age-bands";
 import { storyThemes } from "@/lib/data";
@@ -28,9 +29,58 @@ const LANGUAGES = [
  { code: "ja", label: "🇯🇵 日本語" },
 ] as const;
 
+function storyLocaleFor(lang: string | undefined) {
+ return lang === "en" ? "en-US" : lang === "ja" ? "ja-JP" : "vi-VN";
+}
+
 interface CreateStoryProps {
  onBack: () => void;
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
+}
+
+/** Step 2 — main character (concept board screen 4). */
+const CHARACTERS: { id: string; label: string; icon: Icon3DName }[] = [
+ { id: "thu-rung", label: "Bạn thú rừng", icon: "paw" },
+ { id: "phi-hanh-gia", label: "Phi hành gia", icon: "rocket" },
+ { id: "cong-chua", label: "Công chúa", icon: "castle" },
+ { id: "chu-cuoi", label: "Chú Cuội", icon: "lantern" },
+ { id: "co-tien", label: "Cô tiên nhỏ", icon: "wand" },
+ { id: "hai-tac", label: "Bạn tìm kho báu", icon: "chest" },
+];
+
+const STEPS: { ask: string; mascot: MascotState }[] = [
+ { ask: "Tối nay bé muốn nghe truyện gì nào?", mascot: "hello" },
+ { ask: "Nhân vật chính của mình là ai nhỉ?", mascot: "thinking" },
+ { ask: "Ai sẽ kể cho bé nghe đây?", mascot: "listen" },
+ { ask: "Sẵn sàng chưa? Đóm viết ngay nhé!", mascot: "happy" },
+];
+
+/** Big tappable option card (board `.opt`). */
+function OptionCard({ selected, onClick, icon, label, sub, children }: { selected: boolean; onClick: () => void; icon: Icon3DName; label: string; sub?: string; children?: React.ReactNode }) {
+ return (
+ <div className="relative">
+ <button
+ type="button"
+ onClick={onClick}
+ aria-pressed={selected}
+ className={`relative w-full rounded-[24px] border-[3px] px-2.5 pb-3.5 pt-2.5 text-center transition-colors active:scale-[0.98] ${CARD_SHADOW} ${
+ selected ? "border-brand bg-[#F5F3FF]" : "border-transparent bg-white"
+ }`}
+ >
+ <span className="mx-auto block h-[96px] w-[96px] overflow-hidden rounded-[22px]">
+ <Icon3D name={icon} size={113} className="-m-[9%] max-w-none" />
+ </span>
+ <b className="mt-1 block text-[17px] font-black leading-tight text-ink">{label}</b>
+ {sub && <small className="block text-[12px] font-bold text-ink-2">{sub}</small>}
+ {selected && (
+ <span aria-hidden className="absolute right-2.5 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white">
+ <Check size={16} weight="bold" />
+ </span>
+ )}
+ </button>
+ {children}
+ </div>
+ );
 }
 
 /** Theme → 3D tile (UI v2). */
@@ -54,6 +104,10 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [extraPrompt, setExtraPrompt] = useState("");
  const [isGenerating, setIsGenerating] = useState(false);
  const [error, setError] = useState<string | null>(null);
+ const [step, setStep] = useState(0);
+ const [character, setCharacter] = useState<string | null>(null);
+ const [genProgress, setGenProgress] = useState(0);
+ const speech = useSpeechInput(storyLocaleFor(settings.language));
 
  // Language & narrator voice
  const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
@@ -124,6 +178,22 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const effectiveVoice =
  selectedVoice ?? (voiceProfiles.length > 0 ? voiceProfiles[0].id : null);
 
+ const characterLabel = CHARACTERS.find((c) => c.id === character)?.label;
+ const composedPrompt = [
+ characterLabel ? `Nhân vật chính: ${characterLabel}` : null,
+ speech.transcript ? `Bé kể: ${speech.transcript}` : null,
+ extraPrompt || null,
+ ]
+ .filter(Boolean)
+ .join(". ");
+
+ // Fake-but-honest progress while the story is written (caps at 92% until done).
+ useEffect(() => {
+ if (!isGenerating) return;
+ const t = setInterval(() => setGenProgress((p) => (p >= 92 ? p : p + Math.max(1, (92 - p) / 12))), 600);
+ return () => clearInterval(t);
+ }, [isGenerating]);
+
  const handleGenerate = async () => {
  if (!hasStoryKey) {
  onNavigate("settings");
@@ -131,6 +201,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  }
 
  setIsGenerating(true);
+ setGenProgress(6);
  setError(null);
 
  try {
@@ -147,7 +218,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  childName: childName || undefined,
  age: selectedAge,
  language: storyLocale,
- extraPrompt: extraPrompt || undefined,
+ extraPrompt: composedPrompt || undefined,
  voiceId: effectiveVoice,
  narratorVoiceId: narratorVoiceId || undefined,
  narratorVoiceName: narratorVoiceId
@@ -173,342 +244,252 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  }
  };
 
- return (
- <div className="min-h-screen bg-white dark:bg-night">
- <TopBar title="Tạo truyện mới" onBack={onBack} />
+ const theme = storyThemes.find((t) => t.id === selectedTheme);
+ const voiceName = narratorVoiceId
+ ? defaultVoices.find((v) => v.voice_id === narratorVoiceId)?.name
+ : voiceProfiles.find((v) => v.id === effectiveVoice)?.name;
+ const ask = STEPS[step];
+ const last = step === STEPS.length - 1;
 
- {/* Generating state — Đóm suy nghĩ (UI-06) */}
- {isGenerating && (
- <div
- role="status"
- aria-live="polite"
- className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-cream/95 dark:bg-night/95 backdrop-blur-sm px-8 text-center"
+ const back = () => (step > 0 ? setStep(step - 1) : onBack());
+ const next = () => (last ? handleGenerate() : setStep(step + 1));
+
+ const speakRow = (hint: string) =>
+ speech.supported ? (
+ <button
+ type="button"
+ onClick={speech.listening ? speech.stop : speech.start}
+ aria-pressed={speech.listening}
+ className="mt-3.5 flex min-h-[66px] w-full items-center gap-3 rounded-[22px] bg-glow-soft px-3.5 py-2.5 text-left text-[16px] font-black text-[#7A4A00]"
  >
- <Mascot state="thinking" size={180} label="Đóm đang suy nghĩ để viết truyện" priority />
- <p className="mt-4 font-display text-[24px] font-extrabold text-ink dark:text-moon">
- Đóm đang viết truyện cho bé…
- </p>
- <p className="mt-1.5 text-[15px] text-ink-2 dark:text-moon-2 max-w-xs">
- Thường mất khoảng 15–30 giây. Ba mẹ chờ Đóm một chút nhé!
- </p>
- <div className="mt-5 flex gap-2" aria-hidden>
- {[0, 1, 2].map((i) => (
- <span
- key={i}
- className="h-3 w-3 rounded-full bg-glow animate-bounce"
- style={{ animationDelay: `${i * 0.15}s` }}
- />
+ <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-2xl">
+ <Icon3D name="mic" size={54} className="-m-[9%] max-w-none" />
+ </span>
+ <span className="min-w-0 flex-1">
+ {speech.listening ? "Đóm đang nghe bé nói…" : speech.transcript ? `“${speech.transcript}”` : hint}
+ </span>
+ {speech.listening ? <GlowDots size={6} className="text-cta" /> : <ChevronRight size={22} />}
+ </button>
+ ) : null;
+
+ return (
+ <div className="min-h-screen bg-cream px-5 pb-40 pt-12">
+ {/* Writing state (board screen 6 "Đang tạo") */}
+ {isGenerating && (
+ <div className="fixed inset-0 z-[60] flex items-center justify-center bg-cream/95 px-5 backdrop-blur-sm">
+ <KidLoading tag="Đang tạo" title="Đóm đang viết truyện cho bé…" funFact progress={genProgress} />
+ </div>
+ )}
+
+ <KidHeader title="Tạo truyện mới" onBack={back} backLabel={step > 0 ? "Bước trước" : "Quay lại"} right={<small className="text-[14px] font-extrabold text-ink-2">Bước {step + 1}/{STEPS.length}</small>} />
+
+ {/* Steps (board `.steps`) */}
+ <div className="mt-3 flex gap-1.5" role="progressbar" aria-label="Tiến độ tạo truyện" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1}>
+ {STEPS.map((_, i) => (
+ <i key={i} className={`block h-2 flex-1 rounded-full ${i <= step ? "bg-brand" : "bg-[#E6E0F6]"}`} />
  ))}
  </div>
- </div>
- )}
 
- <div className="px-5 pt-2 pb-10">
- {/* API Status */}
+ {/* Đóm asks (board `.ask`) */}
+ <div className="mt-4 flex items-end gap-1.5">
+ <Mascot key={ask.mascot} state={ask.mascot} size={112} label={null} className="shrink-0" />
+ <Bubble tail="left" className="mb-8 flex-1 font-display text-[20px] font-bold leading-[1.3]">
+ <h2>{ask.ask}</h2>
+ </Bubble>
+ </div>
+
  {!hasStoryKey && (
  <button
+ type="button"
  onClick={() => onNavigate("settings")}
- className="w-full mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 active:scale-[0.98] transition-transform"
+ className="mb-3 flex w-full items-center gap-2.5 rounded-[20px] bg-glow-soft px-4 py-3 text-left active:scale-[0.98]"
  >
- <AlertCircle size={18} className="text-amber-500 shrink-0" />
- <div className="flex-1 text-left">
- <p className="text-[13px] font-bold text-amber-800">
- Chưa cấu hình AI
- </p>
- <p className="text-[11px] text-amber-700">
- Nhấn để thêm API key
- </p>
- </div>
- <Settings size={16} className="text-amber-500" />
+ <AlertCircle size={20} className="shrink-0 text-[#B26A00]" />
+ <span className="flex-1">
+ <b className="block text-[14px] font-black text-[#7A4A00]">Đóm chưa được bật AI</b>
+ <small className="text-[12.5px] font-bold text-[#7A4A00]/80">Nhờ bố mẹ vào mục Bố mẹ để bật nhé</small>
+ </span>
+ <ChevronRight size={18} className="text-[#7A4A00]" />
  </button>
  )}
 
- {/* Theme */}
- <div className="mb-5">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 block">
- Chủ Đề
- </label>
- <div className="grid grid-cols-3 gap-2">
- {storyThemes.map((theme) => {
- const icon3d = THEME_ICON3D[theme.icon] ?? "book";
- const selected = selectedTheme === theme.id;
- return (
- <button
- key={theme.id}
- onClick={() => setSelectedTheme(theme.id)}
- aria-pressed={selected}
- className={`rounded-tile py-3 px-1.5 text-center border-2 transition-all active:scale-95 ${
- selected
- ? "border-brand bg-brand-soft dark:bg-white/10"
- : "border-transparent bg-cream dark:bg-white/[0.04]"
- }`}
- >
- <Icon3D name={icon3d} size={48} className="mx-auto mb-1.5" />
- <div
- className={`text-[12px] font-extrabold ${
- selected ? "text-brand dark:text-moon" : "text-ink dark:text-white"
- }`}
- >
- {theme.name}
+ {/* Step 1 — theme */}
+ {step === 0 && (
+ <>
+ <div className="grid grid-cols-2 gap-3">
+ {storyThemes.map((t) => (
+ <OptionCard key={t.id} selected={selectedTheme === t.id} onClick={() => setSelectedTheme(t.id)} icon={THEME_ICON3D[t.icon] ?? "book"} label={t.name.replace("VN", "").replace("Ngủ Ngon", "Ru ngủ").trim()} />
+ ))}
  </div>
+ {speakRow("Hoặc bé tự nói cho Đóm nghe")}
+ <div className="mt-3 grid grid-cols-2 gap-2.5">
+ <button type="button" onClick={() => onNavigate("draw-story")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand ${CARD_SHADOW}`}>
+ <PenLine size={18} /> Bé vẽ, Đóm kể
  </button>
- );
- })}
+ <button type="button" onClick={() => onNavigate("scan-book")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand ${CARD_SHADOW}`}>
+ <Camera size={18} /> Chụp sách
+ </button>
  </div>
- </div>
+ </>
+ )}
 
- {/* Child Name (optional) */}
- <div className="mb-5">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
- Tên Bé
- <span className="text-[11px] font-normal text-txt-secondary dark:text-white/50">(tuỳ chọn — để trống nếu không cần)</span>
- </label>
- <input
- type="text"
- value={childName}
- onChange={(e) => setChildName(e.target.value)}
- placeholder="VD: Minh, Bảo, Hà..."
- className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[15px] font-semibold text-txt dark:text-white outline-none focus:border-accent transition-colors"
- />
+ {/* Step 2 — character */}
+ {step === 1 && (
+ <>
+ <div className="grid grid-cols-2 gap-3">
+ {CHARACTERS.map((c) => (
+ <OptionCard key={c.id} selected={character === c.id} onClick={() => setCharacter(character === c.id ? null : c.id)} icon={c.icon} label={c.label} />
+ ))}
  </div>
+ {speakRow("Hoặc bé tự nói cho Đóm nghe")}
+ </>
+ )}
 
- {/* Age */}
- <div className="mb-5">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 block">
- Độ Tuổi
- </label>
- <div className="flex gap-2">
+ {/* Step 3 — narrator + age (+ language for parents) */}
+ {step === 2 && (
+ <>
+ {defaultVoicesForLocale.length > 0 || voiceProfiles.some((v) => v.elevenlabs_voice_id) ? (
+ <div className="grid grid-cols-2 gap-3">
+ {voiceProfiles
+ .filter((v) => v.elevenlabs_voice_id)
+ .map((v) => (
+ <OptionCard key={v.id} selected={selectedVoice === v.id} onClick={() => { setSelectedVoice(v.id); setNarratorVoiceId(null); }} icon="mic" label={v.name} sub="Giọng nhà mình">
+ <PreviewButton active={previewVoiceId === v.elevenlabs_voice_id} loading={loadingPreview && previewVoiceId === v.elevenlabs_voice_id} onClick={(e) => playVoicePreview(v.elevenlabs_voice_id!, e)} />
+ </OptionCard>
+ ))}
+ {defaultVoicesForLocale.map((v) => (
+ <OptionCard key={v.id} selected={narratorVoiceId === v.voice_id && !selectedVoice} onClick={() => { setNarratorVoiceId(v.voice_id); setSelectedVoice(null); }} icon="headphones" label={v.name} sub="Giọng của Đóm">
+ <PreviewButton active={previewVoiceId === v.voice_id} loading={loadingPreview && previewVoiceId === v.voice_id} onClick={(e) => playVoicePreview(v.voice_id, e)} />
+ </OptionCard>
+ ))}
+ </div>
+ ) : (
+ <button type="button" onClick={() => onNavigate("recording")} className={`flex w-full items-center gap-3 rounded-[22px] bg-white p-3 text-left ${CARD_SHADOW}`}>
+ <Icon3D name="mic" size={56} />
+ <span className="flex-1">
+ <b className="block text-[16px] font-black text-ink">Chưa có giọng kể</b>
+ <small className="text-[13px] font-bold text-ink-2">Bố mẹ ghi giọng để kể cho bé nhé</small>
+ </span>
+ <ChevronRight size={20} className="text-ink-2" />
+ </button>
+ )}
+
+ <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Bé mấy tuổi?</h3>
+ <div className="grid grid-cols-3 gap-2">
  {AGE_BANDS.map(({ id: age, label }) => (
  <button
  key={age}
+ type="button"
  onClick={() => setSelectedAge(age)}
  aria-pressed={selectedAge === age}
- className={`flex-1 py-3 rounded-xl border-[1.5px] text-sm font-bold text-center transition-all ${
- selectedAge === age
- ? "border-accent bg-orange-50 text-accent"
- : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
- }`}
+ className={`min-h-[52px] rounded-[18px] text-[16px] font-black transition-colors ${selectedAge === age ? "bg-brand text-white shadow-[0_4px_0_var(--color-brand-press)]" : `bg-white text-ink ${CARD_SHADOW}`}`}
  >
  {label}
  </button>
  ))}
  </div>
- </div>
 
- {/* Language */}
- <div className="mb-5">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-1.5">
- <Globe size={14} /> Ngôn Ngữ Truyện
- </label>
- <div className="flex gap-2">
+ <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Kể bằng tiếng gì?</h3>
+ <div className="grid grid-cols-3 gap-2">
  {LANGUAGES.map((lang) => (
  <button
  key={lang.code}
+ type="button"
  onClick={() => { setStoryLocale(lang.code); setNarratorVoiceId(null); }}
- className={`flex-1 py-3 rounded-xl border-[1.5px] text-sm font-bold text-center transition-all ${
- storyLocale === lang.code
- ? "border-accent bg-orange-50 text-accent"
- : "border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
- }`}
+ aria-pressed={storyLocale === lang.code}
+ className={`min-h-[48px] rounded-[16px] text-[14px] font-extrabold transition-colors ${storyLocale === lang.code ? "bg-brand text-white" : `bg-white text-ink ${CARD_SHADOW}`}`}
  >
  {lang.label}
  </button>
  ))}
  </div>
+ </>
+ )}
+
+ {/* Step 4 — summary + optional idea */}
+ {step === 3 && (
+ <>
+ <div className={`flex items-center gap-3 rounded-[24px] bg-white p-3 ${CARD_SHADOW}`}>
+ <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[20px]">
+ <Icon3D name={THEME_ICON3D[theme?.icon ?? ""] ?? "book"} size={85} className="-m-[9%] max-w-none" />
+ </span>
+ <span className="min-w-0 flex-1 text-[14px] font-bold leading-snug text-ink-2">
+ <b className="block font-display text-[19px] font-bold text-ink">{theme?.name ?? "Truyện mới"}</b>
+ {characterLabel ?? "Đóm chọn nhân vật"} · {AGE_BANDS.find((b) => b.id === selectedAge)?.label}
+ {voiceName ? ` · ${voiceName}` : ""}
+ </span>
  </div>
 
- {/* Narrator Voice */}
- <div className="mb-5">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-1.5">
- <Mic size={14} /> Giọng Người Kể
+ <label htmlFor="child-name" className="mb-2 mt-5 block font-display text-[19px] font-bold text-ink">
+ Tên bé <small className="font-sans text-[13px] font-bold text-ink-2">(không bắt buộc)</small>
  </label>
+ <input
+ id="child-name"
+ value={childName}
+ onChange={(e) => setChildName(e.target.value)}
+ placeholder="VD: Bông, Bin, Na…"
+ className={`h-14 w-full rounded-[18px] bg-white px-4 text-[16px] font-bold text-ink outline-none placeholder:text-ink-2/60 focus:ring-2 focus:ring-brand ${CARD_SHADOW}`}
+ />
 
- {/* Default voices for this language */}
- {defaultVoicesForLocale.length > 0 || voiceProfiles.filter(v => v.elevenlabs_voice_id).length > 0 ? (
- <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
- {/* Default voices from admin */}
- {defaultVoicesForLocale.map((v) => {
- const selected = narratorVoiceId === v.voice_id;
- return (
- <button
- key={v.id}
- onClick={() => { setNarratorVoiceId(v.voice_id); setSelectedVoice(null); }}
- className={`min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
- selected
- ? "border-accent bg-orange-50"
- : "border-transparent bg-surface"
- }`}
- >
- <div className="flex justify-center mb-1">
- <Mic
- size={20}
- className={selected ? "text-accent" : "text-gray-500 dark:text-white/40"}
- />
- </div>
- <div className="text-xs font-bold truncate">{v.name}</div>
- <div className="text-[10px] text-txt-secondary dark:text-white/50 font-medium">⭐ Mặc định</div>
- <button
- onClick={(e) => playVoicePreview(v.voice_id, e)}
- className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
- >
- {loadingPreview && previewVoiceId === v.voice_id ? (
- <GlowDots size={3} />
- ) : previewVoiceId === v.voice_id ? (
- <Square size={9} />
- ) : (
- <Volume2 size={11} />
- )}
- </button>
- </button>
- );
- })}
- {/* User's cloned voices */}
- {voiceProfiles.filter(v => v.elevenlabs_voice_id).map((v) => {
- const selected = selectedVoice === v.id;
- return (
- <button
- key={v.id}
- onClick={() => { setSelectedVoice(v.id); setNarratorVoiceId(null); }}
- className={`min-w-[88px] py-3 px-2 rounded-[14px] border-2 text-center transition-all ${
- selected
- ? "border-accent bg-orange-50"
- : "border-transparent bg-surface"
- }`}
- >
- <div className="flex justify-center mb-1">
- {v.gender === "female" ? (
- <UserRound
- size={20}
- className={selected ? "text-accent" : "text-gray-500 dark:text-white/40"}
- />
- ) : (
- <User
- size={20}
- className={selected ? "text-accent" : "text-gray-500 dark:text-white/40"}
- />
- )}
- </div>
- <div className="text-xs font-bold truncate">{v.name}</div>
- <div className="text-[10px] text-txt-secondary dark:text-white/50 font-medium">🎙️ Clone</div>
- {v.elevenlabs_voice_id && (
- <button
- onClick={(e) => playVoicePreview(v.elevenlabs_voice_id!, e)}
- className="mt-1 w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 mx-auto"
- >
- {loadingPreview && previewVoiceId === v.elevenlabs_voice_id ? (
- <GlowDots size={3} />
- ) : previewVoiceId === v.elevenlabs_voice_id ? (
- <Square size={9} />
- ) : (
- <Volume2 size={11} />
- )}
- </button>
- )}
- </button>
- );
- })}
- </div>
- ) : (
- <div className="py-3 px-3.5 rounded-[14px] bg-surface dark:bg-white/[0.04] text-center">
- <p className="text-[12px] text-txt-secondary dark:text-white/50">
- Chưa có giọng nào cho ngôn ngữ này.
- </p>
- <button
- onClick={() => onNavigate("recording")}
- className="mt-1 text-[12px] text-accent font-bold"
- >
- Ghi âm giọng đọc ›
- </button>
- </div>
- )}
- </div>
-
- {/* Description with suggestions */}
- <div className="mb-6">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 block">
- 💡 Mô Tả Truyện
+ <label htmlFor="story-idea" className="mb-2 mt-5 block font-display text-[19px] font-bold text-ink">
+ Thêm ý tưởng <small className="font-sans text-[13px] font-bold text-ink-2">(bố mẹ gõ giúp bé)</small>
  </label>
  <textarea
+ id="story-idea"
  value={extraPrompt}
  onChange={(e) => setExtraPrompt(e.target.value)}
- placeholder={"Mô tả chi tiết hơn để AI tạo truyện hay hơn:\n• Nhân vật yêu thích (khủng long, công chúa, siêu nhân...)\n• Bối cảnh (rừng xanh, vũ trụ, đáy biển...)\n• Bài học mong muốn (chia sẻ, dũng cảm, yêu thiên nhiên...)"}
- className="w-full px-4 py-3.5 rounded-xl border-[1.5px] border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm text-txt dark:text-white outline-none focus:border-accent transition-colors resize-none h-[88px]"
+ placeholder="Có khủng long, ở đáy biển, bài học chia sẻ…"
+ className={`h-[88px] w-full resize-none rounded-[18px] bg-white px-4 py-3 text-[15px] font-bold text-ink outline-none placeholder:text-ink-2/60 focus:ring-2 focus:ring-brand ${CARD_SHADOW}`}
  />
- {/* Quick suggestion chips */}
- <div className="flex flex-wrap gap-1.5 mt-2">
- {[
- "🦕 Có khủng long",
- "🧚 Có phép thuật",
- "🌊 Dưới đáy biển",
- "🚀 Trên vũ trụ",
- "🤝 Bài học chia sẻ",
- "💪 Bài học dũng cảm",
- "🌿 Yêu thiên nhiên",
- "👨‍👩‍👧 Gia đình",
- ].map((chip) => (
+ <div className="mt-2 flex flex-wrap gap-1.5">
+ {["Có phép thuật", "Dưới đáy biển", "Trên vũ trụ", "Bài học chia sẻ", "Bài học dũng cảm", "Yêu thiên nhiên"].map((chip) => (
  <button
  key={chip}
- onClick={() => setExtraPrompt((prev) => prev ? `${prev}, ${chip}` : chip)}
- className="px-2.5 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-[11px] font-bold text-orange-700 active:scale-95 transition-transform"
+ type="button"
+ onClick={() => setExtraPrompt((prev) => (prev ? `${prev}, ${chip}` : chip))}
+ className="min-h-[40px] rounded-2xl bg-brand-soft px-3 text-[13px] font-extrabold text-brand active:scale-95"
  >
- {chip}
+ + {chip}
  </button>
  ))}
  </div>
- </div>
 
- {/* Error */}
  {error && (
- <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2">
- <AlertCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
- <p className="text-[13px] text-red-700">{error}</p>
+ <div role="alert" className="mt-4 flex items-start gap-2 rounded-[18px] bg-[#FDE8E3] p-3.5">
+ <AlertCircle size={18} className="mt-0.5 shrink-0 text-cta" />
+ <p className="text-[14px] font-bold text-[#8A2E10]">{error}</p>
  </div>
  )}
+ </>
+ )}
 
- {/* CTA */}
- <button
- onClick={handleGenerate}
- disabled={isGenerating}
- className="w-full min-h-tap-kid rounded-btn bg-cta text-white font-extrabold text-[17px] flex items-center justify-center gap-2 shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none transition disabled:opacity-60"
- >
- {isGenerating ? (
+ {/* CTA (board `.cr .btn`) */}
+ <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px] bg-gradient-to-t from-cream via-cream/95 to-cream/0 px-5 pb-8 pt-6">
+ <Button3D block onClick={next} disabled={isGenerating || (last && !hasStoryKey)}>
+ {last ? (
  <>
- <GlowDots size={7} />
- Đóm đang viết truyện…
+ <Sparkles size={24} weight="fill" /> Tạo truyện cùng Đóm
  </>
  ) : (
  <>
- <Sparkles size={22} weight="fill" />
- {hasStoryKey ? "Tạo truyện cùng Đóm" : "Cấu hình AI trước"}
+ Tiếp tục <ArrowRight size={22} />
  </>
  )}
- </button>
+ </Button3D>
+ </div>
+ </div>
+ );
+}
 
- {hasStoryKey && (
- <p className="text-[11px] text-txt-secondary dark:text-white/50 text-center mt-2.5">
- Powered by {settings.storyProvider === "openai" ? "OpenAI" : settings.storyProvider === "gemini" ? "Google Gemini" : settings.storyProvider === "anthropic" ? "Anthropic" : "Custom"} · {settings.storyModel}
- </p>
- )}
-
- {/* Alternative creation methods */}
- <div className="mt-5 pt-4 border-t border-gray-100 dark:border-white/[0.06] space-y-3">
+function PreviewButton({ active, loading, onClick }: { active: boolean; loading: boolean; onClick: (e: React.MouseEvent) => void }) {
+ return (
  <button
- onClick={() => onNavigate("draw-story")}
- className="w-full py-3.5 rounded-[14px] bg-white dark:bg-white/[0.04] border-2 border-dashed border-violet-300 text-violet-600 font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+ type="button"
+ onClick={onClick}
+ aria-label={active ? "Dừng nghe thử" : "Nghe thử giọng"}
+ className="absolute left-2.5 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand"
  >
- <PenLine size={18} /> Vẽ truyện — bé vẽ, Đóm kể
+ {loading ? <GlowDots size={3} /> : active ? <Square size={12} weight="fill" /> : <Volume2 size={16} />}
  </button>
- <button
- onClick={() => onNavigate("scan-book")}
- className="w-full py-3.5 rounded-[14px] bg-white dark:bg-white/[0.04] border-2 border-dashed border-accent/30 text-accent font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
- >
- <Camera size={18} /> Chụp truyện từ sách
- </button>
- <p className="text-[11px] text-txt-secondary dark:text-white/50 text-center">
- Chụp ảnh trang sách → AI tự động nhận dạng nội dung
- </p>
- </div>
- </div>
- </div>
  );
 }

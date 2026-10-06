@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { ChevronRight, Sparkles, ShieldCheck, Lock, Mic, BookOpen } from "@/components/ui/icons";
+import { ArrowRight, MoonStars, Sparkles, Star } from "@/components/ui/icons";
+import { Bubble, Button3D, TrustChips } from "@/components/ui/kit";
 import Mascot, { type MascotState } from "@/components/ui/Mascot";
 
 interface OnboardingProps {
@@ -10,62 +11,45 @@ interface OnboardingProps {
 }
 
 /**
- * Onboarding v2 (UI-07): Đóm dẫn đường qua 5 bước, nền kem ấm, chữ ink,
+ * Onboarding v2 (UI-07): Đóm dẫn đường qua 3 bước (concept board screen 1), nền kem ấm, chữ ink,
  * CTA cam. Tiêu đề h1 + nhãn nút được E2E smoke test sử dụng — giữ nguyên.
  */
 const steps: {
  mascot: MascotState;
+ /** Plain title (accessible name, dots). */
  title: string;
- subtitle: string;
+ /** Title split around the indigo emphasis (concept board `.onb h2 em`). */
+ lead: string;
+ em: string;
+ tail: string;
  description: string;
- /** Soft backdrop blob colour behind Đóm. */
- halo: string;
+ bubble?: string;
 }[] = [
  {
  mascot: "hello",
- title: "Chào mừng đến KểCon!",
- subtitle: "Mình là Đóm — bạn kể chuyện của bé",
- description: "Truyện cá nhân hoá cho bé yêu, đọc bằng chính giọng của ba mẹ",
- halo: "from-glow-soft to-[#FFE2CC]",
+ title: "Mỗi tối, Đóm thắp sáng một câu chuyện cho bé",
+ lead: "Mỗi tối, Đóm thắp sáng ",
+ em: "một câu chuyện",
+ tail: " cho bé",
+ description: "Cổ tích Việt Nam, truyện bé tự sáng tạo — và cả giọng kể của bố mẹ.",
+ bubble: "Chào bé! Tớ là",
  },
  {
  mascot: "listen",
- title: "Clone giọng nói",
- subtitle: "Giọng đọc của ba mẹ, ông bà",
- description: "Ghi âm khoảng 30 giây, Đóm học giọng — bé được nghe truyện bằng giọng người thân yêu nhất",
- halo: "from-brand-soft to-[#DDEBFF]",
- },
- {
- mascot: "story",
- title: "Tạo truyện bằng AI",
- subtitle: "Mỗi tối một câu chuyện mới",
- description: "Kể cho Đóm vài ý, Đóm viết truyện, vẽ minh hoạ và đọc bằng giọng bạn chọn",
- halo: "from-success-soft to-glow-soft",
- },
- {
- mascot: "happy",
- title: "An toàn cho bé",
- subtitle: "Ba mẹ kiểm soát hoàn toàn",
- description: "Giới hạn thời gian, giờ ngủ, lọc nội dung theo độ tuổi. Không quảng cáo, dữ liệu của bé luôn được bảo vệ",
- halo: "from-brand-soft to-success-soft",
+ title: "Nghe truyện bằng giọng bố mẹ",
+ lead: "Nghe truyện bằng ",
+ em: "giọng bố mẹ",
+ tail: "",
+ description: "Ghi âm khoảng một phút, Đóm học giọng — bé được nghe truyện bằng giọng người thân yêu nhất.",
  },
  {
  mascot: "celebrate",
- title: "Sẵn sàng rồi!",
- subtitle: "Cùng Đóm bắt đầu hành trình",
- description: "Tạo câu chuyện đầu tiên hoặc ghi âm giọng đọc cho bé ngay nào!",
- halo: "from-glow-soft to-[#FFD9C2]",
+ title: "An toàn, không quảng cáo",
+ lead: "An toàn, ",
+ em: "không quảng cáo",
+ tail: "",
+ description: "Bố mẹ đặt giờ ngủ, giới hạn thời gian và duyệt truyện. Dữ liệu của bé luôn được bảo vệ.",
  },
-];
-
-const TRUST_CHIPS = [
- { icon: ShieldCheck, label: "Không quảng cáo" },
- { icon: Lock, label: "Khoá phụ huynh" },
-];
-
-const FEATURE_CHIPS = [
- { icon: Mic, label: "Giọng ba mẹ" },
- { icon: BookOpen, label: "Truyện 3–12 tuổi" },
 ];
 
 export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
@@ -107,109 +91,72 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
 
  return (
  <div
- className="relative min-h-screen bg-cream text-ink flex flex-col overflow-hidden"
+ className="relative flex min-h-screen flex-col overflow-hidden bg-cream px-[26px] pb-10 pt-12 text-ink"
  onTouchStart={onTouchStart}
  onTouchEnd={onTouchEnd}
  >
- {/* Skip button */}
- <div className="px-5 pt-14 flex items-center justify-between relative z-20">
- <span className="font-display text-[20px] font-extrabold text-brand tracking-tight">KểCon</span>
- <button
- onClick={onGetStarted}
- className="min-h-tap-min text-[14px] text-ink-2 font-bold px-4 rounded-full bg-white/70 border border-ink/5 active:scale-95 transition-transform"
- >
+ {/* Decorations (board `.deco`) */}
+ <Star aria-hidden size={26} weight="fill" className="absolute left-[30px] top-[130px] text-brand opacity-[0.16]" />
+ <MoonStars aria-hidden size={34} weight="fill" className="absolute left-[60px] top-[280px] text-brand opacity-[0.16]" />
+ <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand opacity-[0.16]" />
+
+ <div className="relative z-20 flex justify-end">
+ <button type="button" onClick={onGetStarted} className="min-h-tap-min px-1 text-[16px] font-extrabold text-ink-2 active:scale-95">
  Bỏ qua
  </button>
  </div>
 
- {/* Content */}
  <div
  ref={contentRef}
- className={`flex-1 flex flex-col items-center justify-center px-7 relative z-10 transition-all duration-250 ${
- animating
- ? direction === "next"
- ? "opacity-0 translate-x-8"
- : "opacity-0 -translate-x-8"
- : "opacity-100 translate-x-0"
+ className={`relative z-10 flex flex-1 flex-col items-center transition-all duration-250 ${
+ animating ? (direction === "next" ? "translate-x-8 opacity-0" : "-translate-x-8 opacity-0") : "translate-x-0 opacity-100"
  }`}
  >
- {/* Đóm on a soft halo */}
- <div className="relative mb-6 flex items-end justify-center w-[240px] h-[220px]">
- <div aria-hidden className={`absolute inset-x-2 bottom-2 top-8 rounded-[999px] bg-gradient-to-br ${current.halo} opacity-90`} />
- <Mascot key={current.mascot} state={current.mascot} size={210} priority className="relative" />
- </div>
-
- <div className="text-center">
- <h1 className="font-display text-[28px] leading-tight font-extrabold text-ink tracking-tight mb-1.5">
- {current.title}
- </h1>
- <p className="text-[16px] font-bold text-brand mb-2.5">
- {current.subtitle}
- </p>
- <p className="text-[15px] text-ink-2 leading-relaxed max-w-xs mx-auto">
- {current.description}
- </p>
- </div>
-
- {step === 0 && (
- <ul className="mt-5 flex flex-wrap justify-center gap-2" aria-label="Cam kết của KểCon">
- {[...FEATURE_CHIPS, ...TRUST_CHIPS].map(({ icon: Icon, label }) => (
- <li
- key={label}
- className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-bold text-ink shadow-sm border border-ink/5"
- >
- <Icon size={16} className="text-brand" /> {label}
- </li>
- ))}
- </ul>
+ {/* Đóm in the firefly halo (board `.halo`) */}
+ <div className="relative mt-3 flex h-[270px] w-[270px] items-center justify-center rounded-full bg-[radial-gradient(circle,#FFE7A6_0%,#FFF1CF_45%,rgba(255,248,238,0)_72%)]">
+ <Mascot key={current.mascot} state={current.mascot} size={210} priority />
+ {current.bubble && (
+ <Bubble tail="bottom" className="absolute -right-6 top-6 rotate-3 whitespace-nowrap text-[18px]">
+ {current.bubble} <b className="text-brand">Đóm</b>
+ </Bubble>
  )}
  </div>
 
- {/* Bottom */}
- <div className="px-7 pb-12 relative z-10">
- {/* Dots */}
- <div className="flex justify-center gap-1 mb-5">
- {steps.map((s, i) => (
+ <h1 className="mt-4 text-center font-display text-[31px] font-extrabold leading-[1.15] text-ink">
+ {current.lead}
+ <em className="not-italic text-brand">{current.em}</em>
+ {current.tail}
+ </h1>
+ <p className="mt-3 max-w-[330px] text-center text-[17px] font-bold leading-normal text-ink-2">{current.description}</p>
+ </div>
+
+ <div className="relative z-10">
+ {/* Dots (board `.dots`) */}
+ <div className="mb-[22px] mt-6 flex justify-center gap-1">
+ {steps.map((st, i) => (
  <button
  key={i}
+ type="button"
  onClick={() => transition(i)}
- aria-label={`Bước ${i + 1}: ${s.title}`}
+ aria-label={`Bước ${i + 1}: ${st.title}`}
  aria-current={i === step ? "step" : undefined}
- className="h-6 px-1 flex items-center"
+ className="flex h-6 items-center px-1"
  >
- <span
- className={`block h-2.5 rounded-full transition-all duration-300 ${
- i === step ? "w-8 bg-brand" : "w-2.5 bg-ink/15"
- }`}
- />
+ <span className={`block h-2.5 rounded-md transition-all duration-300 ${i === step ? "w-[30px] bg-brand" : "w-2.5 bg-[#DCD5F5]"}`} />
  </button>
  ))}
  </div>
 
- {/* Actions */}
- {isLast ? (
- <div className="space-y-2.5">
- <button
- onClick={onGetStarted}
- className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] active:bg-cta-press transition-transform shadow-[0_6px_0_var(--color-cta-press)]"
- >
- <Sparkles size={20} weight="fill" /> Bắt đầu ngay
+ <Button3D block onClick={handleNext}>
+ {step === 0 ? "Bắt đầu nào!" : isLast ? "Tạo tài khoản cho bé" : "Tiếp tục"} <ArrowRight size={22} />
+ </Button3D>
+ <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2">
+ Bố mẹ đã có tài khoản?{" "}
+ <button type="button" onClick={onLogin} className="min-h-[40px] font-extrabold text-brand">
+ Đăng nhập
  </button>
- <button
- onClick={onLogin}
- className="w-full min-h-tap-min rounded-btn bg-white text-brand text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform border-2 border-brand-soft"
- >
- Đã có tài khoản? Đăng nhập
- </button>
- </div>
- ) : (
- <button
- onClick={handleNext}
- className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] active:bg-cta-press transition-transform shadow-[0_6px_0_var(--color-cta-press)]"
- >
- Tiếp tục <ChevronRight size={20} />
- </button>
- )}
+ </p>
+ <TrustChips className="mt-4" />
  </div>
  </div>
  );

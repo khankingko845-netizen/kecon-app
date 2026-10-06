@@ -6,6 +6,7 @@ import { SettingsProvider } from "@/lib/settings-context";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { DataProvider } from "@/lib/data-context";
 import TabBar from "@/components/ui/TabBar";
+import { KidLoading } from "@/components/ui/states";
 import Onboarding from "@/components/screens/Onboarding";
 import Login from "@/components/screens/Login";
 import Signup from "@/components/screens/Signup";
@@ -130,6 +131,7 @@ function AppContent() {
  current.screen !== "player" &&
  current.screen !== "lullaby" &&
  current.screen !== "recording" &&
+ current.screen !== "create" &&
  current.screen !== "adventure" &&
  current.screen !== "editor" &&
  current.screen !== "upload" &&
@@ -146,19 +148,14 @@ function AppContent() {
 
  if (loading) {
  return (
- <div className="relative max-w-[430px] mx-auto min-h-screen bg-white dark:bg-[#0A0A0F] flex items-center justify-center">
- <div className="text-center">
- <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center mx-auto mb-3 animate-pulse">
- <span className="text-white text-xl font-bold">K</span>
- </div>
- <p className="text-sm text-gray-400 dark:text-white/30 font-medium">Loading...</p>
- </div>
+ <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream">
+ <KidLoading fullScreen title="Đóm đang thức dậy…" />
  </div>
  );
  }
 
  return (
- <div className="relative max-w-[430px] mx-auto min-h-screen bg-white dark:bg-[#0A0A0F] shadow-2xl shadow-black/10">
+ <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream shadow-2xl shadow-black/10">
  <div className="screen-enter" key={current.screen}>
  {current.screen === "onboarding" && (
  <Onboarding
@@ -191,7 +188,7 @@ function AppContent() {
  />
  )}
  {current.screen === "legacy" && <VoiceLegacy onBack={goBack} />}
- {current.screen === "library" && <Library onNavigate={navigate} />}
+ {current.screen === "library" && <Library onNavigate={navigate} initialCategory={current.data?.category} />}
  {current.screen === "profiles" && (
  <VoiceProfiles onNavigate={navigate} />
  )}

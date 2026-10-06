@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Plus, User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "@/components/ui/icons";
+import { User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "@/components/ui/icons";
+import Mascot from "@/components/ui/Mascot";
+import { GlowDots } from "@/components/ui/states";
+import { Bubble, Button3D, CARD_SHADOW, ProgressBar } from "@/components/ui/kit";
 import { useData } from "@/lib/data-context";
-import { deleteVoiceProfile, updateVoiceProfile, gradientFor } from "@/lib/db";
+import { deleteVoiceProfile, updateVoiceProfile } from "@/lib/db";
 import { useSettings } from "@/lib/settings-context";
 import type { Screen } from "@/lib/types";
 
@@ -116,18 +119,24 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  }, [playingId, settings.elevenLabsApiKey, settings.elevenLabsModelId]);
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
- <div className="px-5 pt-14">
- <h2 className="text-[28px] font-black tracking-tight mb-0.5">Giọng Nói</h2>
- <p className="text-[13px] text-txt-secondary dark:text-white/50 font-medium">
- Voice profiles gia đình
- </p>
+ <div className="min-h-screen bg-cream pb-32">
+ <header className="px-5 pt-12">
+ <h1 className="font-display text-[30px] font-extrabold leading-tight text-ink">Giọng đọc</h1>
+ <p className="text-[15px] font-bold text-ink-2">Giọng kể của cả nhà cho bé</p>
+ </header>
+
+ {/* Đóm intro (board: Ghi giọng phụ huynh) */}
+ <div className="mx-5 mt-4 flex items-center gap-3 rounded-[24px] bg-brand-soft p-4">
+ <Mascot state="listen" size={84} />
+ <div className="min-w-0 flex-1">
+ <Bubble tail="left" className="text-[15px]">Bé thích nghe giọng ai kể nhất? Bố mẹ ghi giọng để <b className="text-brand">Đóm</b> học nhé!</Bubble>
+ </div>
  </div>
 
- <div className="px-5 pt-4 space-y-2.5">
+ <div className="px-5 pt-4 space-y-3">
  {loading && voiceProfiles.length === 0 && (
- <div className="flex justify-center py-8">
- <Loader2 size={24} className="animate-spin text-accent" />
+ <div className="flex justify-center py-8" role="status" aria-label="Đang tải giọng đọc">
+ <GlowDots />
  </div>
  )}
 
@@ -140,13 +149,13 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  return (
  <div
  key={v.id}
- className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none"
+ className={`bg-white rounded-[24px] p-4 ${CARD_SHADOW}`}
  >
  <div className="flex items-center gap-3.5">
  <div
- className={`w-[50px] h-[50px] rounded-2xl bg-gradient-to-br ${gradientFor(v.id)} flex items-center justify-center text-white shrink-0`}
+ className="w-[56px] h-[56px] rounded-[18px] bg-brand-soft flex items-center justify-center text-brand shrink-0"
  >
- {v.gender === "female" ? <UserRound size={24} /> : <User size={24} />}
+ {v.gender === "female" ? <UserRound size={30} /> : <User size={30} />}
  </div>
  <div className="flex-1 min-w-0">
  {isEditing ? (
@@ -175,36 +184,23 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  </div>
  ) : (
  <div className="flex items-center gap-1.5 mb-0.5">
- <h5 className="text-base font-bold truncate">{v.name}</h5>
+ <h3 className="font-display text-[19px] font-bold leading-tight text-ink truncate">{v.name}</h3>
  <button
  onClick={() => startEdit(v.id, v.name)}
- className="w-6 h-6 rounded-md hover:bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-400 dark:text-white/30 shrink-0"
- title="Sửa tên"
+ className="w-8 h-8 rounded-[10px] flex items-center justify-center text-ink-2 shrink-0"
+ aria-label="Sửa tên"
  >
- <Pencil size={12} />
+ <Pencil size={16} />
  </button>
  </div>
  )}
- <p className="text-[11px] text-txt-secondary dark:text-white/50 mb-1.5">
+ <p className="text-[13px] font-bold text-ink-2 mb-2">
  {relationLabel(v.relation)}
  {v.elevenlabs_voice_id ? " · Đã clone" : " · Chưa clone"}
  </p>
  <div className="flex items-center gap-2">
- <div className="flex-1 h-1 bg-gray-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
- <div
- className="h-full rounded-full"
- style={{
- width: `${quality}%`,
- background: quality >= 80 ? "#22C55E" : "#FBBF24",
- }}
- />
- </div>
- <span
- className="text-[13px] font-bold"
- style={{ color: quality >= 80 ? "#16A34A" : "#D97706" }}
- >
- {quality}%
- </span>
+ <ProgressBar value={quality} tone={quality >= 80 ? "brand" : "glow"} label={`Chất lượng giọng ${quality}%`} className="flex-1" />
+ <span className="text-[13px] font-extrabold text-ink-2">{quality}%</span>
  </div>
  </div>
  <div className="flex flex-col gap-1.5 shrink-0">
@@ -212,12 +208,10 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  <button
  onClick={() => playPreview(v.id, v.elevenlabs_voice_id!)}
  disabled={isLoadingPrev}
- className={`w-[38px] h-[38px] rounded-xl border flex items-center justify-center active:scale-95 transition-all ${
- isPlaying
- ? "bg-violet-500 border-violet-500 text-white"
- : "bg-surface dark:bg-white/[0.04] border-gray-200 dark:border-white/10 text-violet-500"
+ className={`w-11 h-11 rounded-[14px] flex items-center justify-center active:scale-95 transition-all ${
+ isPlaying ? "bg-brand text-white" : "bg-brand-soft text-brand"
  }`}
- title="Nghe giọng"
+ aria-label={isPlaying ? "Dừng nghe" : `Nghe giọng ${v.name}`}
  >
  {isLoadingPrev ? (
  <Loader2 size={16} className="animate-spin" />
@@ -231,7 +225,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  <button
  onClick={() => handleDelete(v.id)}
  disabled={deletingId === v.id}
- className="w-[38px] h-[38px] rounded-xl bg-surface dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 flex items-center justify-center text-red-400 active:scale-95 transition-transform"
+ className="w-11 h-11 rounded-[14px] bg-[#FDE7DF] flex items-center justify-center text-cta-press active:scale-95 transition-transform"
  aria-label="Xóa giọng"
  >
  {deletingId === v.id ? (
@@ -247,32 +241,19 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  })}
 
  {!loading && voiceProfiles.length === 0 && (
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none">
- <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-2/20 to-accent/20 flex items-center justify-center text-accent mx-auto mb-2">
- <Mic size={22} />
- </div>
- <p className="text-[14px] font-bold text-txt dark:text-white mb-0.5">
- Chưa có giọng nào
- </p>
- <p className="text-[12px] text-txt-secondary dark:text-white/50">
- Ghi âm để tạo giọng đọc đầu tiên
- </p>
+ <div className={`bg-white rounded-[24px] p-6 text-center ${CARD_SHADOW}`}>
+ <p className="font-display text-[20px] font-bold text-ink mb-0.5">Chưa có giọng nào</p>
+ <p className="text-[14px] font-bold text-ink-2">Ghi 30 giây – 3 phút để tạo giọng đọc đầu tiên</p>
  </div>
  )}
 
  {/* Add Voice */}
- <button
- onClick={() => onNavigate("recording")}
- className="w-full border-2 border-dashed border-gray-300 dark:border-white/15 rounded-2xl p-6 text-center active:scale-[0.98] transition-transform"
- >
- <div className="w-11 h-11 rounded-[14px] bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-accent mx-auto mb-2">
- <Plus size={20} />
+ <div className="pt-2">
+ <Button3D block onClick={() => onNavigate("recording")}>
+ <Mic size={24} weight="fill" /> Ghi giọng bố mẹ
+ </Button3D>
+ <p className="mt-3 text-center text-[13px] font-bold text-ink-2">Ghi 30 giây – 3 phút · chỉ dùng để kể truyện cho bé</p>
  </div>
- <h5 className="text-[15px] font-bold mb-0.5">Thêm Giọng Nói Mới</h5>
- <p className="text-xs text-txt-secondary dark:text-white/50">
- Ghi âm 30s — 3 phút để tạo voice
- </p>
- </button>
  </div>
  </div>
  );

@@ -16,10 +16,12 @@ interface ThemeContextValue {
   isDark: boolean;
   setMode: (mode: ThemeMode) => void;
   toggle: () => void;
-  /** Night mode preference (UI-08): auto = 19:30 → 06:00. */
+  /** Sleep-mode preference (UI-08): auto = 19:30 → 06:00 on bedtime surfaces. */
   nightPref: NightPref;
-  /** Night palette currently active (implies dark). */
+  /** App-wide night palette (pref "on" or dark appearance) — never pure white. */
   isNight: boolean;
+  /** Bedtime surfaces (Player, Ru ngủ) are in sleep mode: pref "on", or "auto" inside 19:30–06:00. */
+  isBedtime: boolean;
   setNightPref: (pref: NightPref) => void;
 }
 
@@ -30,6 +32,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggle: () => {},
   nightPref: "auto",
   isNight: false,
+  isBedtime: false,
   setNightPref: () => {},
 });
 
@@ -99,17 +102,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const nightPref = useSyncExternalStore(subscribeNightPref, getNightPref, getServerNightPref);
   const inNightWindow = useSyncExternalStore(subscribeNightWindow, getInNightWindow, getServerInNightWindow);
-  const isNight = nightPref === "on" || (nightPref === "auto" && inNightWindow);
-  const isDark = isNight || mode === "dark" || (mode === "system" && systemDark);
+  const isBedtime = nightPref === "on" || (nightPref === "auto" && inNightWindow);
+  // One dark look only: any dark appearance uses the night palette (concept board: Ngày / Đêm).
+  // "auto" keeps the cream day UI in the evening (board screen 2, 19:45) and only puts
+  // the bedtime surfaces to sleep.
+  const isDark = nightPref === "on" || mode === "dark" || (mode === "system" && systemDark);
+  const isNight = isDark;
 
   // Apply to <html>: night ⇒ dark + warm bedtime palette (see globals.css `.night`).
   useEffect(() => {
     const html = document.documentElement;
     html.classList.toggle("dark", isDark);
     html.classList.toggle("night", isNight);
+    html.classList.toggle("bedtime", isBedtime);
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", isNight ? "#151233" : isDark ? "#0A0A0F" : "#FFF8EE");
-  }, [isDark, isNight]);
+  }, [isDark, isNight, isBedtime]);
 
   const setNightPref = useCallback((pref: NightPref) => {
     localStorage.setItem(NIGHT_STORAGE_KEY, pref);
@@ -126,7 +134,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isDark, setMode]);
 
   return (
-    <ThemeContext.Provider value={{ mode, isDark, setMode, toggle, nightPref, isNight, setNightPref }}>
+    <ThemeContext.Provider value={{ mode, isDark, setMode, toggle, nightPref, isNight, isBedtime, setNightPref }}>
       {children}
     </ThemeContext.Provider>
   );

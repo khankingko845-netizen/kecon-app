@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
- Mic, Pause, Loader2, Check, AlertCircle, Settings, Play, Square, Volume2,
+ Mic, Loader2, Check, AlertCircle, Settings, Play, Square, Volume2, X, ShieldCheck, SpeakerSlash, Ruler, Hourglass, LockKey,
 } from "@/components/ui/icons";
-import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { cloneVoiceApi } from "@/lib/api-client";
@@ -233,132 +232,148 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
 
  const progress = (elapsed / 180) * 100;
 
- return (
- <div className="min-h-screen bg-white dark:bg-night flex flex-col">
- <TopBar title="Ghi âm giọng nói" onBack={onBack} />
+ const scriptIdx = Math.max(0, SAMPLE_SCRIPTS.findIndex((x) => x.id === selectedScript));
+ const scriptText: string = SAMPLE_SCRIPTS[scriptIdx].text;
+ const sentences = scriptText.match(/[^.!?]+[.!?]*\s*/g) ?? [scriptText];
+ // While recording, gently move the highlight one sentence every ~6 s (board `.script p b`).
+ const readingIdx = isRecording ? Math.min(sentences.length - 1, Math.floor(elapsed / 6)) : 0;
+ const litBars = Math.round((Math.min(progress, 100) / 100) * WAVE.length);
+ const listenTitle = cloneResult
+ ? "Đóm đã học giọng của bạn!"
+ : isRecording
+ ? "Đóm đang lắng nghe…"
+ : audioBlob
+ ? "Ghi xong rồi!"
+ : "Đóm sẵn sàng nghe bạn đọc";
 
- <div className="flex-1 flex flex-col items-center px-7 pt-6 pb-10">
- {/* API warning */}
+ return (
+ <div className="flex min-h-screen flex-col bg-parent-bg px-5 pb-10 pt-12 font-parent text-ink">
+ {/* Top (board `.vtop`) */}
+ <header className="flex min-h-[48px] items-center gap-2.5">
+ <button type="button" onClick={onBack} aria-label="Đóng" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-2xl active:bg-ink/5">
+ <X size={24} weight="bold" />
+ </button>
+ <h1 className="font-parent text-[19px] font-bold">Ghi giọng bố mẹ</h1>
+ <span className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-success-soft px-2.5 py-1.5 text-[12.5px] font-semibold text-success">
+ <ShieldCheck size={15} weight="fill" /> Phụ huynh
+ </span>
+ </header>
+
  {!hasElevenKey && (
  <button
+ type="button"
  onClick={() => onNavigate?.("settings")}
- className="w-full mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 active:scale-[0.98] transition-transform"
+ className="mt-3 flex w-full items-center gap-2.5 rounded-[16px] bg-glow-soft px-3.5 py-3 text-left active:scale-[0.98]"
  >
- <AlertCircle size={16} className="text-amber-500 shrink-0" />
- <p className="flex-1 text-left text-[12px] font-bold text-amber-800">
- Thêm ElevenLabs API key để clone giọng
- </p>
- <Settings size={14} className="text-amber-500" />
+ <AlertCircle size={18} className="shrink-0 text-[#B26A00]" />
+ <span className="flex-1 text-[13px] font-semibold text-[#7A4A00]">Cần bật ElevenLabs trong Cài đặt để Đóm học giọng</span>
+ <Settings size={16} className="text-[#B26A00]" />
  </button>
  )}
 
- {/* Đóm lắng nghe (UI v2) */}
- <div className="w-44 h-44 rounded-full bg-gradient-to-br from-brand-soft to-glow-soft flex items-end justify-center relative mb-5">
- {isRecording && (
- <>
- <div
- className="absolute inset-[-8px] rounded-full border-2 border-brand/20"
- style={{ animation: "pulse-ring 2s ease-in-out infinite" }}
- />
- <div
- className="absolute inset-[-20px] rounded-full border-2 border-brand/10"
- style={{ animation: "pulse-ring 2s ease-in-out infinite 0.5s" }}
- />
- </>
- )}
- <Mascot
- state={cloneResult ? "celebrate" : audioBlob && !isRecording ? "happy" : "listen"}
- size={160}
- priority
- label={isRecording ? "Đóm đang lắng nghe giọng của bạn" : undefined}
- />
+ {/* Đóm listening (board `.lis`) */}
+ <div className="mt-4 flex items-center gap-3 rounded-[20px] bg-white px-3.5 py-2.5 shadow-[0_2px_10px_rgba(43,35,80,0.06)]" role="status" aria-live="polite">
+ <Mascot state={cloneResult ? "celebrate" : audioBlob && !isRecording ? "happy" : "listen"} size={64} priority label={null} />
+ <div>
+ <b className="block text-[16px] font-bold">{listenTitle}</b>
+ <small className="text-[13.5px] text-ink-2">
+ {cloneResult ? `Giọng "${cloneResult.name}" đã sẵn sàng kể cho bé` : "Đọc tự nhiên như kể cho bé nghe nhé"}
+ </small>
+ </div>
  </div>
 
- <h2 className="font-display text-[24px] font-extrabold tracking-tight mb-1.5 text-center text-ink dark:text-white">
- {cloneResult
- ? "Clone thành công!"
- : isRecording
- ? "Đang ghi âm..."
- : audioBlob
- ? "Ghi âm hoàn tất"
- : "Đọc đoạn văn sau"}
- </h2>
- <p className="text-sm text-txt-secondary dark:text-white/50 text-center leading-relaxed mb-5">
- {cloneResult
- ? `Giọng "${cloneResult.name}" đã được tạo trên ElevenLabs`
- : "Đóm sẽ học giọng bạn từ đoạn ghi âm này. Đọc to, rõ ràng, tự nhiên nhé."}
- </p>
-
- {/* Script Selector */}
- <div className="w-full mb-2">
- <div className="text-[11px] font-bold tracking-widest uppercase text-accent-2 mb-2">
- Chọn đoạn đọc mẫu
- </div>
- <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
- {SAMPLE_SCRIPTS.map((s) => (
+ {/* Script picker */}
+ <div className="-mx-5 mt-3 flex gap-1.5 overflow-x-auto px-5 pb-1 no-scrollbar" role="tablist" aria-label="Đoạn đọc mẫu">
+ {SAMPLE_SCRIPTS.map((x) => (
  <button
- key={s.id}
- onClick={() => setSelectedScript(s.id)}
- className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all ${
- selectedScript === s.id
- ? "border-accent bg-orange-50 text-accent"
- : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-txt-secondary dark:text-white/50"
+ key={x.id}
+ type="button"
+ role="tab"
+ aria-selected={selectedScript === x.id}
+ onClick={() => setSelectedScript(x.id)}
+ disabled={isRecording}
+ className={`min-h-[40px] whitespace-nowrap rounded-xl border px-3 text-[13px] font-semibold transition-colors ${
+ selectedScript === x.id ? "border-brand bg-brand-soft text-brand" : "border-[#E7E3F2] bg-white text-ink-2"
  }`}
  >
- {s.label}
+ {x.label}
  </button>
  ))}
  </div>
- </div>
 
- {/* Script Card */}
- <div className="w-full bg-surface dark:bg-white/[0.04] rounded-2xl p-[18px] border border-gray-200 dark:border-white/10 mb-5">
- <p className="text-[15px] leading-relaxed italic text-txt dark:text-white">
- &ldquo;{SAMPLE_SCRIPTS.find((s) => s.id === selectedScript)?.text}&rdquo;
+ {/* Script (board `.script`) */}
+ <div className="mt-2.5 rounded-[20px] bg-white p-4 shadow-[0_2px_10px_rgba(43,35,80,0.06)]">
+ <small className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-2">
+ Đoạn {scriptIdx + 1}/{SAMPLE_SCRIPTS.length} · Đọc to
+ </small>
+ <p className="mt-2 text-[18px] leading-[1.6] text-[#9C96B5]">
+ {sentences.map((sen, i) =>
+ i === readingIdx ? (
+ <b key={i} className="rounded-md bg-glow-soft px-[3px] font-semibold text-ink">
+ {sen}
+ </b>
+ ) : (
+ <span key={i}>{sen}</span>
+ ),
+ )}
  </p>
  </div>
 
- {/* Progress */}
- <div className="w-full mb-1">
- <div className="w-full h-1 bg-gray-200 dark:bg-white/[0.08] rounded-full">
- <div
- className="h-full bg-gradient-to-r from-accent-2 to-accent rounded-full transition-all duration-1000"
- style={{ width: `${progress}%` }}
+ {/* Waveform + timer (board `.wave`, `.timer`) */}
+ <div className="mt-5 flex h-[70px] items-center justify-center gap-1" aria-hidden>
+ {WAVE.map((h, i) => (
+ <i
+ key={i}
+ className={`block w-[5px] rounded-[3px] ${i < litBars || isRecording ? "bg-brand" : "bg-[#D9D3EE]"} ${isRecording ? "kid-wave" : ""}`}
+ style={{ height: h, animationDelay: `${(i % 7) * 0.09}s` }}
  />
+ ))}
  </div>
- <div className="flex justify-between text-xs font-semibold text-txt-secondary dark:text-white/50 mt-2">
- <span>{formatTime(elapsed)}</span>
- <span>3:00</span>
- </div>
- </div>
+ <p className="mt-1.5 text-center text-[28px] font-bold tabular-nums">
+ {formatTime(elapsed)} <small className="text-[16px] font-medium text-ink-2">/ 3:00</small>
+ </p>
 
- {/* Record Button */}
+ {/* Record ring (board `.rec`) */}
  {!cloneResult && (
  <button
+ type="button"
  onClick={handleToggleRecording}
  disabled={isCloning}
- className="w-[72px] h-[72px] rounded-full border-4 border-gray-200 dark:border-white/10 flex items-center justify-center text-white mt-4 active:scale-95 transition-transform disabled:opacity-50"
- style={{
- background: isRecording ? "#EF4444" : "#EF4444",
- boxShadow: "0 6px 20px -4px rgba(239,68,68,0.35)",
- }}
+ aria-label={isRecording ? "Dừng ghi âm" : audioBlob ? "Ghi lại" : "Bắt đầu ghi âm"}
+ aria-pressed={isRecording}
+ className="mx-auto mt-4 flex h-28 w-28 items-center justify-center rounded-full active:scale-95 disabled:opacity-50"
+ style={{ background: `conic-gradient(var(--color-cta) 0 ${Math.max(progress, isRecording ? 2 : 0)}%, #F0E2DB ${Math.max(progress, isRecording ? 2 : 0)}% 100%)` }}
  >
- {isRecording ? <Pause size={24} /> : <Mic size={24} />}
+ <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full bg-white">
+ {isRecording ? <i className="block h-[38px] w-[38px] rounded-[10px] bg-cta" /> : <Mic size={40} weight="fill" className="text-cta" />}
+ </span>
  </button>
  )}
  {!cloneResult && !audioBlob && (
- <p className="text-xs text-txt-secondary dark:text-white/50 mt-2 font-medium">
- {isRecording ? "Nhấn để dừng" : "Nhấn để bắt đầu ghi âm"}
- </p>
+ <p className="mt-2 text-center text-[13px] font-medium text-ink-2">{isRecording ? "Chạm để dừng" : "Chạm để bắt đầu ghi âm"}</p>
  )}
+
+ {/* Tips (board `.tips`) */}
+ <div className="mt-[18px] flex flex-wrap justify-center gap-1.5">
+ {[
+ { icon: SpeakerSlash, label: "Phòng yên tĩnh" },
+ { icon: Ruler, label: "Cách mic 20 cm" },
+ { icon: Hourglass, label: "Đọc chậm" },
+ ].map(({ icon: Icon, label }) => (
+ <span key={label} className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#E7E3F2] bg-white px-2.5 py-[7px] text-[12.5px] font-semibold">
+ <Icon size={16} className="text-brand" /> {label}
+ </span>
+ ))}
+ </div>
 
  {/* Recording playback */}
  {audioBlob && !cloneResult && (
  <button
+ type="button"
  onClick={toggleRecordingPlayback}
- className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[13px] font-bold active:scale-95 transition-transform"
+ className="mx-auto mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-soft px-4 text-[14px] font-semibold text-brand active:scale-95"
  >
- {isRecordingPlaying ? <Square size={14} /> : <Play size={14} />}
+ {isRecordingPlaying ? <Square size={14} weight="fill" /> : <Play size={14} weight="fill" />}
  {isRecordingPlaying ? "Dừng phát" : "Nghe lại bản ghi"}
  </button>
  )}
@@ -475,7 +490,15 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  <p className="text-[13px] text-red-700">{error}</p>
  </div>
  )}
- </div>
+
+ {/* Privacy (board `.priv`) */}
+ <p className="mx-1 mt-[18px] flex gap-2 text-[13px] leading-normal text-ink-2">
+ <LockKey size={18} weight="fill" className="shrink-0 text-success" />
+ Giọng nói chỉ dùng trong gia đình bạn và có thể xoá bất cứ lúc nào.
+ </p>
  </div>
  );
 }
+
+/** Bar heights from the concept board waveform. */
+const WAVE = [14, 22, 36, 50, 30, 58, 44, 64, 40, 28, 52, 60, 34, 20, 46, 56, 30, 18, 40, 26, 12, 8, 6, 6, 6, 6];

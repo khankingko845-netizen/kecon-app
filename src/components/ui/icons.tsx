@@ -12,7 +12,9 @@ import { forwardRef, type ComponentPropsWithoutRef, type ForwardRefExoticCompone
 import type { IconWeight, Icon as PhosphorIcon } from "@phosphor-icons/react";
 import {
   ArrowCounterClockwiseIcon,
+  ArrowClockwiseIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
   ArrowSquareOutIcon,
   ArrowUUpLeftIcon,
   ArrowsClockwiseIcon,
@@ -73,6 +75,7 @@ import {
   LinkIcon,
   ListBulletsIcon,
   LockIcon,
+  LockKeyIcon,
   MagicWandIcon,
   MagnifyingGlassIcon,
   MicrophoneIcon,
@@ -89,6 +92,7 @@ import {
   PlugIcon,
   PlusIcon,
   RocketIcon,
+  RulerIcon,
   ShareNetworkIcon,
   ShieldIcon,
   ShieldCheckIcon,
@@ -102,6 +106,7 @@ import {
   SortDescendingIcon,
   SparkleIcon,
   SpeakerHighIcon,
+  SpeakerSimpleSlashIcon,
   SquareIcon,
   SquaresFourIcon,
   StarIcon,
@@ -113,6 +118,7 @@ import {
   TreeEvergreenIcon,
   TrendUpIcon,
   TrophyIcon,
+  HourglassMediumIcon,
   UploadSimpleIcon,
   UserIcon,
   UserCircleIcon,
@@ -303,3 +309,9 @@ export const MoonStars = make(MoonStarsIcon, "MoonStars");
 export const Timer = make(TimerIcon, "Timer");
 export const Waveform = make(WaveformIcon, "Waveform");
 export const EyeSlash = make(EyeSlashIcon, "EyeSlash");
+export const RotateCw = make(ArrowClockwiseIcon, "RotateCw");
+export const ArrowLeft = make(ArrowLeftIcon, "ArrowLeft", "bold");
+export const LockKey = make(LockKeyIcon, "LockKey");
+export const Ruler = make(RulerIcon, "Ruler");
+export const SpeakerSlash = make(SpeakerSimpleSlashIcon, "SpeakerSlash");
+export const Hourglass = make(HourglassMediumIcon, "Hourglass");

@@ -161,8 +161,8 @@ export default function Lullaby({ onBack }: LullabyProps) {
  onClick={() => toggleSound(s.id)}
  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
  active
- ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-200"
- : "bg-white/[0.04] border border-white/[0.06] text-white/35"
+ ? "bg-amber/[0.16] border border-amber/35 text-amber"
+ : "bg-night-card/70 border border-moon/10 text-moon-2"
  }`}
  >
  <Icon size={14} /> {s.name}
@@ -173,7 +173,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
 
  {/* Volume Sliders */}
  <div className="w-[80%] z-10 mb-3">
- <div className="flex justify-between items-center text-xs font-semibold text-white/30 mb-2">
+ <div className="flex justify-between items-center text-xs font-bold text-moon-2 mb-2">
  <span className="flex items-center gap-1.5">
  <Volume2 size={14} /> Giọng đọc
  </span>
@@ -185,12 +185,12 @@ export default function Lullaby({ onBack }: LullabyProps) {
  max={100}
  value={voiceVol}
  onChange={(e) => setVoiceVol(Number(e.target.value))}
- className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-indigo-400"
+ className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-amber"
  />
  </div>
 
  <div className="w-[80%] z-10 mb-3">
- <div className="flex justify-between items-center text-xs font-semibold text-white/30 mb-2">
+ <div className="flex justify-between items-center text-xs font-bold text-moon-2 mb-2">
  <span className="flex items-center gap-1.5">
  <Music size={14} /> Âm nền
  </span>
@@ -202,7 +202,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  max={100}
  value={bgVol}
  onChange={(e) => setBgVol(Number(e.target.value))}
- className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-indigo-400"
+ className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-amber"
  />
  </div>
 
@@ -212,10 +212,10 @@ export default function Lullaby({ onBack }: LullabyProps) {
  <button
  key={t}
  onClick={() => startTimer(t)}
- className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${
+ className={`min-h-[48px] px-5 rounded-2xl text-[15px] font-extrabold transition-all ${
  activeTimer === t
- ? "bg-gradient-to-br from-indigo-500 to-violet-400 text-white shadow-lg shadow-indigo-500/35"
- : "bg-white/[0.04] text-white/30"
+ ? "bg-amber text-night shadow-[0_4px_0_#B9441C]"
+ : "bg-night-card/70 border border-moon/10 text-moon-2"
  }`}
  >
  {t}

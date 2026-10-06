@@ -14,23 +14,25 @@ test.describe("Trang chủ (chưa đăng nhập)", () => {
     const res = await page.goto("/");
     expect(res?.status()).toBe(200);
     await expect(page).toHaveTitle(/KểCon/);
-    await expect(page.getByRole("heading", { level: 1, name: /Chào mừng đến KểCon!/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Mỗi tối, Đóm thắp sáng/ })).toBeVisible();
     await expect(page.getByRole("button", { name: "Bỏ qua" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Tiếp tục/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Bắt đầu nào!/ })).toBeVisible();
     await expect(page.getByText(/Application error|Unhandled Runtime Error/)).toHaveCount(0);
 
     expect(pageErrors).toEqual([]);
   });
 
-  test("đi hết onboarding → 'Đã có tài khoản? Đăng nhập' → form đăng nhập", async ({ page }) => {
+  test("đi hết onboarding 3 bước → 'Tạo tài khoản cho bé'; 'Đăng nhập' → form đăng nhập", async ({ page }) => {
     const pageErrors = trackPageErrors(page);
     await page.goto("/");
 
-    for (const title of ["Clone giọng nói", "Tạo truyện bằng AI", "An toàn cho bé", "Sẵn sàng rồi!"]) {
-      await page.getByRole("button", { name: /Tiếp tục/ }).click();
-      await expect(page.getByRole("heading", { level: 1, name: new RegExp(title) })).toBeVisible();
-    }
-    await page.getByRole("button", { name: "Đã có tài khoản? Đăng nhập" }).click();
+    await page.getByRole("button", { name: /Bắt đầu nào!/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /Nghe truyện bằng giọng bố mẹ/ })).toBeVisible();
+    await page.getByRole("button", { name: /Tiếp tục/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /An toàn, không quảng cáo/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Tạo tài khoản cho bé/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
 
     await expect(page.getByPlaceholder("name@email.com")).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
@@ -50,7 +52,7 @@ test.describe("Trang chủ (chưa đăng nhập)", () => {
     await expect(page.getByText("Không quảng cáo")).toBeVisible();
 
     // Bước 2 đổi tư thế → Đóm lắng nghe
-    await page.getByRole("button", { name: /Tiếp tục/ }).click();
+    await page.getByRole("button", { name: /Bắt đầu nào!/ }).click();
     await expect(page.locator('[data-mascot="listen"] img')).toBeVisible();
     expect(pageErrors).toEqual([]);
   });
@@ -80,7 +82,7 @@ test.describe("Bảo mật (T05)", () => {
     expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
     expect(headers["x-content-type-options"]).toBe("nosniff");
 
-    await expect(page.getByRole("heading", { level: 1, name: /Chào mừng đến KểCon!/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Mỗi tối, Đóm thắp sáng/ })).toBeVisible();
     await page.getByRole("button", { name: "Bỏ qua" }).click();
     await expect(page.getByRole("heading", { name: "Tạo tài khoản" })).toBeVisible();
 
@@ -99,7 +101,7 @@ test.describe("Bảo mật (T05)", () => {
       }
     });
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: /Chào mừng đến KểCon!/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Mỗi tối, Đóm thắp sáng/ })).toBeVisible();
 
     const stored = await page.evaluate(() => localStorage.getItem("kecon-settings") ?? "");
     expect(stored).not.toContain("secret");
