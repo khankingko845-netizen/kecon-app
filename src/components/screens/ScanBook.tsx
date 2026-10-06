@@ -3,9 +3,11 @@
 import { useState, useRef, useCallback } from "react";
 import { CategoryIcon } from "@/components/ui/Icon3D";
 import {
- ChevronLeft, Camera, ImagePlus, Loader2, Sparkles, Trash2,
+ ChevronLeft, Camera, ImagePlus, Sparkles, Trash2,
  BookOpen, CheckCircle, AlertCircle, X, RotateCcw,
 } from "@/components/ui/icons";
+import { GlowDots } from "@/components/ui/states";
+import Mascot from "@/components/ui/Mascot";
 import { useSettings } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -349,10 +351,9 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  {/* Step: Processing */}
  {step === "processing" && (
  <div className="flex flex-col items-center justify-center py-20">
- <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mb-4">
- <Loader2 size={36} className="animate-spin text-accent" />
- </div>
- <p className="text-[16px] font-bold text-txt dark:text-white">AI đang đọc sách...</p>
+ <Mascot state="story" size={130} label={null} />
+ <p className="mt-2 text-[18px] font-display font-extrabold text-txt dark:text-white" role="status">Đóm đang đọc sách…</p>
+ <GlowDots size={8} className="mt-3 text-glow" />
  <p className="text-[12px] text-txt-secondary dark:text-white/50 mt-2 text-center">
  Đang phân tích {images.length} ảnh và trích xuất nội dung.
  <br />Quá trình có thể mất 10-30 giây.
@@ -446,10 +447,9 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  {/* Step: Saving */}
  {step === "saving" && (
  <div className="flex flex-col items-center justify-center py-20">
- <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mb-4">
- <Loader2 size={36} className="animate-spin text-green-500" />
- </div>
- <p className="text-[16px] font-bold text-txt dark:text-white">{savingProgress}</p>
+ <Mascot state="happy" size={130} label={null} />
+ <p className="mt-2 text-[16px] font-bold text-txt dark:text-white" role="status">{savingProgress}</p>
+ <GlowDots size={8} className="mt-3 text-success" />
  </div>
  )}
 

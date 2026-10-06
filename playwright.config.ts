@@ -5,8 +5,9 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 const isCI = Boolean(process.env.CI);
 
 /**
- * Hermetic env for the app under test: a fake Supabase (nothing listens on
- * :54321) and blanked provider keys. Values set here win over `.env.local`
+ * Hermetic env for the app under test: a fake Supabase on :54321
+ * (tests/e2e/support/mock-supabase.mjs — only accepts the token minted by
+ * tests/e2e/support/fixtures.ts) and blanked provider keys. Values set here win over `.env.local`
  * (Next only fills variables that are absent from process.env), so a local
  * `.env.local` with real keys is never used by the smoke tests.
  * NEXT_PUBLIC_* are inlined at build time → the build must see them too.
@@ -53,13 +54,23 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command,
-    url: BASE_URL,
-    env: appEnv,
-    timeout: 300_000,
-    reuseExistingServer: !isCI,
-    stdout: "ignore",
-    stderr: "pipe",
-  },
+  webServer: [
+    {
+      command: "node tests/e2e/support/mock-supabase.mjs",
+      url: "http://127.0.0.1:54321/health",
+      timeout: 30_000,
+      reuseExistingServer: !isCI,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+    {
+      command,
+      url: BASE_URL,
+      env: appEnv,
+      timeout: 300_000,
+      reuseExistingServer: !isCI,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+  ],
 });

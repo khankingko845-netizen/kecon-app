@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import {
- ChevronRight, Key, Mic, BookOpen, Globe, Bell,
- Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3,
- Download, Trash2, Crown, LayoutDashboard, User,
+ ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer,
 } from "@/components/ui/icons";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
@@ -19,6 +17,7 @@ import {
  unsubscribeFromPush,
 } from "@/lib/push-notifications";
 import { useTheme } from "@/lib/theme-context";
+import { SLEEP_TIMER_OPTIONS } from "@/lib/night-mode";
 import type { Screen } from "@/lib/types";
 
 interface SettingsProps {
@@ -365,11 +364,11 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 /* ── Main Settings Screen ── */
 
 export default function Settings({ onNavigate }: SettingsProps) {
- const { settings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
+ const { settings, updateSettings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
  const { user, signOut, isAdmin } = useAuth();
  const { refreshAll } = useData();
  const { locale } = useI18n();
- const { mode: themeMode, isDark, setMode: setThemeMode } = useTheme();
+ const { mode: themeMode, isDark, setMode: setThemeMode, nightPref, setNightPref } = useTheme();
  const [tab, setTab] = useState<SettingsTab>("main");
  const [busy, setBusy] = useState<string | null>(null);
 
@@ -443,8 +442,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
  {/* Header */}
  <div className="px-5 pt-14 pb-1">
- <h2 className="text-[28px] font-black tracking-tight mb-0.5 dark:text-white">
- Cài Đặt
+ <h2 className="font-display text-[28px] font-extrabold tracking-tight mb-0.5 text-ink dark:text-white">
+ Cài đặt
  </h2>
  <p className="text-[13px] text-txt-secondary dark:text-white/35 font-medium">
  Quản lý ứng dụng & API
@@ -515,10 +514,28 @@ export default function Settings({ onNavigate }: SettingsProps) {
  />
  <SettingsRow
  icon={Moon}
- label="Chế Độ Tối"
+ label="Chế độ tối"
  value={themeMode === "system" ? "Hệ thống" : isDark ? "Bật" : "Tắt"}
  color="#6366F1"
  onClick={() => setThemeMode(themeMode === "light" ? "dark" : themeMode === "dark" ? "system" : "light")}
+ />
+ <SettingsRow
+ icon={MoonStars}
+ label="Chế độ Đêm"
+ value={nightPref === "auto" ? "Tự động 19:30–6:00" : nightPref === "on" ? "Luôn bật" : "Tắt"}
+ color="#5B4BDB"
+ onClick={() => setNightPref(nightPref === "auto" ? "on" : nightPref === "on" ? "off" : "auto")}
+ />
+ <SettingsRow
+ icon={Timer}
+ label="Hẹn giờ ngủ"
+ value={`${settings.sleepTimerDefault || 15} phút`}
+ color="#B9441C"
+ onClick={() => {
+ const opts = SLEEP_TIMER_OPTIONS as readonly number[];
+ const i = opts.indexOf(settings.sleepTimerDefault);
+ updateSettings({ sleepTimerDefault: opts[(i + 1) % opts.length] });
+ }}
  />
  <SettingsRow
  icon={Bell}
