@@ -122,14 +122,21 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
     expect(JSON.stringify(logs[0])).not.toContain("Bin");
   });
 
-  it("đổi API key: ghi 'secret.update' nhưng không bao giờ chép giá trị key", async () => {
+  it("đặt / xoá API key (021: qua Vault): ghi 'secret.*' nhưng không bao giờ chép giá trị key", async () => {
     const from = await lastId();
-    await run(u.admin, "UPDATE public.app_settings SET value = $1 WHERE key = 'openai_api_key'", [SECRET]);
-    await run(u.admin, "UPDATE public.app_settings SET value = '' WHERE key = 'openai_api_key'");
+    await run(u.admin, "SELECT public.set_system_secret('openai_api_key', $1)", [SECRET]);
+    await run(u.admin, "SELECT public.set_system_secret('openai_api_key', '')");
     const logs = await logsSince(from);
-    expect(logs.map((l) => l.action)).toEqual(["secret.update", "secret.update"]);
-    expect(logs[0]).toMatchObject({ target_type: "setting", target_id: "openai_api_key", before: { value: "(trống)" }, after: { value: "[đã ẩn]" } });
-    expect(logs[1]).toMatchObject({ before: { value: "[đã ẩn]" }, after: { value: "(trống)" } });
+    expect(logs.map((l) => l.action)).toEqual(["secret.create", "secret.delete"]);
+    expect(logs[0]).toMatchObject({
+      actor_id: u.admin, target_type: "setting", target_id: "openai_api_key", source: "db",
+      before: { is_set: false, last4: null }, after: { is_set: true, last4: `…${SECRET.slice(-4)}` },
+    });
+    expect(logs[1]).toMatchObject({ before: { is_set: true, last4: `…${SECRET.slice(-4)}` }, after: { is_set: false, last4: null } });
+    // Writing a key straight into app_settings is refused (CHECK) — it would sit there in plain text.
+    await expect(run(u.admin, "UPDATE public.app_settings SET value = $1 WHERE key = 'openai_api_key'", [SECRET])).rejects.toThrow(
+      /app_settings_secret_not_plaintext/
+    );
     const { rows } = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM public.admin_audit_log WHERE row_to_json(admin_audit_log)::text LIKE $1", [`%${SECRET}%`]);
     expect(rows[0].n).toBe(0);
   });

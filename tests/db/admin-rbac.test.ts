@@ -167,14 +167,20 @@ describe("019 · vai trò cũ vẫn chạy", () => {
     expect(await isAdmin(u.ops)).toBe(false);
   });
 
-  it("admin cũ: đọc + đặt API key, đọc mọi tài khoản và truyện của gia đình", async () => {
+  it("admin cũ: thấy + đặt API key (021: key cũ đã vào Vault), đọc mọi tài khoản và truyện của gia đình", async () => {
+    // A-04: the plaintext key set before 019 now lives in Vault — only "set" + last 4 chars are visible.
     const secret = await rows<{ value: string }>(u.legacyAdmin, "SELECT value FROM public.app_settings WHERE key = 'openai_api_key'");
-    expect(secret).toEqual([{ value: SECRET }]);
+    expect(secret).toEqual([{ value: "" }]);
+    const status = await rows<{ key: string; is_set: boolean; last4: string }>(
+      u.legacyAdmin,
+      "SELECT key, is_set, last4 FROM public.list_system_secrets() WHERE key = 'openai_api_key'"
+    );
+    expect(status).toEqual([{ key: "openai_api_key", is_set: true, last4: SECRET.slice(-4) }]);
     expect(
       await dryRun(u.legacyAdmin, async (tx) =>
-        (await tx.query("UPDATE public.app_settings SET value = 'sk-new' WHERE key = 'openai_api_key'")).affectedRows
+        (await tx.query<{ r: { is_set: boolean } }>("SELECT public.set_system_secret('openai_api_key', 'sk-new-key-123456') AS r")).rows[0].r.is_set
       )
-    ).toBe(1);
+    ).toBe(true);
     expect(await rows(u.legacyAdmin, "SELECT id FROM public.profiles WHERE id = $1", [u.family])).toHaveLength(1);
     expect(await rows(u.legacyAdmin, "SELECT id FROM public.stories WHERE id = $1", [familyStory])).toHaveLength(1);
   });
@@ -281,7 +287,7 @@ describe("019 · vận hành (ops)", () => {
   it("không biến cài đặt thường thành bí mật, không thêm key bí mật", async () => {
     await expect(
       rows(u.ops, "UPDATE public.app_settings SET is_secret = true WHERE key = 'default_ai_model'")
-    ).rejects.toThrow(/row-level security/);
+    ).rejects.toThrow(/row-level security|cờ bí mật/);
     await expect(
       rows(u.ops, "INSERT INTO public.app_settings (key, value, is_secret) VALUES ('ops_api_key', 'x', true)")
     ).rejects.toThrow(/row-level security/);

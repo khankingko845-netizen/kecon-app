@@ -3,15 +3,17 @@
  * Used by API routes to get system-wide API keys.
  * Fallback chain: user-provided key → DB admin key → env variable.
  *
- * Secret settings are protected by RLS (admin-only). To let API routes use
- * admin-configured keys for every user, set SUPABASE_SERVICE_ROLE_KEY (server
- * env only). Without it we fall back to the caller's own session and never
- * cache results across users.
+ * A-04: API keys live in Supabase Vault (migration 021). Only the service role
+ * can read them (`get_system_secret`), so SUPABASE_SERVICE_ROLE_KEY (server env
+ * only) is REQUIRED for keys set in the admin screen; without it secret keys
+ * resolve to "" (→ env variables / BYO keys). Plain settings fall back to the
+ * caller's own session and are never cached across users.
  */
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { createClient } from "@/lib/supabase/server";
+import { isSecretSettingKey } from "@/lib/system-secrets";
 
 const settingsCache: Map<string, { value: string; ts: number }> = new Map();
 const CACHE_TTL = 60_000; // 1 minute
@@ -40,32 +42,53 @@ async function readSetting(client: SupabaseClient, key: string): Promise<string>
   return data?.value ?? "";
 }
 
+/** A-04: decrypt an API key from Vault — service role only (anon / authenticated get "permission denied"). */
+async function readSecret(service: SupabaseClient, key: string): Promise<string> {
+  const { data, error } = await service.rpc("get_system_secret", { p_key: key });
+  if (error) throw error;
+  return typeof data === "string" ? data : "";
+}
+
 let warnedNoServiceRole = false;
+
+function warnNoServiceRole() {
+  if (warnedNoServiceRole) return;
+  console.warn(
+    "[server-settings] SUPABASE_SERVICE_ROLE_KEY chưa được cấu hình — API key admin lưu trong Vault sẽ không dùng được (chỉ dùng biến môi trường hoặc key riêng của người dùng)."
+  );
+  warnedNoServiceRole = true;
+}
+
+/** Forget cached values (all, or one key) — e.g. after a test. */
+export function clearSystemSettingCache(key?: string) {
+  if (key) settingsCache.delete(key);
+  else settingsCache.clear();
+}
 
 export async function getSystemSetting(key: string): Promise<string> {
   const service = getServiceClient();
+  const secret = isSecretSettingKey(key);
 
   if (service) {
     // Service-role reads are identical for every user → safe to cache.
     const cached = settingsCache.get(key);
     if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.value;
     try {
-      const value = await readSetting(service, key);
-      settingsCache.set(key, { value, ts: Date.now() });
+      const value = secret ? await readSecret(service, key) : await readSetting(service, key);
+      // Empty = not configured yet: don't cache, so a key an admin has just set works right away.
+      if (value) settingsCache.set(key, { value, ts: Date.now() });
       return value;
     } catch {
       return "";
     }
   }
 
-  // No service role: read with the caller's session (RLS applies).
+  warnNoServiceRole();
+  // Keys in Vault are unreadable without the service role — never ask with the user's session.
+  if (secret) return "";
+
+  // No service role: read plain settings with the caller's session (RLS applies).
   // Never cache — the result depends on who is asking.
-  if (!warnedNoServiceRole) {
-    console.warn(
-      "[server-settings] SUPABASE_SERVICE_ROLE_KEY chưa được cấu hình — user thường sẽ không dùng được API key admin lưu trong app_settings (chỉ dùng biến môi trường hoặc key riêng)."
-    );
-    warnedNoServiceRole = true;
-  }
   try {
     const supabase = await createClient();
     return await readSetting(supabase as unknown as SupabaseClient, key);

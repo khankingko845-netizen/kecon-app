@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/admin-permissions";
+import { isSecretSettingKey, type SetSystemSecretResult, type SystemSecretStatus } from "@/lib/system-secrets";
 
 // ============================================================
 // Row types (mirror supabase/migrations/001_initial_schema.sql)
@@ -1544,11 +1545,11 @@ export async function updateAppSetting(key: string, value: string): Promise<void
   if (error) throw error;
 }
 
-/** Bulk update settings (admin only). */
+/** Bulk update settings (admin only). API keys are skipped — they go to Vault via {@link setSystemSecret}. */
 export async function updateAppSettings(settings: Record<string, string>): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const promises = Object.entries(settings).map(([key, value]) =>
+  const promises = Object.entries(settings).filter(([key]) => !isSecretSettingKey(key)).map(([key, value]) =>
     supabase
       .from("app_settings")
       .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
@@ -1557,6 +1558,28 @@ export async function updateAppSettings(settings: Record<string, string>): Promi
   const results = await Promise.all(promises);
   const failed = results.find((r) => r.error);
   if (failed?.error) throw failed.error;
+}
+
+/**
+ * A-04 · status of every system API key (set or not, last 4 chars, who / when).
+ * Needs `secrets.manage`; never returns the keys themselves.
+ */
+export async function listSystemSecrets(): Promise<SystemSecretStatus[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("list_system_secrets");
+  if (error) throw error;
+  return (data ?? []) as SystemSecretStatus[];
+}
+
+/**
+ * A-04 · write-only: store (or, with "", remove) a system API key in Vault.
+ * Logged as secret.create / update / delete without the key; returns only the new status.
+ */
+export async function setSystemSecret(key: string, value: string, reason?: string): Promise<SetSystemSecretResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("set_system_secret", { p_key: key, p_value: value, p_reason: reason ?? null });
+  if (error) throw error;
+  return data as SetSystemSecretResult;
 }
 
 // ============================================================
