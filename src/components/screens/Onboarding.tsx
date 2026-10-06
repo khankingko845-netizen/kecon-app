@@ -96,9 +96,9 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  onTouchEnd={onTouchEnd}
  >
  {/* Decorations (board `.deco`) */}
- <Star aria-hidden size={26} weight="fill" className="absolute left-[30px] top-[130px] text-brand opacity-[0.16]" />
- <MoonStars aria-hidden size={34} weight="fill" className="absolute left-[60px] top-[280px] text-brand opacity-[0.16]" />
- <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand opacity-[0.16]" />
+ <Star aria-hidden size={26} weight="fill" className="absolute left-[30px] top-[130px] text-brand-ink opacity-[0.16]" />
+ <MoonStars aria-hidden size={34} weight="fill" className="absolute left-[60px] top-[280px] text-brand-ink opacity-[0.16]" />
+ <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand-ink opacity-[0.16]" />
 
  <div className="relative z-20 flex justify-end">
  <button type="button" onClick={onGetStarted} className="min-h-tap-min px-1 text-[16px] font-extrabold text-ink-2 active:scale-95">
@@ -117,14 +117,14 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  <Mascot key={current.mascot} state={current.mascot} size={210} priority />
  {current.bubble && (
  <Bubble tail="bottom" className="absolute -right-6 top-6 rotate-3 whitespace-nowrap text-[18px]">
- {current.bubble} <b className="text-brand">Đóm</b>
+ {current.bubble} <b className="text-brand-ink">Đóm</b>
  </Bubble>
  )}
  </div>
 
  <h1 className="mt-4 text-center font-display text-[31px] font-extrabold leading-[1.15] text-ink">
  {current.lead}
- <em className="not-italic text-brand">{current.em}</em>
+ <em className="not-italic text-brand-ink">{current.em}</em>
  {current.tail}
  </h1>
  <p className="mt-3 max-w-[330px] text-center text-[17px] font-bold leading-normal text-ink-2">{current.description}</p>
@@ -132,7 +132,8 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
 
  <div className="relative z-10">
  {/* Dots (board `.dots`) */}
- <div className="mb-[22px] mt-6 flex justify-center gap-1">
+ {/* UI-12: 44px hit areas (WCAG 2.5.8), same visual spacing as the board. */}
+ <div className="mb-3 mt-3.5 flex justify-center">
  {steps.map((st, i) => (
  <button
  key={i}
@@ -140,7 +141,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  onClick={() => transition(i)}
  aria-label={`Bước ${i + 1}: ${st.title}`}
  aria-current={i === step ? "step" : undefined}
- className="flex h-6 items-center px-1"
+ className="flex h-11 min-w-11 items-center justify-center px-1"
  >
  <span className={`block h-2.5 rounded-md transition-all duration-300 ${i === step ? "w-[30px] bg-brand" : "w-2.5 bg-[#DCD5F5]"}`} />
  </button>
@@ -152,7 +153,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  </Button3D>
  <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2">
  Bố mẹ đã có tài khoản?{" "}
- <button type="button" onClick={onLogin} className="min-h-[40px] font-extrabold text-brand">
+ <button type="button" onClick={onLogin} className="min-h-[40px] font-extrabold text-brand-ink">
  Đăng nhập
  </button>
  </p>

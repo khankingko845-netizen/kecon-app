@@ -149,7 +149,9 @@ export default function Signup({ onNavigate }: SignupProps) {
  <button
  type="button"
  onClick={() => setShowPassword(!showPassword)}
- className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30"
+ aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+ aria-pressed={showPassword}
+ className="absolute right-2 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-ink-2 dark:text-white/60"
  >
  {showPassword ? (
  <EyeOff className="w-4 h-4" />
@@ -196,17 +198,17 @@ export default function Signup({ onNavigate }: SignupProps) {
  <button
  type="submit"
  disabled={pending}
- className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none disabled:opacity-60 transition mt-2"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[19px] font-extrabold shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none disabled:opacity-60 transition mt-2"
  >
  {pending ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
  </button>
 
- <div className="text-center mt-5 text-sm text-gray-500 dark:text-white/40 font-medium">
+ <div className="text-center mt-5 text-sm text-gray-600 dark:text-white/70 font-medium">
  Đã có tài khoản?{" "}
  <button
  type="button"
  onClick={() => onNavigate("login")}
- className="text-brand font-bold"
+ className="text-brand-ink font-bold"
  >
  Đăng nhập
  </button>

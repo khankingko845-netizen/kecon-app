@@ -277,7 +277,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <span className="min-w-0 flex-1">
  {speech.listening ? DOM_LINES.listen.text : speech.transcript ? `“${speech.transcript}”` : hint}
  </span>
- {speech.listening ? <GlowDots size={6} className="text-cta" /> : <ChevronRight size={22} />}
+ {speech.listening ? <GlowDots size={6} className="text-cta-ink" /> : <ChevronRight size={22} />}
  </button>
  ) : null;
 
@@ -316,7 +316,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <AlertCircle size={20} className="shrink-0 text-[#B26A00]" />
  <span className="flex-1">
  <b className="block text-[14px] font-black text-[#7A4A00]">Đóm chưa được bật AI</b>
- <small className="text-[12.5px] font-bold text-[#7A4A00]/80">Nhờ bố mẹ vào mục Bố mẹ để bật nhé</small>
+ <small className="text-[12.5px] font-bold text-[#7A4A00]">Nhờ bố mẹ vào mục Bố mẹ để bật nhé</small>
  </span>
  <ChevronRight size={18} className="text-[#7A4A00]" />
  </button>
@@ -332,10 +332,10 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </div>
  {speakRow("Hoặc bé tự nói cho Đóm nghe")}
  <div className="mt-3 grid grid-cols-2 gap-2.5">
- <button type="button" onClick={() => onNavigate("draw-story")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand ${CARD_SHADOW}`}>
+ <button type="button" onClick={() => onNavigate("draw-story")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
  <PenLine size={18} /> Bé vẽ, Đóm kể
  </button>
- <button type="button" onClick={() => onNavigate("scan-book")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand ${CARD_SHADOW}`}>
+ <button type="button" onClick={() => onNavigate("scan-book")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
  <Camera size={18} /> Chụp sách
  </button>
  </div>
@@ -456,7 +456,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  key={chip}
  type="button"
  onClick={() => setExtraPrompt((prev) => (prev ? `${prev}, ${chip}` : chip))}
- className="min-h-[40px] rounded-2xl bg-brand-soft px-3 text-[13px] font-extrabold text-brand active:scale-95"
+ className="min-h-[40px] rounded-2xl bg-brand-soft px-3 text-[13px] font-extrabold text-brand-ink active:scale-95"
  >
  + {chip}
  </button>
@@ -465,7 +465,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
 
  {error && (
  <div role="alert" className="mt-4 flex items-start gap-2 rounded-[18px] bg-[#FDE8E3] p-3.5">
- <AlertCircle size={18} className="mt-0.5 shrink-0 text-cta" />
+ <AlertCircle size={18} className="mt-0.5 shrink-0 text-cta-ink" />
  <p className="text-[14px] font-bold text-[#8A2E10]">{error}</p>
  </div>
  )}
@@ -496,7 +496,7 @@ function PreviewButton({ active, loading, onClick }: { active: boolean; loading:
  type="button"
  onClick={onClick}
  aria-label={active ? "Dừng nghe thử" : "Nghe thử giọng"}
- className="absolute left-2.5 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand"
+ className="absolute left-2.5 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand-ink"
  >
  {loading ? <GlowDots size={3} /> : active ? <Square size={12} weight="fill" /> : <Volume2 size={16} />}
  </button>

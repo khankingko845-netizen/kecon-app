@@ -25,14 +25,16 @@ export function Button3D({ tone = "cta", size = "lg", block, className, children
   const tones = {
     cta: "bg-cta text-white shadow-[0_6px_0_var(--color-cta-press)] active:shadow-[0_2px_0_var(--color-cta-press)]",
     brand: "bg-brand text-white shadow-[0_5px_0_var(--color-brand-press)] active:shadow-[0_1px_0_var(--color-brand-press)]",
-    glow: "bg-glow text-ink shadow-[0_5px_0_#D9A12A] active:shadow-[0_1px_0_#D9A12A]",
+    glow: "bg-glow text-on-glow shadow-[0_5px_0_#D9A12A] active:shadow-[0_1px_0_#D9A12A]",
   } as const;
   const sizes = {
     // UI-13: heights follow the child's age band (globals.css `html[data-age]`).
     lg: "h-[var(--kid-btn-lg,64px)] rounded-[22px] px-6 text-[22px] gap-2.5",
-    md: "h-[var(--kid-btn-md,48px)] rounded-[18px] px-5 text-[18px] gap-2",
-    sm: "h-[var(--kid-btn-sm,44px)] rounded-2xl px-4 text-[17px] gap-1.5",
+    md: "h-[var(--kid-btn-md,48px)] rounded-[18px] px-5 gap-2",
+    sm: "h-[var(--kid-btn-sm,44px)] rounded-2xl px-4 gap-1.5",
   } as const;
+  // UI-12: white on coral is 3.5:1 → only allowed as WCAG "large" text (bold ≥ 18.66px).
+  const text = { lg: "", md: tone === "cta" ? "text-[19px]" : "text-[18px]", sm: tone === "cta" ? "text-[19px]" : "text-[17px]" }[size];
   return (
     <button
       type="button"
@@ -41,6 +43,7 @@ export function Button3D({ tone = "cta", size = "lg", block, className, children
         "inline-flex items-center justify-center font-display font-extrabold leading-none transition-[transform,box-shadow] duration-100 active:translate-y-1 disabled:opacity-50 disabled:active:translate-y-0",
         tones[tone],
         sizes[size],
+        text,
         block && "w-full",
         className,
       )}
@@ -66,7 +69,7 @@ export function SectionHeader({ title, action, onAction, className }: { title: R
     <div className={cx("mx-0.5 mb-2 mt-4 flex items-baseline justify-between", className)}>
       <h2 className="font-display text-[21px] font-bold leading-tight text-ink">{title}</h2>
       {action && (
-        <button type="button" onClick={onAction} className="min-h-[36px] px-1 text-[15px] font-extrabold text-brand">
+        <button type="button" onClick={onAction} className="min-h-[36px] px-1 text-[15px] font-extrabold text-brand-ink">
           {action}
         </button>
       )}
@@ -158,8 +161,8 @@ export function ParentRow({
       onClick={onClick}
       className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left active:bg-ink/[0.03]"
     >
-      <span className={cx("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", danger ? "bg-[#FDE8E3] text-cta" : "bg-brand-soft text-brand")}>{icon}</span>
-      <span className={cx("flex-1 text-[15px] font-semibold", danger ? "text-cta" : "text-ink")}>{label}</span>
+      <span className={cx("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", danger ? "bg-[#FDE8E3] text-cta-ink" : "bg-brand-soft text-brand-ink")}>{icon}</span>
+      <span className={cx("flex-1 text-[15px] font-semibold", danger ? "text-cta-ink" : "text-ink")}>{label}</span>
       {value != null && <span className="max-w-[45%] truncate text-[13px] font-medium text-ink-2">{value}</span>}
       {children}
       {onClick && <ChevronRight size={16} className="shrink-0 text-ink-2/60" />}

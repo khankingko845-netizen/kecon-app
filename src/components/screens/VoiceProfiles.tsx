@@ -129,7 +129,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  <div className="mx-5 mt-4 flex items-center gap-3 rounded-[24px] bg-brand-soft p-4">
  <Mascot state="listen" size={84} />
  <div className="min-w-0 flex-1">
- <Bubble tail="left" className="text-[15px]">Bé thích nghe giọng ai kể nhất? Bố mẹ ghi giọng để <b className="text-brand">Đóm</b> học nhé!</Bubble>
+ <Bubble tail="left" className="text-[15px]">Bé thích nghe giọng ai kể nhất? Bố mẹ ghi giọng để <b className="text-brand-ink">Đóm</b> học nhé!</Bubble>
  </div>
  </div>
 
@@ -153,7 +153,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  >
  <div className="flex items-center gap-3.5">
  <div
- className="w-[56px] h-[56px] rounded-[18px] bg-brand-soft flex items-center justify-center text-brand shrink-0"
+ className="w-[56px] h-[56px] rounded-[18px] bg-brand-soft flex items-center justify-center text-brand-ink shrink-0"
  >
  {v.gender === "female" ? <UserRound size={30} /> : <User size={30} />}
  </div>
@@ -209,7 +209,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  onClick={() => playPreview(v.id, v.elevenlabs_voice_id!)}
  disabled={isLoadingPrev}
  className={`w-11 h-11 rounded-[14px] flex items-center justify-center active:scale-95 transition-all ${
- isPlaying ? "bg-brand text-white" : "bg-brand-soft text-brand"
+ isPlaying ? "bg-brand text-white" : "bg-brand-soft text-brand-ink"
  }`}
  aria-label={isPlaying ? "Dừng nghe" : `Nghe giọng ${v.name}`}
  >

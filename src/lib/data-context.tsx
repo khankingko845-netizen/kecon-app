@@ -49,7 +49,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfileRow[]>([]);
   const [stories, setStories] = useState<StoryRow[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  // UI-12: `loading` is true from the first render after sign-in until the first
+  // fetch finished — screens show their placeholders right away instead of
+  // flashing an empty state (and Home no longer flips content → skeleton).
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const loading = fetching || (!!user && loadedFor !== user.id);
 
   const refreshVoices = useCallback(async () => {
     try {
@@ -76,20 +81,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshAll = useCallback(async () => {
-    setLoading(true);
+    setFetching(true);
     await Promise.all([refreshVoices(), refreshStories(), refreshFamily()]);
-    setLoading(false);
+    setFetching(false);
   }, [refreshVoices, refreshStories, refreshFamily]);
 
+  const userId = user?.id;
   useEffect(() => {
-    if (user) {
-      refreshAll();
+    if (userId) {
+      refreshAll().then(() => setLoadedFor(userId));
     } else {
       setVoiceProfiles([]);
       setStories([]);
       setFamilyMembers([]);
     }
-  }, [user, refreshAll]);
+  }, [userId, refreshAll]);
 
   return (
     <DataContext.Provider

@@ -32,7 +32,7 @@ function SwitchRow({
       onClick={() => onChange(!checked)}
       className="flex min-h-[64px] w-full items-center gap-3.5 px-4 py-3 text-left transition-colors active:bg-brand-soft/50 dark:active:bg-white/[0.03]"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-brand-soft text-brand">{icon}</span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-brand-soft text-brand-ink">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block font-parent text-[15px] font-semibold text-ink dark:text-white/90">{label}</span>
         <span className="block font-parent text-[12.5px] font-medium leading-snug text-ink-2 dark:text-white/50">{hint}</span>
@@ -101,7 +101,7 @@ export default function FeedbackSettings({ nightPref }: { nightPref: NightPref }
             cue("success");
             say("poke");
           }}
-          className="flex min-h-[40px] shrink-0 items-center gap-1 rounded-2xl bg-brand-soft px-3 font-parent text-[13px] font-bold text-brand active:scale-95"
+          className="flex min-h-[40px] shrink-0 items-center gap-1 rounded-2xl bg-brand-soft px-3 font-parent text-[13px] font-bold text-brand-ink active:scale-95"
         >
           <Play size={14} weight="fill" /> Nghe thử
         </button>

@@ -52,10 +52,10 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <div className="px-5 pt-14">
  {/* Header */}
  <div className="flex items-center gap-3 mb-6">
- <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
+ <button onClick={onBack} aria-label="Quay lại" className="w-11 h-11 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
  <ChevronLeft size={18} />
  </button>
- <h2 className="text-[22px] font-black tracking-tight flex-1">Hồ Sơ</h2>
+ <h1 className="text-[22px] font-black tracking-tight flex-1">Hồ sơ gia đình</h1>
  <button
  onClick={handleSave}
  disabled={saving}
@@ -177,7 +177,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  </div>
 
  {/* Email (read-only) */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4 opacity-60">
+ <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
  <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
  <Calendar size={14} /> Email
  </label>

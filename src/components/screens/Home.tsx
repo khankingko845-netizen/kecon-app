@@ -12,7 +12,7 @@ import { getLastPlayed, lastPlayedProgress, type LastPlayed } from "@/lib/last-p
 import Mascot from "@/components/ui/Mascot";
 import { CategoryIcon, Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
 import { Card, ProgressBar, SectionHeader, CARD_SHADOW } from "@/components/ui/kit";
-import { HomeSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 import { heroFor } from "@/lib/home-hero";
 import { greetingMoment } from "@/lib/dom-lines";
@@ -87,6 +87,17 @@ export default function Home({ onNavigate }: HomeProps) {
     return s ? { storyId: s.id, title: s.title, page: 0, totalPages: Math.max(1, s.page_count || 1), category: s.category, voice: undefined, updatedAt: 0 } : null;
   }, [last, stories]);
 
+  // A poke before the (async) greeting arrives wins — the greeting must not
+  // talk over the kid's own tap, so it is skipped for this session.
+  const pokeDom = () => {
+    try {
+      sessionStorage.setItem(GREETED_KEY, "1");
+    } catch {
+      /* private mode: greeting may still follow */
+    }
+    say("poke");
+  };
+
   const suggest = () => {
     if (hero.lullaby) return onNavigate("lullaby");
     const pick = forYou[0]?.story ?? stories[0];
@@ -94,7 +105,10 @@ export default function Home({ onNavigate }: HomeProps) {
     else onNavigate("library");
   };
 
-  if (loading && stories.length === 0) return <HomeSkeleton />;
+  // UI-12: the hero, topics and shortcuts don't need data — render them at once
+  // (fast LCP, no content → skeleton → content flash); only "Nghe tiếp" waits,
+  // behind a placeholder of the same height so nothing shifts (CLS).
+  const pendingStories = loading && stories.length === 0;
 
   const more: { label: string; screen: Screen; icon: typeof Upload; show?: boolean }[] = [
     { label: "Yêu thích", screen: "favorites", icon: Heart },
@@ -142,7 +156,7 @@ export default function Home({ onNavigate }: HomeProps) {
         <button
           type="button"
           onClick={suggest}
-          className="relative z-10 mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-glow px-3.5 text-[15px] font-black text-ink active:scale-95"
+          className="relative z-10 mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-glow px-3.5 text-[15px] font-black text-on-glow active:scale-95"
         >
           <Wand2 size={16} weight="fill" /> {hero.cta}
         </button>
@@ -150,7 +164,7 @@ export default function Home({ onNavigate }: HomeProps) {
         <button
           type="button"
           data-sfx="pop"
-          onClick={() => say("poke")}
+          onClick={pokeDom}
           aria-label="Chạm để nghe Đóm nói"
           className="absolute -bottom-3.5 -right-1.5 flex h-[150px] w-[150px] items-end justify-end rounded-full active:scale-95"
         >
@@ -159,6 +173,12 @@ export default function Home({ onNavigate }: HomeProps) {
       </section>
 
       {/* Nghe tiếp (board `.cont`) */}
+      {!resume && pendingStories && (
+        <div data-testid="home-resume-pending" aria-hidden>
+          <SectionHeader title="Nghe tiếp" />
+          <Skeleton className="h-[95px] !rounded-[24px]" />
+        </div>
+      )}
       {resume && (
         <>
           <SectionHeader title="Nghe tiếp" />
@@ -228,7 +248,7 @@ export default function Home({ onNavigate }: HomeProps) {
                   <CategoryIcon category={story.category} size={64} />
                 </span>
                 <b className="mt-1.5 block truncate px-1 text-[14px] font-black text-ink">{story.title}</b>
-                <small data-kid-detail className="block truncate px-1 text-[12px] font-bold text-brand">{reason}</small>
+                <small data-kid-detail className="block truncate px-1 text-[12px] font-bold text-brand-ink">{reason}</small>
                 {story.description && (
                   <small data-kid-extra className="line-clamp-2 px-1 pt-0.5 text-[11.5px] font-semibold leading-snug text-ink-2">{story.description}</small>
                 )}
@@ -250,7 +270,7 @@ export default function Home({ onNavigate }: HomeProps) {
               onClick={() => onNavigate(screen)}
               className={`flex min-h-[var(--kid-tap,56px)] items-center gap-2.5 rounded-[20px] bg-white px-3 text-left active:scale-[0.98] ${CARD_SHADOW}`}
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand-ink">
                 <Icon size={20} weight="duotone" />
               </span>
               <span className="text-[15px] font-extrabold text-ink">{label}</span>

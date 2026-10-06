@@ -116,7 +116,9 @@ export default function Login({ onNavigate }: LoginProps) {
  <button
  type="button"
  onClick={() => setShowPassword(!showPassword)}
- className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30"
+ aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+ aria-pressed={showPassword}
+ className="absolute right-2 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-ink-2 dark:text-white/60"
  >
  {showPassword ? (
  <EyeOff className="w-4 h-4" />
@@ -130,14 +132,14 @@ export default function Login({ onNavigate }: LoginProps) {
  <button
  type="submit"
  disabled={pending}
- className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[17px] font-extrabold shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none disabled:opacity-60 transition mt-2"
+ className="w-full min-h-tap-kid rounded-btn bg-cta text-white text-[19px] font-extrabold shadow-[0_5px_0_var(--color-cta-press)] active:translate-y-0.5 active:shadow-none disabled:opacity-60 transition mt-2"
  >
  {pending ? "Đang đăng nhập…" : "Đăng nhập"}
  </button>
 
  <div className="flex items-center gap-3 my-5">
  <div className="flex-1 h-px bg-gray-200 dark:bg-white/[0.08]" />
- <span className="text-[13px] font-medium text-gray-400 dark:text-white/30">hoặc</span>
+ <span className="text-[13px] font-medium text-gray-600 dark:text-white/70">hoặc</span>
  <div className="flex-1 h-px bg-gray-200 dark:bg-white/[0.08]" />
  </div>
 
@@ -150,12 +152,12 @@ export default function Login({ onNavigate }: LoginProps) {
  Đăng nhập với Google
  </button>
 
- <div className="text-center mt-5 text-sm text-gray-500 dark:text-white/40 font-medium">
+ <div className="text-center mt-5 text-sm text-gray-600 dark:text-white/70 font-medium">
  Chưa có tài khoản?{" "}
  <button
  type="button"
  onClick={() => onNavigate("signup")}
- className="text-brand font-bold"
+ className="text-brand-ink font-bold"
  >
  Đăng ký
  </button>
@@ -163,7 +165,7 @@ export default function Login({ onNavigate }: LoginProps) {
  </form>
 
  {/* Bottom branding */}
- <div className="flex items-center justify-center gap-2 pb-8 text-gray-300">
+ <div className="flex items-center justify-center gap-2 pb-8 text-gray-600 dark:text-white/70">
  <Mic className="w-4 h-4" />
  <span className="text-xs font-semibold tracking-wide">KểCon</span>
  </div>

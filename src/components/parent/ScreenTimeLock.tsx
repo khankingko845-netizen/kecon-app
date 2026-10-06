@@ -56,7 +56,7 @@ export default function ScreenTimeLock({
       ) : (
         <Card className="mt-8 w-full p-5 text-left">
           <p className="flex items-center gap-2 font-parent text-[16px] font-semibold text-ink">
-            {reason === "bedtime" ? <MoonStars size={20} weight="fill" className="text-brand" /> : <Clock size={20} className="text-brand" />}
+            {reason === "bedtime" ? <MoonStars size={20} weight="fill" className="text-brand-ink" /> : <Clock size={20} className="text-brand-ink" />}
             Cho bé dùng thêm
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -69,7 +69,7 @@ export default function ScreenTimeLock({
           <button
             type="button"
             onClick={() => setPhase("locked")}
-            className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand"
+            className="mt-3 min-h-[44px] w-full font-parent text-[14.5px] font-semibold text-brand-ink"
           >
             Thôi, để bé nghỉ
           </button>

@@ -66,6 +66,8 @@ Token dán vào `@theme` của Tailwind v4: [`kecon-tokens.css`](kecon-tokens.cs
 | night-bg / moon | `#151233` / `#F3E9D2` | Chế độ Đêm | 14,9:1 |
 | amber | `#FFB547` | Play/tiến độ ban đêm | icon tối 10,3:1 |
 
+**Chữ nhỏ (UI-12, WCAG AA 4,5:1):** nền `brand`/`cta` giữ nguyên, còn *chữ* dùng biến thể đậm: `text-brand-ink` (`#5B4BDB`, đêm `#B3A8FF`), `text-cta-ink` (`#B9441C`, đêm `#FF9A70`), chữ trên nền `glow` dùng `text-on-glow` (`#2B2350`). Nút cam `bg-cta` chỉ dùng chữ trắng **≥ 19px đậm** (chữ lớn 3:1). Không dùng `text-gray-300/400` hay độ mờ `/30–/60` cho chữ — tối thiểu `text-ink-2` / `text-gray-600` (`dark:text-white/70`). Kiểm tra tự động: `tests/e2e/a11y.spec.ts` (axe-core, WCAG 2.1 A/AA).
+
 | Vai trò | Font | Cỡ |
 | --- | --- | --- |
 | Tiêu đề (bé) | Baloo 2 700–800 | 24–32px, line-height ≥ 1,15 |

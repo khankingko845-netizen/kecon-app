@@ -293,7 +293,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  onClick={() => setSelectedScript(x.id)}
  disabled={isRecording}
  className={`min-h-[40px] whitespace-nowrap rounded-xl border px-3 text-[13px] font-semibold transition-colors ${
- selectedScript === x.id ? "border-brand bg-brand-soft text-brand" : "border-[#E7E3F2] bg-white text-ink-2"
+ selectedScript === x.id ? "border-brand bg-brand-soft text-brand-ink" : "border-[#E7E3F2] bg-white text-ink-2"
  }`}
  >
  {x.label}
@@ -345,7 +345,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  style={{ background: `conic-gradient(var(--color-cta) 0 ${Math.max(progress, isRecording ? 2 : 0)}%, #F0E2DB ${Math.max(progress, isRecording ? 2 : 0)}% 100%)` }}
  >
  <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full bg-white">
- {isRecording ? <i className="block h-[38px] w-[38px] rounded-[10px] bg-cta" /> : <Mic size={40} weight="fill" className="text-cta" />}
+ {isRecording ? <i className="block h-[38px] w-[38px] rounded-[10px] bg-cta" /> : <Mic size={40} weight="fill" className="text-cta-ink" />}
  </span>
  </button>
  )}
@@ -361,7 +361,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  { icon: Hourglass, label: "Đọc chậm" },
  ].map(({ icon: Icon, label }) => (
  <span key={label} className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#E7E3F2] bg-white px-2.5 py-[7px] text-[12.5px] font-semibold">
- <Icon size={16} className="text-brand" /> {label}
+ <Icon size={16} className="text-brand-ink" /> {label}
  </span>
  ))}
  </div>
@@ -371,7 +371,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  <button
  type="button"
  onClick={toggleRecordingPlayback}
- className="mx-auto mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-soft px-4 text-[14px] font-semibold text-brand active:scale-95"
+ className="mx-auto mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-soft px-4 text-[14px] font-semibold text-brand-ink active:scale-95"
  >
  {isRecordingPlaying ? <Square size={14} weight="fill" /> : <Play size={14} weight="fill" />}
  {isRecordingPlaying ? "Dừng phát" : "Nghe lại bản ghi"}
