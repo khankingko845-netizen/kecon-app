@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ArrowRight, MoonStars, Sparkles, Star } from "@/components/ui/icons";
 import { Bubble, Button3D, TrustChips } from "@/components/ui/kit";
 import Mascot, { type MascotState } from "@/components/ui/Mascot";
+import { takeEarlyClick } from "@/lib/early-clicks";
 
 interface OnboardingProps {
  onGetStarted: () => void;
@@ -75,6 +76,25 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  else transition(step + 1);
  };
 
+ // Replay a tap made on the server-rendered markup before hydration, as if it
+ // happened now (next task). That markup is always step 0, so "next" means
+ // step 1; every action is idempotent. No cleanup: the tap is consumed once.
+ useEffect(() => {
+ const early = takeEarlyClick();
+ if (!early) return;
+ window.setTimeout(() => {
+ if (early === "skip") onGetStarted();
+ else if (early === "login") onLogin();
+ else if (early === "next") setStep(1);
+ else if (early.startsWith("dot-")) {
+ const i = Number(early.slice(4));
+ if (Number.isInteger(i) && i >= 0 && i < steps.length) setStep(i);
+ }
+ }, 0);
+ // Mount only: the SSR snapshot is gone after the first replay.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, []);
+
  // Swipe support
  const touchRef = useRef({ x: 0, y: 0 });
  const onTouchStart = (e: React.TouchEvent) => {
@@ -101,7 +121,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand-ink opacity-[0.16]" />
 
  <div className="relative z-20 flex justify-end">
- <button type="button" onClick={onGetStarted} className="min-h-tap-min px-1 text-[16px] font-extrabold text-ink-2 active:scale-95">
+ <button type="button" onClick={onGetStarted} data-early-click="skip" className="min-h-tap-min px-1 text-[16px] font-extrabold text-ink-2 active:scale-95">
  Bỏ qua
  </button>
  </div>
@@ -139,6 +159,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  key={i}
  type="button"
  onClick={() => transition(i)}
+ data-early-click={`dot-${i}`}
  aria-label={`Bước ${i + 1}: ${st.title}`}
  aria-current={i === step ? "step" : undefined}
  className="flex h-11 min-w-11 items-center justify-center px-1"
@@ -148,12 +169,12 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  ))}
  </div>
 
- <Button3D block onClick={handleNext}>
+ <Button3D block onClick={handleNext} data-early-click="next">
  {step === 0 ? "Bắt đầu nào!" : isLast ? "Tạo tài khoản cho bé" : "Tiếp tục"} <ArrowRight size={22} />
  </Button3D>
  <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2">
  Bố mẹ đã có tài khoản?{" "}
- <button type="button" onClick={onLogin} className="min-h-[40px] font-extrabold text-brand-ink">
+ <button type="button" onClick={onLogin} data-early-click="login" className="min-h-[40px] font-extrabold text-brand-ink">
  Đăng nhập
  </button>
  </p>
