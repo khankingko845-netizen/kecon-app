@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "@/components/ui/icons";
 import { GlowDots } from "@/components/ui/states";
-import { useData } from "@/lib/data-context";
+import { useKidStories } from "@/lib/parental-controls-context";
+import { isCategoryAllowed } from "@/lib/content-filter";
 import { getStoryPages } from "@/lib/db";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
@@ -57,7 +58,8 @@ const categoryLabels: Record<string, string> = {
 type SortBy = "newest" | "oldest" | "name" | "popular";
 
 export default function Library({ onNavigate, initialCategory }: LibraryProps) {
- const { stories, loading } = useData();
+ // T19: stories hidden by Parental controls never reach the kid library.
+ const { stories, loading, contentRules } = useKidStories();
  const { toast } = useToast();
  const [activeFilter, setActiveFilter] = useState(initialCategory || "all");
  const [searchQuery, setSearchQuery] = useState("");
@@ -180,7 +182,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
 
  {/* Topic chips with 3D icons */}
  <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 no-scrollbar" role="tablist" aria-label="Chủ đề">
- {filters.map((f) => (
+ {filters.filter((f) => isCategoryAllowed(f.id, contentRules)).map((f) => (
  <button
  key={f.id}
  type="button"

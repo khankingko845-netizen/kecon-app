@@ -6,7 +6,9 @@ import {
  SlidersHorizontal, Volume2, X, Sparkles, Share2, Star, MessageSquare, Send,
  Bookmark, Pencil, RotateCcw, RotateCw, Waveform, Headphones,
 } from "@/components/ui/icons";
-import { GlowDots, KidLoading } from "@/components/ui/states";
+import { GlowDots, KidError, KidLoading } from "@/components/ui/states";
+import { useParentalControls } from "@/lib/parental-controls-context";
+import { isStoryAllowed } from "@/lib/content-filter";
 import { CHIP, ScreenOff, ScreenOffButton, SleepTimerButton, useSleepTimer } from "@/components/ui/NightControls";
 import Mascot from "@/components/ui/Mascot";
 import { saveLastPlayed } from "@/lib/last-played";
@@ -159,6 +161,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  });
 
  const [story, setStory] = useState<StoryRow | null>(null);
+ const { contentRules } = useParentalControls();
  const [pages, setPages] = useState<StoryPageRow[]>([]);
  const [loading, setLoading] = useState(!isGenerated);
  const [currentPage, setCurrentPage] = useState(0);
@@ -973,6 +976,21 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if (loading) {
  return (
  <KidLoading fullScreen tone="night" title="Đóm đang mở truyện…" />
+ );
+ }
+
+ // T19: a story hidden by Parental controls can't be opened from any link.
+ if (story && !isStoryAllowed(story, contentRules)) {
+ return (
+ <KidError
+ fullScreen
+ tone="night"
+ title="Truyện này bố mẹ đang ẩn"
+ message="Bé chọn truyện khác cùng Đóm nhé!"
+ tag="Bố mẹ đã ẩn"
+ onRetry={onBack}
+ retryLabel="Chọn truyện khác"
+ />
  );
  }
 

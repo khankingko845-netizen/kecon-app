@@ -5,7 +5,7 @@ import { CategoryIcon } from "@/components/ui/Icon3D";
 import { Shield, Clock, Moon, Lock, Save, Loader2, Check } from "@/components/ui/icons";
 import { Button3D, Card } from "@/components/ui/kit";
 import ParentHeader from "@/components/parent/ParentHeader";
-import { PARENTAL_CONTROLS_EVENT } from "@/lib/use-screen-time";
+import { PARENTAL_CONTROLS_EVENT } from "@/lib/parental-controls-context";
 import { useAuth } from "@/lib/auth-context";
 import { getParentalControls, upsertParentalControls } from "@/lib/db";
 import { createClient } from "@/lib/supabase/client";
@@ -267,7 +267,8 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
 
  {/* Blocked Categories */}
  <Card className="p-4">
- <p className="mb-3 text-[15px] font-semibold text-ink">Chặn thể loại</p>
+ <p className="mb-1 text-[15px] font-semibold text-ink">Chặn thể loại</p>
+ <p className="mb-3 text-[12.5px] text-ink-2">Truyện bị chặn ẩn khỏi Trang chủ, Thư viện, Yêu thích, Bộ sưu tập và không mở được.</p>
  <div className="grid grid-cols-3 gap-2">
  {CATEGORIES.map((cat) => {
  const blocked = blockedCategories.includes(cat.id);
@@ -292,7 +293,8 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
 
  {/* Age Rating */}
  <Card className="p-4">
- <p className="mb-3 text-[15px] font-semibold text-ink">Độ tuổi tối đa</p>
+ <p className="mb-1 text-[15px] font-semibold text-ink">Độ tuổi tối đa</p>
+ <p className="mb-3 text-[12.5px] text-ink-2">Ẩn truyện dành cho bé lớn hơn mức này.</p>
  <div className="grid grid-cols-5 gap-2">
  {[3, 5, 7, 10, 99].map((age) => (
  <button key={age} type="button" aria-pressed={maxAge === age} onClick={() => setMaxAge(age)} className={chip(maxAge === age)}>

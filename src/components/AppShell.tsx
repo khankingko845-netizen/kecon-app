@@ -50,6 +50,7 @@ import ScreenTimeLock from "@/components/parent/ScreenTimeLock";
 import { isParentArea } from "@/lib/parent-gate";
 import { useParentUnlock } from "@/lib/use-parent-unlock";
 import { useScreenTime } from "@/lib/use-screen-time";
+import { ParentalControlsProvider } from "@/lib/parental-controls-context";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -327,7 +328,9 @@ export default function AppShell() {
  <I18nProvider>
  <ThemeProvider>
  <ToastProvider>
+ <ParentalControlsProvider>
  <AppContent />
+ </ParentalControlsProvider>
  </ToastProvider>
  </ThemeProvider>
  </I18nProvider>

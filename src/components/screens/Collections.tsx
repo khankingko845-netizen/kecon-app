@@ -8,6 +8,8 @@ import { KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { gradientFor, iconForCategory } from "@/lib/db";
+import { useParentalControls } from "@/lib/parental-controls-context";
+import { filterAllowed } from "@/lib/content-filter";
 import type { Screen } from "@/lib/types";
 import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
 import Mascot from "@/components/ui/Mascot";
@@ -32,6 +34,7 @@ interface CollectionStory {
  category: string;
  play_count: number;
  like_count: number;
+ target_age_min?: number | null;
 }
 
 function StoryIcon({ icon }: { icon: string }) {
@@ -44,6 +47,7 @@ function StoryIcon({ icon }: { icon: string }) {
 
 export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  const { profile } = useAuth();
+ const { contentRules } = useParentalControls();
  const [collections, setCollections] = useState<Collection[]>([]);
  const [loading, setLoading] = useState(true);
  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
@@ -56,13 +60,15 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  const supabase = createClient();
 
  // Build collections from existing stories by category
- const { data: stories } = await supabase
+ const { data: rows } = await supabase
  .from("stories")
- .select("id, title, category, play_count, like_count")
+ .select("id, title, category, play_count, like_count, target_age_min")
  .eq("user_id", profileId)
  .order("created_at", { ascending: false });
+ // T19: stories hidden by Parental controls don't appear in any collection.
+ const stories = filterAllowed((rows ?? []) as CollectionStory[], contentRules);
 
- if (!stories || stories.length === 0) {
+ if (stories.length === 0) {
  setCollections([]);
  setLoading(false);
  return;
@@ -130,7 +136,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  // ignore
  }
  setLoading(false);
- }, [profileId]);
+ }, [profileId, contentRules]);
 
  useEffect(() => { load(); }, [load]);
 
