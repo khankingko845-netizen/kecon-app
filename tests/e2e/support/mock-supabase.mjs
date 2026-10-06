@@ -235,8 +235,14 @@ createServer((req, res) => {
     if (req.method === "PATCH" && table === "profiles" && sub === MOCK_AGE_USER_ID) {
       // Only the UI-13 family may edit (its own row), so other specs stay stateless.
       readJson(req).then((body) => {
+        // Mirror the schema: family_name / display_name are NOT NULL (001_initial_schema.sql).
+        const nulled = ["family_name", "display_name"].find((c) => body && c in body && body[c] === null);
+        if (nulled) {
+          return send(res, 400, { code: "23502", details: null, hint: null, message: `null value in column "${nulled}" of relation "profiles" violates not-null constraint` });
+        }
         const rows = filterRows(TABLES.profiles, url.searchParams).filter((r) => r.id === sub);
         for (const r of rows) Object.assign(r, body ?? {}, { id: r.id });
+        if ((req.headers.prefer ?? "").includes("return=representation")) return send(res, 200, rows);
         send(res, 204);
       });
       return;
