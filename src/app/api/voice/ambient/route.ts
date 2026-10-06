@@ -3,14 +3,26 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { generateAmbientSound, getAmbientCategory, matchAmbientCategory } from "@/lib/ambient-sounds";
 import { guardUsage } from "@/lib/usage-guard";
+import { z } from "zod";
+import { optionalText, parseJsonBody } from "@/lib/api-validation";
+
+const AmbientBody = z.object({
+  sceneDescription: optionalText(500),
+  categoryId: optionalText(60),
+  customPrompt: optionalText(450),
+  apiKey: optionalText(512),
+  // ElevenLabs sound generation supports 0.5–22 s
+  duration: z.number().min(0.5).max(22).nullish(),
+});
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const { sceneDescription, categoryId, customPrompt, apiKey: userKey, duration } = body;
+  const parsed = await parseJsonBody(request, AmbientBody);
+  if (!parsed.ok) return parsed.response;
+  const { sceneDescription, categoryId, customPrompt, apiKey: userKey, duration } = parsed.data;
 
   // Resolve ElevenLabs API key
   const apiKey = await resolveApiKey("elevenlabs", userKey);

@@ -1,5 +1,17 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
+
+const PushSendBody = z.object({
+  title: requiredText(120),
+  body: requiredText(500),
+  // Only same-origin paths — never send users to external sites from a push
+  url: optionalText(500).pipe(z.string().regex(/^\/(?!\/)/, "url phải là đường dẫn nội bộ bắt đầu bằng /").optional()),
+  storyId: uuid.nullish(),
+  userIds: z.array(uuid).max(1000).nullish(),
+});
+
 
 /**
  * POST /api/push/send — Admin-only: send push notification to all subscribers or specific users.
@@ -30,14 +42,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { title, body, url, storyId, userIds } = await request.json();
-
-  if (!title || !body) {
-    return Response.json(
-      { error: "title and body are required" },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(request, PushSendBody);
+  if (!parsed.ok) return parsed.response;
+  const { title, body, url, storyId, userIds } = parsed.data;
 
   // Fetch subscriptions
   let query = supabase.from("push_subscriptions").select("subscription_json");

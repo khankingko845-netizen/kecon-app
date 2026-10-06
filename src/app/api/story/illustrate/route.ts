@@ -2,6 +2,14 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { z } from "zod";
+import { optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+
+const IllustrateBody = z.object({
+  prompt: requiredText(1000),
+  apiKey: optionalText(512),
+  size: z.enum(["1024x1024", "1792x1024", "1024x1792"]).nullish(),
+});
 
 // Generates an illustration for a story page using OpenAI Images (DALL·E 3).
 // Key resolution: user BYO → admin "dalle_api_key" → admin "openai_api_key" → env.
@@ -15,10 +23,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { prompt, apiKey: userKey, size } = await request.json();
-  if (!prompt) {
-    return Response.json({ error: "Thiếu mô tả cảnh" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, IllustrateBody);
+  if (!parsed.ok) return parsed.response;
+  const { prompt, apiKey: userKey, size } = parsed.data;
 
   // Try DALL-E specific key first, then fall back to OpenAI key
   let apiKey = await resolveApiKey("dalle", userKey);

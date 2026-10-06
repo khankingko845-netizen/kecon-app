@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { resolveApiKey, resolveCustomBaseUrl } from "@/lib/server-settings";
-import { getSystemSetting } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { resolveLlmTarget } from "@/lib/llm-config";
+import { callLlmJson, type LlmTarget } from "@/lib/llm";
+import { z } from "zod";
+import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
 const EXPERTS = {
   psychologist: {
@@ -83,71 +85,24 @@ Trả về JSON:
 
 type ExpertKey = keyof typeof EXPERTS;
 
-async function callAI(
-  provider: string,
-  apiKey: string,
-  model: string,
-  systemPrompt: string,
-  userPrompt: string,
-  baseUrl?: string
-): Promise<string> {
-  let endpoint: string;
-  let headers: Record<string, string>;
-  let body: unknown;
+const ExpertReviewBody = z.object({
+  ...llmSelectionFields,
+  storyContent: requiredText(20_000),
+  storyTitle: optionalText(200),
+  targetAge: optionalText(20),
+  language: languageCode,
+  experts: z.array(z.enum(["psychologist", "screenwriter", "educator"])).max(3).nullish(),
+});
 
-  if (provider === "gemini") {
-    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    headers = { "Content-Type": "application/json" };
-    body = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ parts: [{ text: userPrompt }] }],
-      generationConfig: { temperature: 0.7, responseMimeType: "application/json" },
-    };
-  } else if (provider === "anthropic") {
-    endpoint = "https://api.anthropic.com/v1/messages";
-    headers = {
-      "x-api-key": apiKey,
-      "Content-Type": "application/json",
-      "anthropic-version": "2023-06-01",
-    };
-    body = {
-      model,
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    };
-  } else {
-    // OpenAI-compatible (openai, custom)
-    const base = provider === "custom" && baseUrl
-      ? baseUrl.replace(/\/+$/, "")
-      : "https://api.openai.com/v1";
-    endpoint = `${base}/chat/completions`;
-    headers = {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    };
-    body = {
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-    };
-  }
-
-  const res = await fetch(endpoint, { method: "POST", redirect: "error", headers, body: JSON.stringify(body) });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `AI error: ${res.status}`);
-  }
-  const data = await res.json();
-
-  // Extract text from different provider formats
-  if (provider === "gemini") return data.candidates[0].content.parts[0].text;
-  if (provider === "anthropic") return data.content[0].text;
-  return data.choices[0].message.content;
+async function reviewWith(target: LlmTarget, systemPrompt: string, userPrompt: string): Promise<unknown> {
+  const { data } = await callLlmJson({
+    ...target,
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: 0.7,
+    maxTokens: 2048,
+  });
+  return data;
 }
 
 export async function POST(request: NextRequest) {
@@ -155,26 +110,12 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const { storyContent, storyTitle, targetAge, language, experts: requestedExperts, provider: userProvider, model: userModel, apiKey: userKey, baseUrl: userBaseUrl } = body;
+  const parsedBody = await parseJsonBody(request, ExpertReviewBody);
+  if (!parsedBody.ok) return parsedBody.response;
+  const { storyContent, storyTitle, targetAge, language, experts: requestedExperts } = parsedBody.data;
 
-  if (!storyContent) {
-    return Response.json({ error: "Missing story content" }, { status: 400 });
-  }
-
-  // Resolve provider & key
-  const defaultProvider = await getSystemSetting("default_story_provider") || "openai";
-  const defaultModel = await getSystemSetting("default_ai_model") || "gpt-4o-mini";
-  const provider = userKey ? (userProvider || defaultProvider) : defaultProvider;
-  const model = userModel || defaultModel;
-  const apiKey = await resolveApiKey(provider, userKey);
-  if (!apiKey) {
-    return Response.json({ error: "Chưa cấu hình AI provider" }, { status: 400 });
-  }
-  const baseUrl = provider === "custom" ? await resolveCustomBaseUrl(userBaseUrl, userKey) : undefined;
-  if (provider === "custom" && !baseUrl) {
-    return Response.json({ error: "Custom provider cần Base URL hợp lệ" }, { status: 400 });
-  }
+  const llm = await resolveLlmTarget(parsedBody.data);
+  if (!llm.ok) return llm.response;
 
   // Build the user prompt
   const userPrompt = `Đánh giá câu chuyện thiếu nhi sau:
@@ -190,12 +131,12 @@ Hãy đánh giá chi tiết và trả về JSON theo format yêu cầu. Viết b
 
   // Determine which experts to call
   const expertKeys: ExpertKey[] = requestedExperts?.length
-    ? requestedExperts.filter((k: string) => k in EXPERTS)
+    ? [...new Set(requestedExperts)]
     : ["psychologist", "screenwriter", "educator"];
 
   // Each expert is one paid AI call
   const usageBlocked = await guardUsage(supabase, "ai", {
-    byo: Boolean(userKey),
+    byo: llm.byo,
     amount: Math.max(expertKeys.length, 1),
   });
   if (usageBlocked) return usageBlocked;
@@ -207,10 +148,8 @@ Hãy đánh giá chi tiết và trả về JSON theo format yêu cầu. Viết b
     expertKeys.map(async (key: ExpertKey) => {
       const expert = EXPERTS[key];
       try {
-        const raw = await callAI(provider, apiKey, model, expert.systemPrompt, userPrompt, baseUrl);
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "Invalid response" };
-        results[key] = { expert, review: parsed };
+        const review = await reviewWith(llm.target, expert.systemPrompt, userPrompt);
+        results[key] = { expert, review };
       } catch (err) {
         results[key] = {
           expert,

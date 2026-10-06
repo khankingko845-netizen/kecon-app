@@ -3,6 +3,20 @@ import { createClient } from "@/lib/supabase/server";
 import { cloneVoice } from "@/lib/elevenlabs";
 import { resolveApiKey } from "@/lib/server-settings";
 import { guardUsage } from "@/lib/usage-guard";
+import { z } from "zod";
+import { languageCode, optionalText, parseValue, requiredText } from "@/lib/api-validation";
+
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // ElevenLabs IVC limit per file
+
+const CloneFields = z.object({
+  name: requiredText(100),
+  apiKey: optionalText(512),
+  language: languageCode,
+  audio: z
+    .instanceof(Blob, { message: "Thiếu file ghi âm" })
+    .refine((f) => f.size > 0 && f.size <= MAX_AUDIO_BYTES, "File ghi âm phải từ 1 byte đến 10 MB")
+    .refine((f) => !f.type || f.type.startsWith("audio/") || f.type === "video/webm", "File phải là âm thanh"),
+});
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -14,24 +28,30 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const name = formData.get("name") as string;
-  const audioFile = formData.get("audio") as File;
-  const userKey = formData.get("apiKey") as string | null;
-  const language = (formData.get("language") as string) || "vi";
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return Response.json({ error: "Body phải là multipart/form-data", code: "invalid_body" }, { status: 400 });
+  }
+  const fields = parseValue(
+    {
+      name: formData.get("name"),
+      apiKey: formData.get("apiKey"),
+      language: formData.get("language"),
+      audio: formData.get("audio"),
+    },
+    CloneFields
+  );
+  if (!fields.ok) return fields.response;
+  const { name, apiKey: userKey, audio: audioFile } = fields.data;
+  const language = fields.data.language || "vi";
 
   // Resolve API key: user BYO → admin DB → env variable
   const apiKey = await resolveApiKey("elevenlabs", userKey || undefined);
   if (!apiKey) {
     return Response.json(
       { error: "Chưa cấu hình ElevenLabs API key. Admin cần thêm key trong Cài Đặt Hệ Thống." },
-      { status: 400 }
-    );
-  }
-
-  if (!name || !audioFile) {
-    return Response.json(
-      { error: "Missing name or audio file" },
       { status: 400 }
     );
   }
