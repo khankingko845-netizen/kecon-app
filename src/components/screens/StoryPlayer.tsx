@@ -1413,8 +1413,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <SlidersHorizontal size={18} className="text-accent-2" /> Trộn Âm Thanh
  </h3>
  <button
+ aria-label="Đóng trộn âm thanh"
  onClick={() => setShowMixer(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
+ className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
  >
  <X size={16} />
  </button>
@@ -1425,7 +1426,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onClick={() => setAutoAmbient((v) => !v)}
  className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
  autoAmbient
- ? "bg-accent-2/20 text-accent-2"
+ ? "bg-[#5546CC] text-[#F7EFD8]"
  : "bg-white/5 text-moon-2"
  }`}
  >
@@ -1444,7 +1445,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  aria-pressed={on}
  onClick={() => toggleAmbient(type, !on)}
  className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
- on ? "bg-accent text-moon" : "bg-white/5 text-moon-2"
+ on ? "bg-[#5546CC] text-[#F7EFD8]" : "bg-white/5 text-moon-2"
  }`}
  >
  {label}
@@ -1478,7 +1479,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }}
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  autoEffect && !manualEffect
- ? "bg-accent-2 text-[#0F0628]"
+ ? "bg-[#5546CC] text-[#F7EFD8]"
  : "bg-white/5 text-moon-2"
  }`}
  >
@@ -1491,7 +1492,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }}
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  !autoEffect && !manualEffect
- ? "bg-accent text-moon"
+ ? "bg-[#5546CC] text-[#F7EFD8]"
  : "bg-white/5 text-moon-2"
  }`}
  >
@@ -1503,7 +1504,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onClick={() => setManualEffect(type)}
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  manualEffect === type
- ? "bg-accent text-moon"
+ ? "bg-[#5546CC] text-[#F7EFD8]"
  : "bg-white/5 text-moon-2"
  }`}
  >

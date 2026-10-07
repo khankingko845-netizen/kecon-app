@@ -135,6 +135,9 @@ test("new selected narrator survives reload; legacy caches/character voices neve
   await expect(
     page.getByRole("button", { name: /Âm nền theo bối cảnh/ }),
   ).toContainText("TẮT");
+  await page.getByRole("button",{name:/Âm nền theo bối cảnh/}).click();
+  await page.getByRole("button",{name:"Mưa",exact:true}).click();
+  await page.getByLabel("Âm lượng Mưa",{exact:true}).fill("0.3");
   const axe=await new AxeBuilder({page}).include('[aria-label="Trộn âm thanh"]').withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();expect(axe.violations).toEqual([]);
   if (process.env.VOICE_FIX_QA === "1")
     await page.screenshot({
