@@ -1,267 +1,97 @@
 "use client";
-
-// Lightweight Web Audio ambient engine. All sounds are synthesized on the fly
-// (filtered noise / oscillators) so the app needs no external audio assets and
-// works fully offline. Used by the Lullaby screen and the player Sound Mixer.
-
-export type AmbientType =
-  | "rain"
-  | "waves"
-  | "wind"
-  | "fire"
-  | "night"
-  | "lullaby"
-  | "forest";
-
-function makeNoiseBuffer(ctx: AudioContext, color: "white" | "brown"): AudioBuffer {
-  const length = ctx.sampleRate * 8;
-  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < length; i++) {
-    const white = Math.random() * 2 - 1;
-    if (color === "brown") {
-      last = (last + 0.02 * white) / 1.02;
-      data[i] = last * 3.5;
-    } else {
-      data[i] = white;
-    }
-  }
-  return buffer;
-}
-
-interface Layer {
-  nodes: AudioNode[];
-  gain: GainNode;
-  stop: () => void;
-}
-
+import { ambientResponse, MAX_AMBIENT_LAYERS, type AmbientType } from "@/lib/ambient-library";
+export type { AmbientType } from "@/lib/ambient-library";
+interface Layer { source: AudioBufferSourceNode; gain: GainNode }
+interface PendingLayer { controller: AbortController; promise: Promise<void> }
+const clamp = (n: number) => Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
+const cancelled = () => new DOMException("Đã dừng âm nền.", "AbortError");
+/** Licensed recorded files. No oscillator/noise fallback. */
 export class AmbientEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private masterVolume = 1;
   private layers = new Map<AmbientType, Layer>();
+  private pending = new Map<AmbientType, PendingLayer>();
   private volumes = new Map<AmbientType, number>();
-
-  private ensureCtx(): AudioContext {
+  private buffers = new Map<AmbientType, AudioBuffer>();
+  private retiring = new Map<Layer, ReturnType<typeof setTimeout>>();
+  private disposed = false;
+  /** Call inside a user gesture, before fetching (Safari autoplay policy). */
+  async unlock(): Promise<void> {
+    if (this.disposed) return Promise.reject(cancelled());
     if (!this.ctx) {
-      const Ctor =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      this.ctx = new Ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 1;
-      this.master.connect(this.ctx.destination);
+      const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return Promise.reject(new Error("Trình duyệt chưa hỗ trợ phát âm nền."));
+      this.ctx = new Ctor(); this.master = this.ctx.createGain();
+      this.master.gain.value = this.masterVolume; this.master.connect(this.ctx.destination);
     }
-    if (this.ctx.state === "suspended") this.ctx.resume();
-    return this.ctx;
+    return this.ctx.state === "suspended" ? this.ctx.resume() : Promise.resolve();
   }
-
-  private buildLayer(type: AmbientType, ctx: AudioContext, out: GainNode): Layer {
-    const nodes: AudioNode[] = [];
-    const now = ctx.currentTime;
-
-    const startNoise = (color: "white" | "brown") => {
-      const src = ctx.createBufferSource();
-      src.buffer = makeNoiseBuffer(ctx, color);
-      src.loop = true;
-      nodes.push(src);
-      return src;
-    };
-
-    switch (type) {
-      case "rain": {
-        const src = startNoise("white");
-        const hp = ctx.createBiquadFilter();
-        hp.type = "highpass";
-        hp.frequency.value = 1000;
-        const lp = ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 6000;
-        src.connect(hp).connect(lp).connect(out);
-        src.start();
-        break;
+  play(type: AmbientType): Promise<void> {
+    if (this.disposed) return Promise.reject(cancelled());
+    if (this.layers.has(type)) return Promise.resolve();
+    const existing = this.pending.get(type); if (existing) return existing.promise;
+    if (this.layers.size + this.pending.size >= MAX_AMBIENT_LAYERS)
+      return Promise.reject(new Error("Tối đa 3 âm nền cùng lúc. Tắt một âm trước khi thêm."));
+    const controller = new AbortController();
+    const unlocked = this.unlock();
+    const entry: PendingLayer = { controller, promise: Promise.resolve() };
+    this.pending.set(type, entry);
+    entry.promise = (async () => {
+      await unlocked;
+      const ctx = this.ctx;
+      if (!ctx || this.disposed || controller.signal.aborted) throw cancelled();
+      let buffer = this.buffers.get(type);
+      if (!buffer) {
+        const response = await ambientResponse(type, controller.signal);
+        buffer = await ctx.decodeAudioData(await response.arrayBuffer());
+        if (!buffer.duration) throw new Error("File âm nền chưa phát được.");
+        if (!controller.signal.aborted && !this.disposed) this.buffers.set(type, buffer);
       }
-      case "waves": {
-        const src = startNoise("brown");
-        const lp = ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 600;
-        const swell = ctx.createGain();
-        swell.gain.value = 0.5;
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = 0.12;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 0.4;
-        lfo.connect(lfoGain).connect(swell.gain);
-        lfo.start();
-        nodes.push(lfo);
-        src.connect(lp).connect(swell).connect(out);
-        src.start();
-        break;
-      }
-      case "wind": {
-        const src = startNoise("white");
-        const bp = ctx.createBiquadFilter();
-        bp.type = "bandpass";
-        bp.frequency.value = 500;
-        bp.Q.value = 0.7;
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = 0.08;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 300;
-        lfo.connect(lfoGain).connect(bp.frequency);
-        lfo.start();
-        nodes.push(lfo);
-        src.connect(bp).connect(out);
-        src.start();
-        break;
-      }
-      case "fire": {
-        const src = startNoise("brown");
-        const lp = ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 1200;
-        src.connect(lp).connect(out);
-        src.start();
-        break;
-      }
-      case "forest": {
-        const src = startNoise("white");
-        const bp = ctx.createBiquadFilter();
-        bp.type = "bandpass";
-        bp.frequency.value = 2500;
-        bp.Q.value = 2;
-        const g = ctx.createGain();
-        g.gain.value = 0.15;
-        src.connect(bp).connect(g).connect(out);
-        src.start();
-        break;
-      }
-      case "night": {
-        // Cricket-like chirps via amplitude-modulated high oscillator.
-        const osc = ctx.createOscillator();
-        osc.type = "triangle";
-        osc.frequency.value = 4200;
-        const am = ctx.createGain();
-        am.gain.value = 0;
-        const lfo = ctx.createOscillator();
-        lfo.type = "square";
-        lfo.frequency.value = 8;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 0.06;
-        lfo.connect(lfoGain).connect(am.gain);
-        lfo.start();
-        osc.connect(am).connect(out);
-        osc.start();
-        nodes.push(osc, lfo);
-        break;
-      }
-      case "lullaby": {
-        // Soft repeating arpeggio (pentatonic) with gentle envelope.
-        const notes = [523.25, 587.33, 659.25, 783.99, 880.0];
-        const g = ctx.createGain();
-        g.gain.value = 0.0;
-        g.connect(out);
-        const osc = ctx.createOscillator();
-        osc.type = "sine";
-        osc.connect(g);
-        osc.start();
-        nodes.push(osc);
-        let i = 0;
-        const tick = () => {
-          if (!this.layers.has("lullaby")) return;
-          const t = ctx.currentTime;
-          osc.frequency.setValueAtTime(notes[i % notes.length], t);
-          g.gain.cancelScheduledValues(t);
-          g.gain.setValueAtTime(0.0001, t);
-          g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-          i++;
-        };
-        tick();
-        const interval = setInterval(tick, 1000);
-        nodes.push({
-          // wrap interval cleanup in a dummy node-like object
-          disconnect: () => clearInterval(interval),
-        } as unknown as AudioNode);
-        break;
-      }
-    }
-
-    void now;
-    const gain = out;
-    return {
-      nodes,
-      gain,
-      stop: () => {
-        nodes.forEach((n) => {
-          try {
-            if ("stop" in n && typeof (n as OscillatorNode).stop === "function") {
-              (n as OscillatorNode).stop();
-            }
-            n.disconnect();
-          } catch {
-            /* ignore */
-          }
-        });
-      },
-    };
+      if (controller.signal.aborted || this.disposed || this.pending.get(type) !== entry) throw cancelled();
+      const source = ctx.createBufferSource(); source.buffer = buffer; source.loop = true;
+      const gain = ctx.createGain(); gain.gain.value = 0;
+      gain.gain.setTargetAtTime(this.volumes.get(type) ?? 0.18, ctx.currentTime, 0.45);
+      source.connect(gain).connect(this.master!);
+      this.layers.set(type, { source, gain }); source.start();
+    })().catch(error => {
+      if ((error as Error).name === "AbortError") throw error;
+      throw new Error(`Không phát được âm nền. ${(error as Error).message || "Thử lại khi có mạng."}`);
+    }).finally(() => { if (this.pending.get(type) === entry) this.pending.delete(type); });
+    return entry.promise;
   }
-
-  toggle(type: AmbientType, on: boolean) {
-    if (on) this.play(type);
-    else this.stopLayer(type);
+  toggle(type: AmbientType, on: boolean): Promise<void> {
+    if (on) return this.play(type); this.stopLayer(type); return Promise.resolve();
   }
-
-  play(type: AmbientType) {
-    if (this.layers.has(type)) return;
-    const ctx = this.ensureCtx();
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    gain.gain.setTargetAtTime(this.volumes.get(type) ?? 0.6, ctx.currentTime, 0.45);
-    gain.connect(this.master!);
-    const layer = this.buildLayer(type, ctx, gain);
-    layer.gain = gain;
-    this.layers.set(type, layer);
+  private release(layer: Layer) {
+    try { layer.source.stop(); } catch { /* already stopped */ }
+    layer.source.disconnect(); layer.gain.disconnect();
   }
-
   stopLayer(type: AmbientType) {
-    const layer = this.layers.get(type);
-    if (!layer) return;
+    this.pending.get(type)?.controller.abort(); this.pending.delete(type);
+    const layer = this.layers.get(type); if (!layer) return;
     this.layers.delete(type);
-    if(this.ctx)layer.gain.gain.setTargetAtTime(0,this.ctx.currentTime,0.25);
-    setTimeout(()=>{layer.stop();try{layer.gain.disconnect();}catch{/* already closed */}},1000);
+    if (this.ctx) layer.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.25);
+    const timer = setTimeout(() => { this.retiring.delete(layer); this.release(layer); }, 1000);
+    this.retiring.set(layer, timer);
   }
-
   setVolume(type: AmbientType, value: number) {
-    this.volumes.set(type, value);
-    const layer = this.layers.get(type);
-    if (layer && this.ctx) {
-      layer.gain.gain.setTargetAtTime(value, this.ctx.currentTime, 0.05);
-    }
+    const volume = clamp(value); this.volumes.set(type, volume);
+    if (this.ctx) this.layers.get(type)?.gain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.1);
   }
-
   setMaster(value: number) {
-    if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(value, this.ctx.currentTime, 0.05);
-    }
+    this.masterVolume = clamp(value);
+    if (this.ctx) this.master?.gain.setTargetAtTime(this.masterVolume, this.ctx.currentTime, 0.15);
   }
-
-  isPlaying(type: AmbientType): boolean {
-    return this.layers.has(type);
-  }
-
+  isPlaying(type: AmbientType): boolean { return this.layers.has(type); }
+  isPending(type: AmbientType): boolean { return this.pending.has(type); }
   stopAll() {
-    Array.from(this.layers.keys()).forEach((t) => this.stopLayer(t));
+    [...new Set([...this.layers.keys(), ...this.pending.keys()])].forEach(type => this.stopLayer(type));
   }
-
   dispose() {
-    this.stopAll();
-    if (this.ctx) {
-      this.ctx.close();
-      this.ctx = null;
-      this.master = null;
-    }
+    this.disposed = true; this.pending.forEach(entry => entry.controller.abort()); this.pending.clear();
+    this.layers.forEach(layer => this.release(layer)); this.layers.clear();
+    this.retiring.forEach((timer, layer) => { clearTimeout(timer); this.release(layer); }); this.retiring.clear();
+    this.buffers.clear(); void this.ctx?.close().catch(() => {}); this.ctx = null; this.master = null;
   }
 }
