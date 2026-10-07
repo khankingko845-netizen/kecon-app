@@ -29,6 +29,8 @@ import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/d
 import { storyAudioSegments, storyAudioKey } from "@/lib/story-audio";
 import { modelForLanguage } from "@/lib/tts-models";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
+import { AMBIENT_TRACKS } from "@/lib/ambient-library";
+import AmbientLibraryControls from "@/components/ui/AmbientLibraryControls";
 import { ambientForScene } from "@/lib/story-ambient";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
@@ -76,15 +78,7 @@ interface DefaultVoice {
  language: string;
 }
 
-const AMBIENT_OPTIONS: { type: AmbientType; label: string }[] = [
- { type: "rain", label: "Mưa" },
- { type: "waves", label: "Sóng biển" },
- { type: "wind", label: "Gió" },
- { type: "fire", label: "Lửa trại" },
- { type: "forest", label: "Rừng" },
- { type: "night", label: "Đêm" },
- { type: "lullaby", label: "Ru ngủ" },
-];
+const AMBIENT_OPTIONS = AMBIENT_TRACKS.map(({ id, label }) => ({ type: id, label }));
 
 // Snapshot of the active audio element's clock, used for the time display.
 interface AudioClock {
@@ -209,6 +203,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const [showMixer, setShowMixer] = useState(false);
  const [ambientOn, setAmbientOn] = useState<Record<string, boolean>>({});
  const [ambientVol, setAmbientVol] = useState<Record<string, number>>({});
+ const [ambientLoading, setAmbientLoading] = useState<Record<string, boolean>>({});
+ const [ambientError, setAmbientError] = useState("");
+ const ambientIntent = useRef(new Map<AmbientType, number>());
  const [autoAmbient, setAutoAmbient] = useState(false);
  const autoAmbientRef=useRef<AmbientType|null>(null);
 
@@ -223,9 +220,21 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const toggleAmbient = useCallback(
  (type: AmbientType, on: boolean) => {
- getEngine().setVolume(type,ambientVol[type]??0.18);
- getEngine().toggle(type, on);
+ const intent = (ambientIntent.current.get(type) ?? 0) + 1;
+ ambientIntent.current.set(type, intent);
+ const engine = getEngine();
+ engine.setVolume(type, ambientVol[type] ?? 0.18);
+ setAmbientError("");
+ setAmbientLoading((prev) => ({ ...prev, [type]: on }));
  setAmbientOn((prev) => ({ ...prev, [type]: on }));
+ void engine.toggle(type, on).catch((error: Error) => {
+   if (ambientIntent.current.get(type) !== intent || error.name === "AbortError") return;
+   setAmbientOn((prev) => ({ ...prev, [type]: false }));
+   setAmbientError(error.message);
+ }).finally(() => {
+   if (ambientIntent.current.get(type) === intent)
+     setAmbientLoading((prev) => ({ ...prev, [type]: false }));
+ });
  },
  [getEngine,ambientVol]
  );
@@ -239,7 +248,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  );
 
  useEffect(() => {
+ const intents = ambientIntent.current;
  return () => {
+ intents.clear();
+ autoAmbientRef.current = null;
  engineRef.current?.dispose();
  engineRef.current = null;
  };
@@ -435,14 +447,28 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  authoredEffect ?? effectForScene(`${sceneDesc} ${currentText}`);
  const activeEffect: EffectType | null =
  manualEffect ?? (autoEffect ? autoMatchedEffect : null);
+ const currentAutoAmbient = autoAmbient && isPlaying
+   ? ambientForScene(sceneDesc, isGenerated ? null : pages[currentPage]?.ambient_sound) : null;
  useEffect(()=>{
   const engine=getEngine();engine.setMaster(isPlaying?0.35:1);
-  const match=autoAmbient&&isPlaying?ambientForScene(sceneDesc,isGenerated?null:pages[currentPage]?.ambient_sound):null;
+  const match=currentAutoAmbient;
   const previous=autoAmbientRef.current;
-  if(previous && previous!==match && !ambientOn[previous])engine.stopLayer(previous);
+  if(previous && previous!==match && !ambientOn[previous]){
+    engine.stopLayer(previous);
+    setAmbientLoading((prev) => ({ ...prev, [previous]: false }));
+  }
   autoAmbientRef.current=match;
-  if(match && !ambientOn[match]){engine.setVolume(match,0.12);engine.play(match);}
- },[autoAmbient,isPlaying,sceneDesc,isGenerated,pages,currentPage,ambientOn,getEngine]);
+  if(match && !ambientOn[match]){
+    engine.setVolume(match,0.12);
+    setAmbientLoading((prev) => ({ ...prev, [match]: true }));
+    void engine.play(match).catch((error: Error) => {
+      if(error.name !== "AbortError" && autoAmbientRef.current === match) setAmbientError(error.message);
+    }).finally(() => {
+      if(autoAmbientRef.current === match)
+        setAmbientLoading((prev) => ({ ...prev, [match]: false }));
+    });
+  }
+ },[currentAutoAmbient,isPlaying,ambientOn,getEngine]);
 
  // Every path (play, prefetch, merge) uses the same segments and audio identity.
  const generatePageAudio = useCallback(async (text:string,pageIdx:number):Promise<string>=>{
@@ -722,6 +748,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setIsPlaying(false);
  audioRef.current?.pause();
  engineRef.current?.stopAll();
+ setAmbientOn({});
+ setAmbientLoading({});
  }, []);
  const sleep = useSleepTimer(pauseForSleep);
  // "Nghe tiếp" on Home
@@ -1423,7 +1451,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  <button
  aria-pressed={autoAmbient}
- onClick={() => setAutoAmbient((v) => !v)}
+ onClick={() => {
+   setAmbientError("");
+   if(!autoAmbient) void getEngine().unlock().catch((error: Error) => setAmbientError(error.message));
+   setAutoAmbient((v) => !v);
+ }}
  className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
  autoAmbient
  ? "bg-[#5546CC] text-[#F7EFD8]"
@@ -1431,24 +1463,30 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }`}
  >
  <Volume2 size={14} />
- Âm nền theo bối cảnh (thử nghiệm): {autoAmbient ? "BẬT" : "TẮT"}
+ Âm nền theo bối cảnh: {autoAmbient ? "BẬT" : "TẮT"}
  </button>
 
- <p className="mb-3 text-[12px] text-moon-2">Mặc định tắt. Âm nền mô phỏng, không phải thu âm thật; phát nhẹ hơn khi có lời kể. Không khớp cảnh thì giữ yên lặng.</p>
+ <p className="mb-3 text-[12px] text-moon-2">Mặc định tắt. File âm thiên nhiên và nhạc chuông có giấy phép; tối đa 3 âm nền, phát nhẹ hơn khi có lời kể. Không khớp cảnh thì giữ yên lặng.</p>
+ {ambientError && <p role="alert" aria-label="Lỗi phát âm nền" className="mb-3 text-[12px] text-[#FBCDC5]">{ambientError}</p>}
+ <AmbientLibraryControls />
  <div className="space-y-3 max-h-[40vh] overflow-y-auto no-scrollbar">
  {AMBIENT_OPTIONS.map(({ type, label }) => {
- const on = ambientOn[type] ?? false;
+ const on = (ambientOn[type] ?? false) || currentAutoAmbient === type;
  const vol = ambientVol[type] ?? 0.18;
  return (
  <div key={type} className="flex items-center gap-3">
  <button
  aria-pressed={on}
- onClick={() => toggleAmbient(type, !on)}
+ aria-busy={ambientLoading[type] ?? false}
+ onClick={() => {
+   if(currentAutoAmbient === type && !ambientOn[type]) setAutoAmbient(false);
+   else toggleAmbient(type, !on);
+ }}
  className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
  on ? "bg-[#5546CC] text-[#F7EFD8]" : "bg-white/5 text-moon-2"
  }`}
  >
- {label}
+ {label}{ambientLoading[type] ? " · tải…" : ""}
  </button>
  <input
  type="range"

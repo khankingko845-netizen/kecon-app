@@ -1,24 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Clock, Moon, CloudRain, Waves, Music, Bug, Volume2, Wind, Flame, Trees } from "@/components/ui/icons";
+import { ChevronLeft, Clock, Moon, CloudRain, Waves, Music, Bug, Wind, Flame, Trees } from "@/components/ui/icons";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
 import Mascot from "@/components/ui/Mascot";
+import AmbientLibraryControls from "@/components/ui/AmbientLibraryControls";
+import { AMBIENT_TRACKS } from "@/lib/ambient-library";
 import { ScreenOff, ScreenOffButton } from "@/components/ui/NightControls";
 
 interface LullabyProps {
  onBack: () => void;
 }
 
-const sounds: { id: AmbientType; name: string; Icon: typeof Moon }[] = [
- { id: "rain", name: "Mưa", Icon: CloudRain },
- { id: "waves", name: "Sóng biển", Icon: Waves },
- { id: "wind", name: "Gió", Icon: Wind },
- { id: "fire", name: "Lửa trại", Icon: Flame },
- { id: "forest", name: "Rừng", Icon: Trees },
- { id: "night", name: "Dế đêm", Icon: Bug },
- { id: "lullaby", name: "Ru", Icon: Music },
-];
+const soundIcons: Record<AmbientType, typeof Moon> = {
+ rain: CloudRain, waves: Waves, wind: Wind, fire: Flame,
+ forest: Trees, night: Bug, lullaby: Music, stream: Waves,
+};
+const sounds = AMBIENT_TRACKS.map(({ id, label }) => ({ id, name: label, Icon: soundIcons[id] }));
 
 const timerOptions = ["15p", "30p", "45p", "Auto"];
 const timerMinutes: Record<string, number> = { "15p": 15, "30p": 30, "45p": 45, Auto: 60 };
@@ -28,8 +26,10 @@ export default function Lullaby({ onBack }: LullabyProps) {
  const engineRef = useRef<AmbientEngine | null>(null);
  const [activeSounds, setActiveSounds] = useState<Set<AmbientType>>(new Set());
  const [activeTimer, setActiveTimer] = useState("15p");
- const [voiceVol, setVoiceVol] = useState(60);
- const [bgVol, setBgVol] = useState(50);
+ const [bgVol, setBgVol] = useState(25);
+ const [pending, setPending] = useState<Set<AmbientType>>(new Set());
+ const [ambientError, setAmbientError] = useState("");
+ const intents = useRef(new Map<AmbientType, number>());
  const [remaining, setRemaining] = useState<number | null>(null);
 
  // Initialize engine lazily.
@@ -47,18 +47,24 @@ export default function Lullaby({ onBack }: LullabyProps) {
 
  const toggleSound = (id: AmbientType) => {
  const engine = getEngine();
- setActiveSounds((prev) => {
- const next = new Set(prev);
- if (next.has(id)) {
+ const intent = (intents.current.get(id) ?? 0) + 1;
+ intents.current.set(id, intent);
+ setAmbientError("");
+ if (activeSounds.has(id) || pending.has(id)) {
  engine.stopLayer(id);
- next.delete(id);
+ setActiveSounds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+ setPending((prev) => { const next = new Set(prev); next.delete(id); return next; });
  } else {
  engine.setVolume(id, bgVol / 100);
- engine.play(id);
- next.add(id);
- }
- return next;
+ setPending((prev) => new Set(prev).add(id));
+ void engine.play(id).then(() => {
+   if(intents.current.get(id) === intent) setActiveSounds((prev) => new Set(prev).add(id));
+ }).catch((error: Error) => {
+   if(error.name !== "AbortError" && intents.current.get(id) === intent) setAmbientError(error.message);
+ }).finally(() => {
+   if(intents.current.get(id) === intent) setPending((prev) => { const next = new Set(prev); next.delete(id); return next; });
  });
+ }
  };
 
  // Apply background volume to all active layers.
@@ -147,7 +153,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  Ru ngủ cùng Đóm
  </h2>
  <p className="text-[14px] text-moon-2 font-medium z-10 mb-7">
- Chạm chọn nhiều âm nền · trộn theo ý thích
+ Chạm chọn tối đa 3 âm nền · file có giấy phép
  </p>
 
  {/* Sound Pills */}
@@ -158,6 +164,8 @@ export default function Lullaby({ onBack }: LullabyProps) {
  return (
  <button
  key={s.id}
+ aria-pressed={active}
+ aria-busy={pending.has(s.id)}
  onClick={() => toggleSound(s.id)}
  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
  active
@@ -165,30 +173,14 @@ export default function Lullaby({ onBack }: LullabyProps) {
  : "bg-night-card/70 border border-moon/10 text-moon-2"
  }`}
  >
- <Icon size={14} /> {s.name}
+ <Icon size={14} /> {s.name}{pending.has(s.id) ? " · tải…" : ""}
  </button>
  );
  })}
  </div>
 
- {/* Volume Sliders */}
- <div className="w-[80%] z-10 mb-3">
- <div className="flex justify-between items-center text-xs font-bold text-moon-2 mb-2">
- <span className="flex items-center gap-1.5">
- <Volume2 size={14} /> Giọng đọc
- </span>
- <span>{voiceVol}%</span>
- </div>
- <input
- type="range"
- min={0}
- max={100}
- value={voiceVol}
- onChange={(e) => setVoiceVol(Number(e.target.value))}
- className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-amber"
- />
- </div>
-
+ {ambientError && <p role="alert" aria-label="Lỗi phát âm nền" className="w-[80%] z-10 mb-3 text-sm text-[#FBCDC5]">{ambientError}</p>}
+ {/* This screen has no narrator: avoid a nonfunctional "voice volume" control. */}
  <div className="w-[80%] z-10 mb-3">
  <div className="flex justify-between items-center text-xs font-bold text-moon-2 mb-2">
  <span className="flex items-center gap-1.5">
@@ -197,6 +189,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  <span>{bgVol}%</span>
  </div>
  <input
+ aria-label="Âm lượng âm nền"
  type="range"
  min={0}
  max={100}
@@ -205,6 +198,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  className="w-full h-1 bg-white/[0.06] rounded-full appearance-none accent-amber"
  />
  </div>
+ <div className="w-[80%] z-10"><AmbientLibraryControls /></div>
 
  {/* Timer Chips */}
  <div className="flex gap-2 z-10 mt-5">

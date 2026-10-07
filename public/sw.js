@@ -1,5 +1,7 @@
 // KểCon Service Worker — offline shell + push notifications.
-const CACHE = "kecon-shell-v2";
+const CACHE = "kecon-shell-v3";
+const AMBIENT_CACHE = "kecon-ambient-v1";
+const AMBIENT_FILE = /^\/audio\/ambient\/v1\/(rain|waves|wind|fire|forest|night|stream|lullaby)\.mp3$/;
 
 // ============================================================
 // INSTALL / ACTIVATE
@@ -12,7 +14,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k.startsWith("kecon-shell-") && k !== CACHE).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -35,6 +37,41 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Full public clips are stored only after the client verifies their SHA-256.
+  // Keep this cache across shell updates; never mix clips with API/auth responses.
+  if (AMBIENT_FILE.test(url.pathname)) {
+    event.respondWith(
+      caches.open(AMBIENT_CACHE).then(async (cache) => {
+        const cached = await cache.match(url.pathname);
+        if (!cached || cached.status !== 200) return fetch(request);
+        const range = request.headers.get("range");
+        if (!range) return cached;
+        const bytes = await cached.arrayBuffer();
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        let start = match && match[1] ? Number(match[1]) : 0;
+        let end = match && match[2] ? Number(match[2]) : bytes.byteLength - 1;
+        if (match && !match[1] && match[2]) {
+          start = Math.max(0, bytes.byteLength - Number(match[2]));
+          end = bytes.byteLength - 1;
+        }
+        if (!match || (!match[1] && !match[2]) || start > end || start >= bytes.byteLength) {
+          return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${bytes.byteLength}` } });
+        }
+        end = Math.min(end, bytes.byteLength - 1);
+        return new Response(bytes.slice(start, end + 1), {
+          status: 206,
+          headers: {
+            "Content-Type": cached.headers.get("content-type") || "audio/mpeg",
+            "Content-Range": `bytes ${start}-${end}/${bytes.byteLength}`,
+            "Content-Length": String(end - start + 1),
+            "Accept-Ranges": "bytes",
+          },
+        });
+      })
+    );
+    return;
+  }
+
   // Cache-first for immutable Next build assets.
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
@@ -43,7 +80,7 @@ self.addEventListener("fetch", (event) => {
           cached ||
           fetch(request).then((res) => {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
+            if (res.ok) caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
             return res;
           })
       )
@@ -56,7 +93,7 @@ self.addEventListener("fetch", (event) => {
     fetch(request)
       .then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, copy));
+        if (res.ok && res.status !== 206) caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
         return res;
       })
       .catch(() => caches.match(request))
