@@ -85,6 +85,26 @@ test("A05 · enroll TOTP, reject wrong code, gate API, idle lock and reverify", 
   await expect(
     page.getByRole("navigation", { name: "Quản trị", exact: true }),
   ).toBeVisible();
+  // Delay a successful touch until after close; it must never remount admin.
+  let release!: () => void;
+  let seen!: () => void;
+  const delayed = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const touched = new Promise<void>((resolve) => {
+    seen = resolve;
+  });
+  await page.route("**/rest/v1/rpc/touch_admin_session", async (route) => {
+    const response = await route.fetch();
+    expect((await response.json()).state).toBe("ready");
+    seen();
+    await delayed;
+    await route.fulfill({ response });
+  });
+  await page.evaluate(() =>
+    window.dispatchEvent(new PointerEvent("pointerdown")),
+  );
+  await touched;
   await page
     .getByRole("button", { name: "Khoá quản trị", exact: true })
     .click();
@@ -92,10 +112,17 @@ test("A05 · enroll TOTP, reject wrong code, gate API, idle lock and reverify", 
     page.getByRole("heading", { name: "Xác thực quản trị", exact: true }),
   ).toBeVisible();
   await expect(page.locator("[data-admin-shell]")).toHaveCount(0);
-  const late = page.waitForResponse((r) => r.url().endsWith("/rpc/touch_admin_session"));
+  const late = page.waitForResponse((r) =>
+    r.url().endsWith("/rpc/touch_admin_session"),
+  );
   release();
   await late;
-  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   await expect(
     page.getByRole("heading", { name: "Xác thực quản trị", exact: true }),
   ).toBeVisible();
