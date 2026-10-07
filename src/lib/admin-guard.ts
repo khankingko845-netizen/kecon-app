@@ -11,7 +11,10 @@ import { hasAuthCookie } from "@/lib/auth-cookie";
 import { isStaffRole, myPermissions, type AdminPermission, type StaffRole } from "@/lib/admin-permissions";
 import { createClient } from "@/lib/supabase/server";
 
+import { adminAccess, type AdminAccess } from "@/lib/admin-session";
+
 export interface AdminViewer {
+  access: AdminAccess;
   id: string;
   email: string | null;
   role: StaffRole;
@@ -37,7 +40,7 @@ export async function resolveAdminViewer(supabase: SupabaseClient): Promise<Admi
   if (profileError || !profile || !isStaffRole(profile.role)) return null;
   const permissions = await myPermissions(supabase);
   if (permissions.length === 0) return null;
-  return { id: user.id, email: user.email ?? null, role: profile.role, permissions };
+  return { id: user.id, email: user.email ?? null, role: profile.role, permissions, access: await adminAccess(supabase) };
 }
 
 /** Cached per request, so `generateMetadata` and the page share one lookup. */

@@ -87,7 +87,7 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
 
     const before = await lastId();
     await db.transaction(async (tx) => {
-      await tx.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u.superAdmin, role: "authenticated" })]);
+      await tx.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: u.superAdmin, role: "authenticated",session_id:u.superAdmin,aal:"aal2",amr:[{method:"totp",timestamp:Math.floor(Date.now()/1000)}] })]);
       await tx.query("SELECT set_config('request.headers', $1, true)", [
         JSON.stringify({ "x-forwarded-for": "203.0.113.7, 10.0.0.1", "user-agent": "Vitest/1.0" }),
       ]);

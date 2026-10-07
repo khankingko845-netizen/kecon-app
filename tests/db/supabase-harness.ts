@@ -43,6 +43,9 @@ CREATE TABLE auth.users (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE);
+CREATE TABLE auth.mfa_factors(id uuid PRIMARY KEY,user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,status text,factor_type text);
+
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT nullif(
     coalesce(
@@ -196,6 +199,17 @@ export function asRole<T>(
   });
 }
 
-export const asUser = <T>(db: PGlite, uid: string, fn: (tx: Tx) => Promise<T>, extraClaims?: Record<string, unknown>) =>
-  asRole(db, "authenticated", uid, fn, extraClaims);
+/** Normal signed-in fixture: staff has a verified MFA/admin session. Security negative tests use asRole with explicit AAL1/expired claims. */
+export const asUser = async <T>(db: PGlite, uid: string, fn: (tx: Tx) => Promise<T>, extraClaims?: Record<string, unknown>) => {
+  const proof = Math.floor(Date.now()/1000);
+  const present = await db.query<{exists:boolean}>("SELECT to_regclass('public.admin_sessions') IS NOT NULL AS exists");
+  const role = (await db.query<{role:string}>("SELECT role FROM public.profiles WHERE id=$1",[uid])).rows[0]?.role;
+  const staff = role && role !== "user";
+  if(present.rows[0].exists && staff){
+    await db.query("INSERT INTO auth.sessions(id,user_id) VALUES($1,$1) ON CONFLICT DO NOTHING",[uid]);
+    await db.query("INSERT INTO auth.mfa_factors(id,user_id,status,factor_type) VALUES($1,$1,'verified','totp') ON CONFLICT DO NOTHING",[uid]);
+    await db.query("INSERT INTO public.admin_sessions(session_id,user_id,auth_at) VALUES($1,$1,$2) ON CONFLICT(session_id) DO UPDATE SET auth_at=$2,last_activity=now(),closed=false",[uid,proof]);
+  }
+  return asRole(db, "authenticated", uid, fn, {...(staff?{session_id:uid,aal:'aal2',amr:[{method:'totp',timestamp:proof}]}:{}),...extraClaims});
+};
 export const asAnon = <T>(db: PGlite, fn: (tx: Tx) => Promise<T>) => asRole(db, "anon", null, fn);

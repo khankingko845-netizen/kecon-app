@@ -27,6 +27,14 @@ echo "$SHA" > "$KECON/shared/release"
 rm -rf "$KECON/supabase-stack/supabase/migrations" && cp -r "$REL/supabase/migrations" "$KECON/supabase-stack/supabase/migrations"
 ( set -a; source "$KECON/shared/supabase.secrets"; PUBLIC_URL=$(cat "$KECON/shared/public-url" 2>/dev/null || echo http://127.0.0.1:3000); set +a
   supabase migration up --workdir "$KECON/supabase-stack" --local )
+# A-05: existing CLI stacks default TOTP off. Restart preserves DB/volumes and
+# the startup script sets both flags. Never reset/wipe the stack.
+if ! docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_ENROLL_ENABLED | grep -qx true || \
+   ! docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_VERIFY_ENABLED | grep -qx true; then
+  sudo systemctl restart kecon-supabase
+fi
+docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_ENROLL_ENABLED | grep -qx true
+docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_VERIFY_ENABLED | grep -qx true
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web

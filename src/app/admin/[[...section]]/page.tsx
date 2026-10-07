@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import AdminMfaGate from "@/components/admin/AdminMfaGate";
+import AdminSessionBoundary from "@/components/admin/AdminSessionBoundary";
 import AdminApp from "@/components/admin/AdminApp";
 import { getAdminViewer, type AdminViewer } from "@/lib/admin-guard";
 import { sectionFromSegments, type AdminSection } from "@/lib/admin-routes";
@@ -24,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [viewer, { section }] = await Promise.all([getAdminViewer(), params]);
   const current = sectionFromSegments(section);
   if (!allowed(viewer, current)) return {};
+  if (viewer!.access.state !== "ready") return { title: "Xác thực quản trị · KểCon", robots: { index: false, follow: false } };
   return { title: `${current.label} · Quản trị KểCon`, robots: { index: false, follow: false } };
 }
 
@@ -31,10 +34,13 @@ export default async function AdminPage({ params }: Props) {
   const [viewer, { section }] = await Promise.all([getAdminViewer(), params]);
   const current = sectionFromSegments(section);
   if (!viewer || !allowed(viewer, current)) notFound();
+  if (viewer.access.state !== "ready") return <AdminMfaGate access={viewer.access} />;
   return (
+    <AdminSessionBoundary key={viewer.access.expires_at} initial={viewer.access}>
     <AdminApp
       screen={current.screen}
       viewer={{ email: viewer.email, role: viewer.role, permissions: viewer.permissions }}
     />
+    </AdminSessionBoundary>
   );
 }

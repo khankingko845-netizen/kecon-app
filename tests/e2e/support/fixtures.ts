@@ -14,6 +14,7 @@ export const MOCK_AVATAR_USER_ID = "00000000-0000-4000-8000-00000000e2e6";
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 /** Narrow staff role "editor" (Admin v2 · A-02). */
 export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
+export const MOCK_MFA_USER_ID = "00000000-0000-4000-8000-00000000e2e9";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
 
 const MOCK_EMAILS: Record<string, string> = {
@@ -23,6 +24,7 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_PHOTO_USER_ID]: "e2e-photo@kecon.test",
   [MOCK_VOICE_USER_ID]: "e2e-voice@kecon.test",
   [MOCK_AVATAR_USER_ID]: "e2e-avatar@kecon.test",
+  [MOCK_MFA_USER_ID]: "e2e-mfa@kecon.test",
   [MOCK_ADMIN_USER_ID]: "e2e-admin@kecon.test",
   [MOCK_EDITOR_USER_ID]: "e2e-editor@kecon.test",
 };
@@ -30,11 +32,11 @@ const MOCK_EMAILS: Record<string, string> = {
 const b64url = (v: string) => Buffer.from(v).toString("base64url");
 
 /** Unsigned JWT accepted by the mock (only `sub` is checked). */
-export function mockAccessToken(sub: string = MOCK_USER_ID, email = "e2e@kecon.test"): string {
+export function mockAccessToken(sub: string = MOCK_USER_ID, email = "e2e@kecon.test", adminReady = true): string {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
   return [
     b64url(JSON.stringify({ alg: "HS256", typ: "JWT" })),
-    b64url(JSON.stringify({ sub, role: "authenticated", aud: "authenticated", exp, email })),
+    b64url(JSON.stringify({ sub, role: "authenticated", aud: "authenticated", exp, email, session_id:crypto.randomUUID(),aal:adminReady?"aal2":"aal1",amr:[{method:adminReady?"totp":"password",timestamp:Math.floor(Date.now()/1000)}],e2e_admin_ready:adminReady })),
     "mock-signature",
   ].join(".");
 }
@@ -46,12 +48,12 @@ export function mockAccessToken(sub: string = MOCK_USER_ID, email = "e2e@kecon.t
 export async function signInAsMockFamily(
   context: BrowserContext,
   baseURL: string,
-  { userId = MOCK_USER_ID }: { userId?: string } = {}
+  { userId = MOCK_USER_ID, adminReady = true }: { userId?: string;adminReady?:boolean } = {}
 ): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
   const email = MOCK_EMAILS[userId] ?? "e2e@kecon.test";
   const session = {
-    access_token: mockAccessToken(userId, email),
+    access_token: mockAccessToken(userId, email, adminReady),
     token_type: "bearer",
     expires_in: 3600 * 24,
     expires_at: exp,

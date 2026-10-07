@@ -60,6 +60,7 @@ function fakeSupabase({ user, role, authError, profileError, permissions = [], r
   }));
   const rpc = vi.fn(async (name: string, args?: { p_permission?: string }) => {
     if (rpcError) return { data: null, error: { message: "function does not exist" } };
+    if (name === "admin_access_status") return {data:{state:"ready",requires_mfa:true,expires_at:"2099-01-01T00:00:00Z"},error:null};
     if (name === "my_admin_permissions") return { data: permissions, error: null };
     if (name === "has_permission") return { data: permissions.includes(args?.p_permission ?? ""), error: null };
     return { data: null, error: { message: "unknown rpc" } };
@@ -89,11 +90,11 @@ describe("resolveAdminViewer (A-01 guard + A-02 quyền hạn)", () => {
 
   it("vai trò nhân sự + quyền từ DB → viewer; tra đúng hồ sơ của chính user", async () => {
     const admin = fakeSupabase({ user: { id: "u2", email: "ad@kecon.vn" }, role: "admin", permissions: ADMIN });
-    expect(await resolveAdminViewer(admin.client)).toEqual({ id: "u2", email: "ad@kecon.vn", role: "admin", permissions: ADMIN });
+    expect(await resolveAdminViewer(admin.client)).toEqual({ id: "u2", email: "ad@kecon.vn", role: "admin", permissions: ADMIN, access: {state:"ready",requires_mfa:true,expires_at:"2099-01-01T00:00:00Z"} });
     expect(admin.from).toHaveBeenCalledWith("profiles");
     expect(admin.eq).toHaveBeenCalledWith("id", "u2");
     const editor = fakeSupabase({ user: { id: "u3" }, role: "editor", permissions: [...EDITOR, "không-có-thật"] });
-    expect(await resolveAdminViewer(editor.client)).toEqual({ id: "u3", email: null, role: "editor", permissions: EDITOR });
+    expect(await resolveAdminViewer(editor.client)).toEqual({ id: "u3", email: null, role: "editor", permissions: EDITOR, access: {state:"ready",requires_mfa:true,expires_at:"2099-01-01T00:00:00Z"} });
   });
 
   it("đóng khi lỗi: RPC quyền lỗi / rỗng → null", async () => {
