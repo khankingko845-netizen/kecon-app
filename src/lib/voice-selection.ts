@@ -21,15 +21,20 @@ export function normalizeVoiceLanguage(value?: string | null): string | null {
 }
 export interface LanguageVoice {
   language?: string;
+  locale?: string;
   languages?: string[];
   labels?: Record<string, string>;
   verified_languages?: { language?: string; locale?: string }[];
+}
+export function nativeVoiceLanguage(v: LanguageVoice): string | null {
+  return normalizeVoiceLanguage(v.language) || normalizeVoiceLanguage(v.labels?.language) || normalizeVoiceLanguage(v.locale);
 }
 export function voiceLanguages(v: LanguageVoice): string[] {
   return [
     ...new Set(
       [
         v.language,
+        v.locale,
         v.labels?.language,
         ...(v.languages ?? []),
         ...(v.verified_languages ?? []).flatMap((l) => [l.language, l.locale]),

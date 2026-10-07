@@ -14,7 +14,7 @@ export type AmbientType =
   | "forest";
 
 function makeNoiseBuffer(ctx: AudioContext, color: "white" | "brown"): AudioBuffer {
-  const length = ctx.sampleRate * 2;
+  const length = ctx.sampleRate * 8;
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   let last = 0;
@@ -218,7 +218,8 @@ export class AmbientEngine {
     if (this.layers.has(type)) return;
     const ctx = this.ensureCtx();
     const gain = ctx.createGain();
-    gain.gain.value = this.volumes.get(type) ?? 0.6;
+    gain.gain.value = 0;
+    gain.gain.setTargetAtTime(this.volumes.get(type) ?? 0.6, ctx.currentTime, 0.45);
     gain.connect(this.master!);
     const layer = this.buildLayer(type, ctx, gain);
     layer.gain = gain;
@@ -228,13 +229,9 @@ export class AmbientEngine {
   stopLayer(type: AmbientType) {
     const layer = this.layers.get(type);
     if (!layer) return;
-    layer.stop();
-    try {
-      layer.gain.disconnect();
-    } catch {
-      /* ignore */
-    }
     this.layers.delete(type);
+    if(this.ctx)layer.gain.gain.setTargetAtTime(0,this.ctx.currentTime,0.25);
+    setTimeout(()=>{layer.stop();try{layer.gain.disconnect();}catch{/* already closed */}},1000);
   }
 
   setVolume(type: AmbientType, value: number) {

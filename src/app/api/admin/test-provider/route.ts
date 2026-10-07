@@ -4,10 +4,9 @@ import { requirePermission } from "@/lib/admin-permissions";
 import { auditAdmin } from "@/lib/admin-audit";
 import { getSystemSetting, isSafePublicBaseUrl, resolveApiKey } from "@/lib/server-settings";
 import { voiceKeyPool } from "@/lib/key-pool";
-import { fetchVoiceCatalog } from "@/lib/voice-catalog";
-import { elevenLabsBase } from "@/lib/elevenlabs";
+import { fetchVoiceCatalog, fetchVoiceById } from "@/lib/voice-catalog";
 import { fishGetModel } from "@/lib/fishaudio";
-import { FISH_VOICE_PREFIX, isFishVoiceId, providerVoiceRef } from "@/lib/provider-keys";
+import { FISH_VOICE_PREFIX, isFishVoiceId, providerVoiceRef, VOICE_ID_PATTERN } from "@/lib/provider-keys";
 import { scrubSecret } from "@/lib/system-secrets";
 import { GEMINI_BASE_URL } from "@/lib/llm";
 import { z } from "zod";
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
 
   const voiceId = request.nextUrl.searchParams.get("voice_id");
-  if (!voiceId) {
+  if (!voiceId || !VOICE_ID_PATTERN.test(voiceId)) {
     return Response.json({ error: "voice_id required" }, { status: 400 });
   }
   // A-03: log before spending the system ElevenLabs key.
@@ -78,88 +77,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // A-04b: a key of the ElevenLabs pool.
-  const apiKey = await voiceKeyPool.pickSecret("elevenlabs");
-  if (!apiKey) {
-    return Response.json(
-      { ok: false, error: "ElevenLabs API key chưa được cài đặt" },
-      { status: 200 }
-    );
-  }
-
   try {
-    // Try fetching the voice directly (works for own voices + added from library)
-    const res = await fetch(`${elevenLabsBase()}/voices/${encodeURIComponent(voiceId)}`, {
-      headers: { "xi-api-key": apiKey },
-    });
-
-    if (res.ok) {
-      const v = await res.json() as {
-        voice_id: string;
-        name: string;
-        category: string;
-        labels?: Record<string, string>;
-        preview_url?: string;
-      };
-      return Response.json({
-        ok: true,
-        voice: {
-          voice_id: v.voice_id,
-          name: v.name,
-          language: v.labels?.language || "",
-          category: v.category,
-          preview_url: v.preview_url || null,
-          gender: v.labels?.gender || null,
-        },
-      });
-    }
-
-    // If not found in own voices, try the shared voice library
-    if (res.status === 400 || res.status === 404 || res.status === 422) {
-      // Search shared voices by voice_id (use search= not voice_id= param)
-      const sharedRes = await fetch(
-        `${elevenLabsBase()}/shared-voices?search=${encodeURIComponent(voiceId)}&page_size=5`,
-        { headers: { "xi-api-key": apiKey } }
-      );
-      if (sharedRes.ok) {
-        const sharedData = await sharedRes.json();
-        const voices = sharedData.voices as {
-          voice_id: string;
-          name: string;
-          category: string;
-          accent?: string;
-          gender?: string;
-          language?: string;
-          preview_url?: string;
-        }[];
-        // Find exact match by voice_id (search can return partial matches)
-        const exactMatch = voices?.find((v: { voice_id: string }) => v.voice_id === voiceId);
-        if (exactMatch) {
-          const sv = exactMatch;
-          return Response.json({
-            ok: true,
-            voice: {
-              voice_id: sv.voice_id,
-              name: `${sv.name}${sv.accent ? ` (${sv.accent})` : ""}`,
-              language: sv.language || "",
-              category: sv.category || "library",
-              preview_url: sv.preview_url || null,
-              gender: sv.gender || null,
-            },
-          });
-        }
-      }
-    }
-
-    return Response.json({
-      ok: false,
-      error: `Không tìm thấy voice ID "${voiceId}"`,
-    });
-  } catch (err) {
-    return Response.json({
-      ok: false,
-      error: err instanceof Error ? scrubSecret(err.message, apiKey) : "Lookup failed",
-    });
+    const voice = await voiceKeyPool.run("elevenlabs", key => fetchVoiceById(key, voiceId), {voiceRef:voiceId});
+    return Response.json({ok:true, voice});
+  } catch {
+    // Name search does not guarantee ID lookup. Do not pretend an unrelated voice is a match.
+    return Response.json({ok:false,error:"ID này chưa khả dụng với các tài khoản ElevenLabs trong kho key. Thêm giọng vào My Voices trên tài khoản có key, rồi tra cứu lại. Không thể tìm mọi giọng thư viện chỉ từ ID."});
   }
 }
 

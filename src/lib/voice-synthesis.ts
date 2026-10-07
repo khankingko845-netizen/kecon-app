@@ -1,3 +1,4 @@
+import { modelForLanguage } from "@/lib/tts-models";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { textToSpeech } from "@/lib/elevenlabs";
 import { fishTextToSpeech } from "@/lib/fishaudio";
@@ -13,11 +14,12 @@ import {
 } from "@/lib/provider-keys";
 import { scrubSecret } from "@/lib/system-secrets";
 import { guardUsage } from "@/lib/usage-guard";
-const audioResponse = (audio: ArrayBuffer) =>
+const audioResponse = (audio: ArrayBuffer, model?: string) =>
   new Response(audio, {
     headers: {
       "Content-Type": "audio/mpeg",
       "Cache-Control": "private, no-store",
+      ...(model ? { "X-TTS-Model": model } : {}),
     },
   });
 
@@ -66,18 +68,18 @@ export async function synthesizeSpeech(
           ).arrayBuffer(),
         { voiceRef, chars: text.length },
       );
-      return audioResponse(audio);
+      return audioResponse(audio, model);
     }
 
     // Resolve model: user preference → admin DB → default
-    const modelId = await resolveElevenLabsModel(userModelId);
+    const modelId = modelForLanguage(await resolveElevenLabsModel(userKey ? userModelId : undefined), language);
     const speak = async (key: string) =>
       (
         await textToSpeech(key, voiceRef, text, modelId, language)
       ).arrayBuffer();
     if (userKey) {
       try {
-        return audioResponse(await speak(userKey));
+        return audioResponse(await speak(userKey), modelId);
       } catch (err) {
         return Response.json(
           {
@@ -95,6 +97,7 @@ export async function synthesizeSpeech(
         voiceRef,
         chars: text.length,
       }),
+      modelId,
     );
   } catch (err) {
     return keyPoolErrorResponse(err, "TTS failed");

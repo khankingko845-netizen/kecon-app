@@ -210,6 +210,7 @@ test("Admin: lọc native/verified/category, cảnh báo, thứ tự từng ngô
   await expect(
     modal.getByText("Vietnamese native", { exact: true }),
   ).toBeVisible();
+  await modal.getByLabel("Hiện giọng được kiểm chứng thêm ngôn ngữ này").check();
   await expect(
     modal.getByText("Professional verified", { exact: true }),
   ).toBeVisible();
@@ -219,6 +220,7 @@ test("Admin: lọc native/verified/category, cảnh báo, thứ tự từng ngô
   await expect(modal.getByText("Japanese native", { exact: true })).toHaveCount(
     0,
   );
+  await modal.getByLabel("Hiện giọng chưa có nhãn ngôn ngữ").check();
   await expect(modal.getByText(/Chưa có nhãn ngôn ngữ —/)).toBeVisible();
   await modal.getByLabel("Hiện giọng chưa có nhãn ngôn ngữ").uncheck();
   await expect(modal.getByText("No metadata", { exact: true })).toHaveCount(0);

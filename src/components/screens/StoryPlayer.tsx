@@ -26,8 +26,10 @@ import { useAudioPlayer } from "@/lib/audio-player-context";
 import { mergeAudioBlobs, getPageAtTime, type MergeResult } from "@/lib/audio-merger";
 import { ttsApi } from "@/lib/api-client";
 import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
-import { parseVoiceMarkup } from "@/lib/elevenlabs";
+import { storyAudioSegments, storyAudioKey } from "@/lib/story-audio";
+import { modelForLanguage } from "@/lib/tts-models";
 import { AmbientEngine, type AmbientType } from "@/lib/audio-engine";
+import { ambientForScene } from "@/lib/story-ambient";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
 import ShareModal from "@/components/ui/ShareModal";
@@ -65,7 +67,7 @@ interface StoryPlayerProps {
 }
 
 // Hardcoded fallback if no default voices configured.
-const FALLBACK_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+
 
 interface DefaultVoice {
  id: string;
@@ -83,39 +85,6 @@ const AMBIENT_OPTIONS: { type: AmbientType; label: string }[] = [
  { type: "night", label: "Đêm" },
  { type: "lullaby", label: "Ru ngủ" },
 ];
-
-// Map ambient category IDs (from editor) to AmbientType (audio engine)
-const CATEGORY_TO_AMBIENT: Record<string, AmbientType> = {
- forest: "forest",
- night: "night",
- ocean: "waves",
- rain: "rain",
- castle: "fire", // fireplace crackling for castles
- adventure: "wind",
- home: "fire", // cozy fireplace
- suspense: "wind",
- lullaby: "lullaby",
- magic: "lullaby", // gentle chimes similar to lullaby
- underwater: "waves",
- playful: "forest", // lightest background
-};
-
-// AI auto-matching: pick an ambient layer from a page's scene description.
-function ambientForScene(text: string, pageAmbient?: string | null): AmbientType | null {
- // Priority: editor-set category > heuristic match
- if (pageAmbient && CATEGORY_TO_AMBIENT[pageAmbient]) {
- return CATEGORY_TO_AMBIENT[pageAmbient];
- }
- const t = text.toLowerCase();
- if (/mưa|rain|giông|bão/.test(t)) return "rain";
- if (/biển|sóng|đại dương|sea|ocean|wave/.test(t)) return "waves";
- if (/gió|wind|bão|đồi|núi/.test(t)) return "wind";
- if (/lửa|fire|bếp|trại|nến|ấm/.test(t)) return "fire";
- if (/rừng|cây|chim|forest|vườn|lá/.test(t)) return "forest";
- if (/đêm|tối|sao|trăng|night|ngủ/.test(t)) return "night";
- if (/ngủ|ru|lullaby|giấc mơ/.test(t)) return "lullaby";
- return null;
-}
 
 // Snapshot of the active audio element's clock, used for the time display.
 interface AudioClock {
@@ -141,7 +110,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
- const { settings, hasElevenLabs } = useSettings();
+ const { settings, hasElevenLabs, systemStatus } = useSettings();
  const [audioError,setAudioError]=useState<string|null>(null);
  const narrationEnabledRef=useRef(settings.narrationEnabled);
  const narrationEpochRef=useRef(0);
@@ -201,6 +170,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Default voices from admin + user voice selection
  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+ const [multiVoice,setMultiVoice]=useState(false);
+ const audioJobsRef=useRef(new Map<string,Promise<Blob>>());
+ const audioSavesRef=useRef(new Set<string>());
+ const playbackUrlsRef=useRef(new Map<number,string>());
  const [showVoicePicker, setShowVoicePicker] = useState(false);
  // Auto-advance: when audio ends, go to next page and auto-play
  const [pendingAutoPlay, setPendingAutoPlay] = useState(false);
@@ -236,7 +209,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const [showMixer, setShowMixer] = useState(false);
  const [ambientOn, setAmbientOn] = useState<Record<string, boolean>>({});
  const [ambientVol, setAmbientVol] = useState<Record<string, number>>({});
- const [autoAmbient, setAutoAmbient] = useState(true);
+ const [autoAmbient, setAutoAmbient] = useState(false);
+ const autoAmbientRef=useRef<AmbientType|null>(null);
 
  // Visual effects (scene-matched particles). manualEffect overrides auto.
  const [autoEffect, setAutoEffect] = useState(true);
@@ -249,10 +223,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const toggleAmbient = useCallback(
  (type: AmbientType, on: boolean) => {
+ getEngine().setVolume(type,ambientVol[type]??0.18);
  getEngine().toggle(type, on);
  setAmbientOn((prev) => ({ ...prev, [type]: on }));
  },
- [getEngine]
+ [getEngine,ambientVol]
  );
 
  const changeAmbientVol = useCallback(
@@ -359,15 +334,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const resolvedVoiceId = (selectedVoiceId && availableVoiceIds.has(selectedVoiceId) ? selectedVoiceId : null)
  || (rememberedVoiceId && availableVoiceIds.has(rememberedVoiceId) ? rememberedVoiceId : null)
  || (narratorVoiceId && availableVoiceIds.has(narratorVoiceId) ? narratorVoiceId : null)
- || (story?.voice_id ? storyVoice?.elevenlabs_voice_id : null)
+ || (storyVoice?.is_active && story?.voice_id ? storyVoice?.elevenlabs_voice_id : null)
  || firstClonedVoice?.elevenlabs_voice_id
  || defaultsForLocale[0]?.voice_id
- || FALLBACK_VOICE_ID;
+ || "";
  const elevenVoiceId = resolvedVoiceId;
  const preview=useVoicePreview(storyLocale);
- const canReuseSavedAudio = !selectedVoiceId && !rememberedVoiceId && (narratorVoiceId ? elevenVoiceId===narratorVoiceId : story?.voice_id ? elevenVoiceId===storyVoice?.elevenlabs_voice_id : true);
+ const effectiveModel=modelForLanguage(settings.elevenLabsApiKey ? settings.elevenLabsModelId || systemStatus.elevenLabsModel : systemStatus.elevenLabsModel || "eleven_multilingual_v2",storyLocale);
+ const audioIdentity=JSON.stringify([resolvedVoiceId,storyLocale,effectiveModel,multiVoice,pages.map(p=>p.content),storyCharacters.map(c=>[c.name,c.voice_id])]);
  const stopNarration=useCallback(()=>{
- narrationEpochRef.current++;mergeAbortRef.current=true;
+ narrationEpochRef.current++;mergeAbortRef.current=true;audioJobsRef.current.clear();
  setPendingAutoPlay(false);setIsPlaying(false);setIsTTSLoading(false);setCurrentSpeaker(null);setAudioClock(null);
  const a=audioRef.current;a?.pause();if(a?.src.startsWith("blob:")&&a.src!==mergedRef.current?.blobUrl)URL.revokeObjectURL(a.src);audioRef.current=null;
  setMergeStatus(mergedRef.current?"ready":"idle");setMergeProgress("");
@@ -381,11 +357,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  prefetchCache.current.forEach(url=>{if(url.startsWith("blob:"))URL.revokeObjectURL(url);});prefetchCache.current.clear();
  if(mergedRef.current)URL.revokeObjectURL(mergedRef.current.blobUrl);
  mergedRef.current=null;setMergedResult(null);setMergeStatus("idle");setMergeProgress("");setAudioError(null);
- },[resolvedVoiceId,stopNarration,preview.stop]);
+ audioJobsRef.current.clear();playbackUrlsRef.current.clear();
+ },[audioIdentity,stopNarration,preview.stop]);
 
  // Save voice choice to story when user manually picks
  const handleVoiceSelect = useCallback((voiceId: string, voiceName: string) => {
- setSelectedVoiceId(voiceId);
+ stopNarration();setMultiVoice(false);setSelectedVoiceId(voiceId);
  setShowVoicePicker(false);
  // Persist to DB
  if (storyId && !isGenerated) {
@@ -394,7 +371,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  last_voice_name: voiceName,
  }).catch(() => {});
  }
- }, [storyId, isGenerated]);
+ }, [storyId, isGenerated,stopNarration]);
 
  // Label for display
  const selectedDefault = defaultVoices.find((v) => v.voice_id === resolvedVoiceId);
@@ -458,117 +435,61 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  authoredEffect ?? effectForScene(`${sceneDesc} ${currentText}`);
  const activeEffect: EffectType | null =
  manualEffect ?? (autoEffect ? autoMatchedEffect : null);
- useEffect(() => {
- if (!autoAmbient || !isPlaying) return;
- const pageAmbient = isGenerated ? null : pages[currentPage]?.ambient_sound;
- const match = ambientForScene(`${sceneDesc} ${currentText}`, pageAmbient);
- if (!match) return;
- const engine = getEngine();
- AMBIENT_OPTIONS.forEach(({ type }) => {
- if (type !== match && engine.isPlaying(type) && !ambientOn[type]) {
- engine.stopLayer(type);
- }
- });
- if (!engine.isPlaying(match)) {
- engine.setVolume(match, 0.4);
- engine.play(match);
- }
- // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [sceneDesc, autoAmbient, isPlaying, currentPage]);
+ useEffect(()=>{
+  const engine=getEngine();engine.setMaster(isPlaying?0.35:1);
+  const match=autoAmbient&&isPlaying?ambientForScene(sceneDesc,isGenerated?null:pages[currentPage]?.ambient_sound):null;
+  const previous=autoAmbientRef.current;
+  if(previous && previous!==match && !ambientOn[previous])engine.stopLayer(previous);
+  autoAmbientRef.current=match;
+  if(match && !ambientOn[match]){engine.setVolume(match,0.12);engine.play(match);}
+ },[autoAmbient,isPlaying,sceneDesc,isGenerated,pages,currentPage,ambientOn,getEngine]);
 
- // Helper: generate TTS for a page text and return an audio URL (objectURL or remote)
- const generatePageAudio = useCallback(async (
- text: string,
- pageIdx: number,
- ): Promise<string> => {
- const epoch=narrationEpochRef.current;
- if(!narrationEnabledRef.current)throw new Error("Giọng đọc đang tắt.");
- const hasMarkup = /\[(narrator|character:[^\]]+)\]/.test(text);
- let blob: Blob;
-
- if (hasMarkup && storyCharacters.length > 0) {
- const charVoiceMap: Record<string, { voiceId: string; voiceName?: string }> = {};
- for (const c of storyCharacters) {
- if (c.voice_id) {
- charVoiceMap[c.name] = { voiceId: c.voice_id, voiceName: c.voice_name || c.name };
- }
- }
- const segments = parseVoiceMarkup(text, charVoiceMap, elevenVoiceId, narratorVoiceName || "Narrator");
- const audioBlobs: Blob[] = [];
- for (const seg of segments) {
- if(!narrationEnabledRef.current||epoch!==narrationEpochRef.current)throw new Error("Đã dừng giọng đọc.");
- if (pageIdx === currentPage) {
- setCurrentSpeaker(seg.speaker === "narrator" ? null : seg.speaker);
- }
- const segBlob = await ttsApi(
- seg.voiceId, seg.text,
- settings.elevenLabsApiKey || undefined,
- settings.elevenLabsModelId || undefined,
- storyLocale
- );
- audioBlobs.push(segBlob);
- }
- if (audioBlobs.length === 1) {
- blob = audioBlobs[0];
- } else {
- const parts: ArrayBuffer[] = [];
- for (const b of audioBlobs) parts.push(await b.arrayBuffer());
- const totalLength = parts.reduce((s, p) => s + p.byteLength, 0);
- const combined = new Uint8Array(totalLength);
- let offset = 0;
- for (const part of parts) { combined.set(new Uint8Array(part), offset); offset += part.byteLength; }
- blob = new Blob([combined], { type: "audio/mpeg" });
- }
- if (pageIdx === currentPage) setCurrentSpeaker(null);
- } else {
- blob = await ttsApi(
- elevenVoiceId, text,
- settings.elevenLabsApiKey || undefined,
- settings.elevenLabsModelId || undefined,
- storyLocale
- );
- }
-
- // Save audio to Supabase for future reuse (fire-and-forget)
- const pageRow = pages[pageIdx];
- if (canReuseSavedAudio && pageRow && !pageRow.audio_url) {
- uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
- savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
- // Update local pages state so we don't regenerate
- setPages((prev) =>
- prev.map((p) => (p.id === pageRow.id ? { ...p, audio_url: remoteUrl } : p))
- );
- }).catch(() => {});
- }
-
- return URL.createObjectURL(blob);
- }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale, currentPage, pages,canReuseSavedAudio]);
-
- // Prefetch next page audio in background
- const prefetchNextPage = useCallback((fromPageIdx: number) => {
- const nextIdx = fromPageIdx + 1;
- if (nextIdx >= totalPages || !hasElevenLabs || !narrationEnabledRef.current) return;
- const epoch=narrationEpochRef.current;
- if (prefetchCache.current.has(nextIdx)) return; // already prefetched
- const nextPageRow = pages[nextIdx];
- if (!nextPageRow) return;
- // If it already has a saved audio_url, preload that
- if (canReuseSavedAudio && nextPageRow.audio_url) {
- prefetchCache.current.set(nextIdx, nextPageRow.audio_url);
- // Preload into browser cache
- const preloadAudio = new Audio(nextPageRow.audio_url);
- preloadAudio.preload = "auto";
- preloadAudio.load();
- return;
- }
- // Otherwise generate TTS in background
- const nextText = nextPageRow.content;
- if (!nextText) return;
- generatePageAudio(nextText, nextIdx).then((url) => {
- if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
- prefetchCache.current.set(nextIdx, url);
- }).catch(() => {});
- }, [totalPages, hasElevenLabs, pages, generatePageAudio,canReuseSavedAudio]);
+ // Every path (play, prefetch, merge) uses the same segments and audio identity.
+ const generatePageAudio = useCallback(async (text:string,pageIdx:number):Promise<string>=>{
+  const epoch=narrationEpochRef.current;
+  if(!narrationEnabledRef.current)throw new Error("Giọng đọc đang tắt.");
+  if(!elevenVoiceId)throw new Error("Chưa có giọng khả dụng cho ngôn ngữ truyện. Bố mẹ cần thêm giọng phù hợp.");
+  const segments=storyAudioSegments(text,elevenVoiceId,storyCharacters,multiVoice);
+  if(!segments.length)throw new Error("Trang truyện chưa có nội dung để đọc.");
+  const key=await storyAudioKey(segments,storyLocale,effectiveModel);
+  if(epoch!==narrationEpochRef.current)throw new Error("Đã đổi giọng đọc.");
+  const pageRow=pages[pageIdx];
+  if(pageRow?.audio_url && pageRow.audio_key===key){playbackUrlsRef.current.set(pageIdx,pageRow.audio_url);return pageRow.audio_url;}
+  let job=audioJobsRef.current.get(key);
+  if(!job){
+   job=(async()=>{
+    const blobs:Blob[]=[];
+    for(const seg of segments){
+     if(epoch!==narrationEpochRef.current || !narrationEnabledRef.current)throw new Error("Đã dừng giọng đọc.");
+     blobs.push(await ttsApi(seg.voiceId,seg.text,settings.elevenLabsApiKey||undefined,settings.elevenLabsApiKey ? effectiveModel : undefined,storyLocale));
+    }
+    if(blobs.length===1)return blobs[0];
+    const merged=await mergeAudioBlobs(blobs);
+    try{return await (await fetch(merged.blobUrl)).blob();}finally{URL.revokeObjectURL(merged.blobUrl);}
+   })();
+   audioJobsRef.current.set(key,job);
+   job.catch(()=>{if(audioJobsRef.current.get(key)===job)audioJobsRef.current.delete(key);});
+  }
+  const blob=await job;
+  if(epoch!==narrationEpochRef.current || !narrationEnabledRef.current)throw new Error("Đã đổi hoặc tắt giọng đọc.");
+  const url=URL.createObjectURL(blob);playbackUrlsRef.current.set(pageIdx,url);
+  const saveKey=pageRow?`${pageRow.id}:${key}`:"";
+  if(pageRow && !audioSavesRef.current.has(saveKey)){audioSavesRef.current.add(saveKey);void uploadTtsAudio(pageRow.id,blob).then(async remoteUrl=>{
+   if(epoch!==narrationEpochRef.current)return;
+   await savePageAudio(pageRow.id,remoteUrl,0,key);
+   if(epoch===narrationEpochRef.current)playbackUrlsRef.current.set(pageIdx,remoteUrl);
+   if(epoch===narrationEpochRef.current)setPages(prev=>prev.map(p=>p.id===pageRow.id?{...p,audio_url:remoteUrl,audio_key:key}:p));
+  }).catch(()=>{audioSavesRef.current.delete(saveKey);});}
+  return url;
+ },[storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,settings.elevenLabsApiKey,pages]);
+ const prefetchNextPage=useCallback((from:number)=>{
+  const idx=from+1;const epoch=narrationEpochRef.current;
+  if(idx>=totalPages || !hasElevenLabs || !narrationEnabledRef.current || prefetchCache.current.has(idx) || !pages[idx]?.content)return;
+  generatePageAudio(pages[idx].content,idx).then(url=>{
+   if(epoch!==narrationEpochRef.current || !narrationEnabledRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
+   prefetchCache.current.set(idx,url);
+  }).catch(()=>{});
+ },[totalPages,hasElevenLabs,pages,generatePageAudio]);
 
  // Background merge: generate TTS for all pages and merge into single audio
  const startBackgroundMerge = useCallback(async () => {
@@ -589,35 +510,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const pageRow = pages[i];
  if (!pageRow?.content) continue;
 
- let blob: Blob;
- // Check if page already has saved audio
- if (canReuseSavedAudio && pageRow.audio_url) {
- try {
- const res = await fetch(pageRow.audio_url);
- blob = await res.blob();
- } catch {
- blob = await ttsApi(
- elevenVoiceId, pageRow.content,
- settings.elevenLabsApiKey || undefined,
- settings.elevenLabsModelId || undefined,
- storyLocale
- );
- }
- } else {
- blob = await ttsApi(
- elevenVoiceId, pageRow.content,
- settings.elevenLabsApiKey || undefined,
- settings.elevenLabsModelId || undefined,
- storyLocale
- );
- // Save only original-narrator audio; selected alternatives must not overwrite it.
- if(canReuseSavedAudio) uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
- savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
- setPages((prev) =>
- prev.map((p) => (p.id === pageRow.id ? { ...p, audio_url: remoteUrl } : p))
- );
- }).catch(() => {});
- }
+ const pageUrl=await generatePageAudio(pageRow.content,i);
+ const res=await fetch(pageUrl);if(!res.ok)throw new Error("Không tải được audio để ghép.");
+ const blob=await res.blob();if(pageUrl.startsWith("blob:"))URL.revokeObjectURL(pageUrl);
  blobs.push(blob);
  }
 
@@ -647,7 +542,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setMergeStatus("idle"); // allow retry
  setMergeProgress("");
  }
- }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale,canReuseSavedAudio]);
+ }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages,generatePageAudio]);
 
  // Switch to merged audio playback
  const switchToMerged = useCallback(() => {
@@ -697,7 +592,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
  };
 
- audio.play().catch(() => {});
+ audio.onerror=()=>{setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");};
+ audio.play().catch(e=>{setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Không phát được audio.");});
  setIsPlaying(true);
  setMergeStatus("playing");
  }, [currentPage, storyId, isGenerated, cue, say]);
@@ -706,23 +602,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if(!narrationEnabledRef.current)return;
  preview.stop();setShowVoicePicker(false);setAudioError(null);
  const epoch=narrationEpochRef.current;
- if (!hasElevenLabs || !currentText) {
- setIsPlaying(true);
- return;
+ if (!hasElevenLabs || !currentText || !elevenVoiceId) {
+ setAudioError("Chưa có giọng khả dụng hoặc provider chưa cấu hình.");return;
  }
 
  setIsTTSLoading(true);
  setCurrentSpeaker(null);
  try {
  let url: string;
- const pageRow = !isGenerated ? pages[currentPage] : null;
 
- // 1. Check if page already has saved audio_url in DB
- if (canReuseSavedAudio && pageRow?.audio_url) {
- url = pageRow.audio_url;
- }
  // 2. Check prefetch cache
- else if (prefetchCache.current.has(currentPage)) {
+ if (prefetchCache.current.has(currentPage)) {
  url = prefetchCache.current.get(currentPage)!;
  prefetchCache.current.delete(currentPage);
  }
@@ -774,6 +664,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
  };
 
+ playbackUrlsRef.current.set(currentPage,url);
+ audio.onerror=()=>{if(epoch===narrationEpochRef.current){setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");}};
  await audio.play();
  if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){audio.pause();return;}
  setIsPlaying(true);
@@ -790,7 +682,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  } finally {
  if(epoch===narrationEpochRef.current)setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say,canReuseSavedAudio,preview.stop]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say,elevenVoiceId,preview.stop]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
@@ -1063,9 +955,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const isMerged = mergeStatus === "playing";
  const allPageAudios = isMerged
  ? undefined // merged = single track, no page switching needed
- : pages
- .filter((p) => p.audio_url)
- .map((p) => ({ pageNumber: p.page_number, audioUrl: p.audio_url! }));
+ : Array.from(playbackUrlsRef.current).filter(([,url])=>!url.startsWith("blob:")).map(([idx,url])=>({pageNumber:idx+1,audioUrl:url})).sort((a,b)=>a.pageNumber-b.pageNumber);
  globalPlayer.adoptAudio(audioRef.current, {
  storyId: story.id,
  storyTitle: story.title,
@@ -1221,6 +1111,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <span>· Trang {currentPage + 1}/{totalPages}</span>
  {showVoicePicker && (
  <div className="absolute top-full left-0 right-0 mt-1 bg-night-card/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
+ <label className="flex min-h-11 items-center gap-2 px-3 text-[13px] text-moon"><input type="checkbox" checked={multiVoice} onChange={e=>{stopNarration();setMultiVoice(e.target.checked);}} /> Dùng giọng riêng từng nhân vật</label>
+ <p className="px-3 pb-2 text-[12px] text-moon-2">Mặc định toàn truyện dùng giọng đã chọn. Giọng nhân vật chỉ dùng khi bật mục trên.</p>
  {/* User's cloned voices */}
  {voiceProfiles.filter((v) => v.elevenlabs_voice_id).length > 0 && (
  <>
@@ -1514,7 +1406,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Sound Mixer (3-layer: voice TTS + ambient + auto-match) */}
  {showMixer && (
- <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+ <div role="dialog" aria-modal="true" aria-label="Trộn âm thanh" className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
  <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10">
  <div className="flex items-center justify-between mb-4">
  <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
@@ -1529,33 +1421,37 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </div>
 
  <button
+ aria-pressed={autoAmbient}
  onClick={() => setAutoAmbient((v) => !v)}
  className={`w-full mb-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors ${
  autoAmbient
  ? "bg-accent-2/20 text-accent-2"
- : "bg-white/5 text-moon/50"
+ : "bg-white/5 text-moon-2"
  }`}
  >
  <Volume2 size={14} />
- AI tự chọn âm nền theo cảnh: {autoAmbient ? "BẬT" : "TẮT"}
+ Âm nền theo bối cảnh (thử nghiệm): {autoAmbient ? "BẬT" : "TẮT"}
  </button>
 
+ <p className="mb-3 text-[12px] text-moon-2">Mặc định tắt. Âm nền mô phỏng, không phải thu âm thật; phát nhẹ hơn khi có lời kể. Không khớp cảnh thì giữ yên lặng.</p>
  <div className="space-y-3 max-h-[40vh] overflow-y-auto no-scrollbar">
  {AMBIENT_OPTIONS.map(({ type, label }) => {
  const on = ambientOn[type] ?? false;
- const vol = ambientVol[type] ?? 0.6;
+ const vol = ambientVol[type] ?? 0.18;
  return (
  <div key={type} className="flex items-center gap-3">
  <button
+ aria-pressed={on}
  onClick={() => toggleAmbient(type, !on)}
  className={`w-20 shrink-0 py-2 rounded-lg text-[12px] font-bold transition-colors ${
- on ? "bg-accent text-moon" : "bg-white/5 text-moon/50"
+ on ? "bg-accent text-moon" : "bg-white/5 text-moon-2"
  }`}
  >
  {label}
  </button>
  <input
  type="range"
+ aria-label={`Âm lượng ${label}`}
  min={0}
  max={1}
  step={0.05}
@@ -1583,7 +1479,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  autoEffect && !manualEffect
  ? "bg-accent-2 text-[#0F0628]"
- : "bg-white/5 text-moon/50"
+ : "bg-white/5 text-moon-2"
  }`}
  >
  AI tự chọn
@@ -1596,7 +1492,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  !autoEffect && !manualEffect
  ? "bg-accent text-moon"
- : "bg-white/5 text-moon/50"
+ : "bg-white/5 text-moon-2"
  }`}
  >
  Tắt
@@ -1608,7 +1504,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
  manualEffect === type
  ? "bg-accent text-moon"
- : "bg-white/5 text-moon/50"
+ : "bg-white/5 text-moon-2"
  }`}
  >
  {EFFECT_LABELS[type]}
@@ -1616,7 +1512,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  ))}
  </div>
  {autoEffect && !manualEffect && (
- <p className="text-[11px] text-moon/30 mt-2">
+ <p className="text-[11px] text-moon-2 mt-2">
  {autoMatchedEffect
  ? `Đang khớp cảnh: ${EFFECT_LABELS[autoMatchedEffect]}`
  : "Trang này chưa khớp hiệu ứng nào"}
@@ -1661,7 +1557,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">🎨</div>
  <div className="text-sm font-bold text-moon">Tạo Minh Hoạ</div>
- <div className="text-[11px] text-moon/50 mt-0.5">AI vẽ hình cho mỗi trang</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">AI vẽ hình cho mỗi trang</div>
  </button>
 
  {/* Personalize */}
@@ -1672,7 +1568,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">🧒</div>
  <div className="text-sm font-bold text-moon">Cá Nhân Hoá</div>
- <div className="text-[11px] text-moon/50 mt-0.5">Đưa tên bé vào truyện</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">Đưa tên bé vào truyện</div>
  </button>
 
  {/* Vocabulary & Quiz */}
@@ -1687,7 +1583,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">📚</div>
  <div className="text-sm font-bold text-moon">Từ Vựng & Quiz</div>
- <div className="text-[11px] text-moon/50 mt-0.5">Học từ mới + trả lời quiz</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">Học từ mới + trả lời quiz</div>
  </button>
 
  {/* Translate */}
@@ -1706,7 +1602,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">🌍</div>
  <div className="text-sm font-bold text-moon">Dịch Truyện</div>
- <div className="text-[11px] text-moon/50 mt-0.5">Dịch sang ngôn ngữ khác</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">Dịch sang ngôn ngữ khác</div>
  </button>
 
  {/* Ambient Sounds */}
@@ -1716,7 +1612,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">🎵</div>
  <div className="text-sm font-bold text-moon">Âm Nền</div>
- <div className="text-[11px] text-moon/50 mt-0.5">Nhạc + âm thanh môi trường</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">Nhạc + âm thanh môi trường</div>
  </button>
 
  {/* Edit Story */}
@@ -1730,7 +1626,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  >
  <div className="text-2xl mb-2">✏️</div>
  <div className="text-sm font-bold text-moon">Chỉnh Sửa</div>
- <div className="text-[11px] text-moon/50 mt-0.5">Sửa nội dung truyện</div>
+ <div className="text-[11px] text-moon-2 mt-0.5">Sửa nội dung truyện</div>
  </button>
  )}
  </div>
