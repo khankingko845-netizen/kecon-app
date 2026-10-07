@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -42,6 +43,7 @@ const TOPICS: { id: string; label: string; icon: Icon3DName }[] = [
 ];
 
 export default function Home({ onNavigate }: HomeProps) {
+ const features = useFeatureFlags();
   const { profile, user } = useAuth();
   useEffect(()=>{if(user)recordMilestone("home_view");},[user]);
   // T19: only stories the parent allows (blocked categories / age cap removed).
@@ -142,6 +144,7 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
         <button
           type="button"
+          hidden={!features.enabled("gamification")}
           onClick={() => onNavigate("achievements")}
           aria-label={`${streak} đêm liền nghe truyện`}
           className="ml-auto flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-2xl bg-glow-soft px-3 text-[15px] font-black text-[#7A4A00]"
@@ -263,7 +266,7 @@ export default function Home({ onNavigate }: HomeProps) {
       {/* Khám phá thêm */}
       <SectionHeader title="Khám phá thêm" />
       <div data-testid="home-explore" className="grid grid-cols-2 gap-2.5">
-        {exploreFor(more, ageUi)
+        {exploreFor(more.filter((item) => features.canOpen(item.screen)), ageUi)
           .map(({ label, screen, icon: Icon }) => (
             <button
               key={screen}

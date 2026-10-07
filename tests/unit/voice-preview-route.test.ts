@@ -10,6 +10,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mocks.user },
     from: mocks.from,
+    rpc: async () => ({data:{multilingual:true},error:null}),
   }),
 }));
 vi.mock("@/lib/admin-permissions", () => ({ hasPermission: mocks.permission }));

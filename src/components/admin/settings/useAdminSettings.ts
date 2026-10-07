@@ -340,7 +340,7 @@ export function useAdminSettings(canManageSecrets: boolean) {
       const changed: Record<string, string> = {};
       for (const [k, v] of Object.entries(settings)) {
         // API keys never go through app_settings (A-04: Vault only).
-        if (isSecretSettingKey(k)) continue;
+        if (isSecretSettingKey(k) || k.startsWith("feature.")) continue;
         if (v !== (original[k] ?? "")) {
           changed[k] = v;
         }

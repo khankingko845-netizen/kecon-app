@@ -59,7 +59,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-mobile",
-      testIgnore: /(perf|secrets-scan)\.spec\.ts$/,
+      testIgnore: /(perf|secrets-scan|feature-flags)\.spec\.ts$/,
       use: mobileChromium,
     },
     {
@@ -80,6 +80,7 @@ export default defineConfig({
       fullyParallel: false,
       use: mobileChromium,
     },
+    {name:"feature-flags",testMatch:/feature-flags\.spec\.ts$/,dependencies:["secrets-scan"],fullyParallel:false,use:mobileChromium},
   ],
   webServer: [
     {

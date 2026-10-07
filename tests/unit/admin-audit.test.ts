@@ -44,6 +44,10 @@ describe("A-03 · mọi route quản trị ghi nhật ký (quét mã)", () => {
     const rel = relative(ROOT, file);
     const isAdminRoute = rel.startsWith(join("src", "app", "api", "admin"));
     for (const h of handlers(readFileSync(file, "utf8"))) {
+      // Public capability polling is not an admin operation: it reads only an
+      // allowlisted boolean catalog and caller permissions (including visitors).
+      // Exact route/method exception, independently verified in feature-flag-capabilities.test.ts.
+      if (rel.replace(/\\/g, "/") === "src/app/api/features/route.ts" && h.method === "GET") continue;
       if (!isAdminRoute && !STAFF_CHECK.test(h.body)) continue;
       const name = `${rel.replace(/\\/g, "/")} ${h.method}`;
       checked.push(name);
@@ -173,7 +177,7 @@ describe("A-03 · route ghi nhật ký trước khi thao tác", () => {
     vi.stubGlobal("fetch", fetchMock);
   });
   const rpcWith = (logResult: { error: unknown }) =>
-    rpc.mockImplementation(async (name: string) => (name === "has_permission" ? { data: true, error: null } : { data: 1, ...logResult }));
+    rpc.mockImplementation(async (name: string) => (name === "public_feature_flags" ? {data:{child_push:true},error:null} : name === "has_permission" ? { data: true, error: null } : { data: 1, ...logResult }));
 
   it("push/send: không ghi được nhật ký → 503, không đọc danh sách người nhận", async () => {
     rpcWith({ error: { message: "audit down" } });

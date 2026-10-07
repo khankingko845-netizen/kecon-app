@@ -126,7 +126,7 @@ test.describe("UI-13 · Lớn cùng bé", () => {
 
     await tabBar(page).getByRole("button", { name: "Trang chủ" }).click();
     await expect(topics).toHaveAttribute("data-cols", "3");
-    await expect(page.getByTestId("home-explore").getByRole("button")).toHaveCount(6);
+    await expect(page.getByTestId("home-explore").getByRole("button")).toHaveCount(5); // Upload is staff-only even when its flag is enabled.
     await expect(page.locator("[data-kid-detail]").first()).toBeVisible();
     await expect.poll(() => domWidth(page)).toBeLessThan(bigDom * 0.85);
 

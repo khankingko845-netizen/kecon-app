@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Every action the log can contain (DB triggers + API routes), with its Vietnamese label. */
 export const AUDIT_ACTIONS = {
+  "flag.create": "Tạo cờ tính năng", "flag.update": "Đổi cờ tính năng", "flag.delete": "Xoá cờ tính năng",
   "measurement.view": "Xem đo lường tổng hợp",
   "pricing.update": "Đổi đơn giá AI",
   "admin_session.open": "Mở phiên quản trị",

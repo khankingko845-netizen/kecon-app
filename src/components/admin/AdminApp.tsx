@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import {
   createContext,
@@ -128,6 +129,7 @@ const OVERLAY_SCREENS = new Set<Screen>([
 ]);
 
 function AdminContent({ screen }: { screen: AdminScreen }) {
+ const features = useFeatureFlags();
   const router = useRouter();
   const permissions = useContext(AdminPermissionsContext);
   const [overlays, setOverlays] = useState<Overlay[]>([]);
@@ -142,14 +144,14 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
       if (isAdminScreen(next)) {
         setOverlays([]);
         if (canOpenSection(next, permissions)) router.push(adminPath(next));
-      } else if (OVERLAY_SCREENS.has(next)) {
+      } else if (OVERLAY_SCREENS.has(next) && features.canOpen(next) && (next !== "create" || permissions.includes("stories.write"))) {
         setOverlays((prev) => [...prev, { screen: next, data }]);
       } else {
         // Kid-only screens stay in the kid app — just close the story tool.
         setOverlays([]);
       }
     },
-    [router, permissions],
+    [router, permissions, features.canOpen],
   );
   const closeOverlay = useCallback(
     () => setOverlays((prev) => prev.slice(0, -1)),
@@ -161,6 +163,7 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
   );
 
   const top = overlays[overlays.length - 1];
+  if (top && !features.canOpen(top.screen)) return <div role="status" className="p-6">Tính năng đang tắt<button className="admin-button ml-4" onClick={closeOverlay}>Đóng</button></div>;
   if (top?.screen === "editor")
     return (
       <StoryEditor

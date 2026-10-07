@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState, useEffect } from "react";
 import {
@@ -103,6 +104,7 @@ const THEME_ICON3D: Record<string, Icon3DName> = {
 
 
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
+ const features = useFeatureFlags();
  const { settings, systemStatus } = useSettings();
  const { voiceProfiles, refreshStories } = useData();
  const [selectedTheme, setSelectedTheme] = useState("cotich");
@@ -118,7 +120,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const { cue, say } = useFeedback();
 
  // Language & narrator voice
- const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
+ const [selectedStoryLocale, setStoryLocale] = useState(settings.language || "vi");
+ const storyLocale = features.enabled("multilingual") ? selectedStoryLocale : "vi";
  const speech = useSpeechInput(storyLocaleFor(storyLocale));
  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
 
@@ -293,10 +296,10 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </div>
  {speakRow("Hoặc bé tự nói cho Đóm nghe")}
  <div className="mt-3 grid grid-cols-2 gap-2.5">
- <button type="button" onClick={() => onNavigate("draw-story")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
+ <button hidden={!features.canOpen("draw-story")} type="button" onClick={() => onNavigate("draw-story")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
  <PenLine size={18} /> Bé vẽ, Đóm kể
  </button>
- <button type="button" onClick={() => onNavigate("scan-book")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
+ <button hidden={!features.canOpen("scan-book")} type="button" onClick={() => onNavigate("scan-book")} className={`flex min-h-[52px] items-center justify-center gap-2 rounded-[18px] bg-white text-[14px] font-extrabold text-brand-ink ${CARD_SHADOW}`}>
  <Camera size={18} /> Chụp sách
  </button>
  </div>
@@ -363,7 +366,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
 
  <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Kể bằng tiếng gì?</h3>
  <div className="grid grid-cols-3 gap-2">
- {LANGUAGES.map((lang) => (
+ {LANGUAGES.filter((lang) => lang.code === "vi" || features.enabled("multilingual")).map((lang) => (
  <button
  key={lang.code}
  type="button"

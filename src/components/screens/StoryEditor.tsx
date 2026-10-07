@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 import { storyAudioSegments } from "@/lib/story-audio";
 
 import { useState, useEffect, useCallback } from "react";
@@ -59,6 +60,7 @@ interface StoryEditorProps {
 }
 
 export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditorProps) {
+ const features = useFeatureFlags();
  const { settings, hasElevenLabs } = useSettings();
  const { refreshStories, voiceProfiles } = useData();
  const [story, setStory] = useState<StoryRow | null>(null);
@@ -314,6 +316,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  }, [storyId, title, category, description, ageMin, ageMax, pages, refreshStories]);
 
  const handleIllustrate = async (page: StoryPageRow) => {
+ if(!features.enabled("ai_illustrations")) return;
  const prompt = page.scene_description || page.content;
  if (!prompt) return;
  setIllustrating(page.id);
@@ -922,7 +925,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  </div>
 
  {/* Branching choices for this page */}
- <div className="mb-2 rounded-xl bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] p-2.5">
+ <div hidden={!features.enabled("branching_stories")} className="mb-2 rounded-xl bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] p-2.5">
  <div className="flex items-center justify-between mb-1.5">
  <span className="text-[11px] font-bold text-txt-secondary dark:text-white/50 flex items-center gap-1">
  <GitBranch size={12} className="text-emerald-600" /> Lựa chọn rẽ nhánh
@@ -987,6 +990,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  ) : null}
 
  <button
+ hidden={!features.enabled("ai_illustrations")}
  onClick={() => handleIllustrate(page)}
  disabled={illustrating === page.id}
  className="inline-flex items-center gap-1.5 text-[12px] font-bold text-accent-2 px-3 py-1.5 rounded-lg bg-accent-2/10 disabled:opacity-50"
@@ -1067,12 +1071,12 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  </p>
 
  {/* AI Expert Panel */}
- <ExpertPanel
+ {features.enabled("expert_review") && ( <ExpertPanel
  storyContent={pages.map((p, i) => `Trang ${i + 1}: ${p.content}`).join("\n\n")}
  storyTitle={story?.title}
  targetAge={story?.target_age_min ? `${story.target_age_min}-${story.target_age_max}` : "4-6"}
  language={story?.locale || "vi"}
- />
+ />)}
 
  <div className="flex gap-2 mt-2">
  <button

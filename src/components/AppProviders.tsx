@@ -1,5 +1,6 @@
 "use client";
 
+import { FeatureFlagsProvider } from "@/lib/feature-flags-context";
 import { AdminConfirmProvider } from "@/components/admin/AdminConfirm";
 import type { ReactNode } from "react";
 import { SettingsProvider } from "@/lib/settings-context";
@@ -21,6 +22,7 @@ import { AgeUiProvider } from "@/lib/age-ui-context";
 export default function AppProviders({ children }: { children: ReactNode }) {
  return (
  <AuthProvider>
+ <FeatureFlagsProvider>
  <SettingsProvider>
  <DataProvider>
  <AudioPlayerProvider>
@@ -38,6 +40,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
  </AudioPlayerProvider>
  </DataProvider>
  </SettingsProvider>
+ </FeatureFlagsProvider>
  </AuthProvider>
  );
 }

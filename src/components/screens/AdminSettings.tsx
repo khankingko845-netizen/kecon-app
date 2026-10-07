@@ -1,4 +1,5 @@
 "use client";
+import FeatureFlagSettings from "@/components/admin/settings/FeatureFlagSettings";
 import AiPricingSettings from "@/components/admin/settings/AiPricingSettings";
 import { Save, Loader2, Check } from "@/components/ui/icons";
 import { AdminHeader } from "@/components/admin/AdminUi";
@@ -52,6 +53,7 @@ export default function AdminSettings({
           </p>
         ) : (
           <>
+            <FeatureFlagSettings/>
             <AiPricingSettings/>
       <ElevenLabsSettings
               controller={controller}

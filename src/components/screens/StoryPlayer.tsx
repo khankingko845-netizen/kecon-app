@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
 import NarrationToggle from "@/components/ui/NarrationToggle";
@@ -105,6 +106,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
+ const features = useFeatureFlags();
  const { settings, hasElevenLabs, systemStatus } = useSettings();
  const [audioError,setAudioError]=useState<string|null>(null);
  const narrationEnabledRef=useRef(settings.narrationEnabled);
@@ -334,6 +336,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  : voiceProfiles.find((v) => v.elevenlabs_voice_id);
 
  const storyLocale = story?.locale || "vi";
+ const localeAllowed = storyLocale === "vi" || features.enabled("multilingual");
  const narratorVoiceId = story?.narrator_voice_id ?? null;
  const narratorVoiceName = story?.narrator_voice_name ?? null;
  const rememberedVoiceId = story?.last_voice_id ?? null;
@@ -363,8 +366,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  },[]);
  useEffect(()=>{
  narrationEnabledRef.current=settings.narrationEnabled;
- if(!settings.narrationEnabled) stopNarration();
- },[settings.narrationEnabled,stopNarration]);
+ if(!settings.narrationEnabled || !localeAllowed) {stopNarration();preview.stop();}
+ },[settings.narrationEnabled,localeAllowed,stopNarration,preview.stop]);
  useEffect(()=>{
  stopNarration();preview.stop();
  prefetchCache.current.forEach(url=>{if(url.startsWith("blob:"))URL.revokeObjectURL(url);});prefetchCache.current.clear();
@@ -474,6 +477,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Every path (play, prefetch, merge) uses the same segments and audio identity.
  const generatePageAudio = useCallback(async (text:string,pageIdx:number):Promise<string>=>{
   const epoch=narrationEpochRef.current;
+  if(!localeAllowed) throw new Error("Ngôn ngữ truyện đang tắt.");
   if(!narrationEnabledRef.current)throw new Error("Giọng đọc đang tắt.");
   if(!elevenVoiceId)throw new Error("Chưa có giọng khả dụng cho ngôn ngữ truyện. Bố mẹ cần thêm giọng phù hợp.");
   const segments=storyAudioSegments(text,elevenVoiceId,storyCharacters,multiVoice);
@@ -508,7 +512,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
    if(epoch===narrationEpochRef.current)setPages(prev=>prev.map(p=>p.id===pageRow.id?{...p,audio_url:remoteUrl,audio_key:key}:p));
   }).catch(()=>{audioSavesRef.current.delete(saveKey);});}
   return url;
- },[storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,settings.elevenLabsApiKey,pages]);
+ },[localeAllowed,storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,settings.elevenLabsApiKey,pages]);
  const prefetchNextPage=useCallback((from:number)=>{
   const idx=from+1;const epoch=narrationEpochRef.current;
   if(idx>=totalPages || !hasElevenLabs || !narrationEnabledRef.current || prefetchCache.current.has(idx) || !pages[idx]?.content)return;
@@ -858,6 +862,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const [aiMessage, setAiMessage] = useState<string | null>(null);
 
  const handleAutoIllustrate = async () => {
+ if(!features.enabled("ai_illustrations")) return;
  if (!storyId || isIllustrating) return;
  setIsIllustrating(true);
  setAiMessage("Đang tạo minh hoạ AI...");
@@ -908,6 +913,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
 
  const handleTranslate = async (targetLang: string, bilingual: boolean) => {
+ if(!features.enabled("multilingual")) return;
  if (!storyId || isTranslating) return;
  setIsTranslating(true);
  setAiMessage("Đang dịch truyện...");
@@ -933,13 +939,13 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  type MoreId = "lullaby" | "adventure" | "save" | "share" | "mixer" | "ai" | "rating" | "edit";
  const moreItems: { id: MoreId; icon: typeof Moon; label: string; active?: boolean; loading?: boolean }[] = [
  { id: "lullaby", icon: Moon, label: "Ru ngủ" },
- { id: "adventure", icon: Shuffle, label: "Rẽ nhánh" },
+ ...(features.enabled("branching_stories") ? [{ id: "adventure" as const, icon: Shuffle, label: "Rẽ nhánh" }] : []),
  { id: "save", icon: Bookmark, label: isFav ? "Đã lưu" : "Lưu", active: isFav, loading: favLoading },
  { id: "share", icon: Share2, label: "Chia sẻ" },
  { id: "mixer", icon: SlidersHorizontal, label: "Trộn âm" },
  { id: "ai", icon: Sparkles, label: "Đóm AI" },
  { id: "rating", icon: Star, label: ratingCount > 0 ? `Đánh giá ${avgRating.toFixed(1)}` : "Đánh giá" },
- ...(!isGenerated && storyId ? [{ id: "edit" as const, icon: Pencil, label: "Chỉnh sửa" }] : []),
+ ...(!isGenerated && storyId && features.canOpen("editor") ? [{ id: "edit" as const, icon: Pencil, label: "Chỉnh sửa" }] : []),
  ];
 
  function runMore(id: MoreId) {
@@ -962,6 +968,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <KidLoading fullScreen tone="night" title="Đóm đang mở truyện…" />
  );
  }
+
+ if (!localeAllowed) return <KidError fullScreen tone="night" title="Ngôn ngữ truyện đang tắt" message="Bố mẹ chọn truyện tiếng Việt nhé." onRetry={onBack} />;
 
  // T19: a story hidden by Parental controls can't be opened from any link.
  if (story && !isStoryAllowed(story, contentRules)) {
@@ -1591,6 +1599,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </div>
 
  <div className="grid grid-cols-2 gap-3">
+{features.enabled("ai_illustrations") && (<>
  {/* Auto-Illustrate */}
  <button
  onClick={() => { setShowAIMenu(false); handleAutoIllustrate(); }}
@@ -1602,6 +1611,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="text-[11px] text-moon-2 mt-0.5">AI vẽ hình cho mỗi trang</div>
  </button>
 
+
+</>)}
  {/* Personalize */}
  <button
  onClick={() => { setShowAIMenu(false); handlePersonalize(); }}
@@ -1613,6 +1624,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="text-[11px] text-moon-2 mt-0.5">Đưa tên bé vào truyện</div>
  </button>
 
+{features.enabled("vocabulary_quiz") && (<>
  {/* Vocabulary & Quiz */}
  <button
  onClick={() => {
@@ -1628,6 +1640,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="text-[11px] text-moon-2 mt-0.5">Học từ mới + trả lời quiz</div>
  </button>
 
+
+</>)}
+{features.enabled("multilingual") && (<>
  {/* Translate */}
  <button
  onClick={() => {
@@ -1647,6 +1662,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="text-[11px] text-moon-2 mt-0.5">Dịch sang ngôn ngữ khác</div>
  </button>
 
+
+</>)}
  {/* Ambient Sounds */}
  <button
  onClick={() => { setShowAIMenu(false); setShowMixer(true); }}
@@ -1658,7 +1675,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </button>
 
  {/* Edit Story */}
- {storyId && !isGenerated && (
+ {storyId && !isGenerated && features.canOpen("editor") && (
  <button
  onClick={() => {
  setShowAIMenu(false);
