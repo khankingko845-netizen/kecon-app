@@ -482,7 +482,7 @@ function DefaultVoicesManager({
  {/* ─── Add Voice Modal ─── */}
  {addingForLang && (
  <div onKeyDown={e=>{ if(e.key==="Escape"&&!submitting){setAddingForLang(null);return;} if(e.key!=="Tab")return;const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]'));const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();} }} role="dialog" aria-modal="true" aria-label="Chọn giọng theo ngôn ngữ" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
- <div className="bg-white dark:bg-[#242047] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
+ <div className="bg-white dark:bg-[#242047] dark:text-[#F7EFD8] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
  {/* Modal header */}
  <div className="flex items-center justify-between px-4 py-3 border-b">
  <h4 className="text-[15px] font-bold">
@@ -520,7 +520,7 @@ function DefaultVoicesManager({
  <button
  type="button"
  onClick={() => setManualMode(true)}
- className="text-[11px] text-accent font-semibold"
+ className="text-[11px] text-accent dark:text-amber-300 font-semibold"
  >
  Nhập voice_id thủ công →
  </button>
@@ -542,7 +542,7 @@ function DefaultVoicesManager({
  aria-label="Tra cứu Voice ID"
  onClick={handleLookupVoice}
  disabled={lookingUp || !manualVoiceId.trim()}
- className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-accent text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
+ className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-accent dark:text-amber-300 text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
  >
  {lookingUp ? (
  <Loader2 size={14} className="animate-spin" />
@@ -552,7 +552,7 @@ function DefaultVoicesManager({
  </button>
  </div>
  {lookupError && (
- <p className="text-[11px] text-red-500 font-medium flex items-center gap-1">
+ <p className="text-[11px] text-red-500 dark:text-red-300 font-medium flex items-center gap-1">
  <AlertCircle size={11} /> {lookupError}
  </p>
  )}
@@ -568,7 +568,7 @@ function DefaultVoicesManager({
  <button
  type="button"
  onClick={() => { setManualMode(false); setLookupError(null); }}
- className="text-[11px] text-accent font-semibold"
+ className="text-[11px] text-accent dark:text-amber-300 font-semibold"
  >
  ← Chọn từ danh sách
  </button>
@@ -576,7 +576,7 @@ function DefaultVoicesManager({
  type="button"
  onClick={() => handleAddManual(addingForLang)}
  disabled={submitting || !manualVoiceId.trim() || !manualName.trim()}
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-[12px] font-bold disabled:opacity-50"
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white dark:bg-[#6D45C0] dark:text-white text-[12px] font-bold disabled:opacity-50"
  >
  {submitting ? (
  <Loader2 size={12} className="animate-spin" />
@@ -590,7 +590,7 @@ function DefaultVoicesManager({
  href={`https://elevenlabs.io/community?language=${addingForLang}`}
  target="_blank"
  rel="noopener noreferrer"
- className="inline-flex items-center gap-1.5 text-accent text-[11px] font-semibold"
+ className="inline-flex items-center gap-1.5 text-accent dark:text-amber-300 text-[11px] font-semibold"
  >
  Tìm voice trên ElevenLabs <ExternalLink size={11} />
  </a>
@@ -648,7 +648,7 @@ function DefaultVoicesManager({
  {/* Premade voices */}
  {ownPremade.length > 0 && (
  <div>
- <div className="px-4 py-2 bg-gray-50 dark:bg-white/[0.04] text-[11px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider sticky top-0">
+ <div className="px-4 py-2 bg-gray-50 dark:bg-white/[0.04] text-[11px] font-bold text-gray-500 dark:text-white/65 uppercase tracking-wider sticky top-0">
  🌐 Giọng trong tài khoản
  </div>
  {ownPremade.map((v) => (
@@ -665,7 +665,7 @@ function DefaultVoicesManager({
  </div>
  )}
 
- {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
+ {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2 dark:text-white/65">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
  {matches.length + unknownVoices.length === 0 && !catalogLoading && (
  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary dark:text-white/50">
  Không tìm thấy voice nào
@@ -692,10 +692,10 @@ function VoiceRow({
  alreadyAdded: boolean;
 }) {
  return (
- <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:bg-white/[0.04] transition-colors">
+ <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] transition-colors">
  <div className="flex-1 min-w-0">
  <p className="text-[13px] font-semibold truncate">{voice.name}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50">
+ <p className="text-[11px] text-txt-secondary dark:text-white/65">
  {voice.category} · {voiceLanguages(voice).map(code=>LANGUAGES.find(l=>l.code===code)?.label??code).join(", ") || "chưa có nhãn ngôn ngữ"}
  </p>
  </div>
@@ -706,7 +706,7 @@ function VoiceRow({
  type="button"
  onClick={onAdd}
  disabled={submitting}
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-colors disabled:opacity-50"
+ className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent/10 text-accent dark:bg-amber-300/10 dark:text-amber-300 dark:hover:bg-amber-300/15 text-[11px] font-bold hover:bg-accent/20 transition-colors disabled:opacity-50"
  >
  {submitting ? (
  <Loader2 size={11} className="animate-spin" />
