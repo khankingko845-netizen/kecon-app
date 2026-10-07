@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminConfirmProvider } from "@/components/admin/AdminConfirm";
 import type { ReactNode } from "react";
 import { SettingsProvider } from "@/lib/settings-context";
 import { AuthProvider } from "@/lib/auth-context";
@@ -28,7 +29,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
  <AgeUiProvider>
  <FeedbackProvider>
  <ToastProvider>
- <ParentalControlsProvider>{children}</ParentalControlsProvider>
+ <ParentalControlsProvider><AdminConfirmProvider>{children}</AdminConfirmProvider></ParentalControlsProvider>
  </ToastProvider>
  </FeedbackProvider>
  </AgeUiProvider>

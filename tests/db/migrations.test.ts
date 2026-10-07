@@ -152,7 +152,7 @@ describe("016 · profiles: chặn leo thang đặc quyền", () => {
   it("super_admin đổi được role của người khác", async () => {
     const superAdmin = await createUser({ role: "super_admin" });
     const uid = await createUser();
-    await asUser(db, superAdmin, (tx) => tx.query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [uid]));
+    await asUser(db, superAdmin, (tx) => tx.query("SELECT public.admin_confirmed_action('role.change',ARRAY[$1::text],'Đổi vai trò theo ca kiểm thử','admin')", [uid]));
     expect((await profile(uid)).role).toBe("admin");
   });
 });

@@ -37,7 +37,7 @@ const run = <T = Record<string, unknown>>(uid: string, sql: string, params: unkn
 const asService = <T = Record<string, unknown>>(sql: string, params: unknown[] = []) =>
   asRole(db, "service_role", null, async (tx) => (await tx.query<T>(sql, params)).rows);
 const setSecret = async (uid: string, key: string, value: string, reason: string | null = null) =>
-  (await run<{ r: Status }>(uid, "SELECT public.set_system_secret($1, $2, $3) AS r", [key, value, reason]))[0].r;
+  (await run<{ r: Status }>(uid, "SELECT public.set_system_secret($1, $2, $3) AS r", [key, value, reason ?? (value === "" ? "Secrets suite cleared test key" : null)]))[0].r;
 const serverRead = async (key: string) =>
   (await asService<{ v: string | null }>("SELECT public.get_system_secret($1) AS v", [key]))[0].v;
 

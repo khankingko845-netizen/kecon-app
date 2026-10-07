@@ -25,6 +25,7 @@ export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 /** Admin v2 · A-02: an "editor" (Biên tập) — narrow role, no settings / users / API keys. */
 export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 
+const MOCK_A15_ADMIN_ID="00000000-0000-4000-8000-00000000e2a0",MOCK_A15_TARGET_ID="00000000-0000-4000-8000-00000000e2a1";
 const MOCK_MFA_USER_ID="00000000-0000-4000-8000-00000000e2e9";
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
@@ -60,6 +61,8 @@ const editorUser = {
   email: "e2e-editor@kecon.test",
 };
 const USERS = {
+  [MOCK_A15_ADMIN_ID]:{...adminUser,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test"},
+  [MOCK_A15_TARGET_ID]:{...user,id:MOCK_A15_TARGET_ID,email:"e2e-a15-target@kecon.test"},
   [MOCK_USER_ID]: user,
   [MOCK_PIN_USER_ID]: pinUser,
   [MOCK_AGE_USER_ID]: ageUser,
@@ -204,7 +207,7 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
+  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
@@ -422,6 +425,18 @@ function rpc(name, sub, body, claims={}) {
   const access=mockAdminAccess(sub,claims);
   const permissions=access.state==="ready"?rawPermissions:[];
   switch (name) {
+    case "admin_confirmed_action":{
+      const map={"role.change":"roles.manage","story.trash":"stories.write","story.unpublish":"stories.write","category.delete":"categories.manage","template.delete":"templates.manage","default_voice.delete":"voices.manage"};
+      if(!map[body.p_action]||!permissions.includes(map[body.p_action]))return rpcError(400,"42501","Forbidden");
+      if(String(body.p_reason??"").trim().length<10)return rpcError(400,"22023","Reason required");
+      const table={"role.change":"profiles","story.trash":"stories","story.unpublish":"stories","category.delete":"story_categories","template.delete":"story_templates","default_voice.delete":"default_voices"}[body.p_action];
+      const ids=body.p_ids??[],rows=(TABLES[table]??[]).filter(r=>ids.includes(r.id));if(rows.length!==ids.length)return rpcError(400,"40001","Stale targets");
+      if(body.p_action==="role.change")rows[0].role=body.p_role;
+      else if(body.p_action==="story.trash")rows.forEach(r=>Object.assign(r,{deleted_at:new Date().toISOString(),is_published:false}));
+      else if(body.p_action==="story.unpublish")rows.forEach(r=>Object.assign(r,{status:"draft",is_published:false}));
+      else TABLES[table]=(TABLES[table]??[]).filter(r=>!ids.includes(r.id));
+      return ids.length;
+    }
     case "admin_access_status":return access;
     case "open_admin_session": {
       if(!rawPermissions.length)return access;

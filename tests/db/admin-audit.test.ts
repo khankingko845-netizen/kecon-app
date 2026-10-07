@@ -50,7 +50,7 @@ async function lastId(): Promise<number> {
   const { rows } = await db.query<{ id: number | null }>("SELECT max(id) AS id FROM public.admin_audit_log");
   return Number(rows[0].id ?? 0);
 }
-const run = (uid: string, sql: string, params: unknown[] = []) => asUser(db, uid, (tx) => tx.query(sql, params));
+const run = (uid: string, sql: string, params: unknown[] = []) => asUser(db, uid, async(tx) => {await tx.query("SELECT set_config('app.admin_reason','Audit suite confirmed action',true)");return tx.query(sql, params);});
 const asServiceRole = (sql: string) => asRole(db, "service_role" as "authenticated", null, (tx) => tx.query(sql));
 
 beforeAll(async () => {
@@ -92,6 +92,7 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
         JSON.stringify({ "x-forwarded-for": "203.0.113.7, 10.0.0.1", "user-agent": "Vitest/1.0" }),
       ]);
       await tx.exec("SET LOCAL ROLE authenticated");
+      await tx.query("SELECT set_config('app.admin_reason','Audit header confirmed change',true)");
       await tx.query("UPDATE public.profiles SET role = 'support' WHERE id = $1", [u.family]);
       await tx.query("UPDATE public.profiles SET role = 'user' WHERE id = $1", [u.family]);
     });
@@ -125,7 +126,7 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
   it("đặt / xoá API key (021: qua Vault): ghi 'secret.*' nhưng không bao giờ chép giá trị key", async () => {
     const from = await lastId();
     await run(u.admin, "SELECT public.set_system_secret('openai_api_key', $1)", [SECRET]);
-    await run(u.admin, "SELECT public.set_system_secret('openai_api_key', '')");
+    await run(u.admin, "SELECT public.set_system_secret('openai_api_key', '', 'Audit suite cleared test key')");
     const logs = await logsSince(from);
     expect(logs.map((l) => l.action)).toEqual(["secret.create", "secret.delete"]);
     expect(logs[0]).toMatchObject({

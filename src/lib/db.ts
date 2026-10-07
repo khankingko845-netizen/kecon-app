@@ -1614,9 +1614,9 @@ export async function updateProviderKey(id: string, patch: { label?: string; ena
   if (error) throw error;
 }
 
-export async function deleteProviderKey(id: string): Promise<void> {
+export async function deleteProviderKey(id: string, reason: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.rpc("delete_provider_key", { p_id: id, p_reason: null });
+  const { error } = await supabase.rpc("delete_provider_key", { p_id: id, p_reason: reason });
   if (error) throw error;
 }
 

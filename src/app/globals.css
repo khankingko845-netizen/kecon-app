@@ -426,3 +426,41 @@ html:not([data-density="high"]) [data-kid-extra] { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .kid-wave { animation: none; }
 }
+
+/* A-15: the operations console uses parent typography and a calm, fixed light palette,
+   independent of the kid's bedtime theme. Native dialogs share the same tokens. */
+[data-admin-shell], .admin-dialog {
+ --color-ink:#2B2350; --color-ink-2:#6B6390; --color-txt:#2B2350;
+ --color-txt-secondary:#6B6390; --color-brand-ink:#5B4BDB;
+ --color-brand-soft:#ECE9FF; --color-accent:#A63B18; --color-surface:#F7F6FB; --color-parent-bg:#F7F6FB; --color-white:#FFF; --color-night-card:#FFF; --color-success:#146650;
+ color:var(--color-ink); color-scheme:light; font-family:var(--font-parent),sans-serif;
+}
+[data-admin-shell] :is(h1,h2,h3), .admin-dialog :is(h1,h2) {font-family:var(--font-parent),sans-serif;}
+[data-admin-shell] :is(button,input,select,textarea), .admin-dialog :is(button,input,select,textarea){min-height:44px;}
+[data-admin-shell] :is(button,a,input,select,textarea):focus-visible, .admin-dialog :focus-visible {outline:3px solid var(--color-brand);outline-offset:3px;}
+.admin-button {display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border:1px solid #D8D5E5;border-radius:10px;background:white;color:var(--color-ink);font-size:14px;font-weight:600;}
+.admin-button:hover:not(:disabled){background:var(--color-brand-soft);}
+.admin-button:disabled{opacity:.5;cursor:not-allowed;}
+.admin-button-danger {background:#B42318;border-color:#B42318;color:white;}
+.admin-button-danger:hover:not(:disabled){background:#8E1B13;}
+.admin-input {border:1px solid #B7B1CA;border-radius:10px;padding:12px;background:white;color:var(--color-ink);font-size:14px;}
+.admin-dialog {position:fixed;inset:0;margin:auto;width:calc(100% - 32px);max-width:520px;max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid #D8D5E5;border-radius:16px;background:white;box-shadow:0 16px 64px #15123333;}
+.admin-dialog::backdrop{background:#15123399;}
+.admin-drawer {inset:0 0 0 auto;margin:0;width:min(100%,520px);max-width:520px;height:100dvh;max-height:100dvh;border-radius:16px 0 0 16px;}
+.admin-table th {padding:14px 16px;background:#F7F6FB;font-weight:600;white-space:nowrap;}
+.admin-table td {padding:16px;border-top:1px solid #E5E2ED;vertical-align:top;}
+.admin-table tbody tr:hover {background:#FAF9FE;}
+[data-admin-shell] .admin-settings section {scroll-margin-top:24px;}
+
+/* Keep legacy night selectors out of the fixed-light operations console. */
+.night [data-admin-shell] :is(.text-red-700,.text-red-600) {color:#B42318;}
+.night [data-admin-shell] :is(.text-emerald-800,.text-emerald-700,.text-success) {color:#146650;}
+.night [data-admin-shell] :is(.text-gray-500,.text-gray-600,.text-gray-700) {color:#6B6390;}
+.night [data-admin-shell] :is(.text-gray-800,.text-gray-900) {color:#2B2350;}
+
+[data-admin-shell] button, .admin-dialog button {min-width:44px;}
+.night [data-admin-shell] :is(.text-amber-600,.text-amber-700,.text-amber-800) {color:#854D0E;}
+.night [data-admin-shell] :is(.text-violet-600,.text-violet-700,.text-violet-800,.text-purple-700,.text-indigo-700) {color:#6B21A8;}
+.night [data-admin-shell] .text-red-800 {color:#991B1B;}
+
+[data-admin-shell] .voice-preview-button {color:var(--color-brand-ink);background:var(--color-brand-soft);}
