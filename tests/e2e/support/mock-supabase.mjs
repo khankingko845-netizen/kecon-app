@@ -17,6 +17,8 @@ const MOCK_PIN = "2468";
 /** Third family (UI-13): its profile is writable so specs can change the child's age. */
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
 /** Writable avatar family, isolated from concurrent age-band tests. */
+export const MOCK_PHOTO_USER_ID = "00000000-0000-4000-8000-00000000e2e7";
+export const MOCK_VOICE_USER_ID = "00000000-0000-4000-8000-00000000e2e8";
 export const MOCK_AVATAR_USER_ID = "00000000-0000-4000-8000-00000000e2e6";
 /** Admin v2 · A-01: the only mock account whose profile role is "admin". */
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
@@ -61,6 +63,8 @@ const USERS = {
   [MOCK_PIN_USER_ID]: pinUser,
   [MOCK_AGE_USER_ID]: ageUser,
   [MOCK_AVATAR_USER_ID]: avatarUser,
+  [MOCK_PHOTO_USER_ID]: {...user,id:MOCK_PHOTO_USER_ID,email:"e2e-photo@kecon.test"},
+  [MOCK_VOICE_USER_ID]: {...user,id:MOCK_VOICE_USER_ID,email:"e2e-voice@kecon.test"},
   [MOCK_ADMIN_USER_ID]: adminUser,
   [MOCK_EDITOR_USER_ID]: editorUser,
 };
@@ -198,7 +202,8 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }],
+  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
+  voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
   parental_controls: parentalControls,
@@ -514,6 +519,8 @@ function filterRows(rows, params) {
       return true;
     });
   }
+  const orders=(params.get("order")??"").split(",").filter(Boolean);
+  if(orders.length)out=[...out].sort((a,b)=>{for(const order of orders){const [key,dir]=order.split(".");const c=compare(String(a[key]??""),String(b[key]??""));if(c)return dir==="desc"?-c:c;}return 0;});
   const limit = Number(params.get("limit"));
   return Number.isFinite(limit) && limit > 0 ? out.slice(0, limit) : out;
 }
@@ -530,6 +537,7 @@ function send(res, status, body, headers = {}) {
   res.end(body === undefined ? "" : JSON.stringify(body));
 }
 
+const photos=new Map();
 createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://127.0.0.1:${PORT}`);
   const path = url.pathname;
@@ -542,6 +550,20 @@ createServer((req, res) => {
       send(res, 200, { secretsScan });
     });
     return;
+  }
+
+  if(path.startsWith("/storage/v1/object/")){
+    const sub=tokenSub(req.headers.authorization);if(!USERS[sub])return send(res,401,{message:"Unauthorized"});
+    const relative=path.slice("/storage/v1/object/".length).replace(/^authenticated\//,"");
+    if(req.method==="DELETE"&&relative==="family-avatars"){
+      readJson(req).then(body=>{for(const p of body?.prefixes??[])if(p.startsWith(`${sub}/`))photos.delete(`family-avatars/${p}`);send(res,200,[]);});return;
+    }
+    if(!relative.startsWith(`family-avatars/${sub}/`))return send(res,404,{message:"Not found"});
+    if(req.method==="POST"){
+      const chunks=[];req.on("data",c=>chunks.push(c));req.on("end",()=>{photos.set(relative,Buffer.concat(chunks));send(res,200,{Key:relative,Id:randomUUID()});});return;
+    }
+    if(req.method==="GET"&&photos.has(relative)){res.writeHead(200,{...CORS,"Content-Type":"image/webp"});res.end(photos.get(relative));return;}
+    return send(res,404,{message:"Not found"});
   }
 
   // ── Auth ──
@@ -569,7 +591,7 @@ createServer((req, res) => {
       return;
     }
     const table = path.slice("/rest/v1/".length);
-    if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID].includes(sub)) {
+    if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID,MOCK_PHOTO_USER_ID].includes(sub)) {
       // Only the isolated age/avatar families may edit their own rows.
       readJson(req).then((body) => {
         // Mirror the schema: family_name / display_name are NOT NULL (001_initial_schema.sql).
@@ -588,7 +610,7 @@ createServer((req, res) => {
       return send(res, req.method === "DELETE" ? 204 : 201, req.method === "DELETE" ? undefined : []);
     }
     const allowed = authed && (!TABLE_PERMISSION[table] || permissionsOf(sub).includes(TABLE_PERMISSION[table]));
-    const rows = allowed ? filterRows(TABLES[table] ?? [], url.searchParams) : [];
+    const rows = allowed ? filterRows((TABLES[table] ?? []).filter(r=>table!=="voice_profiles"||r.user_id===sub), url.searchParams) : [];
     const range = { "Content-Range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" };
     if (req.method === "HEAD") return send(res, 200, undefined, range);
     if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {

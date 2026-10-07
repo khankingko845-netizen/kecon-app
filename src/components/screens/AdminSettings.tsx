@@ -18,6 +18,7 @@ import {
 import { isSecretSettingKey, secretStatusText, type SystemSecretStatus } from "@/lib/system-secrets";
 import type { ProviderKeyRow } from "@/lib/provider-keys";
 import { FISH_MODELS } from "@/lib/fishaudio";
+import { voiceMatchesLanguage, voiceLanguages, rankedDefaultsForLocale } from "@/lib/voice-selection";
 import ProviderKeyPool from "@/components/screens/ProviderKeyPool";
 
 interface AdminSettingsProps {
@@ -40,6 +41,7 @@ interface VoiceOption {
  name: string;
  category: string;
  language: string;
+ languages?: string[];
  source?: "own" | "library";
  public_owner_id?: string;
 }
@@ -278,12 +280,14 @@ function DefaultVoicesManager({
  defaultVoices,
  onAdd,
  onRemove,
+ onReorder,
  loading,
 }: {
  availableVoices: VoiceOption[];
  defaultVoices: DefaultVoiceRow[];
  onAdd: (voice: { voice_id: string; name: string; language: string; gender?: string }) => Promise<void>;
  onRemove: (id: string) => Promise<void>;
+ onReorder: (language:string,ids:string[])=>Promise<void>;
  loading: boolean;
 }) {
  const [addingForLang, setAddingForLang] = useState<string | null>(null);
@@ -295,6 +299,26 @@ function DefaultVoicesManager({
  const [removingId, setRemovingId] = useState<string | null>(null);
  const [lookingUp, setLookingUp] = useState(false);
  const [lookupError, setLookupError] = useState<string | null>(null);
+ const [catalogue,setCatalogue]=useState<VoiceOption[]>([]);
+ const [catalogLoading,setCatalogLoading]=useState(false);
+ const [catalogWarnings,setCatalogWarnings]=useState<string[]>([]);
+ const [managerError,setManagerError]=useState<string|null>(null);
+ const [ordering,setOrdering]=useState<string|null>(null);
+ const [showUnknown,setShowUnknown]=useState(true);
+ useEffect(()=>{
+  if(!addingForLang)return;let alive=true;
+  fetch(`/api/admin/voice-catalog?language=${addingForLang}`).then(async r=>{
+   const d=await r.json();if(!r.ok)throw new Error(d.error||"Chưa tải được giọng.");
+   if(alive){setCatalogue(d.voices??[]);setCatalogWarnings(d.warnings??[]);}
+  }).catch(e=>{if(alive)setManagerError(e.message);}).finally(()=>{if(alive)setCatalogLoading(false);});
+  return()=>{alive=false;};
+ },[addingForLang]);
+ async function moveVoice(language:string,id:string,direction:number){
+  const list=rankedDefaultsForLocale(defaultVoices,language);const from=list.findIndex(v=>v.id===id);const to=from+direction;if(to<0||to>=list.length)return;
+  [list[from],list[to]]=[list[to],list[from]];setOrdering(language);setManagerError(null);
+  try{await onReorder(language,list.map(v=>v.id));}catch(e){setManagerError(e instanceof Error?e.message:"Chưa sắp xếp được.");}finally{setOrdering(null);}
+ }
+
 
  // Auto-lookup voice info when user enters a voice_id
  async function handleLookupVoice() {
@@ -328,6 +352,7 @@ function DefaultVoicesManager({
  });
  setAddingForLang(null);
  setSearchQuery("");
+ } catch(e) {setManagerError(e instanceof Error?e.message:"Chưa thêm được giọng.");
  } finally {
  setSubmitting(false);
  }
@@ -346,6 +371,7 @@ function DefaultVoicesManager({
  setManualVoiceId("");
  setManualName("");
  setManualMode(false);
+ } catch(e) {setManagerError(e instanceof Error?e.message:"Chưa thêm được giọng.");
  } finally {
  setSubmitting(false);
  }
@@ -355,31 +381,19 @@ function DefaultVoicesManager({
  setRemovingId(id);
  try {
  await onRemove(id);
+ } catch(e) {setManagerError(e instanceof Error?e.message:"Chưa xoá được giọng.");
  } finally {
  setRemovingId(null);
  }
  }
 
  // Filter available voices for the add modal
- const filteredVoices = availableVoices.filter((v) => {
- if (!searchQuery) return true;
- const q = searchQuery.toLowerCase();
- return v.name.toLowerCase().includes(q) || v.voice_id.toLowerCase().includes(q);
- });
-
- // Group available voices by source
- const currentLangFilter = LANGUAGES.find((l) => l.code === addingForLang)?.filter || "";
- const libraryForLang = filteredVoices.filter(
- (v) =>
- v.source === "library" &&
- v.language.toLowerCase().includes(currentLangFilter.toLowerCase())
- );
- const ownCloned = filteredVoices.filter(
- (v) => v.source === "own" && v.category === "cloned"
- );
- const ownPremade = filteredVoices.filter(
- (v) => v.source === "own" && v.category === "premade"
- );
+ const filteredVoices = catalogue.filter(v=>!searchQuery||v.name.toLowerCase().includes(searchQuery.toLowerCase())||v.voice_id.toLowerCase().includes(searchQuery.toLowerCase()));
+ const matches=filteredVoices.filter(v=>voiceMatchesLanguage(v,addingForLang??"vi"));
+ const libraryForLang=matches.filter(v=>v.source==="library");
+ const ownCloned=matches.filter(v=>v.source==="own"&&["cloned","professional"].includes(v.category));
+ const ownPremade=matches.filter(v=>v.source==="own"&&!["cloned","professional"].includes(v.category));
+ const unknownVoices=showUnknown?filteredVoices.filter(v=>voiceLanguages(v).length===0):[];
 
  return (
  <div className="space-y-4 pt-1">
@@ -387,12 +401,12 @@ function DefaultVoicesManager({
  Giọng mặc định cho người dùng
  </p>
  <p className="text-[11px] text-txt-secondary dark:text-white/50 -mt-2 leading-relaxed">
- Người dùng không clone voice sẽ chọn từ danh sách này.
- Thêm nhiều giọng cho mỗi ngôn ngữ.
+ Tự chọn giọng: clone bố mẹ/ông bà trước, rồi danh sách theo thứ tự bên dưới. Kết nối key không tự gán giọng mặc định; bấm Thêm giọng để chọn cho từng ngôn ngữ.
  </p>
 
+ {managerError && <p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{managerError}</p>}
  {LANGUAGES.map((lang) => {
- const voicesForLang = defaultVoices.filter((v) => v.language === lang.code);
+ const voicesForLang = rankedDefaultsForLocale(defaultVoices,lang.code);
 
  return (
  <div key={lang.code} className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
@@ -407,21 +421,24 @@ function DefaultVoicesManager({
  {/* Voice list */}
  {voicesForLang.length > 0 ? (
  <div className="divide-y divide-gray-100 dark:divide-white/[0.06]">
- {voicesForLang.map((v) => (
+ {voicesForLang.map((v,index) => (
  <div
  key={v.id}
  className="flex items-center gap-3 px-3.5 py-2.5"
  >
  <div className="flex-1 min-w-0">
- <p className="text-[13px] font-semibold truncate">{v.name}</p>
+ <p className="text-[13px] font-semibold truncate">{index+1}. {v.name}</p>
  <p className="text-[11px] text-txt-secondary dark:text-white/50 font-mono truncate">
  {v.voice_id}
  </p>
  </div>
+ <button type="button" aria-label={`Ưu tiên lên: ${v.name}`} disabled={index===0||!!ordering||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,-1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↑</button>
+ <button type="button" aria-label={`Ưu tiên xuống: ${v.name}`} disabled={index===voicesForLang.length-1||!!ordering||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↓</button>
  <button
  type="button"
+ aria-label={`Xoá giọng: ${v.name}`}
  onClick={() => handleRemove(v.id)}
- disabled={removingId === v.id}
+ disabled={!!removingId||!!ordering||submitting}
  className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
  >
  {removingId === v.id ? (
@@ -443,22 +460,20 @@ function DefaultVoicesManager({
  <div className="px-3.5 py-2.5 border-t border-gray-100 dark:border-white/[0.06]">
  <button
  type="button"
+ aria-label={`Thêm giọng ${lang.code}`}
  onClick={() => {
+ setCatalogue(availableVoices);setCatalogLoading(true);setCatalogWarnings([]);setManagerError(null);
  setAddingForLang(lang.code);
  setSearchQuery("");
  setManualMode(false);
  }}
- disabled={loading || availableVoices.length === 0}
+ disabled={loading}
  className="inline-flex items-center gap-1.5 text-accent text-[12px] font-bold hover:underline disabled:opacity-50"
  >
  <Plus size={13} />
  Thêm giọng
  </button>
- {availableVoices.length === 0 && (
- <span className="text-[11px] text-txt-secondary dark:text-white/50 ml-2">
- (Test Kết Nối ElevenLabs trước)
- </span>
- )}
+
  </div>
  </div>
  );
@@ -466,8 +481,8 @@ function DefaultVoicesManager({
 
  {/* ─── Add Voice Modal ─── */}
  {addingForLang && (
- <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
- <div className="bg-white dark:bg-white/[0.04] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
+ <div onKeyDown={e=>{ if(e.key==="Escape"&&!submitting){setAddingForLang(null);return;} if(e.key!=="Tab")return;const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]'));const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();} }} role="dialog" aria-modal="true" aria-label="Chọn giọng theo ngôn ngữ" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+ <div className="bg-white dark:bg-[#242047] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
  {/* Modal header */}
  <div className="flex items-center justify-between px-4 py-3 border-b">
  <h4 className="text-[15px] font-bold">
@@ -476,6 +491,7 @@ function DefaultVoicesManager({
  <button
  type="button"
  onClick={() => setAddingForLang(null)}
+ aria-label="Đóng chọn giọng"
  className="p-1.5 rounded-lg hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
  >
  <X size={18} />
@@ -495,6 +511,7 @@ function DefaultVoicesManager({
  type="text"
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
+ aria-label="Tìm giọng theo tên hoặc ID"
  placeholder="Tìm voice theo tên hoặc ID..."
  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm outline-none focus:border-accent transition-colors"
  autoFocus
@@ -515,12 +532,14 @@ function DefaultVoicesManager({
  type="text"
  value={manualVoiceId}
  onChange={(e) => { setManualVoiceId(e.target.value); setLookupError(null); }}
+ aria-label="Voice ID"
  placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB hoặc fish:<id>)"
  className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-mono outline-none focus:border-accent transition-colors"
  autoFocus
  />
  <button
  type="button"
+ aria-label="Tra cứu Voice ID"
  onClick={handleLookupVoice}
  disabled={lookingUp || !manualVoiceId.trim()}
  className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-accent text-[12px] font-bold hover:bg-accent/5 disabled:opacity-50 transition-colors whitespace-nowrap"
@@ -541,6 +560,7 @@ function DefaultVoicesManager({
  type="text"
  value={manualName}
  onChange={(e) => setManualName(e.target.value)}
+ aria-label="Tên giọng"
  placeholder={lookingUp ? "Đang tìm..." : "Tên hiển thị (nhập ID rồi nhấn 🔍)"}
  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm outline-none focus:border-accent transition-colors"
  />
@@ -578,6 +598,10 @@ function DefaultVoicesManager({
  )}
  </div>
 
+ {catalogLoading && <p role="status" className="px-4 py-3 text-[14px]">Đang tải giọng theo ngôn ngữ…</p>}
+ {catalogWarnings.map(w=><p key={w} role="status" className="px-4 py-2 text-[14px] text-amber-800 dark:text-amber-300">{w}</p>)}
+ {managerError && <p role="alert" className="px-4 py-2 text-[14px] text-red-700 dark:text-red-300">{managerError}</p>}
+ {!manualMode && <label className="flex min-h-11 items-center gap-2 px-4 text-[14px]"><input type="checkbox" checked={showUnknown} onChange={e=>setShowUnknown(e.target.checked)} /> Hiện giọng chưa có nhãn ngôn ngữ</label>}
  {/* Voice list (scrollable) */}
  {!manualMode && (
  <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-white/[0.06]">
@@ -585,7 +609,7 @@ function DefaultVoicesManager({
  {libraryForLang.length > 0 && (
  <div>
  <div className="px-4 py-2 bg-amber-50 text-[11px] font-bold text-amber-700 uppercase tracking-wider sticky top-0">
- ⭐ Chuyên {LANGUAGES.find((l) => l.code === addingForLang)?.label}
+ ⭐ Thư viện · {LANGUAGES.find((l) => l.code === addingForLang)?.label}
  </div>
  {libraryForLang.map((v) => (
  <VoiceRow
@@ -625,7 +649,7 @@ function DefaultVoicesManager({
  {ownPremade.length > 0 && (
  <div>
  <div className="px-4 py-2 bg-gray-50 dark:bg-white/[0.04] text-[11px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider sticky top-0">
- 🌐 Premade
+ 🌐 Giọng trong tài khoản
  </div>
  {ownPremade.map((v) => (
  <VoiceRow
@@ -641,7 +665,8 @@ function DefaultVoicesManager({
  </div>
  )}
 
- {filteredVoices.length === 0 && (
+ {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
+ {matches.length + unknownVoices.length === 0 && !catalogLoading && (
  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary dark:text-white/50">
  Không tìm thấy voice nào
  </div>
@@ -671,7 +696,7 @@ function VoiceRow({
  <div className="flex-1 min-w-0">
  <p className="text-[13px] font-semibold truncate">{voice.name}</p>
  <p className="text-[11px] text-txt-secondary dark:text-white/50">
- {voice.category}{voice.language ? ` · ${voice.language}` : ""}
+ {voice.category} · {voiceLanguages(voice).map(code=>LANGUAGES.find(l=>l.code===code)?.label??code).join(", ") || "chưa có nhãn ngôn ngữ"}
  </p>
  </div>
  {alreadyAdded ? (
@@ -771,6 +796,11 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  load();
  }, [load]);
 
+ async function handleReorderDefaultVoices(language:string,ids:string[]){
+ const response=await fetch("/api/voice/defaults",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({language,ids})});const data=await response.json();
+ if(!response.ok)throw new Error(data.error||"Chưa sắp xếp được.");
+ setDefaultVoices(prev=>prev.map(v=>ids.includes(v.id)?{...v,sort_order:ids.indexOf(v.id)}:v));
+ }
  const handleChange = (key: string, value: string) => {
  setSettings((prev) => ({ ...prev, [key]: value }));
  setSaved(false);
@@ -837,9 +867,8 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  method: "DELETE",
  });
  const data = await res.json();
- if (data.ok) {
+ if (!res.ok || !data.ok) throw new Error(data.error || "Chưa xoá được giọng.");
  setDefaultVoices((prev) => prev.filter((v) => v.id !== id));
- }
  }
 
  // ── test provider ──
@@ -1074,6 +1103,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  defaultVoices={defaultVoices}
  onAdd={handleAddDefaultVoice}
  onRemove={handleRemoveDefaultVoice}
+ onReorder={handleReorderDefaultVoices}
  loading={elevenTesting}
  />
  </div>

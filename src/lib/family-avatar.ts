@@ -1,3 +1,4 @@
+import { avatarIdFromUrl } from "@/lib/avatar-path";
 /** Family portraits reuse Đóm's bundled art: no upload, migration or extra image requests. */
 export const FAMILY_AVATARS = [
   { id: "hello", label: "Đóm chào", src: "/mascot/dom-hello.webp", tint: "#EEE9FF", rim: "#D8CFFC" },
@@ -22,6 +23,7 @@ export function familyAvatarFor(url?: string | null, emoji?: string | null): Fam
 
 /** Preserve existing uploaded/profile photos, but never request arbitrary schemes. */
 export function customAvatarUrl(value?: string | null): string | null {
+  if (avatarIdFromUrl(value)) return value!;
   if (!value || FAMILY_AVATARS.some((a) => a.src === value)) return null;
   try {
     const url = new URL(value);

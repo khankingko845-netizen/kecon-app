@@ -5,16 +5,17 @@ import { customAvatarUrl, familyAvatarFor } from "@/lib/family-avatar";
 
 /** Static portrait badge, deliberately unaffected by the child's mascot scale or animation. */
 export default function FamilyAvatar({
-  avatarUrl, emoji, size = 56, label, className = "",
+  avatarUrl, previewUrl, emoji, size = 56, label, className = "",
 }: {
   avatarUrl?: string | null;
+  previewUrl?: string | null;
   emoji?: string | null;
   size?: number;
   label?: string | null;
   className?: string;
 }) {
   const preset = familyAvatarFor(avatarUrl, emoji);
-  const custom = customAvatarUrl(avatarUrl);
+  const custom = previewUrl?.startsWith("blob:") ? previewUrl : customAvatarUrl(avatarUrl);
   const src = custom ?? preset.src;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const isPhoto = Boolean(custom && failedSrc !== src);
