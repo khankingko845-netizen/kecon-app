@@ -1,3 +1,4 @@
+import { guardFeature } from "@/lib/feature-flags-server";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const featureDenied=await guardFeature(supabase,"child_push");
+  if(featureDenied) return featureDenied;
   const parsed = await parseJsonBody(request, PushSubscriptionBody);
   if (!parsed.ok) return parsed.response;
   const subscription = parsed.data;
@@ -67,11 +70,8 @@ export async function DELETE(request: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const { endpoint } = parsed.data;
 
-  await supabase
-    .from("push_subscriptions")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("endpoint", endpoint);
+  const {error}=await supabase.rpc("unsubscribe_push",{p_endpoint:endpoint});
+  if(error) return Response.json({error:"Không xoá được đăng ký"},{status:503});
 
   return Response.json({ ok: true });
 }

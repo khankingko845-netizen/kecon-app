@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
+import { useFeatureFlags } from "@/lib/feature-flags-context";
+
 export type Locale = "vi" | "en" | "ja";
 
 // Translation keys — add new keys here as features grow.
@@ -411,7 +413,8 @@ export function useI18n() {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
+  const { enabled } = useFeatureFlags();
+  const [savedLocale, setLocaleState] = useState<Locale>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("kecon-locale") as Locale | null;
       if (saved && translations[saved]) return saved;
@@ -419,12 +422,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return "vi";
   });
 
+  const locale = enabled("multilingual") ? savedLocale : "vi";
   const setLocale = useCallback((newLocale: Locale) => {
+    if (newLocale !== "vi" && !enabled("multilingual")) return;
     setLocaleState(newLocale);
     if (typeof window !== "undefined") {
       localStorage.setItem("kecon-locale", newLocale);
     }
-  }, []);
+  }, [enabled]);
 
   return (
     <I18nContext.Provider value={{ locale, t: translations[locale], setLocale }}>

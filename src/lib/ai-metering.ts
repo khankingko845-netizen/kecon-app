@@ -1,4 +1,5 @@
 /** Server only. The ledger stores an allowlist, never request/response bodies, URLs, keys, voice IDs or error messages. */
+import { guardMeasuredFeature } from "@/lib/feature-flags-server";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
@@ -32,15 +33,17 @@ export function withAiContext(
     } = await db.auth.getUser();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     let byo = false;
+    let body: Record<string, unknown> = {};
     try {
-      if (r.headers.get("content-type")?.includes("multipart/form-data"))
-        byo = Boolean(
-          String((await r.clone().formData()).get("apiKey") ?? "").trim(),
-        );
-      else byo = Boolean(String((await r.clone().json()).apiKey ?? "").trim());
+      body = r.headers.get("content-type")?.includes("multipart/form-data")
+        ? Object.fromEntries((await r.clone().formData()).entries())
+        : await r.clone().json();
+      byo = Boolean(String(body?.apiKey ?? "").trim());
     } catch {
       /* validation remains in handler */
     }
+    const denied = await guardMeasuredFeature(db, feature, body);
+    if (denied) return denied;
     return aiContext.run(
       { userId: user.id, requestId: randomUUID(), feature, byo },
       () => handler(r),

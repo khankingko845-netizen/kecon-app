@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState, useRef, useCallback } from "react";
 import { CategoryIcon } from "@/components/ui/Icon3D";
@@ -44,6 +45,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
+ const features = useFeatureFlags();
  const { settings, systemStatus } = useSettings();
  const { profile } = useAuth();
  const { refreshStories } = useData();
@@ -213,7 +215,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
 
  // Navigate to editor for this story
  setTimeout(() => {
- onNavigate("editor", { storyId: storyRow.id });
+ onNavigate(features.canOpen("editor") ? "editor" : "player", { storyId: storyRow.id });
  }, 800);
  } catch (err) {
  setError(err instanceof Error ? err.message : "Lỗi khi lưu");

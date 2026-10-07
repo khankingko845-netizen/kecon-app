@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState } from "react";
 import {
@@ -325,6 +326,7 @@ function ApiKeysPanel() {
 
 function LanguagePanel({ onBack }: { onBack: () => void }) {
  const { locale, setLocale } = useI18n();
+ const features = useFeatureFlags();
 
  const languages: { id: Locale; flag: string }[] = [
  { id: "vi", flag: "🇻🇳" },
@@ -337,7 +339,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
  <ParentHeader title="Ngôn ngữ" onBack={onBack} />
  <div className="px-5">
  <SettingsCard>
- {languages.map((lang) => (
+ {languages.filter((lang)=>lang.id === "vi" || features.enabled("multilingual")).map((lang) => (
  <button
  key={lang.id}
  onClick={() => setLocale(lang.id)}
@@ -366,6 +368,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 /* ── Main Settings Screen ── */
 
 export default function Settings({ onNavigate }: SettingsProps) {
+ const features = useFeatureFlags();
  const { settings, updateSettings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
  const { user, profile, signOut, isAdmin, isStaff } = useAuth();
  const ageUi = useAgeUi();
@@ -495,7 +498,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  label="Ngôn ngữ"
  value={LOCALE_LABELS[locale]}
  
- onClick={() => setTab("language")}
+ onClick={() => { if(features.enabled("multilingual")) setTab("language"); }}
  />
  <SettingsRow
  icon={Moon}
@@ -537,7 +540,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  if (!isPushSupported()) return;
  if (getPermissionState() === "granted") {
  await unsubscribeFromPush();
- } else {
+ } else if (features.enabled("child_push")) {
  await subscribeToPush();
  }
  }}
@@ -561,7 +564,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SectionHeader title="Gia đình & bé" />
  <SettingsCard>
  <SettingsRow icon={Mail} label="Thông báo" onClick={() => onNavigate("notifications")} />
- <SettingsRow icon={Trophy} label="Thành tích & huy hiệu" tone="glow" onClick={() => onNavigate("achievements")} />
+ {features.enabled("gamification") && <SettingsRow icon={Trophy} label="Thành tích & huy hiệu" tone="glow" onClick={() => onNavigate("achievements")} />}
  <SettingsRow icon={Shield} label="Kiểm soát phụ huynh" tone="success" onClick={() => onNavigate("parental-controls")} />
  <SettingsRow icon={User} avatar={<FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={40} label={null} />} label="Hồ sơ gia đình" value={`${ageUi.short} · ${ageUi.label}`} onClick={() => onNavigate("profile-edit")} />
  <SettingsRow icon={BarChart3} label="Thống kê của bé" onClick={() => onNavigate("parent-analytics")} />

@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -87,10 +88,11 @@ const screenTabMap: Partial<Record<Screen, TabId>> = {
  settings: "settings",
 };
 
-function AppContent({ signedOut }: { signedOut: boolean }) {
+function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialScreen?: Screen }) {
+ const features = useFeatureFlags();
  const { user, loading } = useAuth();
  const [history, setHistoryState] = useState<ScreenState[]>([
- { screen: "onboarding" },
+ { screen: initialScreen ?? "onboarding" },
  ]);
  // UI-12: the first screen (server-rendered onboarding / first screen after the
  // splash) appears without the slide-in — an opacity-0 start would only delay
@@ -146,9 +148,10 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  window.location.assign(adminPath(screen));
  return;
  }
+ if (!features.canOpen(screen)) return;
  setHistory((prev) => [...prev, { screen, data }]);
  },
- [setHistory]
+ [setHistory, features.canOpen]
  );
 
  const goBack = useCallback(() => {
@@ -212,6 +215,8 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  <ParentGate onUnlock={unlockParent} onCancel={leaveGate} onPinReset={afterPinReset} />
  ) : kidLocked ? (
  <ScreenTimeLock reason={lockReason} onGrant={screenTime.grant} />
+ ) : !features.canOpen(current.screen) ? (
+ <div role="status" className="p-6"><h1 className="text-xl font-bold">Tính năng đang tắt</h1><button className="admin-button mt-4" onClick={leaveGate}>Về Trang chủ</button></div>
  ) : (
  <>
  {current.screen === "onboarding" && (
@@ -319,10 +324,10 @@ function AppContent({ signedOut }: { signedOut: boolean }) {
  );
 }
 
-export default function AppShell({ signedOut = false }: { signedOut?: boolean }) {
+export default function AppShell({ signedOut = false, initialScreen }: { signedOut?: boolean; initialScreen?: Screen }) {
  return (
  <AppProviders>
- <AppContent signedOut={signedOut} />
+ <AppContent signedOut={signedOut} initialScreen={initialScreen} />
  </AppProviders>
  );
 }

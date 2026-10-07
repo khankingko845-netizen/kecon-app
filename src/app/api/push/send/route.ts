@@ -1,3 +1,4 @@
+import { guardFeature } from "@/lib/feature-flags-server";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
@@ -29,6 +30,8 @@ export async function POST(request: NextRequest) {
   const denied = await requirePermission(supabase, "notifications.send");
   if (denied) return denied;
 
+  const featureDenied=await guardFeature(supabase,"child_push");
+  if(featureDenied) return featureDenied;
   const parsed = await parseJsonBody(request, PushSendBody);
   if (!parsed.ok) return parsed.response;
   const { title, body, url, storyId, userIds } = parsed.data;

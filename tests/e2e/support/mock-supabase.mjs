@@ -419,12 +419,21 @@ function permissionsOf(sub) {
 }
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
+const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience'].map(k=>[k,true]));
 function rpc(name, sub, body, claims={}) {
   const hasPin = sub === MOCK_PIN_USER_ID;
   const rawPermissions = permissionsOf(sub);
   const access=mockAdminAccess(sub,claims);
   const permissions=access.state==="ready"?rawPermissions:[];
   switch (name) {
+    case "unsubscribe_push": return null;
+    case "public_feature_flags": return {...FEATURE_FLAGS};
+    case "set_feature_flag": {
+      if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");
+      if(!Object.hasOwn(FEATURE_FLAGS,body.p_name)||typeof body.p_enabled!=="boolean"||typeof body.p_expected!=="boolean"||String(body.p_reason??"").trim().length<10)return rpcError(400,"22023","Invalid flag");
+      if(FEATURE_FLAGS[body.p_name]!==body.p_expected)return rpcError(400,"40001","Stale flag");
+      const changed=FEATURE_FLAGS[body.p_name]!==body.p_enabled;FEATURE_FLAGS[body.p_name]=body.p_enabled;return changed;
+    }
     case "admin_confirmed_action":{
       const map={"role.change":"roles.manage","story.trash":"stories.write","story.unpublish":"stories.write","category.delete":"categories.manage","template.delete":"templates.manage","default_voice.delete":"voices.manage"};
       if(!map[body.p_action]||!permissions.includes(map[body.p_action]))return rpcError(400,"42501","Forbidden");
@@ -638,7 +647,7 @@ createServer((req, res) => {
       readJson(req).then((body) => {
         const served = isServiceRole ? serviceRpc(name, body) : undefined;
         if (served !== undefined) return send(res, 200, served);
-        const out = authed ? rpc(name, sub, body,tokenClaims(req.headers.authorization)) : null;
+        const out = name === "public_feature_flags" ? {...FEATURE_FLAGS} : authed ? rpc(name, sub, body,tokenClaims(req.headers.authorization)) : null;
         if (out && typeof out === "object" && "__rpcError" in out) return send(res, out.__rpcError.status, out.__rpcError.body);
         send(res, 200, out);
       });

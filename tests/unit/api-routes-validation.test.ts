@@ -37,6 +37,7 @@ function post(body: unknown): NextRequest {
 beforeEach(() => {
   fetchMock.mockReset();
   rpc.mockReset();
+  rpc.mockImplementation(async (name:string)=>({data:name === "public_feature_flags" ? {story_drawing:true,book_scan:true,expert_review:true,vocabulary_quiz:true,multilingual:true,ai_illustrations:true,child_push:true,ai_ambience:true}:false,error:null}));
   from.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -64,7 +65,7 @@ describe("API routes: body sai schema → 400, không gọi provider/DB", () => 
       expect(res.status).toBe(400);
       expect((await res.json()).code).toBe("invalid_body");
       expect(fetchMock).not.toHaveBeenCalled();
-      expect(rpc).not.toHaveBeenCalled();
+      expect(rpc.mock.calls.every(([name])=>name === "public_feature_flags")).toBe(true);
       expect(from).not.toHaveBeenCalled();
     });
   }

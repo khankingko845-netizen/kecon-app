@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useSettings } from "@/lib/settings-context";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
@@ -59,6 +60,7 @@ const categoryLabels: Record<string, string> = {
 type SortBy = "newest" | "oldest" | "name" | "popular";
 
 export default function Library({ onNavigate, initialCategory }: LibraryProps) {
+ const features = useFeatureFlags();
  // T19: stories hidden by Parental controls never reach the kid library.
  const { stories, loading, contentRules } = useKidStories();
  const { toast } = useToast();
@@ -231,7 +233,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  key={story.id}
  items={[
  { id: "play", icon: Play, label: "Nghe truyện", color: "text-cta-ink" },
- { id: "edit", icon: Pencil, label: "Chỉnh sửa", color: "text-brand-ink" },
+ ...(features.canOpen("editor") ? [{ id: "edit", icon: Pencil, label: "Chỉnh sửa", color: "text-brand-ink" }] : []),
  { id: "favorite", icon: Heart, label: "Yêu thích", color: "text-cta-ink" },
  { id: "share", icon: Share2, label: "Chia sẻ", color: "text-success" },
  { id: "delete", icon: Trash2, label: "Xoá", destructive: true },
