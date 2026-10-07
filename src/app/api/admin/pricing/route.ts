@@ -10,8 +10,8 @@ export async function POST(request: Request) {
   if (!parsed.success)
     return Response.json({ error: "Đơn giá không hợp lệ" }, { status: 400 });
   const v = parsed.data;
-  // audit: db-trigger ai_price_rates (set_ai_price writes audit atomically; direct writes are revoked)
-  const { error } = await db.rpc("set_ai_price", {
+  // audit: db-trigger ai_price_rates (RPC writes audit atomically; direct writes are revoked)
+  const { error } = await db.rpc("set_ai_price_v2", {
     p_provider: v.provider,
     p_model: v.model,
     p_kind: v.kind,
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     p_output: v.output,
     p_unit: v.unit,
     p_source: v.source,
+    p_billing_unit: v.billingUnit ?? null,
   });
   return Response.json(
     error ? { error: "Không lưu được đơn giá" } : { ok: true },

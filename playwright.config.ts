@@ -59,7 +59,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-mobile",
-      testIgnore: /(perf|secrets-scan|feature-flags)\.spec\.ts$/,
+      testIgnore: /(perf|secrets-scan|feature-flags|fish-billing)\.spec\.ts$/,
       use: mobileChromium,
     },
     {
@@ -81,6 +81,7 @@ export default defineConfig({
       use: mobileChromium,
     },
     {name:"feature-flags",testMatch:/feature-flags\.spec\.ts$/,dependencies:["secrets-scan"],fullyParallel:false,use:mobileChromium},
+    {name:"fish-billing",testMatch:/fish-billing\.spec\.ts$/,dependencies:["feature-flags"],fullyParallel:false,use:mobileChromium},
   ],
   webServer: [
     {

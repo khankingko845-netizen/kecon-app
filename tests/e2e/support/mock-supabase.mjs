@@ -448,7 +448,16 @@ function rpc(name, sub, body, claims={}) {
     }
     case "record_measurement_event":return true;
     case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
-    case "set_ai_price":if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");return null;
+    case "set_ai_price_v2":case "set_ai_price": {
+      if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");
+      const fish=body.p_provider==="fishaudio";
+      if(fish&&(name!=="set_ai_price_v2"||body.p_kind!=="tts"||body.p_billing_unit!=="utf8_bytes"))return rpcError(400,"22023","Byte unit required");
+      TABLES.ai_price_rates??=[];
+      const row={provider:body.p_provider,model:body.p_model,kind:body.p_kind,input_per_million:body.p_input,output_per_million:body.p_output,unit_usd:body.p_unit,source:body.p_source,updated_at:new Date().toISOString(),billing_unit:fish?"utf8_bytes":null,price_version:fish?2:1};
+      const n=TABLES.ai_price_rates.findIndex(r=>r.provider===row.provider&&r.model===row.model&&r.kind===row.kind);
+      if(n<0)TABLES.ai_price_rates.push(row);else TABLES.ai_price_rates[n]=row;
+      return null;
+    }
     case "admin_access_status":return access;
     case "open_admin_session": {
       if(!rawPermissions.length)return access;

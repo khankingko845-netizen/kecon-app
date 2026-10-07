@@ -18,7 +18,7 @@ NEXT_TELEMETRY_DISABLED=1 \
 NEXT_PUBLIC_SUPABASE_URL=$PLACEHOLDER \
 NEXT_PUBLIC_SITE_URL=$PLACEHOLDER \
 NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_PLACEHOLDER \
-  npm run build
+  npm run build -- --webpack
 rm -rf .next/cache && mv .next .next-template
 
 ln -sfn "$REL" "$KECON/current"

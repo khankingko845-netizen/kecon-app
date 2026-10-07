@@ -15,6 +15,7 @@ import {
 } from "@/lib/provider-keys";
 import { scrubSecret } from "@/lib/system-secrets";
 import { guardUsage } from "@/lib/usage-guard";
+import { fishBillingUsage } from "@/lib/tts-billing";
 const audioResponse = (audio: ArrayBuffer, model?: string) =>
   new Response(audio, {
     headers: {
@@ -72,7 +73,7 @@ export async function synthesizeSpeech(
                 payer: "platform",
                 model,
                 kind: "tts",
-                units: [...stripEmotionTags(text)].length,
+                ...fishBillingUsage(text),
               }),
             })
           ).arrayBuffer(),

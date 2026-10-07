@@ -90,6 +90,13 @@ export default function MeasurementPanel() {
                 chưa cấu hình. Các lần này không được tính thành $0.
               </p>
             )}
+            {(data.totals.legacy_unit_attempts ?? 0) > 0 && (
+              <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                {data.totals.legacy_unit_attempts} lượt Fish cũ đếm ký tự, chưa
+                xác minh đơn vị giá. Không cộng ước tính cũ vào tổng; giữ nguyên
+                dữ liệu và snapshot gốc, không hồi điền bằng giá byte.
+              </p>
+            )}
             <h3 className="mt-5 font-bold">
               Funnel tài khoản mới trong khoảng ngày
             </h3>
