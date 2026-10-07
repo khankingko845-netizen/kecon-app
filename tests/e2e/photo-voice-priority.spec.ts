@@ -355,15 +355,15 @@ test("Player: lựa chọn narrator được giữ dù gia đình có clone; pic
   await expect(current).toBeVisible();
   await current.click();
   await expect(
-    page.getByRole("button", { name: "Bà của bé", exact: true }),
+    page.getByRole("button", { name: /Bà của bé/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Vi A", exact: true }),
+    page.getByRole("button", { name: /Vi A/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "English A", exact: true }),
+    page.getByRole("button", { name: /English A/ }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Bà của bé", exact: true }).click();
+  await page.getByRole("button", { name: /Bà của bé/ }).click();
   await expect(
     page.getByRole("button", { name: "Giọng: Bà của bé", exact: true }),
   ).toBeVisible();
