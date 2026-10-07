@@ -16,6 +16,8 @@ export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 const MOCK_PIN = "2468";
 /** Third family (UI-13): its profile is writable so specs can change the child's age. */
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
+/** Writable avatar family, isolated from concurrent age-band tests. */
+export const MOCK_AVATAR_USER_ID = "00000000-0000-4000-8000-00000000e2e6";
 /** Admin v2 · A-01: the only mock account whose profile role is "admin". */
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 /** Admin v2 · A-02: an "editor" (Biên tập) — narrow role, no settings / users / API keys. */
@@ -43,6 +45,7 @@ const ageUser = {
   id: MOCK_AGE_USER_ID,
   email: "e2e-age@kecon.test",
 };
+const avatarUser = { ...user, id: MOCK_AVATAR_USER_ID, email: "e2e-avatar@kecon.test" };
 const adminUser = {
   ...user,
   id: MOCK_ADMIN_USER_ID,
@@ -57,6 +60,7 @@ const USERS = {
   [MOCK_USER_ID]: user,
   [MOCK_PIN_USER_ID]: pinUser,
   [MOCK_AGE_USER_ID]: ageUser,
+  [MOCK_AVATAR_USER_ID]: avatarUser,
   [MOCK_ADMIN_USER_ID]: adminUser,
   [MOCK_EDITOR_USER_ID]: editorUser,
 };
@@ -194,7 +198,7 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile],
+  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }],
   stories,
   story_pages: pages,
   parental_controls: parentalControls,
@@ -565,8 +569,8 @@ createServer((req, res) => {
       return;
     }
     const table = path.slice("/rest/v1/".length);
-    if (req.method === "PATCH" && table === "profiles" && sub === MOCK_AGE_USER_ID) {
-      // Only the UI-13 family may edit (its own row), so other specs stay stateless.
+    if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID].includes(sub)) {
+      // Only the isolated age/avatar families may edit their own rows.
       readJson(req).then((body) => {
         // Mirror the schema: family_name / display_name are NOT NULL (001_initial_schema.sql).
         const nulled = ["family_name", "display_name"].find((c) => body && c in body && body[c] === null);

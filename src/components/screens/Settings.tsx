@@ -22,6 +22,7 @@ import { useTheme } from "@/lib/theme-context";
 import { SLEEP_TIMER_OPTIONS } from "@/lib/night-mode";
 import type { Screen } from "@/lib/types";
 import ParentHeader from "@/components/parent/ParentHeader";
+import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import FeedbackSettings from "@/components/parent/FeedbackSettings";
 
 interface SettingsProps {
@@ -64,6 +65,7 @@ function SettingsRow({
  onClick,
  tone = "brand",
  badge,
+ avatar,
 }: {
  icon: typeof Key;
  label: string;
@@ -71,15 +73,16 @@ function SettingsRow({
  onClick?: () => void;
  tone?: RowTone;
  badge?: "ok" | "warn";
+ avatar?: React.ReactNode;
 }) {
  return (
  <button
  onClick={onClick}
  className="w-full min-h-[60px] flex items-center gap-3.5 px-4 py-3 active:bg-brand-soft/50 dark:active:bg-white/[0.03] transition-colors"
  >
- <span className={`w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0 ${ROW_TONE[tone]}`}>
+ {avatar ?? <span className={`w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0 ${ROW_TONE[tone]}`}>
  <Icon size={20} weight="duotone" />
- </span>
+ </span>}
  <span className={`flex-1 text-left font-parent text-[15px] font-semibold ${tone === "danger" ? "text-cta-press dark:text-cta-ink" : "text-ink dark:text-white/90"}`}>
  {label}
  </span>
@@ -363,7 +366,7 @@ function LanguagePanel({ onBack }: { onBack: () => void }) {
 
 export default function Settings({ onNavigate }: SettingsProps) {
  const { settings, updateSettings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
- const { user, signOut, isAdmin, isStaff } = useAuth();
+ const { user, profile, signOut, isAdmin, isStaff } = useAuth();
  const ageUi = useAgeUi();
  const { refreshAll } = useData();
  const { locale } = useI18n();
@@ -557,7 +560,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SettingsRow icon={Mail} label="Thông báo" onClick={() => onNavigate("notifications")} />
  <SettingsRow icon={Trophy} label="Thành tích & huy hiệu" tone="glow" onClick={() => onNavigate("achievements")} />
  <SettingsRow icon={Shield} label="Kiểm soát phụ huynh" tone="success" onClick={() => onNavigate("parental-controls")} />
- <SettingsRow icon={User} label="Hồ sơ gia đình" value={`${ageUi.short} · ${ageUi.label}`} onClick={() => onNavigate("profile-edit")} />
+ <SettingsRow icon={User} avatar={<FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={40} label={null} />} label="Hồ sơ gia đình" value={`${ageUi.short} · ${ageUi.label}`} onClick={() => onNavigate("profile-edit")} />
  <SettingsRow icon={BarChart3} label="Thống kê của bé" onClick={() => onNavigate("parent-analytics")} />
  </SettingsCard>
 
