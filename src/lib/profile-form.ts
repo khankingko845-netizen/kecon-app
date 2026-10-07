@@ -10,6 +10,7 @@ export interface ProfileForm {
   displayName: string;
   familyName: string;
   avatarEmoji: string;
+  avatarUrl?: string | null;
   childAge: string;
   locale: string;
 }
@@ -17,7 +18,8 @@ export interface ProfileForm {
 export interface ProfileUpdate {
   display_name: string;
   family_name: string;
-  avatar_emoji: string;
+  avatar_emoji: string | null;
+  avatar_url?: string | null;
   child_age: number | null;
   locale: string;
 }
@@ -27,7 +29,8 @@ export function buildProfileUpdate(form: ProfileForm): ProfileUpdate {
   return {
     display_name: form.displayName.trim(),
     family_name: form.familyName.trim(),
-    avatar_emoji: form.avatarEmoji,
+    avatar_emoji: form.avatarUrl ? null : form.avatarEmoji,
+    ...(form.avatarUrl !== undefined ? { avatar_url: form.avatarUrl } : {}),
     child_age: Number.isInteger(age) && age >= 1 && age <= 12 ? age : null,
     locale: form.locale || "vi",
   };

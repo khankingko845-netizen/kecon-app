@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Check, User, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
+import { ChevronLeft, Check, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/settings-context";
 import { ageUiFor } from "@/lib/age-ui";
+import FamilyAvatar from "@/components/ui/FamilyAvatar";
+import { FAMILY_AVATARS, familyAvatarFor, customAvatarUrl } from "@/lib/family-avatar";
 import { buildProfileUpdate } from "@/lib/profile-form";
 import { createClient } from "@/lib/supabase/client";
 import type { Screen } from "@/lib/types";
@@ -14,14 +16,12 @@ interface ProfileEditProps {
  onBack: () => void;
 }
 
-const avatarEmojis = ["👨‍👩‍👧", "👨‍👩‍👦", "👩‍👧", "👨‍👦", "👨‍👩‍👧‍👦", "👪", "🐻", "🦁", "🐰", "🐼", "🦊", "🐯"];
-
 export default function ProfileEdit({ onBack }: ProfileEditProps) {
  const { profile, refreshProfile } = useAuth();
  const { updateSettings } = useSettings();
  const [displayName, setDisplayName] = useState(profile?.display_name || "");
  const [familyName, setFamilyName] = useState(profile?.family_name || "");
- const [selectedAvatar, setSelectedAvatar] = useState(profile?.avatar_emoji || "👨‍👩‍👧");
+ const [selectedAvatar, setSelectedAvatar] = useState(customAvatarUrl(profile?.avatar_url) ?? familyAvatarFor(profile?.avatar_url, profile?.avatar_emoji).src);
  const [childAge, setChildAge] = useState(profile?.child_age?.toString() || "");
  const [locale, setLocale] = useState(profile?.locale || "vi");
  const [saving, setSaving] = useState(false);
@@ -34,7 +34,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  setSaveError(false);
  try {
  const supabase = createClient();
- const update = buildProfileUpdate({ displayName, familyName, avatarEmoji: selectedAvatar, childAge, locale });
+ const update = buildProfileUpdate({ displayName, familyName, avatarEmoji: "", avatarUrl: selectedAvatar, childAge, locale });
  // `.select` so an update that matched no row (RLS) is not reported as saved.
  const { data, error } = await supabase.from("profiles").update(update).eq("id", profile.id).select("id");
  if (error || !data?.length) throw error ?? new Error("profile not updated");
@@ -50,7 +50,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  };
 
  return (
- <div className="min-h-screen bg-surface dark:bg-[#0A0A0F] pb-24">
+ <div className="min-h-screen bg-parent-bg font-parent pb-24">
  <div className="px-5 pt-14">
  {/* Header */}
  <div className="flex items-center gap-3 mb-6">
@@ -61,8 +61,8 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <button
  onClick={handleSave}
  disabled={saving}
- className={`px-4 py-2 rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-all ${
- saved ? "bg-green-500 text-white" : "bg-accent text-white"
+ className={`min-h-11 px-4 py-2 rounded-xl text-[14px] font-bold flex items-center gap-1.5 transition-all ${
+ saved ? "bg-success text-white" : "bg-brand text-white"
  }`}
  >
  {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : null}
@@ -76,35 +76,40 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  </p>
  )}
 
- {/* Avatar */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
- <p className="text-[13px] font-bold text-txt dark:text-white mb-3 flex items-center gap-2">
- <User size={14} /> Ảnh đại diện
- </p>
- <div className="flex flex-wrap gap-2.5">
- {avatarEmojis.map((emoji) => (
+ {/* One shared portrait appears here, on Home, and beside the family settings row. */}
+ <section className={`bg-white dark:bg-white/[0.04] rounded-[24px] p-5 shadow-sm mb-4`} aria-label="Ảnh đại diện gia đình">
+ <div className="mb-5 flex flex-col items-center text-center">
+ <FamilyAvatar avatarUrl={selectedAvatar} size={104} />
+ <h2 className="mt-3 text-[18px] font-bold text-ink dark:text-white">{familyName.trim() || "Gia đình mình"}</h2>
+ <p className="mt-1 text-[14px] leading-relaxed text-ink-2 dark:text-white/65">Chọn một bạn Đóm đại diện cho cả nhà.</p>
+ </div>
+ <div className="grid grid-cols-3 gap-3" role="group" aria-label="Chọn ảnh đại diện Đóm">
+ {FAMILY_AVATARS.map((avatar) => (
  <button
- key={emoji}
- onClick={() => setSelectedAvatar(emoji)}
- className={`w-14 h-14 rounded-2xl text-2xl flex items-center justify-center transition-all ${
- selectedAvatar === emoji
- ? "bg-accent/10 border-2 border-accent scale-110"
- : "bg-gray-50 dark:bg-white/[0.04] border-2 border-transparent"
- }`}
+ key={avatar.id}
+ type="button"
+ onClick={() => { setSelectedAvatar(avatar.src); setSaved(false); }}
+ aria-label={avatar.label}
+ aria-pressed={selectedAvatar === avatar.src}
+ className={`relative flex min-h-[112px] flex-col items-center gap-2 rounded-[20px] border-2 px-1 py-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${selectedAvatar === avatar.src ? "border-brand bg-brand-soft" : "border-transparent bg-surface dark:bg-white/[0.04]"}`}
  >
- {emoji}
+ <FamilyAvatar avatarUrl={avatar.src} size={60} label={null} />
+ <span className="text-[14px] font-semibold leading-tight text-ink dark:text-white">{avatar.label}</span>
+ {selectedAvatar === avatar.src && <span aria-hidden className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white"><Check size={12} weight="bold" /></span>}
  </button>
  ))}
  </div>
- </div>
+ {customAvatarUrl(profile?.avatar_url) && <button type="button" aria-pressed={selectedAvatar === profile?.avatar_url} onClick={() => setSelectedAvatar(profile!.avatar_url!)} className="mt-3 flex min-h-11 items-center gap-2 rounded-xl px-3 text-[14px] text-brand-ink"><FamilyAvatar avatarUrl={profile?.avatar_url} size={32} label={null} /> Giữ ảnh hiện tại</button>}
+ </section>
 
  {/* Display Name */}
  <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
+ <label htmlFor="profile-display-name" className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
  <Users size={14} /> Tên hiển thị
  </label>
  <input
  type="text"
+ id="profile-display-name"
  value={displayName}
  onChange={(e) => setDisplayName(e.target.value)}
  placeholder="VD: Ba Minh, Mẹ Hà..."
@@ -114,17 +119,18 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
 
  {/* Family Name */}
  <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
+ <label htmlFor="profile-family-name" className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
  <Users size={14} /> Tên gia đình
  </label>
  <input
  type="text"
+ id="profile-family-name"
  value={familyName}
  onChange={(e) => setFamilyName(e.target.value)}
  placeholder="VD: Gia đình Gấu, Nhà Mít..."
  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-[14px] font-semibold outline-none focus:border-accent transition-colors"
  />
- <p className="text-[11px] text-txt-secondary dark:text-white/50 mt-2">Hiển thị trên trang chủ &quot;Gia đình ...&quot;</p>
+ <p className="text-[14px] text-txt-secondary dark:text-white/65 mt-2">Tên gọi chung của cả nhà trong hồ sơ.</p>
  </div>
 
  {/* Child Age */}
@@ -140,7 +146,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  aria-pressed={childAge === age}
  className={`w-10 h-10 rounded-xl text-[13px] font-bold flex items-center justify-center transition-all ${
  childAge === age
- ? "bg-accent text-white"
+ ? "bg-brand text-white"
  : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"
  }`}
  >
@@ -174,7 +180,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  onClick={() => setLocale(lang.id)}
  className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all ${
  locale === lang.id
- ? "bg-accent text-white"
+ ? "bg-brand text-white"
  : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"
  }`}
  >
@@ -189,7 +195,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
  <Calendar size={14} /> Email
  </label>
- <p className="text-[14px] text-txt-secondary dark:text-white/50">{profile?.email || "—"}</p>
+ <p className="text-[14px] text-txt-secondary dark:text-white/65">{profile?.email || "—"}</p>
  </div>
  </div>
  </div>

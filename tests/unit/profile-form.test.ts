@@ -20,6 +20,13 @@ describe("buildProfileUpdate", () => {
     });
   });
 
+  it("persists a mascot URL and clears the conflicting legacy emoji", () => {
+    expect(buildProfileUpdate({ ...base, avatarUrl: "/mascot/dom-story.webp" })).toMatchObject({
+      avatar_url: "/mascot/dom-story.webp",
+      avatar_emoji: null,
+    });
+  });
+
   it("empty names stay empty strings (NOT NULL columns), never null", () => {
     const u = buildProfileUpdate({ ...base, displayName: "  ", familyName: "" });
     expect(u.display_name).toBe("");

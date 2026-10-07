@@ -9,6 +9,7 @@ import { useSettings } from "@/lib/settings-context";
 import { getReadingStreak } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
 import { getLastPlayed, lastPlayedProgress, type LastPlayed } from "@/lib/last-played";
+import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import Mascot from "@/components/ui/Mascot";
 import { CategoryIcon, Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
 import { Card, ProgressBar, SectionHeader, CARD_SHADOW } from "@/components/ui/kit";
@@ -127,9 +128,9 @@ export default function Home({ onNavigate }: HomeProps) {
           type="button"
           onClick={() => onNavigate("profile-edit")}
           aria-label="Hồ sơ của bé"
-          className="flex h-[50px] w-[50px] shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-brand-soft"
+          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
         >
-          <Icon3D name="paw" size={58} />
+          <FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={52} label={null} />
         </button>
         <div className="min-w-0">
           <h1 className="truncate font-display text-[24px] font-bold leading-[1.05] text-ink">
