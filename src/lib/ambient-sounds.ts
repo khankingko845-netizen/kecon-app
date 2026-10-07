@@ -147,7 +147,8 @@ export function getAmbientCategory(categoryId: string): AmbientCategory | undefi
 export async function generateAmbientSound(
   apiKey: string,
   prompt: string,
-  durationSeconds: number = 10
+  durationSeconds: number = 10,
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch
 ): Promise<Blob> {
   const res = await elevenFetch(
     "/sound-generation",
@@ -161,7 +162,7 @@ export async function generateAmbientSound(
         prompt_influence: 0.3,
       }),
     },
-    "tạo âm thanh nền lỗi"
+    "tạo âm thanh nền lỗi", fetchImpl
   );
 
   return res.blob();

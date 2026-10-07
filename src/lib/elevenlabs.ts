@@ -11,16 +11,29 @@ export function elevenLabsBase(): string {
  * (status + `detail.status` code such as `quota_exceeded`) so the key pool
  * (src/lib/key-pool.ts) can tell "hết credit" from "key sai" from "giọng không có".
  */
-export async function elevenFetch(path: string, apiKey: string, init: RequestInit = {}, what = "lỗi"): Promise<Response> {
+export async function elevenFetch(
+  path: string,
+  apiKey: string,
+  init: RequestInit = {},
+  what = "lỗi",
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch,
+): Promise<Response> {
   let res: Response;
   try {
-    res = await fetch(`${elevenLabsBase()}${path}`, {
+    res = await fetchImpl(`${elevenLabsBase()}${path}`, {
       ...init,
       signal: init.signal ?? AbortSignal.timeout(120_000),
       headers: { "xi-api-key": apiKey, ...(init.headers ?? {}) },
     });
   } catch (err) {
-    throw new ProviderHttpError("elevenlabs", 0, "network", `ElevenLabs không phản hồi (${err instanceof Error ? err.name : "lỗi mạng"})`);
+    if (err instanceof Error && err.name === "MeteringUnavailableError")
+      throw err;
+    throw new ProviderHttpError(
+      "elevenlabs",
+      0,
+      "network",
+      `ElevenLabs không phản hồi (${err instanceof Error ? err.name : "lỗi mạng"})`,
+    );
   }
   if (!res.ok) throw await providerHttpError("elevenlabs", res, what);
   return res;
@@ -52,8 +65,15 @@ export interface ElevenLabsSubscription {
 }
 
 /** Character quota of the key's account (needs the `user_read` permission on restricted keys). */
-export async function getSubscription(apiKey: string): Promise<ElevenLabsSubscription> {
-  const res = await elevenFetch("/user/subscription", apiKey, {}, "kiểm tra credit lỗi");
+export async function getSubscription(
+  apiKey: string,
+): Promise<ElevenLabsSubscription> {
+  const res = await elevenFetch(
+    "/user/subscription",
+    apiKey,
+    {},
+    "kiểm tra credit lỗi",
+  );
   const d = (await res.json()) as Partial<ElevenLabsSubscription>;
   return {
     tier: d.tier ?? null,
@@ -72,7 +92,8 @@ export async function cloneVoice(
   apiKey: string,
   name: string,
   audioBlob: Blob,
-  language: string = "vi"
+  language: string = "vi",
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch,
 ): Promise<CloneVoiceResult> {
   // Map short codes to ElevenLabs language labels
   const langMap: Record<string, string> = {
@@ -101,12 +122,18 @@ export async function cloneVoice(
       accent: languageLabel,
       use_case: "storytelling",
       age: "adult",
-    })
+    }),
   );
   // Remove the default accent detection — force the language
   form.append("remove_background_noise", "true");
 
-  const res = await elevenFetch("/voices/add", apiKey, { method: "POST", body: form }, "clone giọng lỗi");
+  const res = await elevenFetch(
+    "/voices/add",
+    apiKey,
+    { method: "POST", body: form },
+    "clone giọng lỗi",
+    fetchImpl,
+  );
   return res.json();
 }
 
@@ -114,7 +141,16 @@ export async function cloneVoice(
 // Emotion Detection & Voice Settings
 // ============================================================
 
-export type EmotionType = "neutral" | "whisper" | "excited" | "sad" | "scared" | "angry" | "happy" | "gentle" | "dramatic";
+export type EmotionType =
+  | "neutral"
+  | "whisper"
+  | "excited"
+  | "sad"
+  | "scared"
+  | "angry"
+  | "happy"
+  | "gentle"
+  | "dramatic";
 
 interface EmotionSettings {
   stability: number;
@@ -124,15 +160,60 @@ interface EmotionSettings {
 }
 
 const EMOTION_PRESETS: Record<EmotionType, EmotionSettings> = {
-  neutral:   { stability: 0.5, similarity_boost: 0.75, style: 0.4, use_speaker_boost: true },
-  whisper:   { stability: 0.8, similarity_boost: 0.9,  style: 0.1, use_speaker_boost: false },
-  excited:   { stability: 0.3, similarity_boost: 0.6,  style: 0.8, use_speaker_boost: true },
-  happy:     { stability: 0.4, similarity_boost: 0.7,  style: 0.7, use_speaker_boost: true },
-  sad:       { stability: 0.7, similarity_boost: 0.85, style: 0.3, use_speaker_boost: false },
-  scared:    { stability: 0.6, similarity_boost: 0.7,  style: 0.5, use_speaker_boost: true },
-  angry:     { stability: 0.3, similarity_boost: 0.6,  style: 0.9, use_speaker_boost: true },
-  gentle:    { stability: 0.75, similarity_boost: 0.85, style: 0.2, use_speaker_boost: false },
-  dramatic:  { stability: 0.35, similarity_boost: 0.65, style: 0.85, use_speaker_boost: true },
+  neutral: {
+    stability: 0.5,
+    similarity_boost: 0.75,
+    style: 0.4,
+    use_speaker_boost: true,
+  },
+  whisper: {
+    stability: 0.8,
+    similarity_boost: 0.9,
+    style: 0.1,
+    use_speaker_boost: false,
+  },
+  excited: {
+    stability: 0.3,
+    similarity_boost: 0.6,
+    style: 0.8,
+    use_speaker_boost: true,
+  },
+  happy: {
+    stability: 0.4,
+    similarity_boost: 0.7,
+    style: 0.7,
+    use_speaker_boost: true,
+  },
+  sad: {
+    stability: 0.7,
+    similarity_boost: 0.85,
+    style: 0.3,
+    use_speaker_boost: false,
+  },
+  scared: {
+    stability: 0.6,
+    similarity_boost: 0.7,
+    style: 0.5,
+    use_speaker_boost: true,
+  },
+  angry: {
+    stability: 0.3,
+    similarity_boost: 0.6,
+    style: 0.9,
+    use_speaker_boost: true,
+  },
+  gentle: {
+    stability: 0.75,
+    similarity_boost: 0.85,
+    style: 0.2,
+    use_speaker_boost: false,
+  },
+  dramatic: {
+    stability: 0.35,
+    similarity_boost: 0.65,
+    style: 0.85,
+    use_speaker_boost: true,
+  },
 };
 
 function escapeRegExp(value: string): string {
@@ -142,7 +223,10 @@ function escapeRegExp(value: string): string {
 /** True when `text` contains any of `words` as a whole word (Unicode-aware). */
 function hasWord(text: string, words: string[]): boolean {
   const pattern = words.map(escapeRegExp).join("|");
-  return new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])(?:${pattern})(?![\\p{L}\\p{M}\\p{N}])`, "u").test(text.normalize("NFC"));
+  return new RegExp(
+    `(?<![\\p{L}\\p{M}\\p{N}])(?:${pattern})(?![\\p{L}\\p{M}\\p{N}])`,
+    "u",
+  ).test(text.normalize("NFC"));
 }
 
 /**
@@ -165,14 +249,74 @@ export function detectEmotion(text: string): EmotionType {
   // Auto-detect from context
   // Whole-word matching so short keywords don't hit inside other words
   // (e.g. "ôm" in "hôm", "run" in "trung").
-  if (hasWord(t, ["thì thầm", "nhỏ giọng", "rì rầm", "whisper", "thầm thì", "lẩm bẩm"])) return "whisper";
-  if (hasWord(t, ["hét", "la lớn", "kêu lên", "wow", "hoan hô", "tuyệt vời", "haha", "oà"])) return "excited";
-  if (hasWord(t, ["buồn", "khóc", "nước mắt", "nhớ", "thương", "đau", "mất", "chia ly"])) return "sad";
-  if (hasWord(t, ["sợ", "run", "rùng mình", "kinh", "hãi", "đáng sợ", "bóng tối"])) return "scared";
+  if (
+    hasWord(t, [
+      "thì thầm",
+      "nhỏ giọng",
+      "rì rầm",
+      "whisper",
+      "thầm thì",
+      "lẩm bẩm",
+    ])
+  )
+    return "whisper";
+  if (
+    hasWord(t, [
+      "hét",
+      "la lớn",
+      "kêu lên",
+      "wow",
+      "hoan hô",
+      "tuyệt vời",
+      "haha",
+      "oà",
+    ])
+  )
+    return "excited";
+  if (
+    hasWord(t, [
+      "buồn",
+      "khóc",
+      "nước mắt",
+      "nhớ",
+      "thương",
+      "đau",
+      "mất",
+      "chia ly",
+    ])
+  )
+    return "sad";
+  if (
+    hasWord(t, ["sợ", "run", "rùng mình", "kinh", "hãi", "đáng sợ", "bóng tối"])
+  )
+    return "scared";
   if (hasWord(t, ["giận", "tức", "nổi điên", "bực", "la mắng"])) return "angry";
-  if (hasWord(t, ["cười", "vui", "hạnh phúc", "sung sướng", "mừng", "yêu", "xinh", "đẹp"])) return "happy";
-  if (hasWord(t, ["ru ngủ", "dịu dàng", "nhẹ nhàng", "ấm áp", "âu yếm", "ôm"])) return "gentle";
-  if (hasWord(t, ["bất ngờ", "bí ẩn", "kịch tính", "nguy hiểm", "phiêu lưu", "mạo hiểm"])) return "dramatic";
+  if (
+    hasWord(t, [
+      "cười",
+      "vui",
+      "hạnh phúc",
+      "sung sướng",
+      "mừng",
+      "yêu",
+      "xinh",
+      "đẹp",
+    ])
+  )
+    return "happy";
+  if (hasWord(t, ["ru ngủ", "dịu dàng", "nhẹ nhàng", "ấm áp", "âu yếm", "ôm"]))
+    return "gentle";
+  if (
+    hasWord(t, [
+      "bất ngờ",
+      "bí ẩn",
+      "kịch tính",
+      "nguy hiểm",
+      "phiêu lưu",
+      "mạo hiểm",
+    ])
+  )
+    return "dramatic";
 
   return "neutral";
 }
@@ -181,7 +325,12 @@ export function detectEmotion(text: string): EmotionType {
  * Strip emotion tags from text before sending to TTS.
  */
 export function stripEmotionTags(text: string): string {
-  return text.replace(/\[(thì thầm|whisper|hét|shout|la|cười|laugh|vui|buồn|sad|khóc|sợ|scared|run|giận|angry|nhẹ nhàng|gentle|dịu|kịch tính|dramatic)\]/gi, "").trim();
+  return text
+    .replace(
+      /\[(thì thầm|whisper|hét|shout|la|cười|laugh|vui|buồn|sad|khóc|sợ|scared|run|giận|angry|nhẹ nhàng|gentle|dịu|kịch tính|dramatic)\]/gi,
+      "",
+    )
+    .trim();
 }
 
 export async function textToSpeech(
@@ -190,7 +339,8 @@ export async function textToSpeech(
   text: string,
   modelId: string = "eleven_multilingual_v2",
   languageCode?: string,
-  emotion?: EmotionType
+  emotion?: EmotionType,
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch,
 ): Promise<Blob> {
   // Map short codes to ElevenLabs language_code format
   const langCodeMap: Record<string, string> = {
@@ -210,7 +360,8 @@ export async function textToSpeech(
 
   // Auto-detect emotion if not provided
   const detectedEmotion = emotion || detectEmotion(text);
-  const emotionSettings = EMOTION_PRESETS[detectedEmotion] || EMOTION_PRESETS.neutral;
+  const emotionSettings =
+    EMOTION_PRESETS[detectedEmotion] || EMOTION_PRESETS.neutral;
 
   // Strip emotion tags from text before sending to TTS
   const cleanText = stripEmotionTags(text);
@@ -223,24 +374,37 @@ export async function textToSpeech(
 
   // language_code is only supported by turbo v2.5, flash v2.5, and v3+ models.
   // eleven_multilingual_v2 does NOT support language_code (will error).
-  if (resolvedLang && supportsLanguageCode(modelForLanguage(modelId, resolvedLang))) {
+  if (
+    resolvedLang &&
+    supportsLanguageCode(modelForLanguage(modelId, resolvedLang))
+  ) {
     body.language_code = resolvedLang;
   }
 
   const res = await elevenFetch(
     `/text-to-speech/${encodeURIComponent(voiceId)}/stream`,
     apiKey,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
-    "TTS lỗi"
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    "TTS lỗi",
+    fetchImpl,
   );
   return res.blob();
 }
 
 export async function deleteVoice(
   apiKey: string,
-  voiceId: string
+  voiceId: string,
 ): Promise<void> {
-  await elevenFetch(`/voices/${encodeURIComponent(voiceId)}`, apiKey, { method: "DELETE" }, "xoá giọng lỗi");
+  await elevenFetch(
+    `/voices/${encodeURIComponent(voiceId)}`,
+    apiKey,
+    { method: "DELETE" },
+    "xoá giọng lỗi",
+  );
 }
 
 // ============================================================
@@ -248,9 +412,9 @@ export async function deleteVoice(
 // ============================================================
 
 export interface ParsedSegment {
-  speaker: string;       // "narrator" or character name
+  speaker: string; // "narrator" or character name
   text: string;
-  voiceId: string;       // Resolved ElevenLabs voice_id
+  voiceId: string; // Resolved ElevenLabs voice_id
   voiceName?: string;
 }
 
@@ -271,11 +435,12 @@ export function parseVoiceMarkup(
   content: string,
   characters: CharacterVoiceMap,
   narratorVoiceId: string,
-  narratorVoiceName?: string
+  narratorVoiceName?: string,
 ): ParsedSegment[] {
   const segments: ParsedSegment[] = [];
   // Match [narrator]...[/narrator] and [character:Name]...[/character]
-  const tagRegex = /\[(narrator|character:([^\]]+))\]([\s\S]*?)\[\/(?:narrator|character)\]/g;
+  const tagRegex =
+    /\[(narrator|character:([^\]]+))\]([\s\S]*?)\[\/(?:narrator|character)\]/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -354,7 +519,7 @@ export async function generateMultiVoiceAudio(
   apiKey: string,
   segments: ParsedSegment[],
   modelId: string,
-  languageCode?: string
+  languageCode?: string,
 ): Promise<Blob> {
   if (segments.length === 0) {
     throw new Error("No segments to generate audio for");
@@ -381,7 +546,7 @@ export async function generateMultiVoiceAudio(
       seg.text,
       modelId,
       languageCode,
-      emotion
+      emotion,
     );
     audioBlobs.push(blob);
   }

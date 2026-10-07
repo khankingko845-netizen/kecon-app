@@ -1,6 +1,7 @@
+import { meteredFetch } from "@/lib/ai-metering";
 import { modelForLanguage } from "@/lib/tts-models";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { textToSpeech } from "@/lib/elevenlabs";
+import { textToSpeech, stripEmotionTags } from "@/lib/elevenlabs";
 import { fishTextToSpeech } from "@/lib/fishaudio";
 import {
   resolveElevenLabsModel,
@@ -64,7 +65,16 @@ export async function synthesizeSpeech(
         "fishaudio",
         async (key) =>
           (
-            await fishTextToSpeech(key, voiceRef, text, { model })
+            await fishTextToSpeech(key, voiceRef, text, {
+              model,
+              fetchImpl: meteredFetch({
+                provider: "fishaudio",
+                payer: "platform",
+                model,
+                kind: "tts",
+                units: [...stripEmotionTags(text)].length,
+              }),
+            })
           ).arrayBuffer(),
         { voiceRef, chars: text.length },
       );
@@ -72,10 +82,26 @@ export async function synthesizeSpeech(
     }
 
     // Resolve model: user preference → admin DB → default
-    const modelId = modelForLanguage(await resolveElevenLabsModel(userKey ? userModelId : undefined), language);
+    const modelId = modelForLanguage(
+      await resolveElevenLabsModel(userKey ? userModelId : undefined),
+      language,
+    );
     const speak = async (key: string) =>
       (
-        await textToSpeech(key, voiceRef, text, modelId, language)
+        await textToSpeech(
+          key,
+          voiceRef,
+          text,
+          modelId,
+          language,
+          undefined,
+          meteredFetch({
+            provider: "elevenlabs",
+            model: modelId,
+            kind: "tts",
+            units: [...stripEmotionTags(text)].length,
+          }),
+        )
       ).arrayBuffer();
     if (userKey) {
       try {

@@ -1,9 +1,10 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
-import { callLlm, extractJsonObject } from "@/lib/llm";
+import { callLlm, extractJsonObject } from "@/lib/llm-metered";
 import { z } from "zod";
 import { imageData, llmSelectionFields, parseJsonBody } from "@/lib/api-validation";
 
@@ -13,6 +14,7 @@ const ScanBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.scan",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,4 +87,5 @@ CHỈ trả về JSON, không có text nào khác.`,
     const message = err instanceof Error ? err.message : "OCR scan failed";
     return Response.json({ error: message }, { status: 500 });
   }
+})(request);
 }

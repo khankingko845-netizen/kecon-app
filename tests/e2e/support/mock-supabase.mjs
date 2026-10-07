@@ -437,6 +437,9 @@ function rpc(name, sub, body, claims={}) {
       else TABLES[table]=(TABLES[table]??[]).filter(r=>!ids.includes(r.id));
       return ids.length;
     }
+    case "record_measurement_event":return true;
+    case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
+    case "set_ai_price":if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");return null;
     case "admin_access_status":return access;
     case "open_admin_session": {
       if(!rawPermissions.length)return access;
@@ -642,6 +645,15 @@ createServer((req, res) => {
       return;
     }
     const table = path.slice("/rest/v1/".length);
+    if(["ai_cost_ledger","ai_price_rates"].includes(table)){
+      const service=(req.headers.authorization??"")===`Bearer ${MOCK_SERVICE_ROLE_KEY}`;
+      if(!service)return send(res,403,{code:"42501",message:"Forbidden"});
+      TABLES[table]??=[];
+      if(req.method==="GET")return send(res,200,filterRows(TABLES[table],url.searchParams));
+      if(req.method==="POST")return readJson(req).then(body=>{TABLES[table].push({...body,status:"pending"});send(res,201,null)});
+      if(req.method==="PATCH")return readJson(req).then(body=>{const id=url.searchParams.get("id")?.replace(/^eq\./,"");const r=TABLES[table].find(r=>r.id===id);if(r)Object.assign(r,body);send(res,200,null)});
+    }
+
     if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID,MOCK_PHOTO_USER_ID].includes(sub)) {
       // Only the isolated age/avatar families may edit their own rows.
       readJson(req).then((body) => {

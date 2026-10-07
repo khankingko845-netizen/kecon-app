@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily KểCon measurement retention
+
+[Timer]
+OnCalendar=*-*-* 03:17:00 UTC
+RandomizedDelaySec=600
+Persistent=true
+Unit=kecon-measurement-retention.service
+
+[Install]
+WantedBy=timers.target

@@ -1,4 +1,5 @@
 "use client";
+import MeasurementPanel from "@/components/admin/MeasurementPanel";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -171,6 +172,7 @@ export default function AdminDashboard({
     <div className="min-h-screen bg-surface  pb-10">
       <TopBar title="Quản Trị" onBack={onBack} />
 
+      {canOpen("admin-analytics") && <MeasurementPanel/>}
       {loading ? (
         <div className="flex justify-center pt-20">
           <Loader2 size={26} className="animate-spin text-accent" />

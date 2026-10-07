@@ -1,4 +1,5 @@
 "use client";
+import {recordMilestone} from "@/lib/measurement-client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Camera, Flame, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
@@ -41,7 +42,8 @@ const TOPICS: { id: string; label: string; icon: Icon3DName }[] = [
 ];
 
 export default function Home({ onNavigate }: HomeProps) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  useEffect(()=>{if(user)recordMilestone("home_view");},[user]);
   // T19: only stories the parent allows (blocked categories / age cap removed).
  const { stories, loading, contentRules } = useKidStories();
   const { settings } = useSettings();

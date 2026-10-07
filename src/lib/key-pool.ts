@@ -1,3 +1,4 @@
+import {MeteringUnavailableError} from "@/lib/ai-metering";
 /**
  * Admin v2 · A-04b — xoay vòng nhiều API key giọng nói + tự bù key (server only).
  *
@@ -274,6 +275,7 @@ export function createKeyPool(deps: KeyPoolDeps, options: Partial<KeyPoolOptions
         if (ref && !key.virtual) await deps.bindVoice(provider, ref, key.id).catch(() => {});
         return result;
       } catch (err) {
+        if(err instanceof MeteringUnavailableError)throw err;
         const outcome = classifyProviderError(provider, err, { voice: Boolean(o.voiceRef) });
         attempts.push({
           key: key.last4 ? `…${key.last4}` : key.label,
@@ -393,6 +395,7 @@ export const voiceKeyPool: KeyPool = createKeyPool({
 
 /** Map a pool failure to an API response (safe message, no key). */
 export function keyPoolErrorResponse(err: unknown, fallback: string): Response {
+  if (err instanceof MeteringUnavailableError)return Response.json({error:err.message,code:"measurement_unavailable"},{status:503});
   if (err instanceof KeyPoolError) {
     return Response.json({ error: err.message, code: `key_pool_${err.code}` }, { status: err.httpStatus });
   }

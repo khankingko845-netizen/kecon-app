@@ -1,4 +1,5 @@
 "use client";
+import AiPricingSettings from "@/components/admin/settings/AiPricingSettings";
 import { Save, Loader2, Check } from "@/components/ui/icons";
 import { AdminHeader } from "@/components/admin/AdminUi";
 import { useAdminSettings } from "@/components/admin/settings/useAdminSettings";
@@ -51,7 +52,8 @@ export default function AdminSettings({
           </p>
         ) : (
           <>
-            <ElevenLabsSettings
+            <AiPricingSettings/>
+      <ElevenLabsSettings
               controller={controller}
               canManageSecrets={canManageSecrets}
             />

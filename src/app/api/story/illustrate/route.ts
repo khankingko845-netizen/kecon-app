@@ -1,3 +1,4 @@
+import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveApiKey } from "@/lib/server-settings";
@@ -15,6 +16,7 @@ const IllustrateBody = z.object({
 // Generates an illustration for a story page using OpenAI Images (DALL·E 3).
 // Key resolution: user BYO → admin "dalle_api_key" → admin "openai_api_key" → env.
 export async function POST(request: NextRequest) {
+ return withAiContext("story.illustrate",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
   if (usageBlocked) return usageBlocked;
 
   try {
-    const res = await fetch("https://api.openai.com/v1/images/generations", {
+    const res = await meteredFetch({provider:"openai",model:`dall-e-3.standard.${size || "1024x1024"}`,kind:"image",units:1})("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -78,4 +80,5 @@ export async function POST(request: NextRequest) {
       err instanceof Error ? err.message : "Tạo minh hoạ thất bại";
     return Response.json({ error: message }, { status: 500 });
   }
+})(request);
 }

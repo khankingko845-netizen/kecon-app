@@ -1,8 +1,9 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { guardUsage } from "@/lib/usage-guard";
 import { resolveLlmTarget } from "@/lib/llm-config";
-import { callLlmJson } from "@/lib/llm";
+import { callLlmJson } from "@/lib/llm-metered";
 import { z } from "zod";
 import { imageData as imageDataSchema, languageCode, optionalText, parseJsonBody } from "@/lib/api-validation";
 
@@ -19,6 +20,7 @@ const FromDrawingBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.from-drawing",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -165,4 +167,5 @@ Hãy viết truyện thiếu nhi dựa trên bản vẽ này!`;
       { status: 500 }
     );
   }
+})(request);
 }
