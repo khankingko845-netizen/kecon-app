@@ -5,7 +5,7 @@ test("T07 admin cost/funnel explain unknown coverage; period and failure remain 
   page,
   context,
   baseURL,
-}) => {
+}, testInfo) => {
   await signInAsMockFamily(context, baseURL!, { userId: MOCK_A15_ADMIN_ID });
   await page.goto("/admin/analytics");
   const panel = page.getByRole("region", { name: "Đo lường first-party" });
@@ -25,7 +25,9 @@ test("T07 admin cost/funnel explain unknown coverage; period and failure remain 
     .analyze();
   expect(a.violations).toEqual([]);
   await page.screenshot({
-    path: process.env.T07_SCREENSHOT || "/data/t07-analytics-mobile.png",
+    path:
+      process.env.T07_SCREENSHOT ||
+      testInfo.outputPath("t07-analytics-mobile.png"),
   });
   await page.route("**/api/admin/measurement?*", (r) =>
     r.fulfill({ status: 503, json: { error: "unavailable" } }),
