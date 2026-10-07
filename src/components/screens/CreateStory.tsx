@@ -14,6 +14,7 @@ import { storyThemes } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { generateStoryApi } from "@/lib/api-client";
+import { rankedDefaultsForLocale, resolveNarratorChoice, type NarratorChoice } from "@/lib/voice-selection";
 import { DOM_LINES } from "@/lib/dom-lines";
 import { useFeedback } from "@/lib/feedback-context";
 import type { Screen } from "@/lib/types";
@@ -23,6 +24,7 @@ interface DefaultVoice {
  voice_id: string;
  name: string;
  language: string;
+ sort_order?: number;
 }
 
 const LANGUAGES = [
@@ -102,7 +104,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const { voiceProfiles, refreshStories } = useData();
  const [selectedTheme, setSelectedTheme] = useState("cotich");
  const [selectedAge, setSelectedAge] = useState<string>(normalizeAgeBand(settings.childAge));
- const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+ const [voiceChoice,setVoiceChoice]=useState<NarratorChoice>(null);
  const [childName, setChildName] = useState(settings.childName || "");
  const [extraPrompt, setExtraPrompt] = useState("");
  const [isGenerating, setIsGenerating] = useState(false);
@@ -110,13 +112,13 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [step, setStep] = useState(0);
  const [character, setCharacter] = useState<string | null>(null);
  const [genProgress, setGenProgress] = useState(0);
- const speech = useSpeechInput(storyLocaleFor(settings.language));
  const { cue, say } = useFeedback();
 
  // Language & narrator voice
  const [storyLocale, setStoryLocale] = useState(settings.language || "vi");
+ const speech = useSpeechInput(storyLocaleFor(storyLocale));
  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
- const [narratorVoiceId, setNarratorVoiceId] = useState<string | null>(null);
+
 
  // Voice preview
  const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
@@ -167,20 +169,13 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  .catch(() => {});
  }, []);
 
- // Auto-select first default voice for locale when locale changes
- useEffect(() => {
- const forLocale = defaultVoices.filter((v) => v.language === storyLocale);
- if (forLocale.length > 0 && !narratorVoiceId) {
- setNarratorVoiceId(forLocale[0].voice_id);
- }
- }, [storyLocale, defaultVoices, narratorVoiceId]);
-
- const defaultVoicesForLocale = defaultVoices.filter((v) => v.language === storyLocale);
-
+ const defaultVoicesForLocale = rankedDefaultsForLocale(defaultVoices,storyLocale);
+ const activeNarrator=resolveNarratorChoice(voiceProfiles,defaultVoices,storyLocale,voiceChoice);
+ const selectedVoice=activeNarrator?.kind==="family"?activeNarrator.id:null;
+ const narratorVoiceId=activeNarrator?.kind==="default"?activeNarrator.voice_id:null;
+ const effectiveVoice=selectedVoice;
  const { hasStoryProvider } = useSettings();
- const hasStoryKey = hasStoryProvider;
- const effectiveVoice =
- selectedVoice ?? (voiceProfiles.length > 0 ? voiceProfiles[0].id : null);
+ const hasStoryKey=hasStoryProvider;
 
  const characterLabel = CHARACTERS.find((c) => c.id === character)?.label;
  const composedPrompt = [
@@ -362,12 +357,12 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  {voiceProfiles
  .filter((v) => v.elevenlabs_voice_id)
  .map((v) => (
- <OptionCard key={v.id} selected={selectedVoice === v.id} onClick={() => { setSelectedVoice(v.id); setNarratorVoiceId(null); }} icon="mic" label={v.name} sub="Giọng nhà mình">
+ <OptionCard key={v.id} selected={selectedVoice === v.id} onClick={() => { setVoiceChoice({kind:"family",id:v.id}); }} icon="mic" label={v.name} sub="Giọng nhà mình">
  <PreviewButton active={previewVoiceId === v.elevenlabs_voice_id} loading={loadingPreview && previewVoiceId === v.elevenlabs_voice_id} onClick={(e) => playVoicePreview(v.elevenlabs_voice_id!, e)} />
  </OptionCard>
  ))}
  {defaultVoicesForLocale.map((v) => (
- <OptionCard key={v.id} selected={narratorVoiceId === v.voice_id && !selectedVoice} onClick={() => { setNarratorVoiceId(v.voice_id); setSelectedVoice(null); }} icon="headphones" label={v.name} sub="Giọng của Đóm">
+ <OptionCard key={v.id} selected={narratorVoiceId === v.voice_id && !selectedVoice} onClick={() => { setVoiceChoice({kind:"default",id:v.voice_id}); }} icon="headphones" label={v.name} sub="Giọng của Đóm">
  <PreviewButton active={previewVoiceId === v.voice_id} loading={loadingPreview && previewVoiceId === v.voice_id} onClick={(e) => playVoicePreview(v.voice_id, e)} />
  </OptionCard>
  ))}
@@ -404,7 +399,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <button
  key={lang.code}
  type="button"
- onClick={() => { setStoryLocale(lang.code); setNarratorVoiceId(null); }}
+ onClick={() => { setStoryLocale(lang.code); setVoiceChoice(null); }}
  aria-pressed={storyLocale === lang.code}
  className={`min-h-[48px] rounded-[16px] text-[14px] font-extrabold transition-colors ${storyLocale === lang.code ? "bg-brand text-white" : `bg-white text-ink ${CARD_SHADOW}`}`}
  >

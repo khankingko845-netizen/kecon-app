@@ -7,6 +7,8 @@ export const MOCK_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2e2";
 export const MOCK_PIN = "2468";
 /** Family whose profile (child's age) can be edited — UI-13 "Lớn cùng bé". */
 export const MOCK_AGE_USER_ID = "00000000-0000-4000-8000-00000000e2e3";
+export const MOCK_PHOTO_USER_ID = "00000000-0000-4000-8000-00000000e2e7";
+export const MOCK_VOICE_USER_ID = "00000000-0000-4000-8000-00000000e2e8";
 export const MOCK_AVATAR_USER_ID = "00000000-0000-4000-8000-00000000e2e6";
 /** The only mock account with `profiles.role = "admin"` (Admin v2 · A-01). */
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
@@ -18,6 +20,8 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_USER_ID]: "e2e@kecon.test",
   [MOCK_PIN_USER_ID]: "e2e-pin@kecon.test",
   [MOCK_AGE_USER_ID]: "e2e-age@kecon.test",
+  [MOCK_PHOTO_USER_ID]: "e2e-photo@kecon.test",
+  [MOCK_VOICE_USER_ID]: "e2e-voice@kecon.test",
   [MOCK_AVATAR_USER_ID]: "e2e-avatar@kecon.test",
   [MOCK_ADMIN_USER_ID]: "e2e-admin@kecon.test",
   [MOCK_EDITOR_USER_ID]: "e2e-editor@kecon.test",

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { rankedDefaultsForLocale, preferredFamilyVoice } from "@/lib/voice-selection";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
  ChevronDown, MoreHorizontal, Play, Pause, Moon, MoonStars, Shuffle, Heart,
  SlidersHorizontal, Volume2, X, Sparkles, Share2, Star, MessageSquare, Send,
@@ -328,7 +329,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  : pages[currentPage]?.illustration_url;
 
  // Resolve which ElevenLabs voice to use for TTS.
- // Priority: 1) user-selected 2) remembered (last used for this story) 3) family cloned voices 4) narrator 5) defaults 6) fallback
+ // Explicit / remembered story choices first; automatic selection: family clones → ranked locale defaults.
  const storyVoice = story?.voice_id
  ? voiceProfiles.find((v) => v.id === story.voice_id)
  : voiceProfiles.find((v) => v.elevenlabs_voice_id);
@@ -338,18 +339,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const narratorVoiceName = story?.narrator_voice_name ?? null;
  const rememberedVoiceId = story?.last_voice_id ?? null;
  const rememberedVoiceName = story?.last_voice_name ?? null;
- const defaultsForLocale = defaultVoices.filter((v) => v.language === storyLocale);
+ const defaultsForLocale = useMemo(()=>rankedDefaultsForLocale(defaultVoices,storyLocale),[defaultVoices,storyLocale]);
  // First family cloned voice (prioritized over system defaults)
- const firstClonedVoice = voiceProfiles.find((v) => v.elevenlabs_voice_id);
+ const firstClonedVoice = useMemo(()=>preferredFamilyVoice(voiceProfiles),[voiceProfiles]);
 
  // Determine active voice
  const resolvedVoiceId = selectedVoiceId
  || rememberedVoiceId
- || firstClonedVoice?.elevenlabs_voice_id
  || narratorVoiceId
- || storyVoice?.elevenlabs_voice_id
- || defaultVoices.find((v) => v.language === storyLocale)?.voice_id
- || defaultVoices[0]?.voice_id
+ || (story?.voice_id ? storyVoice?.elevenlabs_voice_id : null)
+ || firstClonedVoice?.elevenlabs_voice_id
+ || defaultsForLocale[0]?.voice_id
  || FALLBACK_VOICE_ID;
  const elevenVoiceId = resolvedVoiceId;
 
@@ -1212,23 +1212,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  ))}
  </>
  )}
- {/* Default voices for other languages */}
- {defaultVoices.filter((v) => v.language !== storyLocale).length > 0 && (
- <>
- <div className="px-3 py-1.5 text-[10px] font-bold text-moon/30 uppercase tracking-wider">Ngôn ngữ khác</div>
- {defaultVoices.filter((v) => v.language !== storyLocale).map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.voice_id, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-moon/70"
- }`}
- >
- {v.language === "vi" ? "🇻🇳" : v.language === "ja" ? "🇯🇵" : "🇺🇸"} {v.name}
- </button>
- ))}
- </>
- )}
+
  </div>
  )}
  </div>
