@@ -6,6 +6,7 @@
  * mirrors the catalog for the UI (labels, role picker) and typed checks in API
  * routes. `tests/db/admin-rbac.test.ts` fails if the two drift apart.
  */
+import { adminAccess } from "@/lib/admin-session";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const ADMIN_PERMISSIONS = [
@@ -97,6 +98,10 @@ export async function requirePermission(
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!(await hasPermission(supabase, permission))) {
+    const access = await adminAccess(supabase);
+    if (["mfa_required", "session_required", "session_expired"].includes(access.state)) {
+      return Response.json({ error: "Xác thực lại phiên quản trị", code: access.state === "mfa_required" ? "admin_mfa_required" : "admin_session_expired" }, { status: 403 });
+    }
     return Response.json({ error: "Forbidden", code: "missing_permission", permission }, { status: 403 });
   }
   return null;

@@ -25,6 +25,7 @@ export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 /** Admin v2 · A-02: an "editor" (Biên tập) — narrow role, no settings / users / API keys. */
 export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 
+const MOCK_MFA_USER_ID="00000000-0000-4000-8000-00000000e2e9";
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
   id: MOCK_USER_ID,
@@ -65,6 +66,7 @@ const USERS = {
   [MOCK_AVATAR_USER_ID]: avatarUser,
   [MOCK_PHOTO_USER_ID]: {...user,id:MOCK_PHOTO_USER_ID,email:"e2e-photo@kecon.test"},
   [MOCK_VOICE_USER_ID]: {...user,id:MOCK_VOICE_USER_ID,email:"e2e-voice@kecon.test"},
+  [MOCK_MFA_USER_ID]: {...adminUser,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"},
   [MOCK_ADMIN_USER_ID]: adminUser,
   [MOCK_EDITOR_USER_ID]: editorUser,
 };
@@ -202,7 +204,7 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
+  profiles: [profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
@@ -337,7 +339,8 @@ function poolRpc(name, sub, body, permissions) {
       if (pool.some((k) => k.provider === provider && k.secret === value)) {
         return rpcError(400, "23505", `Key này đã có trong kho ${POOL_PROVIDERS[provider]} (…${last4(value)})`);
       }
-      const now = new Date().toISOString();
+
+const now = new Date().toISOString();
       const row = poolKey(randomUUID(), provider, String(body?.p_label ?? "").trim().slice(0, 60), value, {
         created_at: now, updated_at: now, created_by_email: USERS[sub]?.email ?? null,
       });
@@ -413,12 +416,24 @@ function permissionsOf(sub) {
 }
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
-function rpc(name, sub, body) {
+function rpc(name, sub, body, claims={}) {
   const hasPin = sub === MOCK_PIN_USER_ID;
-  const permissions = permissionsOf(sub);
+  const rawPermissions = permissionsOf(sub);
+  const access=mockAdminAccess(sub,claims);
+  const permissions=access.state==="ready"?rawPermissions:[];
   switch (name) {
+    case "admin_access_status":return access;
+    case "open_admin_session": {
+      if(!rawPermissions.length)return access;
+      if(access.requires_mfa&&claims.aal!=="aal2")return {...access,state:"mfa_required"};
+      const old=adminSessions.get(claims.session_id),proof=Math.max(...(claims.amr??[]).map(a=>a.timestamp),0);
+      if(old&&(old.closed||old.last<Date.now()-1800000)&&proof<=old.proof)return {...access,state:"mfa_required"};
+      adminSessions.set(claims.session_id,{sub,last:Date.now(),proof,closed:false});return mockAdminAccess(sub,claims);
+    }
+    case "touch_admin_session":if(access.state==="ready")adminSessions.get(claims.session_id).last=Date.now();return mockAdminAccess(sub,claims);
+    case "close_admin_session":if(adminSessions.has(claims.session_id))adminSessions.get(claims.session_id).closed=true;return mockAdminAccess(sub,claims);
     case "my_admin_permissions":
-      return permissions;
+      return rawPermissions;
     case "has_permission":
       return permissions.includes(body?.p_permission);
     case "parent_pin_status":
@@ -472,6 +487,17 @@ function readJson(req) {
     });
   });
 }
+
+const adminSessions=new Map(),mfaFactors=new Map();
+function tokenClaims(auth){try{return JSON.parse(Buffer.from(String(auth??'').replace(/^Bearer\s+/i,'').split('.')[1]??'','base64url').toString())}catch{return {}}}
+function mockAdminAccess(sub,claims){
+ const permissions=permissionsOf(sub),required=permissions.some(p=>/write|manage|send/.test(p));
+ if(!permissions.length)return {state:'forbidden',requires_mfa:false,expires_at:null};
+ if(claims.e2e_admin_ready&&!adminSessions.has(claims.session_id))adminSessions.set(claims.session_id,{sub,last:Date.now(),proof:claims.amr?.[0]?.timestamp??0,closed:false});
+ const s=adminSessions.get(claims.session_id);let state=required&&claims.aal!=='aal2'?'mfa_required':!s?'session_required':s.closed||s.last<Date.now()-1800000?'session_expired':'ready';
+ return {state,requires_mfa:required,expires_at:state==='ready'?new Date(s.last+1800000).toISOString():null};
+}
+function mockSession(sub,claims){const payload={...claims,aal:'aal2',amr:[...(claims.amr??[]).filter(a=>a.method!=='totp'),{method:'totp',timestamp:Math.floor(Date.now()/1000)}]};return {access_token:[Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),Buffer.from(JSON.stringify(payload)).toString('base64url'),'mock-signature'].join('.'),token_type:'bearer',expires_in:86400,refresh_token:'mock-refresh-token',user:{...USERS[sub],factors:mfaFactors.get(sub)??[]}};}
 
 function tokenSub(auth) {
   const token = (auth ?? "").replace(/^Bearer\s+/i, "");
@@ -568,8 +594,18 @@ createServer((req, res) => {
 
   // ── Auth ──
   if (path === "/auth/v1/user") {
-    const known = USERS[tokenSub(req.headers.authorization)];
+    const sub=tokenSub(req.headers.authorization);const known = USERS[sub]?{...USERS[sub],factors:mfaFactors.get(sub)??[]}:null;
     return known ? send(res, 200, known) : send(res, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
+  }
+  if(path==='/__e2e/mfa-expire'&&req.method==='POST'){readJson(req).then(b=>{const s=adminSessions.get(b.session_id);if(s)s.last=Date.now()-1860000;send(res,200,{ok:Boolean(s)});});return;}
+  if(path.startsWith('/auth/v1/factors')){
+   const claims=tokenClaims(req.headers.authorization),sub=claims.sub;if(!USERS[sub])return send(res,401,{message:'Unauthorized'});
+   const factors=mfaFactors.get(sub)??[];
+   if(path==='/auth/v1/factors'&&req.method==='POST'){readJson(req).then(b=>{const f={id:randomUUID(),friendly_name:b.friendly_name,factor_type:'totp',status:'unverified',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};factors.push(f);mfaFactors.set(sub,factors);send(res,200,{id:f.id,type:'totp',totp:{secret:'JBSWY3DPEHPK3PXP',uri:'otpauth://totp/KeCon?secret=JBSWY3DPEHPK3PXP',qr_code:'<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><rect width="220" height="220" fill="white"/></svg>'}});});return;}
+   const id=path.split('/')[4],f=factors.find(f=>f.id===id);if(!f)return send(res,404,{message:'Unknown factor'});
+   if(req.method==='DELETE'){mfaFactors.set(sub,factors.filter(f=>f.id!==id));return send(res,200,{id});}
+   if(path.endsWith('/challenge'))return send(res,200,{id:randomUUID(),type:'totp',expires_at:Math.floor(Date.now()/1000)+300});
+   if(path.endsWith('/verify')){readJson(req).then(b=>{if(b.code!=='123456')return send(res,422,{code:'mfa_verification_failed',msg:'Invalid code'});f.status='verified';send(res,200,mockSession(sub,claims));});return;}
   }
   if (path.startsWith("/auth/v1/logout")) return send(res, 204);
   if (path.startsWith("/auth/v1/")) return send(res, 400, { error: "invalid_grant", error_description: "mock" });
@@ -584,7 +620,7 @@ createServer((req, res) => {
       readJson(req).then((body) => {
         const served = isServiceRole ? serviceRpc(name, body) : undefined;
         if (served !== undefined) return send(res, 200, served);
-        const out = authed ? rpc(name, sub, body) : null;
+        const out = authed ? rpc(name, sub, body,tokenClaims(req.headers.authorization)) : null;
         if (out && typeof out === "object" && "__rpcError" in out) return send(res, out.__rpcError.status, out.__rpcError.body);
         send(res, 200, out);
       });
