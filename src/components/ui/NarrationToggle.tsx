@@ -25,7 +25,7 @@ export default function NarrationToggle() {
         aria-hidden
         className={`flex h-7 w-12 items-center rounded-full p-1 ${settings.narrationEnabled ? "justify-end bg-brand" : "justify-start bg-gray-500"}`}
       >
-        <span className="h-5 w-5 rounded-full bg-white" />
+        <span className="h-5 w-5 rounded-full bg-[#F7EFD8]" />
       </span>
     </button>
   );
