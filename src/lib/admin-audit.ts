@@ -14,6 +14,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Every action the log can contain (DB triggers + API routes), with its Vietnamese label. */
 export const AUDIT_ACTIONS = {
+  "measurement.view": "Xem đo lường tổng hợp",
+  "pricing.update": "Đổi đơn giá AI",
   "admin_session.open": "Mở phiên quản trị",
   "admin_session.close": "Khoá phiên quản trị",
   "admin_session.revoke": "Thu hồi phiên quản trị",
@@ -58,6 +60,7 @@ export const AUDIT_ACTIONS = {
 export type AuditAction = keyof typeof AUDIT_ACTIONS;
 
 export const AUDIT_TARGET_LABELS: Record<string, string> = {
+  pricing: "Đơn giá AI",
   admin_session: "Phiên quản trị",
   user: "Người dùng",
   setting: "Cài đặt",

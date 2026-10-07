@@ -1,4 +1,5 @@
 "use client";
+import MeasurementPanel from "@/components/admin/MeasurementPanel";
 
 import { useState, useEffect } from "react";
 import {
@@ -47,6 +48,7 @@ export default function AdminAnalytics({ onBack }: AdminAnalyticsProps) {
   return (
     <div className="min-h-screen bg-surface  pb-10">
       <TopBar title="Thống kê" onBack={onBack} />
+<MeasurementPanel/>
 
       {loading ? (
         <div className="flex justify-center pt-20">

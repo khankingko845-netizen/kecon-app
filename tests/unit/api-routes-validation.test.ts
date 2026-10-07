@@ -18,6 +18,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/server-settings", () => ({
+  getServiceClient:()=>({from:()=>{const c={select:()=>c,eq:()=>c,maybeSingle:async()=>({data:null,error:null}),insert:async()=>({error:null}),update:()=>({eq:async()=>({error:null})})};return c}}),
   getSystemSetting: vi.fn(async () => ""),
   resolveApiKey: vi.fn(async () => "platform-key"),
   resolveCustomBaseUrl: vi.fn(async () => ""),

@@ -1,3 +1,4 @@
+import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { keyPoolErrorResponse, voiceKeyPool } from "@/lib/key-pool";
@@ -18,6 +19,7 @@ const AmbientBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("voice.ambient",async(request)=>{
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
   if (usageBlocked) return usageBlocked;
 
   try {
-    const generate = async (key: string) => (await generateAmbientSound(key, prompt, duration || 10)).arrayBuffer();
+    const generate = async (key: string) => (await generateAmbientSound(key, prompt, duration || 10, meteredFetch({provider:"elevenlabs",model:"sound-generation",kind:"ambient",units:duration || 10}))).arrayBuffer();
     const arrayBuffer = userKey ? await generate(userKey) : await voiceKeyPool.run("elevenlabs", generate);
 
     return new Response(arrayBuffer, {
@@ -77,4 +79,5 @@ export async function POST(request: NextRequest) {
     }
     return keyPoolErrorResponse(err, "Sound generation failed");
   }
+})(request);
 }

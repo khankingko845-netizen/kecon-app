@@ -1,3 +1,4 @@
+import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission } from "@/lib/admin-permissions";
@@ -30,6 +31,7 @@ const IllustrateBatchBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.illustrate-batch",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest) {
     const prompt = `Children's storybook illustration for "${storyTitle}". ${stylePrompt}. Scene: ${sceneDesc}. No text or words in the image. Safe for children.`;
 
     try {
-      const res = await fetch("https://api.openai.com/v1/images/generations", {
+      const res = await meteredFetch({provider:"openai",model:"dall-e-3.standard.1024x1024",kind:"image",units:1})("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -174,4 +176,5 @@ export async function POST(request: NextRequest) {
   }
 
   return Response.json({ results });
+})(request);
 }

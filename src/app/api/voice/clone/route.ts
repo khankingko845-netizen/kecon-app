@@ -1,3 +1,4 @@
+import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cloneVoice } from "@/lib/elevenlabs";
@@ -21,6 +22,7 @@ const CloneFields = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("voice.clone",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   if (userKey) {
     try {
-      return Response.json(await cloneVoice(userKey, name, audioFile, language));
+      return Response.json(await cloneVoice(userKey, name, audioFile, language, meteredFetch({provider:"elevenlabs",model:"ivc",kind:"clone",units:1})));
     } catch (err) {
       const message = err instanceof Error ? scrubSecret(err.message, userKey) : "Voice cloning failed";
       return Response.json({ error: message }, { status: 500 });
@@ -73,11 +75,12 @@ export async function POST(request: NextRequest) {
 
   try {
     // The clone only exists in the account of the key that made it → remember that key for TTS.
-    const result = await voiceKeyPool.run("elevenlabs", (key) => cloneVoice(key, name, audioFile, language), {
+    const result = await voiceKeyPool.run("elevenlabs", (key) => cloneVoice(key, name, audioFile, language, meteredFetch({provider:"elevenlabs",model:"ivc",kind:"clone",units:1})), {
       bindVoiceFrom: (r) => r.voice_id,
     });
     return Response.json(result);
   } catch (err) {
     return keyPoolErrorResponse(err, "Voice cloning failed");
   }
+})(request);
 }

@@ -1,3 +1,4 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,7 @@ const Body = z
   })
   .strict();
 export async function POST(request: NextRequest) {
+ return withAiContext("voice.preview",async(request)=>{
   if (request.headers.get("sec-fetch-site") === "cross-site")
     return Response.json(
       { error: "Không cho phép yêu cầu khác nguồn." },
@@ -74,4 +76,5 @@ export async function POST(request: NextRequest) {
   response.headers.set("Cache-Control", "private, no-store");
   response.headers.set("X-Content-Type-Options", "nosniff");
   return response;
+})(request);
 }

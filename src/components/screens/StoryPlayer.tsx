@@ -1,4 +1,5 @@
 "use client";
+import {recordMilestone} from "@/lib/measurement-client";
 
 import NarrationToggle from "@/components/ui/NarrationToggle";
 import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
@@ -584,6 +585,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  const audio = new Audio(merged.blobUrl);
+ audio.onplaying=()=>recordMilestone("first_listen");
  audioRef.current = audio;
  setAudioClock(null);
 
@@ -657,6 +659,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  const audio = new Audio(url);
+ audio.onplaying=()=>recordMilestone("first_listen");
  audioRef.current = audio;
  setAudioClock(null);
 

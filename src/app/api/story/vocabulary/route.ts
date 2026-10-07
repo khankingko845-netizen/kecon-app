@@ -1,9 +1,10 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
-import { callLlmJson } from "@/lib/llm";
+import { callLlmJson } from "@/lib/llm-metered";
 import { z } from "zod";
 import { optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
 
@@ -19,6 +20,7 @@ const VocabularyBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.vocabulary",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -115,4 +117,5 @@ Yêu cầu:
       { status: 500 }
     );
   }
+})(request);
 }

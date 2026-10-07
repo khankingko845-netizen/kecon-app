@@ -35,6 +35,12 @@ if ! docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_ENROLL_ENA
 fi
 docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_ENROLL_ENABLED | grep -qx true
 docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_VERIFY_ENABLED | grep -qx true
+# T07 additive measurement tables have been migrated before scheduling retention.
+sudo install -m 644 "$REL/deploy/prized/kecon-measurement-retention.service" /etc/systemd/system/
+sudo install -m 644 "$REL/deploy/prized/kecon-measurement-retention.timer" /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now kecon-measurement-retention.timer
+sudo systemctl start kecon-measurement-retention.service
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web

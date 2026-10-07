@@ -1,3 +1,4 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { VOICE_ID_PATTERN } from "@/lib/provider-keys";
@@ -20,6 +21,7 @@ const TtsBody = z.object({
 import { synthesizeSpeech } from "@/lib/voice-synthesis";
 
 export async function POST(request: NextRequest) {
+ return withAiContext("voice.tts",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,4 +39,5 @@ export async function POST(request: NextRequest) {
   const disabled = await guardDisabledVoice(supabase, user.id, voiceId, language);
   if (disabled) return disabled;
   return synthesizeSpeech(supabase,parsed.data);
+})(request);
 }

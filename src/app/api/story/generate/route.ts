@@ -1,3 +1,4 @@
+import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { validateStoryNarrator } from "@/lib/story-narrator";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -31,6 +32,7 @@ const GenerateBody = z.object({
 });
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.generate",async(request)=>{
   const supabase = await createClient();
   const {
     data: { user },
@@ -78,7 +80,8 @@ export async function POST(request: NextRequest) {
         language: language || "vi",
         extraPrompt,
       },
-      target.baseUrl
+      target.baseUrl,
+      meteredFetch({provider:target.provider,model:target.model,kind:"llm"})
     );
 
     let storyId: string | null = null;
@@ -148,4 +151,5 @@ export async function POST(request: NextRequest) {
       err instanceof Error ? err.message : "Story generation failed";
     return Response.json({ error: message }, { status: 500 });
   }
+})(request);
 }

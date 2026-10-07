@@ -1,9 +1,10 @@
+import { withAiContext } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
-import { callLlmJson, type LlmTarget } from "@/lib/llm";
+import { callLlmJson, type LlmTarget } from "@/lib/llm-metered";
 import { z } from "zod";
 import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 
@@ -107,6 +108,7 @@ async function reviewWith(target: LlmTarget, systemPrompt: string, userPrompt: s
 }
 
 export async function POST(request: NextRequest) {
+ return withAiContext("story.expert-review",async(request)=>{
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -164,4 +166,5 @@ Hãy đánh giá chi tiết và trả về JSON theo format yêu cầu. Viết b
   );
 
   return Response.json({ reviews: results });
+})(request);
 }
