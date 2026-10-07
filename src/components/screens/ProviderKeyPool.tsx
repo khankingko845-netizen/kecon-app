@@ -8,9 +8,25 @@
  * rotates the keys (least busy / least recently used first) and skips keys that
  * run out of credit or fail, filling in with the next one (src/lib/key-pool.ts).
  */
+import { useAdminConfirm } from "@/components/admin/AdminConfirm";
 import { useState } from "react";
-import { Check, Eye, EyeOff, ExternalLink, Key, Loader2, Plus, RefreshCw, Trash2 } from "@/components/ui/icons";
-import { addProviderKey, checkProviderKeys, deleteProviderKey, updateProviderKey } from "@/lib/db";
+import {
+  Check,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Key,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "@/components/ui/icons";
+import {
+  addProviderKey,
+  checkProviderKeys,
+  deleteProviderKey,
+  updateProviderKey,
+} from "@/lib/db";
 import {
   providerCreditText,
   providerKeyStatusText,
@@ -28,10 +44,20 @@ const TONE_CLASS = {
 
 const fmt = (n: number) => n.toLocaleString("vi-VN");
 const when = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : null;
+  iso
+    ? new Date(iso).toLocaleString("vi-VN", {
+        dateStyle: "short",
+        timeStyle: "short",
+      })
+    : null;
 
 function errorText(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string") {
+  if (
+    err &&
+    typeof err === "object" &&
+    "message" in err &&
+    typeof (err as { message: unknown }).message === "string"
+  ) {
     return (err as { message: string }).message;
   }
   return fallback;
@@ -51,6 +77,7 @@ export default function ProviderKeyPool({
   /** No `secrets.manage` → nothing to show or change. */
   locked?: boolean;
 }) {
+  const confirm = useAdminConfirm();
   const info = VOICE_PROVIDER_INFO[provider];
   const [newKey, setNewKey] = useState("");
   const [newLabel, setNewLabel] = useState("");
@@ -61,7 +88,7 @@ export default function ProviderKeyPool({
 
   if (locked) {
     return (
-      <p className="text-[12px] text-txt-secondary dark:text-white/50">
+      <p className="text-sm text-txt-secondary ">
         Chỉ Super admin / Admin xem và đặt được key {info.label}.
       </p>
     );
@@ -92,42 +119,63 @@ export default function ProviderKeyPool({
     await act(
       "add",
       async () => {
-        const added = await addProviderKey(provider, value, newLabel.trim() || undefined);
+        const added = await addProviderKey(
+          provider,
+          value,
+          newLabel.trim() || undefined,
+        );
         setNewKey("");
         setNewLabel("");
         setShow(false);
-        const [result] = await checkProviderKeys({ id: added.id }).catch(() => []);
+        const [result] = await checkProviderKeys({ id: added.id }).catch(
+          () => [],
+        );
         setNotice(
           `Đã thêm key …${added.last4 ?? "????"}` +
-            (result ? (result.ok ? " · kiểm tra OK" : ` · ${result.error ?? "chưa kiểm tra được"}`) : "")
+            (result
+              ? result.ok
+                ? " · kiểm tra OK"
+                : ` · ${result.error ?? "chưa kiểm tra được"}`
+              : ""),
         );
       },
-      "Thêm key thất bại"
+      "Thêm key thất bại",
     );
   }
 
   return (
     <div data-testid={`key-pool-${provider}`} className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-[12px] font-bold text-txt-secondary dark:text-white/50">
+        <p className="text-sm font-bold text-txt-secondary ">
           Kho API key · {rows.length} key · {active} đang dùng
         </p>
         {rows.length > 0 && (
           <button
             type="button"
-            onClick={() => act("all", async () => void (await checkProviderKeys({ provider })), "Kiểm tra thất bại")}
+            onClick={() =>
+              act(
+                "all",
+                async () => void (await checkProviderKeys({ provider })),
+                "Kiểm tra thất bại",
+              )
+            }
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/10 text-[12px] font-bold text-txt-secondary dark:text-white/50 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200  text-sm font-bold text-txt-secondary  hover:bg-gray-50 disabled:opacity-50"
           >
-            {busy === "all" ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            {busy === "all" ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <RefreshCw size={13} />
+            )}
             Kiểm tra tất cả
           </button>
         )}
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-[12px] text-txt-secondary dark:text-white/50 leading-relaxed">
-          Chưa có key nào. Thêm một hay nhiều key bên dưới (máy chủ vẫn dùng biến môi trường {info.envVar} nếu có).
+        <p className="text-sm text-txt-secondary  leading-relaxed">
+          Chưa có key nào. Thêm một hay nhiều key bên dưới (máy chủ vẫn dùng
+          biến môi trường {info.envVar} nếu có).
         </p>
       ) : (
         <ul aria-label={`Kho key ${info.label}`} className="space-y-2">
@@ -139,51 +187,102 @@ export default function ProviderKeyPool({
               <li
                 key={row.id}
                 data-testid={`pool-key-${row.id}`}
-                className="rounded-xl border border-gray-200 dark:border-white/10 px-3 py-2.5 text-[12px]"
+                className="rounded-xl border border-gray-200  px-3 py-2.5 text-sm"
               >
                 <div className="flex items-center gap-2 flex-wrap">
                   <Key size={13} className="text-txt-secondary" />
-                  <span className="font-bold text-[13px]">{row.label || `Key …${row.last4 ?? "????"}`}</span>
-                  <code className="font-mono text-txt-secondary dark:text-white/50">…{row.last4 ?? "????"}</code>
-                  <span className={`px-2 py-0.5 rounded-full border font-semibold ${TONE_CLASS[status.tone]}`}>{status.text}</span>
+                  <span className="font-bold text-sm">
+                    {row.label || `Key …${row.last4 ?? "????"}`}
+                  </span>
+                  <code className="font-mono text-txt-secondary ">
+                    …{row.last4 ?? "????"}
+                  </code>
+                  <span
+                    className={`px-2 py-0.5 rounded-full border font-semibold ${TONE_CLASS[status.tone]}`}
+                  >
+                    {status.text}
+                  </span>
                 </div>
-                <p className="mt-1 text-txt-secondary dark:text-white/50">
+                <p className="mt-1 text-txt-secondary ">
                   {[
                     credit,
                     `${fmt(row.use_count)} lượt · ${fmt(row.char_count)} ký tự`,
                     lastUsed ? `dùng lần cuối ${lastUsed}` : "chưa dùng",
-                    row.created_by_email ? `thêm bởi ${row.created_by_email}` : null,
+                    row.created_by_email
+                      ? `thêm bởi ${row.created_by_email}`
+                      : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
-                {row.last_error && <p className="mt-1 text-red-500 break-words">Lỗi gần nhất: {row.last_error}</p>}
+                {row.last_error && (
+                  <p className="mt-1 text-red-700 break-words">
+                    Lỗi gần nhất: {row.last_error}
+                  </p>
+                )}
                 <div className="mt-2 flex items-center gap-3 flex-wrap font-semibold">
                   <button
                     type="button"
-                    onClick={() => act(row.id, async () => void (await checkProviderKeys({ id: row.id })), "Kiểm tra thất bại")}
+                    onClick={() =>
+                      act(
+                        row.id,
+                        async () =>
+                          void (await checkProviderKeys({ id: row.id })),
+                        "Kiểm tra thất bại",
+                      )
+                    }
                     disabled={busy !== null}
                     className="inline-flex items-center gap-1 text-accent hover:underline disabled:opacity-50"
                   >
-                    {busy === row.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                    {busy === row.id ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Check size={12} />
+                    )}
                     Kiểm tra
                   </button>
                   <button
                     type="button"
-                    onClick={() => act(row.id, () => updateProviderKey(row.id, { enabled: !row.enabled || row.status !== "active" ? true : false }), "Đổi trạng thái thất bại")}
+                    onClick={() =>
+                      act(
+                        row.id,
+                        () =>
+                          updateProviderKey(row.id, {
+                            enabled:
+                              !row.enabled || row.status !== "active"
+                                ? true
+                                : false,
+                          }),
+                        "Đổi trạng thái thất bại",
+                      )
+                    }
                     disabled={busy !== null}
-                    className="text-txt-secondary dark:text-white/50 hover:underline disabled:opacity-50"
+                    className="text-txt-secondary  hover:underline disabled:opacity-50"
                   >
-                    {!row.enabled ? "Bật" : row.status !== "active" ? "Bật lại" : "Tắt"}
+                    {!row.enabled
+                      ? "Bật"
+                      : row.status !== "active"
+                        ? "Bật lại"
+                        : "Tắt"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!window.confirm(`Xoá key ${info.label} …${row.last4 ?? "????"}? Giọng nhân bản trong tài khoản này sẽ không đọc được nữa.`)) return;
-                      void act(row.id, () => deleteProviderKey(row.id), "Xoá key thất bại");
+                    onClick={async () => {
+                      const reason = await confirm({
+                        title: `Xoá key ${info.label} …${row.last4 ?? "????"}?`,
+                        description:
+                          "Giọng nhân bản trong tài khoản này có thể không đọc được nữa. Không thể xem lại key đã xoá.",
+                        confirmLabel: "Xoá key",
+                      });
+                      if (!reason) return;
+                      void act(
+                        row.id,
+                        () => deleteProviderKey(row.id, reason),
+                        "Xoá key thất bại",
+                      );
                     }}
                     disabled={busy !== null}
-                    className="inline-flex items-center gap-1 text-red-500 hover:underline disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-red-700 hover:underline disabled:opacity-50"
                   >
                     <Trash2 size={12} />
                     Xoá
@@ -195,7 +294,7 @@ export default function ProviderKeyPool({
         </ul>
       )}
 
-      <div className="rounded-xl bg-surface dark:bg-white/[0.03] p-3 space-y-2">
+      <div className="rounded-xl bg-surface  p-3 space-y-2">
         <div className="flex gap-2 flex-wrap">
           <input
             type="text"
@@ -204,7 +303,7 @@ export default function ProviderKeyPool({
             maxLength={60}
             aria-label={`Tên key ${info.label} mới`}
             placeholder="Tên gợi nhớ (VD: Tài khoản 2)"
-            className="flex-1 min-w-[140px] px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-sm outline-none focus:border-accent"
+            className="flex-1 min-w-[140px] px-3 py-2.5 rounded-xl border border-gray-200  bg-white  text-sm outline-none focus:border-accent"
           />
         </div>
         <div className="flex gap-2">
@@ -219,13 +318,13 @@ export default function ProviderKeyPool({
             autoComplete="off"
             spellCheck={false}
             placeholder={info.placeholder}
-            className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-sm font-mono outline-none focus:border-accent"
+            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-gray-200  bg-white  text-sm font-mono outline-none focus:border-accent"
           />
           <button
             type="button"
             onClick={() => setShow(!show)}
             aria-label={show ? "Ẩn key đang nhập" : "Hiện key đang nhập"}
-            className="px-3 rounded-xl border border-gray-200 dark:border-white/10 text-txt-secondary"
+            className="shrink-0 px-3 rounded-xl border border-gray-200  text-txt-secondary"
           >
             {show ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -233,9 +332,13 @@ export default function ProviderKeyPool({
             type="button"
             onClick={() => void handleAdd()}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3.5 rounded-xl bg-accent text-white text-[13px] font-bold disabled:opacity-50"
+            className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 px-3.5 rounded-xl bg-accent text-white text-sm font-bold disabled:opacity-50"
           >
-            {busy === "add" ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            {busy === "add" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
             Thêm key
           </button>
         </div>
@@ -243,17 +346,27 @@ export default function ProviderKeyPool({
           href={info.keysUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-accent text-[12px] font-semibold"
+          className="inline-flex items-center gap-1.5 text-accent text-sm font-semibold"
         >
           Lấy API key {info.label} <ExternalLink size={12} />
         </a>
       </div>
 
-      {notice && <p role="status" className="text-[12px] font-semibold text-emerald-600">{notice}</p>}
-      {error && <p role="alert" className="text-[12px] font-semibold text-red-500">{error}</p>}
-      <p className="text-[11px] text-txt-secondary dark:text-white/40 leading-relaxed">
-        Máy chủ xoay vòng các key: request chia đều cho key đang rảnh; key hết credit hoặc lỗi được tự bỏ qua và bù bằng key kế
-        tiếp. Key đã lưu được mã hoá, chỉ hiện 4 ký tự cuối. Giọng nhân bản chỉ nằm trong tài khoản đã tạo nó.
+      {notice && (
+        <p role="status" className="text-sm font-semibold text-emerald-800">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          {error}
+        </p>
+      )}
+      <p className="text-sm text-txt-secondary  leading-relaxed">
+        Máy chủ xoay vòng các key: request chia đều cho key đang rảnh; key hết
+        credit hoặc lỗi được tự bỏ qua và bù bằng key kế tiếp. Key đã lưu được
+        mã hoá, chỉ hiện 4 ký tự cuối. Giọng nhân bản chỉ nằm trong tài khoản đã
+        tạo nó.
       </p>
     </div>
   );

@@ -8,18 +8,36 @@
  * A-04b — kho nhiều key ElevenLabs / Fish Audio: thêm, kiểm tra credit, tắt, xoá; chỉ thấy 4 ký tự cuối.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { MOCK_ADMIN_USER_ID, MOCK_EDITOR_USER_ID, passParentGate, signInAsMockFamily } from "./support/fixtures";
+import {
+  MOCK_ADMIN_USER_ID,
+  MOCK_EDITOR_USER_ID,
+  passParentGate,
+  signInAsMockFamily,
+} from "./support/fixtures";
 
 const ADMIN_URLS = ["/admin", "/admin/users", "/admin/settings"];
-const ALL_SECTIONS = ["Tổng quan", "Truyện", "Người dùng", "Thống kê", "Danh mục", "Mẫu truyện", "Cài đặt hệ thống", "Nhật ký"];
+const ALL_SECTIONS = [
+  "Tổng quan",
+  "Truyện",
+  "Người dùng",
+  "Thống kê",
+  "Danh mục",
+  "Mẫu truyện",
+  "Cài đặt hệ thống",
+  "Nhật ký",
+];
 const EDITOR_SECTIONS = ["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"];
-const kidNav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
-const adminNav = (page: Page) => page.getByRole("navigation", { name: "Quản trị" });
+const kidNav = (page: Page) =>
+  page.getByRole("navigation", { name: "Điều hướng chính" });
+const adminNav = (page: Page) =>
+  page.getByRole("navigation", { name: "Quản trị" });
 
 async function expectNotFound(page: Page, url: string) {
   const res = await page.goto(url);
   expect(res?.status(), url).toBe(404);
-  await expect(page.getByRole("heading", { level: 1, name: "Không tìm thấy trang" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Không tìm thấy trang" }),
+  ).toBeVisible();
   await expect(page.locator("[data-admin-shell]")).toHaveCount(0);
   await expect(adminNav(page)).toHaveCount(0);
   // Nothing in the response hints that a console exists (title, labels, data).
@@ -28,9 +46,13 @@ async function expectNotFound(page: Page, url: string) {
 }
 
 async function openParentArea(page: Page) {
-  await kidNav(page).getByRole("button", { name: "Bố mẹ", exact: true }).click();
+  await kidNav(page)
+    .getByRole("button", { name: "Bố mẹ", exact: true })
+    .click();
   await passParentGate(page);
-  await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true }),
+  ).toBeVisible();
 }
 
 test.describe("A-01 · /admin ẩn với người không phải admin", () => {
@@ -38,7 +60,11 @@ test.describe("A-01 · /admin ẩn với người không phải admin", () => {
     for (const url of ADMIN_URLS) await expectNotFound(page, url);
   });
 
-  test("user thường: 404 kể cả gõ URL; Trang chủ và khu Bố mẹ không có lối vào", async ({ page, context, baseURL }) => {
+  test("user thường: 404 kể cả gõ URL; Trang chủ và khu Bố mẹ không có lối vào", async ({
+    page,
+    context,
+    baseURL,
+  }) => {
     await signInAsMockFamily(context, baseURL!);
     for (const url of ADMIN_URLS) await expectNotFound(page, url);
 
@@ -46,24 +72,36 @@ test.describe("A-01 · /admin ẩn với người không phải admin", () => {
     await expect(page.getByTestId("home-explore")).toBeVisible();
     await expect(page.getByText("Quản trị")).toHaveCount(0);
     await openParentArea(page);
-    await expect(page.getByRole("button", { name: /Trang quản trị/ })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Trang quản trị/ }),
+    ).toHaveCount(0);
   });
 });
 
 test.describe("A-01 · admin", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  test.use({
+    viewport: { width: 1280, height: 800 },
+    isMobile: false,
+    hasTouch: false,
+  });
 
   test.beforeEach(async ({ context, baseURL }) => {
     await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
   });
 
-  test("layout desktop có thanh bên; mỗi mục một URL (tải lại, nút Back vẫn đúng)", async ({ page }) => {
+  test("layout desktop có thanh bên; mỗi mục một URL (tải lại, nút Back vẫn đúng)", async ({
+    page,
+  }) => {
     const res = await page.goto("/admin");
     expect(res?.status()).toBe(200);
     await expect(page).toHaveTitle("Tổng quan · Quản trị KểCon");
     await expect(adminNav(page)).toBeVisible();
-    await expect(adminNav(page).getByRole("link", { name: "Tổng quan" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { name: "Quản Trị", exact: true })).toBeVisible();
+    await expect(
+      adminNav(page).getByRole("link", { name: "Tổng quan" }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("heading", { name: "Quản Trị", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("e2e-admin@kecon.test")).toBeVisible();
     // Desktop: the sidebar is a full-height column beside the content, no kid tab bar.
     const aside = await page.locator("aside").boundingBox();
@@ -76,28 +114,40 @@ test.describe("A-01 · admin", () => {
 
     await adminNav(page).getByRole("link", { name: "Người dùng" }).click();
     await expect(page).toHaveURL(/\/admin\/users$/);
-    await expect(page.getByRole("heading", { name: "Người dùng", exact: true })).toBeVisible();
-    await expect(adminNav(page).getByRole("link", { name: "Người dùng" })).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("heading", { name: "Người dùng", exact: true }),
+    ).toBeVisible();
+    await expect(
+      adminNav(page).getByRole("link", { name: "Người dùng" }),
+    ).toHaveAttribute("aria-current", "page");
     await expect(page).toHaveTitle("Người dùng · Quản trị KểCon");
 
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Người dùng", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Người dùng", exact: true }),
+    ).toBeVisible();
     await page.goBack();
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole("heading", { name: "Quản Trị", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Quản Trị", exact: true }),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: "Về app KểCon" }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId("home-explore")).toBeVisible();
   });
 
-  test("URL lạ → 404; Trang chủ bé không còn ô Quản trị; lối vào nằm trong khu Bố mẹ", async ({ page }) => {
+  test("URL lạ → 404; Trang chủ bé không còn ô Quản trị; lối vào nằm trong khu Bố mẹ", async ({
+    page,
+  }) => {
     await expectNotFound(page, "/admin/khong-co");
     await expectNotFound(page, "/admin/users/1");
 
     await page.goto("/");
     await expect(page.getByTestId("home-explore")).toBeVisible();
-    await expect(page.getByTestId("home-explore").getByText("Quản trị")).toHaveCount(0);
+    await expect(
+      page.getByTestId("home-explore").getByText("Quản trị"),
+    ).toHaveCount(0);
 
     await openParentArea(page);
     await page.getByRole("button", { name: /Trang quản trị/ }).click();
@@ -107,18 +157,28 @@ test.describe("A-01 · admin", () => {
 });
 
 test.describe("A-03 · Nhật ký thao tác", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  test.use({
+    viewport: { width: 1280, height: 800 },
+    isMobile: false,
+    hasTouch: false,
+  });
 
   test.beforeEach(async ({ context, baseURL }) => {
     await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
   });
 
-  test("admin xem nhật ký mới nhất trước; lọc theo hành động, người, ngày", async ({ page }) => {
+  test("admin xem nhật ký mới nhất trước; lọc theo hành động, người, ngày", async ({
+    page,
+  }) => {
     const res = await page.goto("/admin/audit");
     expect(res?.status()).toBe(200);
     await expect(page).toHaveTitle("Nhật ký · Quản trị KểCon");
-    await expect(adminNav(page).getByRole("link", { name: "Nhật ký" })).toHaveAttribute("aria-current", "page");
-    const entries = page.getByRole("list", { name: "Nhật ký thao tác" }).locator(":scope > li");
+    await expect(
+      adminNav(page).getByRole("link", { name: "Nhật ký" }),
+    ).toHaveAttribute("aria-current", "page");
+    const entries = page
+      .getByRole("list", { name: "Nhật ký thao tác" })
+      .locator(":scope > li");
     await expect(entries).toHaveCount(4);
 
     const newest = entries.first();
@@ -133,13 +193,17 @@ test.describe("A-03 · Nhật ký thao tác", () => {
 
     await page.getByLabel("Hành động").selectOption({ label: "Sửa truyện" });
     await expect(entries).toHaveCount(1);
-    await expect(entries.first()).toContainText("title: Thỏ con → Thỏ con và Rùa");
+    await expect(entries.first()).toContainText(
+      "title: Thỏ con → Thỏ con và Rùa",
+    );
     await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
     await expect(entries).toHaveCount(4);
 
     await page.getByLabel("Người thực hiện").fill("EDITOR@");
     await expect(entries).toHaveCount(1);
-    await expect(entries.first()).toContainText("e2e-editor@kecon.test · Biên tập");
+    await expect(entries.first()).toContainText(
+      "e2e-editor@kecon.test · Biên tập",
+    );
     await page.getByLabel("Người thực hiện").fill("");
     await expect(entries).toHaveCount(4);
 
@@ -148,24 +212,37 @@ test.describe("A-03 · Nhật ký thao tác", () => {
     await page.getByLabel("Đến ngày").fill("2026-03-03");
     await expect(entries).toHaveCount(1);
     await page.getByLabel("Hành động").selectOption({ label: "Đổi vai trò" });
-    await expect(page.getByText("Không có thao tác nào khớp bộ lọc")).toBeVisible();
+    await expect(
+      page.getByText("Không có thao tác nào khớp bộ lọc"),
+    ).toBeVisible();
 
     // Read-only screen: no edit / delete controls for log entries.
     await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
     await expect(entries).toHaveCount(4);
-    await expect(page.getByRole("button", { name: /Sửa|Xoá(?! bộ lọc)/ })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Sửa|Xoá(?! bộ lọc)/ }),
+    ).toHaveCount(0);
   });
 
   test("ô Nhật ký trên Tổng quan mở /admin/audit", async ({ page }) => {
     await page.goto("/admin");
-    await page.getByRole("main").getByRole("button", { name: "Nhật ký" }).click();
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "Nhật ký" })
+      .click();
     await expect(page).toHaveURL(/\/admin\/audit$/);
-    await expect(page.getByRole("heading", { name: "Nhật ký", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Nhật ký", exact: true }),
+    ).toBeVisible();
   });
 });
 
 test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  test.use({
+    viewport: { width: 1280, height: 800 },
+    isMobile: false,
+    hasTouch: false,
+  });
   const STORED_CLAUDE = "sk-ant-e2e-stored-claude-x9Qz"; // mock Vault — must never reach the browser
   const NEW_OPENAI = "sk-e2e-new-openai-key-7777";
 
@@ -173,7 +250,9 @@ test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
     await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
   });
 
-  test("hiện trạng thái + 4 ký tự cuối; đặt key mới rồi xoá; key không quay lại trình duyệt", async ({ page }) => {
+  test("hiện trạng thái + 4 ký tự cuối; đặt key mới rồi xoá; key không quay lại trình duyệt", async ({
+    page,
+  }) => {
     const bodies: Promise<string>[] = [];
     page.on("response", (r) => bodies.push(r.text().catch(() => "")));
 
@@ -183,21 +262,32 @@ test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
     await expect(claude).toContainText("Đã đặt · …x9Qz");
     await expect(claude).toContainText("e2e-admin@kecon.test");
     await expect(page.getByLabel("API key Claude")).toHaveValue("");
-    await expect(page.getByLabel("API key Claude")).toHaveAttribute("placeholder", /Nhập key mới để thay/);
+    await expect(page.getByLabel("API key Claude")).toHaveAttribute(
+      "placeholder",
+      /Nhập key mới để thay/,
+    );
 
     await page.getByRole("button", { name: "OpenAI", exact: true }).click();
     const openai = page.getByTestId("secret-status-openai_api_key");
     await expect(openai).toHaveText("Chưa đặt");
     await page.getByLabel("API key OpenAI").fill(NEW_OPENAI);
-    const saved = page.waitForResponse((r) => r.url().includes("/rest/v1/rpc/set_system_secret"));
+    const saved = page.waitForResponse((r) =>
+      r.url().includes("/rest/v1/rpc/set_system_secret"),
+    );
     await page.getByRole("button", { name: "Lưu Cài Đặt" }).click();
     expect(await (await saved).text()).not.toContain(NEW_OPENAI); // write-only: only the status comes back
     await expect(openai).toContainText("Đã đặt · …7777");
     await expect(page.getByLabel("API key OpenAI")).toHaveValue("");
-    await expect(page.getByRole("button", { name: "Đã lưu thành công!" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Đã lưu thành công!" }),
+    ).toBeVisible();
 
-    page.once("dialog", (d) => d.accept());
     await openai.getByRole("button", { name: "Xoá key" }).click();
+    const confirm = page.getByRole("dialog", { name: "Xoá API key OpenAI?" });
+    await confirm
+      .getByLabel("Lý do thao tác")
+      .fill("Xoá key thử nghiệm trong E2E");
+    await confirm.getByRole("button", { name: "Xoá key", exact: true }).click();
     await expect(openai).toHaveText("Chưa đặt");
 
     const all = (await Promise.all(bodies)).join("\n");
@@ -207,16 +297,25 @@ test.describe("A-04 · API key chỉ-ghi (Cài đặt hệ thống)", () => {
 });
 
 test.describe("A-04b · kho nhiều key giọng nói (ElevenLabs + Fish Audio)", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+  test.use({
+    viewport: { width: 1280, height: 800 },
+    isMobile: false,
+    hasTouch: false,
+  });
   // mock pool (mock-supabase.mjs) — secrets must never reach the browser
-  const POOL_SECRETS = ["sk_e2e-stored-elevenlabs-x9Qz", "sk_e2e-pool-elevenlabs-quota-Ab12"];
+  const POOL_SECRETS = [
+    "sk_e2e-stored-elevenlabs-x9Qz",
+    "sk_e2e-pool-elevenlabs-quota-Ab12",
+  ];
   const NEW_FISH = "e2e-fish-new-account-key-5555";
 
   test.beforeEach(async ({ context, baseURL }) => {
     await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
   });
 
-  test("hiện kho key + credit; thêm key Fish → tự kiểm tra; tắt / xoá; key không quay lại trình duyệt", async ({ page }) => {
+  test("hiện kho key + credit; thêm key Fish → tự kiểm tra; tắt / xoá; key không quay lại trình duyệt", async ({
+    page,
+  }) => {
     const bodies: Promise<string>[] = [];
     page.on("response", (r) => bodies.push(r.text().catch(() => "")));
 
@@ -233,10 +332,14 @@ test.describe("A-04b · kho nhiều key giọng nói (ElevenLabs + Fish Audio)",
     await expect(spare.getByRole("button", { name: "Bật lại" })).toBeVisible();
 
     // "Kiểm tra" runs on the server against the provider (mocked) — status + credit only.
-    const checked = page.waitForResponse((r) => r.url().includes("/api/admin/provider-keys/check"));
+    const checked = page.waitForResponse((r) =>
+      r.url().includes("/api/admin/provider-keys/check"),
+    );
     await main.getByRole("button", { name: "Kiểm tra", exact: true }).click();
     const checkBody = await (await checked).json();
-    expect(checkBody.results).toEqual([expect.objectContaining({ ok: true, status: "active" })]);
+    expect(checkBody.results).toEqual([
+      expect.objectContaining({ ok: true, status: "active" }),
+    ]);
     await expect(main).toContainText("Đang dùng");
 
     // Add a Fish Audio key → it is checked right away.
@@ -254,28 +357,43 @@ test.describe("A-04b · kho nhiều key giọng nói (ElevenLabs + Fish Audio)",
     // The same key twice → refused.
     await page.getByLabel("API key Fish Audio mới").fill(NEW_FISH);
     await fish.getByRole("button", { name: "Thêm key" }).click();
-    await expect(fish).toContainText("Key này đã có trong kho Fish Audio (…5555)");
+    await expect(fish).toContainText(
+      "Key này đã có trong kho Fish Audio (…5555)",
+    );
     await page.getByLabel("API key Fish Audio mới").fill("");
 
     await added.getByRole("button", { name: "Tắt" }).click();
     await expect(added).toContainText("Đã tắt");
-    page.once("dialog", (d) => d.accept());
     await added.getByRole("button", { name: "Xoá" }).click();
+    const removal = page.getByRole("dialog");
+    await removal
+      .getByLabel("Lý do thao tác")
+      .fill("Xoá key QA sau khi kiểm thử");
+    await removal.getByRole("button", { name: "Xoá key", exact: true }).click();
     await expect(fish).toContainText("Chưa có key nào");
 
     const all = (await Promise.all(bodies)).join("\n");
-    for (const secret of [...POOL_SECRETS, NEW_FISH]) expect(all).not.toContain(secret);
+    for (const secret of [...POOL_SECRETS, NEW_FISH])
+      expect(all).not.toContain(secret);
   });
 });
 
 test.describe("A-02 · biên tập (vai trò hẹp)", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
-
-  test.beforeEach(async ({ context, baseURL }) => {
-    await signInAsMockFamily(context, baseURL!, { userId: MOCK_EDITOR_USER_ID });
+  test.use({
+    viewport: { width: 1280, height: 800 },
+    isMobile: false,
+    hasTouch: false,
   });
 
-  test("thanh bên chỉ có mục của biên tập; mục khác → 404 kể cả gõ URL", async ({ page }) => {
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInAsMockFamily(context, baseURL!, {
+      userId: MOCK_EDITOR_USER_ID,
+    });
+  });
+
+  test("thanh bên chỉ có mục của biên tập; mục khác → 404 kể cả gõ URL", async ({
+    page,
+  }) => {
     const res = await page.goto("/admin");
     expect(res?.status()).toBe(200);
     await expect(adminNav(page).getByRole("link")).toHaveText(EDITOR_SECTIONS);
@@ -285,9 +403,17 @@ test.describe("A-02 · biên tập (vai trò hẹp)", () => {
 
     await adminNav(page).getByRole("link", { name: "Danh mục" }).click();
     await expect(page).toHaveURL(/\/admin\/categories$/);
-    await expect(adminNav(page).getByRole("link", { name: "Danh mục" })).toHaveAttribute("aria-current", "page");
+    await expect(
+      adminNav(page).getByRole("link", { name: "Danh mục" }),
+    ).toHaveAttribute("aria-current", "page");
 
-    for (const url of ["/admin/settings", "/admin/users", "/admin/analytics", "/admin/audit"]) await expectNotFound(page, url);
+    for (const url of [
+      "/admin/settings",
+      "/admin/users",
+      "/admin/analytics",
+      "/admin/audit",
+    ])
+      await expectNotFound(page, url);
   });
 
   test("lối vào Trang quản trị trong khu Bố mẹ", async ({ page }) => {

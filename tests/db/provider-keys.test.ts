@@ -153,7 +153,7 @@ describe("022 · admin quản lý kho (chỉ-ghi)", () => {
     const [{ id }] = await db.query<{ id: string }>(
       "SELECT id FROM public.provider_api_keys WHERE provider = 'elevenlabs' ORDER BY created_at DESC LIMIT 1"
     ).then((r) => r.rows);
-    await run(u.admin, "SELECT public.delete_provider_key($1)", [id]);
+    await run(u.admin, "SELECT public.delete_provider_key($1, 'Dọn key dùng thử trong test')", [id]);
   });
 
   it("chỉ secrets.manage: biên tập / vận hành / gia đình / khách không xem, không thêm được", async () => {
@@ -279,12 +279,12 @@ describe("022 · server (service role): lấy kho, báo trạng thái, lượt d
   it("xoá key → xoá bản Vault, gỡ giọng đã gắn, nhật ký provider_key.delete", async () => {
     const { rows } = await db.query<{ v: string }>("SELECT vault_secret_id AS v FROM public.provider_api_keys WHERE id = $1", [fishA]);
     const from = await lastLogId();
-    await run(u.superAdmin, "SELECT public.delete_provider_key($1, 'Hết hạn')", [fishA]);
+    await run(u.superAdmin, "SELECT public.delete_provider_key($1, 'Hết hạn key thử nghiệm')", [fishA]);
     expect((await db.query("SELECT 1 FROM vault.secrets WHERE id = $1", [rows[0].v])).rows).toHaveLength(0);
     expect((await db.query("SELECT 1 FROM public.provider_voice_bindings WHERE key_id = $1", [fishA])).rows).toHaveLength(0);
     const logs = await logsSince(from);
-    expect(logs).toEqual([expect.objectContaining({ action: "provider_key.delete", actor_id: u.superAdmin, reason: "Hết hạn", after: null })]);
-    await expect(run(u.superAdmin, "SELECT public.delete_provider_key($1)", [fishA])).rejects.toThrow(/Không tìm thấy key/);
+    expect(logs).toEqual([expect.objectContaining({ action: "provider_key.delete", actor_id: u.superAdmin, reason: "Hết hạn key thử nghiệm", after: null })]);
+    await expect(run(u.superAdmin, "SELECT public.delete_provider_key($1, 'Xoá key đã được dọn trước đó')", [fishA])).rejects.toThrow(/Không tìm thấy key/);
   });
 
   it("không bảng nào ngoài Vault chứa key", async () => {

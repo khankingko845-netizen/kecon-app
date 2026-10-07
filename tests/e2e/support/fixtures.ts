@@ -14,10 +14,14 @@ export const MOCK_AVATAR_USER_ID = "00000000-0000-4000-8000-00000000e2e6";
 export const MOCK_ADMIN_USER_ID = "00000000-0000-4000-8000-00000000e2e4";
 /** Narrow staff role "editor" (Admin v2 · A-02). */
 export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
+export const MOCK_A15_ADMIN_ID = "00000000-0000-4000-8000-00000000e2a0";
+export const MOCK_A15_TARGET_ID = "00000000-0000-4000-8000-00000000e2a1";
 export const MOCK_MFA_USER_ID = "00000000-0000-4000-8000-00000000e2e9";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
 
 const MOCK_EMAILS: Record<string, string> = {
+  [MOCK_A15_ADMIN_ID]:"e2e-a15-admin@kecon.test",
+  [MOCK_A15_TARGET_ID]:"e2e-a15-target@kecon.test",
   [MOCK_USER_ID]: "e2e@kecon.test",
   [MOCK_PIN_USER_ID]: "e2e-pin@kecon.test",
   [MOCK_AGE_USER_ID]: "e2e-age@kecon.test",

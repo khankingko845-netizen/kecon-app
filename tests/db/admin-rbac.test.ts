@@ -38,14 +38,15 @@ async function createStory(owner: string, platform: boolean, title: string): Pro
 
 /** Run as a signed-in user and return the rows. */
 const rows = <T = Record<string, unknown>>(uid: string, sql: string, params: unknown[] = []) =>
-  asUser(db, uid, async (tx) => (await tx.query<T>(sql, params)).rows);
+  asUser(db, uid, async (tx) => {await tx.query("SELECT set_config('app.admin_reason','RBAC suite confirmed action',true)");return (await tx.query<T>(sql, params)).rows;});
 /** Run a write as a signed-in user and return how many rows it touched (RLS hides rows silently). */
 const affected = (uid: string, sql: string, params: unknown[] = []) =>
-  asUser(db, uid, async (tx) => (await tx.query(sql, params)).affectedRows ?? 0);
+  asUser(db, uid, async (tx) => {await tx.query("SELECT set_config('app.admin_reason','RBAC suite confirmed action',true)");return (await tx.query(sql, params)).affectedRows ?? 0;});
 /** Run inside a transaction that is always rolled back (keeps fixtures intact). */
 async function dryRun<T>(uid: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   let out: T | undefined;
   await asUser(db, uid, async (tx) => {
+    await tx.query("SELECT set_config('app.admin_reason','RBAC suite confirmed action',true)");
     out = await fn(tx);
     await tx.rollback();
   });
