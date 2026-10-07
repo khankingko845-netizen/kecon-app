@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
- Sparkles, AlertCircle, ArrowRight, ChevronRight, Volume2, Square, PenLine, Camera, Check,
+ Sparkles, AlertCircle, ArrowRight, ChevronRight, PenLine, Camera, Check,
 } from "@/components/ui/icons";
 import { GlowDots, KidLoading } from "@/components/ui/states";
+import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
+import NarrationToggle from "@/components/ui/NarrationToggle";
+import { useVoicePreview } from "@/lib/use-voice-preview";
 import Mascot, { type MascotState } from "@/components/ui/Mascot";
 import { Bubble, Button3D, KidHeader, CARD_SHADOW } from "@/components/ui/kit";
 import { useSpeechInput } from "@/lib/use-speech-input";
@@ -120,44 +123,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [defaultVoices, setDefaultVoices] = useState<DefaultVoice[]>([]);
 
 
- // Voice preview
- const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
- const [loadingPreview, setLoadingPreview] = useState(false);
- const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-
- const playVoicePreview = useCallback(async (voiceId: string, e: React.MouseEvent) => {
- e.stopPropagation();
- if (previewVoiceId === voiceId && previewAudioRef.current) {
- previewAudioRef.current.pause();
- previewAudioRef.current = null;
- setPreviewVoiceId(null);
- return;
- }
- if (previewAudioRef.current) { previewAudioRef.current.pause(); previewAudioRef.current = null; }
- setLoadingPreview(true);
- setPreviewVoiceId(voiceId);
- try {
- const res = await fetch("/api/voice/tts", {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({
- voiceId,
- text: "Xin chào! Đây là giọng kể chuyện dành cho bé yêu của bạn.",
- language: storyLocale,
- }),
- });
- if (!res.ok) throw new Error();
- const blob = await res.blob();
- const url = URL.createObjectURL(blob);
- const audio = new Audio(url);
- previewAudioRef.current = audio;
- audio.onended = () => { setPreviewVoiceId(null); URL.revokeObjectURL(url); };
- audio.play();
- } catch {
- setPreviewVoiceId(null);
- }
- setLoadingPreview(false);
- }, [previewVoiceId, storyLocale]);
+ const preview=useVoicePreview(storyLocale);
 
  // Fetch default voices
  useEffect(() => {
@@ -352,18 +318,20 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  {/* Step 3 — narrator + age (+ language for parents) */}
  {step === 2 && (
  <>
+ <NarrationToggle />
+ {preview.error && <p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{preview.error}</p>}
  {defaultVoicesForLocale.length > 0 || voiceProfiles.some((v) => v.elevenlabs_voice_id) ? (
  <div className="grid grid-cols-2 gap-3">
  {voiceProfiles
  .filter((v) => v.elevenlabs_voice_id)
  .map((v) => (
  <OptionCard key={v.id} selected={selectedVoice === v.id} onClick={() => { setVoiceChoice({kind:"family",id:v.id}); }} icon="mic" label={v.name} sub="Giọng nhà mình">
- <PreviewButton active={previewVoiceId === v.elevenlabs_voice_id} loading={loadingPreview && previewVoiceId === v.elevenlabs_voice_id} onClick={(e) => playVoicePreview(v.elevenlabs_voice_id!, e)} />
+ <span className="absolute left-2.5 top-2"><VoicePreviewButton preview={preview} voiceId={v.elevenlabs_voice_id!} name={v.name} compact /></span>
  </OptionCard>
  ))}
  {defaultVoicesForLocale.map((v) => (
  <OptionCard key={v.id} selected={narratorVoiceId === v.voice_id && !selectedVoice} onClick={() => { setVoiceChoice({kind:"default",id:v.voice_id}); }} icon="headphones" label={v.name} sub="Giọng của Đóm">
- <PreviewButton active={previewVoiceId === v.voice_id} loading={loadingPreview && previewVoiceId === v.voice_id} onClick={(e) => playVoicePreview(v.voice_id, e)} />
+ <span className="absolute left-2.5 top-2"><VoicePreviewButton preview={preview} voiceId={v.voice_id} name={v.name} compact /></span>
  </OptionCard>
  ))}
  </div>
@@ -482,18 +450,5 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </Button3D>
  </div>
  </div>
- );
-}
-
-function PreviewButton({ active, loading, onClick }: { active: boolean; loading: boolean; onClick: (e: React.MouseEvent) => void }) {
- return (
- <button
- type="button"
- onClick={onClick}
- aria-label={active ? "Dừng nghe thử" : "Nghe thử giọng"}
- className="absolute left-2.5 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand-ink"
- >
- {loading ? <GlowDots size={3} /> : active ? <Square size={12} weight="fill" /> : <Volume2 size={16} />}
- </button>
  );
 }

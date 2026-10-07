@@ -45,6 +45,8 @@ export const AUDIT_ACTIONS = {
   "default_voice.delete": "Xoá giọng mặc định",
   "provider.test": "Thử kết nối nhà cung cấp AI",
   "voice.catalog": "Tải danh sách giọng",
+  "voice.preview": "Nghe thử giọng",
+  "default_voice.list": "Xem giọng mặc định và giọng đã tắt",
   "voice.lookup": "Tra cứu giọng ElevenLabs",
   "push.send": "Gửi thông báo đẩy",
 } as const;

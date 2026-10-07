@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettings } from "@/lib/settings-context";
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 
 export interface AudioTrack {
@@ -78,7 +79,7 @@ type AudioRef = React.RefObject<HTMLAudioElement | null>;
 type SetPlayerState = React.Dispatch<React.SetStateAction<AudioPlayerState>>;
 
 /** Attach progress / auto-advance listeners to an Audio element */
-function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: SetPlayerState) {
+function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: SetPlayerState, enabled: React.RefObject<boolean>) {
   audio.onloadedmetadata = () => {
     setState((s) => ({ ...s, duration: audio.duration }));
   };
@@ -94,6 +95,7 @@ function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: 
   };
 
   audio.onended = () => {
+    if (!enabled.current || audioRef.current !== audio) return;
     setState((prev) => {
       const t = prev.currentTrack;
       if (!t?.allPages) {
@@ -103,11 +105,12 @@ function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: 
       if (nextIdx < t.allPages.length) {
         const nextPage = t.allPages[nextIdx];
         setTimeout(() => {
+          if (!enabled.current || audioRef.current !== audio) return;
           startTrack({
             ...t,
             pageNumber: nextPage.pageNumber,
             audioUrl: nextPage.audioUrl,
-          }, audioRef, setState);
+          }, audioRef, setState, enabled);
         }, 0);
         return prev;
       }
@@ -117,7 +120,8 @@ function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: 
 }
 
 /** Stop the current Audio element (if any) and start playing `track` */
-function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerState) {
+function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerState, enabled: React.RefObject<boolean>) {
+  if (!enabled.current) return;
   if (audioRef.current) {
     audioRef.current.pause();
     audioRef.current = null;
@@ -125,7 +129,7 @@ function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerSt
 
   const audio = new Audio(track.audioUrl);
   audioRef.current = audio;
-  wireAudioEvents(audio, audioRef, setState);
+  wireAudioEvents(audio, audioRef, setState, enabled);
 
   audio.play().catch(() => {});
   setState({
@@ -138,6 +142,9 @@ function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerSt
 }
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
+  const {settings}=useSettings();
+  const enabledRef=useRef(settings.narrationEnabled);
+  useEffect(()=>{enabledRef.current=settings.narrationEnabled;},[settings.narrationEnabled]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [state, setState] = useState<AudioPlayerState>({
     currentTrack: null,
@@ -158,16 +165,17 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const play = useCallback((track: AudioTrack) => {
-    startTrack(track, audioRef, setState);
+    startTrack(track, audioRef, setState, enabledRef);
   }, []);
 
   /** Adopt an already-playing Audio element from StoryPlayer so it keeps playing in MiniPlayer */
   const adoptAudio = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
+    if (!enabledRef.current) {audio.pause();return;}
     if (audioRef.current && audioRef.current !== audio) {
       audioRef.current.pause();
     }
     audioRef.current = audio;
-    wireAudioEvents(audio, audioRef, setState);
+    wireAudioEvents(audio, audioRef, setState, enabledRef);
 
     const isCurrentlyPlaying = !audio.paused && !audio.ended;
     setState({
@@ -185,6 +193,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const resume = useCallback(() => {
+    if (!enabledRef.current) return;
     audioRef.current?.play().catch(() => {});
     setState((s) => ({ ...s, isPlaying: true }));
   }, []);
@@ -203,6 +212,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     });
     updateMediaSession(null, {});
   }, []);
+
+  useEffect(()=>{if(!settings.narrationEnabled) stop();},[settings.narrationEnabled,stop]);
 
   const seekTo = useCallback((pct: number) => {
     if (audioRef.current && audioRef.current.duration) {

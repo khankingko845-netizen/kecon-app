@@ -6,6 +6,8 @@ import {
  Image as ImageIcon, Globe, FileText, Check, Sparkles, GitBranch, X,
  Headphones, Volume2, Users, Mic, Search,
 } from "@/components/ui/icons";
+import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
+import { useVoicePreview } from "@/lib/use-voice-preview";
 import TopBar from "@/components/ui/TopBar";
 import ExpertPanel from "@/components/ui/ExpertPanel";
 import { AMBIENT_CATEGORIES } from "@/lib/ambient-sounds";
@@ -127,6 +129,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  }, []);
 
  const storyLocale = story?.locale || "vi";
+ const preview=useVoicePreview(storyLocale);
 
  const handleAddCharacter = async () => {
  if (!storyId || !newCharName.trim()) return;
@@ -540,6 +543,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  </button>
  {showCharacters && (
  <div className="bg-white dark:bg-white/[0.04] rounded-xl border border-gray-100 dark:border-white/[0.06] p-3.5 mb-2 space-y-3">
+ {preview.error&&<p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{preview.error}</p>}
  {/* Narrator voice */}
  <div>
  <label className="text-[12px] font-bold text-txt-secondary dark:text-white/50 block mb-1.5 flex items-center gap-1">
@@ -585,11 +589,12 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     </option>
    ))}
  </select>
+ {story?.narrator_voice_id&&<VoicePreviewButton preview={preview} voiceId={story.narrator_voice_id} name={story.narrator_voice_name||"Người kể"} />}
  </div>
 
  {/* Characters list */}
  {characters.map((c) => (
- <div key={c.id} className="flex items-center gap-2 p-2 rounded-lg bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06]">
+ <div key={c.id} className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-surface dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06]">
  <span className="text-lg shrink-0">{c.emoji || "👤"}</span>
  <div className="flex-1 min-w-0">
  <div className="text-[12px] font-bold text-txt dark:text-white truncate">{c.name}</div>
@@ -619,6 +624,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
     <option key={v.id} value={v.voice_id}>⭐ {v.name}</option>
    ))}
  </select>
+ {c.voice_id&&<VoicePreviewButton preview={preview} voiceId={c.voice_id} name={c.voice_name||c.name} compact />}
  <button
  onClick={() => handleDeleteCharacter(c.id)}
  className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0"
@@ -683,6 +689,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  <option key={v.id} value={v.voice_id}>⭐ {v.name}</option>
  ))}
  </select>
+ {newCharVoiceId&&<VoicePreviewButton preview={preview} voiceId={newCharVoiceId} name={newCharVoiceName||"Nhân vật mới"} />}
  <div className="flex gap-1.5 items-center">
  <span className="text-[10px] text-txt-secondary dark:text-white/50 font-medium">Màu:</span>
  {CHARACTER_COLORS.map((color) => (

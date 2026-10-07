@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useSettings } from "@/lib/settings-context";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Volume2, Square, Pencil, Search, X, SortAsc, SortDesc, Play, Heart, Share2, Trash2 } from "@/components/ui/icons";
 import { GlowDots } from "@/components/ui/states";
 import { useKidStories } from "@/lib/parental-controls-context";
@@ -61,6 +62,9 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  // T19: stories hidden by Parental controls never reach the kid library.
  const { stories, loading, contentRules } = useKidStories();
  const { toast } = useToast();
+ const {settings}=useSettings();
+ const narrationEnabledRef=useRef(settings.narrationEnabled);
+ const previewEpochRef=useRef(0);
  const [activeFilter, setActiveFilter] = useState(initialCategory || "all");
  const [searchQuery, setSearchQuery] = useState("");
  const [showSearch, setShowSearch] = useState(false);
@@ -70,8 +74,12 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
  const searchRef = useRef<HTMLInputElement>(null);
 
+ useEffect(()=>{narrationEnabledRef.current=settings.narrationEnabled;if(!settings.narrationEnabled){previewEpochRef.current++;previewAudioRef.current?.pause();previewAudioRef.current=null;setPlayingStoryId(null);}},[settings.narrationEnabled]);
+ useEffect(()=>()=>{previewEpochRef.current++;previewAudioRef.current?.pause();},[]);
  const togglePreview = useCallback(async (storyId: string, e: React.MouseEvent) => {
  e.stopPropagation();
+ if(!narrationEnabledRef.current){toast("info","Giọng đọc đang tắt. Bật trong Giọng đọc để nghe.");return;}
+ const epoch=++previewEpochRef.current;
  if (playingStoryId === storyId && previewAudioRef.current) {
  previewAudioRef.current.pause();
  previewAudioRef.current = null;
@@ -88,14 +96,16 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  const pages = await getStoryPages(storyId);
  const firstPageWithAudio = pages.find((p) => p.audio_url);
  if (!firstPageWithAudio?.audio_url) { setLoadingAudio(null); return; }
+ if(!narrationEnabledRef.current||epoch!==previewEpochRef.current)return;
  const audio = new Audio(firstPageWithAudio.audio_url);
  previewAudioRef.current = audio;
  audio.onended = () => { setPlayingStoryId(null); previewAudioRef.current = null; };
  await audio.play();
+ if(!narrationEnabledRef.current||epoch!==previewEpochRef.current){audio.pause();return;}
  setPlayingStoryId(storyId);
  } catch { /* no audio */ }
  setLoadingAudio(null);
- }, [playingStoryId]);
+ }, [playingStoryId,toast]);
 
  const filtered = useMemo(() => {
  let result = stories.filter((s) => {

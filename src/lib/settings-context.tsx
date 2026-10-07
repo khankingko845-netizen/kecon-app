@@ -25,6 +25,8 @@ export interface AppSettings {
   storyBaseUrl: string;
   language: string;
   autoPlay: boolean;
+  /** Device preference: story narration only, not explicit voice previews or ambient sounds. */
+  narrationEnabled: boolean;
   sleepTimerDefault: number;
   childName: string;
   childAge: string;
@@ -51,6 +53,7 @@ const defaultSettings: AppSettings = {
   storyBaseUrl: "",
   language: "vi",
   autoPlay: true,
+  narrationEnabled: true,
   sleepTimerDefault: 15,
   childName: "",
   childAge: DEFAULT_AGE_BAND,

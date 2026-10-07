@@ -145,7 +145,7 @@ test("Admin: lọc native/verified/category, cảnh báo, thứ tự từng ngô
 }) => {
   await signInAsMockFamily(context, baseURL!, { userId: MOCK_ADMIN_USER_ID });
   let current = defaults.map((v) => ({ ...v }));
-  await page.route("**/api/voice/defaults", async (r) => {
+  await page.route(/\/api\/voice\/defaults(?:\?.*)?$/, async (r) => {
     if (r.request().method() === "PATCH") {
       const data = r.request().postDataJSON();
       expect(data.language).toBe("vi");
@@ -286,7 +286,7 @@ test("Tạo truyện: clone trước, lựa chọn riêng không bị ghi đè, 
   baseURL,
 }) => {
   await signInAsMockFamily(context, baseURL!, { userId: MOCK_VOICE_USER_ID });
-  await page.route("**/api/voice/defaults", (r) =>
+  await page.route(/\/api\/voice\/defaults(?:\?.*)?$/, (r) =>
     r.fulfill({ json: { voices: defaults } }),
   );
   await page.route("**/api/system/status", (r) =>
@@ -354,7 +354,7 @@ test("Player: lựa chọn narrator được giữ dù gia đình có clone; pic
   baseURL,
 }) => {
   await signInAsMockFamily(context, baseURL!, { userId: MOCK_VOICE_USER_ID });
-  await page.route("**/api/voice/defaults", (r) =>
+  await page.route(/\/api\/voice\/defaults(?:\?.*)?$/, (r) =>
     r.fulfill({ json: { voices: defaults } }),
   );
   await page.route("**/rest/v1/stories?*", async (r) => {
@@ -379,10 +379,10 @@ test("Player: lựa chọn narrator được giữ dù gia đình có clone; pic
   });
   await expect(current).toBeVisible();
   await current.click();
-  await expect(page.getByRole("button", { name: /Bà của bé/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Vi A/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "🎙️ Bà của bé", exact:true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "⭐ Vi A", exact:true })).toBeVisible();
   await expect(page.getByRole("button", { name: /English A/ })).toHaveCount(0);
-  await page.getByRole("button", { name: /Bà của bé/ }).click();
+  await page.getByRole("button", { name: "🎙️ Bà của bé", exact:true }).click();
   await expect(
     page.getByRole("button", { name: "Giọng: Bà của bé", exact: true }),
   ).toBeVisible();
