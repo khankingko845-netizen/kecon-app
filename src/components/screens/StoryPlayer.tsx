@@ -1,5 +1,8 @@
 "use client";
 
+import NarrationToggle from "@/components/ui/NarrationToggle";
+import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
+import { useVoicePreview } from "@/lib/use-voice-preview";
 import { rankedDefaultsForLocale, preferredFamilyVoice } from "@/lib/voice-selection";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
@@ -139,6 +142,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
  const { settings, hasElevenLabs } = useSettings();
+ const [audioError,setAudioError]=useState<string|null>(null);
+ const narrationEnabledRef=useRef(settings.narrationEnabled);
+ const narrationEpochRef=useRef(0);
  // UI-08 night mode: bedtime palette, sleep timer, screen-off.
  const { isBedtime } = useTheme();
  const { cue, say } = useFeedback();
@@ -219,6 +225,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Render-safe mirror of mergedRef (page tick marks on the seek bar)
  const [mergedResult, setMergedResult] = useState<MergeResult | null>(null);
  const mergeAbortRef = useRef(false);
+ useEffect(()=>()=>{
+ narrationEpochRef.current++;mergeAbortRef.current=true;
+ const a=audioRef.current;a?.pause();if(a?.src.startsWith("blob:"))URL.revokeObjectURL(a.src);audioRef.current=null;
+ prefetchCache.current.forEach(url=>{if(url.startsWith("blob:"))URL.revokeObjectURL(url);});prefetchCache.current.clear();
+ },[]);
 
  // Sound mixer (Web Audio ambient layers).
  const engineRef = useRef<AmbientEngine | null>(null);
@@ -344,14 +355,33 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const firstClonedVoice = useMemo(()=>preferredFamilyVoice(voiceProfiles),[voiceProfiles]);
 
  // Determine active voice
- const resolvedVoiceId = selectedVoiceId
- || rememberedVoiceId
- || narratorVoiceId
+ const availableVoiceIds = new Set([...voiceProfiles.filter(v=>v.is_active&&v.elevenlabs_voice_id).map(v=>v.elevenlabs_voice_id),...defaultsForLocale.map(v=>v.voice_id)]);
+ const resolvedVoiceId = (selectedVoiceId && availableVoiceIds.has(selectedVoiceId) ? selectedVoiceId : null)
+ || (rememberedVoiceId && availableVoiceIds.has(rememberedVoiceId) ? rememberedVoiceId : null)
+ || (narratorVoiceId && availableVoiceIds.has(narratorVoiceId) ? narratorVoiceId : null)
  || (story?.voice_id ? storyVoice?.elevenlabs_voice_id : null)
  || firstClonedVoice?.elevenlabs_voice_id
  || defaultsForLocale[0]?.voice_id
  || FALLBACK_VOICE_ID;
  const elevenVoiceId = resolvedVoiceId;
+ const preview=useVoicePreview(storyLocale);
+ const canReuseSavedAudio = !selectedVoiceId && !rememberedVoiceId && (narratorVoiceId ? elevenVoiceId===narratorVoiceId : story?.voice_id ? elevenVoiceId===storyVoice?.elevenlabs_voice_id : true);
+ const stopNarration=useCallback(()=>{
+ narrationEpochRef.current++;mergeAbortRef.current=true;
+ setPendingAutoPlay(false);setIsPlaying(false);setIsTTSLoading(false);setCurrentSpeaker(null);setAudioClock(null);
+ const a=audioRef.current;a?.pause();if(a?.src.startsWith("blob:")&&a.src!==mergedRef.current?.blobUrl)URL.revokeObjectURL(a.src);audioRef.current=null;
+ setMergeStatus(mergedRef.current?"ready":"idle");setMergeProgress("");
+ },[]);
+ useEffect(()=>{
+ narrationEnabledRef.current=settings.narrationEnabled;
+ if(!settings.narrationEnabled) stopNarration();
+ },[settings.narrationEnabled,stopNarration]);
+ useEffect(()=>{
+ stopNarration();preview.stop();
+ prefetchCache.current.forEach(url=>{if(url.startsWith("blob:"))URL.revokeObjectURL(url);});prefetchCache.current.clear();
+ if(mergedRef.current)URL.revokeObjectURL(mergedRef.current.blobUrl);
+ mergedRef.current=null;setMergedResult(null);setMergeStatus("idle");setMergeProgress("");setAudioError(null);
+ },[resolvedVoiceId,stopNarration,preview.stop]);
 
  // Save voice choice to story when user manually picks
  const handleVoiceSelect = useCallback((voiceId: string, voiceName: string) => {
@@ -369,13 +399,13 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Label for display
  const selectedDefault = defaultVoices.find((v) => v.voice_id === resolvedVoiceId);
  const selectedClone = voiceProfiles.find((v) => v.elevenlabs_voice_id === resolvedVoiceId);
- const voiceLabel = selectedVoiceId
+ const voiceLabel = selectedVoiceId===resolvedVoiceId
  ? (selectedClone?.name || selectedDefault?.name || "Giọng đã chọn")
- : rememberedVoiceId
+ : rememberedVoiceId===resolvedVoiceId
  ? (rememberedVoiceName || "Giọng đã dùng")
  : selectedClone?.name
  ? `🎙️ ${selectedClone.name}`
- : narratorVoiceId
+ : narratorVoiceId===resolvedVoiceId
  ? (narratorVoiceName || "Narrator")
  : storyVoice?.name
  ? storyVoice.name
@@ -451,6 +481,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  text: string,
  pageIdx: number,
  ): Promise<string> => {
+ const epoch=narrationEpochRef.current;
+ if(!narrationEnabledRef.current)throw new Error("Giọng đọc đang tắt.");
  const hasMarkup = /\[(narrator|character:[^\]]+)\]/.test(text);
  let blob: Blob;
 
@@ -464,6 +496,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const segments = parseVoiceMarkup(text, charVoiceMap, elevenVoiceId, narratorVoiceName || "Narrator");
  const audioBlobs: Blob[] = [];
  for (const seg of segments) {
+ if(!narrationEnabledRef.current||epoch!==narrationEpochRef.current)throw new Error("Đã dừng giọng đọc.");
  if (pageIdx === currentPage) {
  setCurrentSpeaker(seg.speaker === "narrator" ? null : seg.speaker);
  }
@@ -498,7 +531,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  // Save audio to Supabase for future reuse (fire-and-forget)
  const pageRow = pages[pageIdx];
- if (pageRow && !pageRow.audio_url) {
+ if (canReuseSavedAudio && pageRow && !pageRow.audio_url) {
  uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
  savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
  // Update local pages state so we don't regenerate
@@ -509,17 +542,18 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  return URL.createObjectURL(blob);
- }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale, currentPage, pages]);
+ }, [storyCharacters, elevenVoiceId, narratorVoiceName, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale, currentPage, pages,canReuseSavedAudio]);
 
  // Prefetch next page audio in background
  const prefetchNextPage = useCallback((fromPageIdx: number) => {
  const nextIdx = fromPageIdx + 1;
- if (nextIdx >= totalPages || !hasElevenLabs) return;
+ if (nextIdx >= totalPages || !hasElevenLabs || !narrationEnabledRef.current) return;
+ const epoch=narrationEpochRef.current;
  if (prefetchCache.current.has(nextIdx)) return; // already prefetched
  const nextPageRow = pages[nextIdx];
  if (!nextPageRow) return;
  // If it already has a saved audio_url, preload that
- if (nextPageRow.audio_url) {
+ if (canReuseSavedAudio && nextPageRow.audio_url) {
  prefetchCache.current.set(nextIdx, nextPageRow.audio_url);
  // Preload into browser cache
  const preloadAudio = new Audio(nextPageRow.audio_url);
@@ -531,13 +565,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const nextText = nextPageRow.content;
  if (!nextText) return;
  generatePageAudio(nextText, nextIdx).then((url) => {
+ if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
  prefetchCache.current.set(nextIdx, url);
  }).catch(() => {});
- }, [totalPages, hasElevenLabs, pages, generatePageAudio]);
+ }, [totalPages, hasElevenLabs, pages, generatePageAudio,canReuseSavedAudio]);
 
  // Background merge: generate TTS for all pages and merge into single audio
  const startBackgroundMerge = useCallback(async () => {
- if (mergeStatus !== "idle" || isGenerated || !hasElevenLabs) return;
+ if (mergeStatus !== "idle" || isGenerated || !hasElevenLabs || !narrationEnabledRef.current) return;
+ const epoch=narrationEpochRef.current;
  if (totalPages <= 1) return; // no need to merge single page
 
  setMergeStatus("generating");
@@ -547,7 +583,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const blobs: Blob[] = [];
 
  for (let i = 0; i < totalPages; i++) {
- if (mergeAbortRef.current) return;
+ if (mergeAbortRef.current||epoch!==narrationEpochRef.current||!narrationEnabledRef.current) return;
  setMergeProgress(`Chuẩn bị audio ${i + 1}/${totalPages}`);
 
  const pageRow = pages[i];
@@ -555,7 +591,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  let blob: Blob;
  // Check if page already has saved audio
- if (pageRow.audio_url) {
+ if (canReuseSavedAudio && pageRow.audio_url) {
  try {
  const res = await fetch(pageRow.audio_url);
  blob = await res.blob();
@@ -574,8 +610,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  settings.elevenLabsModelId || undefined,
  storyLocale
  );
- // Save to DB for future reuse
- uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
+ // Save only original-narrator audio; selected alternatives must not overwrite it.
+ if(canReuseSavedAudio) uploadTtsAudio(pageRow.id, blob).then((remoteUrl) => {
  savePageAudio(pageRow.id, remoteUrl, 0).catch(() => {});
  setPages((prev) =>
  prev.map((p) => (p.id === pageRow.id ? { ...p, audio_url: remoteUrl } : p))
@@ -585,7 +621,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  blobs.push(blob);
  }
 
- if (mergeAbortRef.current || blobs.length === 0) return;
+ if (mergeAbortRef.current || epoch!==narrationEpochRef.current || !narrationEnabledRef.current || blobs.length === 0) return;
 
  // Merge all blobs
  setMergeStatus("merging");
@@ -597,7 +633,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
  });
 
- if (mergeAbortRef.current) {
+ if (mergeAbortRef.current||epoch!==narrationEpochRef.current||!narrationEnabledRef.current) {
  URL.revokeObjectURL(result.blobUrl);
  return;
  }
@@ -607,15 +643,16 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setMergeStatus("ready");
  setMergeProgress("🎧 Audio liên tục sẵn sàng");
  } catch {
+ if(epoch!==narrationEpochRef.current)return;
  setMergeStatus("idle"); // allow retry
  setMergeProgress("");
  }
- }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale]);
+ }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages, elevenVoiceId, settings.elevenLabsApiKey, settings.elevenLabsModelId, storyLocale,canReuseSavedAudio]);
 
  // Switch to merged audio playback
  const switchToMerged = useCallback(() => {
  const merged = mergedRef.current;
- if (!merged) return;
+ if (!merged || !narrationEnabledRef.current) return;
 
  // Stop current per-page audio
  if (audioRef.current) {
@@ -666,6 +703,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }, [currentPage, storyId, isGenerated, cue, say]);
 
  const playWithTTS = useCallback(async () => {
+ if(!narrationEnabledRef.current)return;
+ preview.stop();setShowVoicePicker(false);setAudioError(null);
+ const epoch=narrationEpochRef.current;
  if (!hasElevenLabs || !currentText) {
  setIsPlaying(true);
  return;
@@ -678,7 +718,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const pageRow = !isGenerated ? pages[currentPage] : null;
 
  // 1. Check if page already has saved audio_url in DB
- if (pageRow?.audio_url) {
+ if (canReuseSavedAudio && pageRow?.audio_url) {
  url = pageRow.audio_url;
  }
  // 2. Check prefetch cache
@@ -690,6 +730,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  else {
  url = await generatePageAudio(currentText, currentPage);
  }
+ if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
 
  if (audioRef.current) {
  audioRef.current.pause();
@@ -734,6 +775,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
 
  await audio.play();
+ if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){audio.pause();return;}
  setIsPlaying(true);
 
  // Start prefetching next page while this one plays
@@ -743,22 +785,22 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if (mergeStatus === "idle" && totalPages > 1) {
  startBackgroundMerge();
  }
- } catch {
- setIsPlaying(true);
+ } catch(e) {
+ if(epoch===narrationEpochRef.current&&narrationEnabledRef.current){setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Chưa phát được giọng đọc.");}
  } finally {
- setIsTTSLoading(false);
+ if(epoch===narrationEpochRef.current)setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say,canReuseSavedAudio,preview.stop]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
  // Auto-play next page when audio ends and advances
  useEffect(() => {
- if (pendingAutoPlay) {
+ if (pendingAutoPlay && settings.narrationEnabled) {
  setPendingAutoPlay(false);
  playWithTTS();
  }
- }, [pendingAutoPlay, currentPage, playWithTTS]);
+ }, [pendingAutoPlay, currentPage, playWithTTS,settings.narrationEnabled]);
 
  // Fake progress when there is no audio element (no API key configured).
  useEffect(() => {
@@ -797,6 +839,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }, [isGenerated, storyId, story, currentPage, totalPages, voiceLabel]);
 
  const togglePlay = () => {
+ if(!settings.narrationEnabled){setAudioError("Giọng đọc đang tắt. Bật công tắc Giọng đọc truyện để nghe.");return;}
+ preview.stop();
  // At bedtime, starting playback arms the default sleep timer (parent can change/cancel it).
  if (!isPlaying && isNight && !sleep.active) sleep.start(settings.sleepTimerDefault || 15);
  if (isPlaying) {
@@ -1012,6 +1056,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  const handleBack = () => {
+ preview.stop();
  // Hand off playing audio to MiniPlayer for background playback
  if (audioRef.current && !audioRef.current.paused && story) {
  // If merged audio is playing, it's a single continuous track
@@ -1180,16 +1225,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  {voiceProfiles.filter((v) => v.elevenlabs_voice_id).length > 0 && (
  <>
  <div className="px-3 py-1.5 text-[10px] font-bold text-moon/30 uppercase tracking-wider">Giọng của bạn</div>
- {voiceProfiles.filter((v) => v.elevenlabs_voice_id).map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.elevenlabs_voice_id!, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.elevenlabs_voice_id ? "text-accent font-bold" : "text-moon/70"
- }`}
- >
- 🎙️ {v.name}
- </button>
+ {voiceProfiles.filter((v) => v.is_active && v.elevenlabs_voice_id).map((v) => (
+ <div key={v.id} className="flex items-center gap-2 px-2 py-1">
+ <button type="button" aria-pressed={resolvedVoiceId===v.elevenlabs_voice_id} onClick={() => {preview.stop();handleVoiceSelect(v.elevenlabs_voice_id!,v.name);}} className="min-h-11 min-w-0 flex-1 px-2 text-left text-[14px] text-moon">🎙️ {v.name}</button>
+ <VoicePreviewButton preview={preview} voiceId={v.elevenlabs_voice_id!} name={v.name} compact onBeforePlay={stopNarration}/>
+ </div>
  ))}
  </>
  )}
@@ -1200,15 +1240,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  Giọng {storyLocale === "vi" ? "Tiếng Việt" : storyLocale === "ja" ? "日本語" : "English"}
  </div>
  {defaultsForLocale.map((v) => (
- <button
- key={v.id}
- onClick={() => handleVoiceSelect(v.voice_id, v.name)}
- className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
- resolvedVoiceId === v.voice_id ? "text-accent font-bold" : "text-moon/70"
- }`}
- >
- ⭐ {v.name}
- </button>
+ <div key={v.id} className="flex items-center gap-2 px-2 py-1">
+ <button type="button" aria-pressed={resolvedVoiceId===v.voice_id} onClick={()=>{preview.stop();handleVoiceSelect(v.voice_id,v.name);}} className="min-h-11 min-w-0 flex-1 px-2 text-left text-[14px] text-moon">⭐ {v.name}</button>
+ <VoicePreviewButton preview={preview} voiceId={v.voice_id} name={v.name} compact onBeforePlay={stopNarration}/>
+ </div>
  ))}
  </>
  )}
@@ -1217,6 +1252,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  )}
  </div>
 
+ <div className="mt-3"><NarrationToggle /></div>
+ {(audioError||preview.error)&&<p role="alert" className="mt-2 text-[14px] text-red-200">{audioError||preview.error}</p>}
  {/* Status chips: continuous playback, scene effect, speaker */}
  {(mergeStatus !== "idle" || activeEffect || currentSpeaker) && (
  <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -1303,7 +1340,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <button
  type="button"
  onClick={togglePlay}
- disabled={isTTSLoading}
+ disabled={isTTSLoading||!settings.narrationEnabled}
  aria-label={isPlaying ? "Tạm dừng" : "Phát"}
  className="flex h-[86px] w-[86px] items-center justify-center rounded-full bg-amber shadow-[0_0_40px_rgba(255,181,71,0.35)] transition-transform active:scale-95 disabled:opacity-70"
  >

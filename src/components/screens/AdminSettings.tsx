@@ -6,6 +6,8 @@ import {
  Mic, Brain, Image, RefreshCw, Plug, AlertCircle, ChevronDown,
  Plus, Trash2, X, Search,
 } from "@/components/ui/icons";
+import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
+import { useVoicePreview, type VoicePreview } from "@/lib/use-voice-preview";
 import TopBar from "@/components/ui/TopBar";
 import {
  getAppSettings,
@@ -281,6 +283,7 @@ function DefaultVoicesManager({
  onAdd,
  onRemove,
  onReorder,
+ onToggle,
  loading,
 }: {
  availableVoices: VoiceOption[];
@@ -288,6 +291,7 @@ function DefaultVoicesManager({
  onAdd: (voice: { voice_id: string; name: string; language: string; gender?: string }) => Promise<void>;
  onRemove: (id: string) => Promise<void>;
  onReorder: (language:string,ids:string[])=>Promise<void>;
+ onToggle: (id:string,active:boolean)=>Promise<void>;
  loading: boolean;
 }) {
  const [addingForLang, setAddingForLang] = useState<string | null>(null);
@@ -305,6 +309,13 @@ function DefaultVoicesManager({
  const [managerError,setManagerError]=useState<string|null>(null);
  const [ordering,setOrdering]=useState<string|null>(null);
  const [showUnknown,setShowUnknown]=useState(true);
+ const preview=useVoicePreview(addingForLang||"vi");
+ useEffect(()=>{preview.stop();},[addingForLang,preview.stop]);
+ const [toggling,setToggling]=useState<string|null>(null);
+ async function toggleVoice(id:string,active:boolean){
+  setToggling(id);setManagerError(null);preview.stop();
+  try{await onToggle(id,active);}catch(e){setManagerError(e instanceof Error?e.message:"Chưa đổi được trạng thái giọng.");}finally{setToggling(null);}
+ }
  useEffect(()=>{
   if(!addingForLang)return;let alive=true;
   fetch(`/api/admin/voice-catalog?language=${addingForLang}`).then(async r=>{
@@ -350,7 +361,7 @@ function DefaultVoicesManager({
  name: v.name,
  language: lang,
  });
- setAddingForLang(null);
+ preview.stop();setAddingForLang(null);
  setSearchQuery("");
  } catch(e) {setManagerError(e instanceof Error?e.message:"Chưa thêm được giọng.");
  } finally {
@@ -367,7 +378,7 @@ function DefaultVoicesManager({
  name: manualName.trim(),
  language: lang,
  });
- setAddingForLang(null);
+ preview.stop();setAddingForLang(null);
  setManualVoiceId("");
  setManualName("");
  setManualMode(false);
@@ -405,8 +416,11 @@ function DefaultVoicesManager({
  </p>
 
  {managerError && <p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{managerError}</p>}
+ {preview.error && !addingForLang && <p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{preview.error}</p>}
+ <p className="text-[14px] text-ink-2 dark:text-white/65">Nghe thử dùng câu mẫu theo ngôn ngữ và hạn mức TTS. Tắt giọng không xoá giọng hoặc thứ tự đã lưu.</p>
  {LANGUAGES.map((lang) => {
- const voicesForLang = rankedDefaultsForLocale(defaultVoices,lang.code);
+ const activeForLang = rankedDefaultsForLocale(defaultVoices,lang.code);
+ const voicesForLang = [...activeForLang,...defaultVoices.filter(v=>v.language===lang.code&&!v.is_active).sort((a,b)=>a.sort_order-b.sort_order)];
 
  return (
  <div key={lang.code} className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
@@ -414,7 +428,7 @@ function DefaultVoicesManager({
  <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.04]">
  <span className="text-[13px] font-bold">{lang.label}</span>
  <span className="text-[11px] text-txt-secondary dark:text-white/50 font-semibold">
- {voicesForLang.length} giọng
+ {activeForLang.length} bật · {voicesForLang.length-activeForLang.length} tắt
  </span>
  </div>
 
@@ -424,16 +438,18 @@ function DefaultVoicesManager({
  {voicesForLang.map((v,index) => (
  <div
  key={v.id}
- className="flex items-center gap-3 px-3.5 py-2.5"
+ className="flex flex-wrap items-center gap-2 px-3.5 py-2.5"
  >
- <div className="flex-1 min-w-0">
- <p className="text-[13px] font-semibold truncate">{index+1}. {v.name}</p>
+ <div className="w-full min-w-0">
+ <p className="text-[14px] font-semibold truncate">{v.is_active?`${index+1}. `:"Đã tắt · "}{v.name}</p>
  <p className="text-[11px] text-txt-secondary dark:text-white/50 font-mono truncate">
  {v.voice_id}
  </p>
  </div>
- <button type="button" aria-label={`Ưu tiên lên: ${v.name}`} disabled={index===0||!!ordering||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,-1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↑</button>
- <button type="button" aria-label={`Ưu tiên xuống: ${v.name}`} disabled={index===voicesForLang.length-1||!!ordering||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↓</button>
+ <VoicePreviewButton preview={preview} voiceId={v.voice_id} name={v.name} language={lang.code} />
+ <button type="button" role="switch" aria-label={`Bật giọng: ${v.name}`} aria-checked={v.is_active} disabled={!!toggling||!!ordering||!!removingId||submitting} onClick={()=>toggleVoice(v.id,!v.is_active)} className="min-h-11 rounded-xl border border-gray-200 px-3 text-[14px] font-bold text-ink dark:border-white/20 dark:text-white/90 disabled:opacity-50">{toggling===v.id?"Đang lưu…":v.is_active?"Bật":"Tắt"}</button>
+ <button type="button" aria-label={`Ưu tiên lên: ${v.name}`} disabled={!v.is_active||index===0||!!ordering||!!toggling||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,-1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↑</button>
+ <button type="button" aria-label={`Ưu tiên xuống: ${v.name}`} disabled={!v.is_active||index===activeForLang.length-1||!!ordering||!!toggling||!!removingId||submitting} onClick={()=>moveVoice(lang.code,v.id,1)} className="min-h-11 min-w-11 rounded-xl text-brand disabled:opacity-30">↓</button>
  <button
  type="button"
  aria-label={`Xoá giọng: ${v.name}`}
@@ -481,7 +497,7 @@ function DefaultVoicesManager({
 
  {/* ─── Add Voice Modal ─── */}
  {addingForLang && (
- <div onKeyDown={e=>{ if(e.key==="Escape"&&!submitting){setAddingForLang(null);return;} if(e.key!=="Tab")return;const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]'));const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();} }} role="dialog" aria-modal="true" aria-label="Chọn giọng theo ngôn ngữ" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+ <div onKeyDown={e=>{ if(e.key==="Escape"&&!submitting){preview.stop();setAddingForLang(null);return;} if(e.key!=="Tab")return;const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]'));const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();} }} role="dialog" aria-modal="true" aria-label="Chọn giọng theo ngôn ngữ" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
  <div className="bg-white dark:bg-[#242047] dark:text-[#F7EFD8] w-full max-w-md max-h-[80vh] rounded-t-2xl sm:rounded-2xl flex flex-col">
  {/* Modal header */}
  <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -551,6 +567,7 @@ function DefaultVoicesManager({
  )}
  </button>
  </div>
+ {manualVoiceId.trim()&&<VoicePreviewButton preview={preview} voiceId={manualVoiceId.trim()} name={manualName.trim()||manualVoiceId.trim()} language={addingForLang} />}
  {lookupError && (
  <p className="text-[11px] text-red-500 dark:text-red-300 font-medium flex items-center gap-1">
  <AlertCircle size={11} /> {lookupError}
@@ -598,6 +615,7 @@ function DefaultVoicesManager({
  )}
  </div>
 
+ {preview.error && <p role="alert" className="px-4 py-2 text-[14px] text-red-700 dark:text-red-300">{preview.error}</p>}
  {catalogLoading && <p role="status" className="px-4 py-3 text-[14px]">Đang tải giọng theo ngôn ngữ…</p>}
  {catalogWarnings.map(w=><p key={w} role="status" className="px-4 py-2 text-[14px] text-amber-800 dark:text-amber-300">{w}</p>)}
  {managerError && <p role="alert" className="px-4 py-2 text-[14px] text-red-700 dark:text-red-300">{managerError}</p>}
@@ -615,6 +633,8 @@ function DefaultVoicesManager({
  <VoiceRow
  key={v.voice_id}
  voice={v}
+ preview={preview}
+ language={addingForLang}
  onAdd={() => handleAddVoice(v, addingForLang)}
  submitting={submitting}
  alreadyAdded={defaultVoices.some(
@@ -635,6 +655,8 @@ function DefaultVoicesManager({
  <VoiceRow
  key={v.voice_id}
  voice={v}
+ preview={preview}
+ language={addingForLang}
  onAdd={() => handleAddVoice(v, addingForLang)}
  submitting={submitting}
  alreadyAdded={defaultVoices.some(
@@ -655,6 +677,8 @@ function DefaultVoicesManager({
  <VoiceRow
  key={v.voice_id}
  voice={v}
+ preview={preview}
+ language={addingForLang}
  onAdd={() => handleAddVoice(v, addingForLang)}
  submitting={submitting}
  alreadyAdded={defaultVoices.some(
@@ -665,7 +689,7 @@ function DefaultVoicesManager({
  </div>
  )}
 
- {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2 dark:text-white/65">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
+ {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2 dark:text-white/65">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} preview={preview} language={addingForLang} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
  {matches.length + unknownVoices.length === 0 && !catalogLoading && (
  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary dark:text-white/50">
  Không tìm thấy voice nào
@@ -682,11 +706,15 @@ function DefaultVoicesManager({
 
 function VoiceRow({
  voice,
+ preview,
+ language,
  onAdd,
  submitting,
  alreadyAdded,
 }: {
  voice: VoiceOption;
+ preview: VoicePreview;
+ language: string;
  onAdd: () => void;
  submitting: boolean;
  alreadyAdded: boolean;
@@ -699,6 +727,7 @@ function VoiceRow({
  {voice.category} · {voiceLanguages(voice).map(code=>LANGUAGES.find(l=>l.code===code)?.label??code).join(", ") || "chưa có nhãn ngôn ngữ"}
  </p>
  </div>
+ <VoicePreviewButton preview={preview} voiceId={voice.voice_id} name={voice.name} language={language} compact />
  {alreadyAdded ? (
  <span className="text-[11px] text-emerald-600 font-semibold">✓ Đã thêm</span>
  ) : (
@@ -772,7 +801,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  try {
  const [rows, dvRes] = await Promise.all([
  getAppSettings(),
- fetch("/api/voice/defaults").then((r) => r.json()),
+ fetch("/api/voice/defaults?includeInactive=true").then((r) => r.json()),
  canManageSecrets ? loadSecrets() : Promise.resolve(),
  ]);
  const map: Record<string, string> = {};
@@ -796,6 +825,11 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  load();
  }, [load]);
 
+ async function handleToggleDefaultVoice(id:string,active:boolean){
+ const res=await fetch("/api/voice/defaults",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,is_active:active})});
+ const data=await res.json();if(!res.ok||!data.voice)throw new Error(data.error||"Chưa đổi được trạng thái giọng.");
+ setDefaultVoices(prev=>prev.map(v=>v.id===id?data.voice:v));
+ }
  async function handleReorderDefaultVoices(language:string,ids:string[]){
  const response=await fetch("/api/voice/defaults",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({language,ids})});const data=await response.json();
  if(!response.ok)throw new Error(data.error||"Chưa sắp xếp được.");
@@ -1104,6 +1138,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  onAdd={handleAddDefaultVoice}
  onRemove={handleRemoveDefaultVoice}
  onReorder={handleReorderDefaultVoices}
+ onToggle={handleToggleDefaultVoice}
  loading={elevenTesting}
  />
  </div>

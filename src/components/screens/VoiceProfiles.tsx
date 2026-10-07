@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X, Volume2, Square } from "@/components/ui/icons";
+import { useState, useEffect, useCallback } from "react";
+import { User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X } from "@/components/ui/icons";
+import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
+import NarrationToggle from "@/components/ui/NarrationToggle";
+import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useVoicePreview } from "@/lib/use-voice-preview";
 import Mascot from "@/components/ui/Mascot";
 import { GlowDots } from "@/components/ui/states";
 import { Bubble, Button3D, CARD_SHADOW, ProgressBar } from "@/components/ui/kit";
 import { useData } from "@/lib/data-context";
-import { deleteVoiceProfile, updateVoiceProfile } from "@/lib/db";
+import { deleteVoiceProfile, updateVoiceProfile, getVoiceProfiles, type VoiceProfileRow, type DefaultVoiceRow } from "@/lib/db";
 import { useSettings } from "@/lib/settings-context";
 import type { Screen } from "@/lib/types";
 
@@ -20,6 +24,8 @@ function relationLabel(relation: string): string {
  mother: "Mẹ",
  father: "Bố",
  grandparent: "Ông/Bà",
+ grandma: "Bà",
+ grandpa: "Ông",
  other: "Khác",
  };
  return map[relation] || relation;
@@ -27,7 +33,19 @@ function relationLabel(relation: string): string {
 
 export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  const { voiceProfiles, loading, refreshVoices } = useData();
+ const [allVoices,setAllVoices]=useState<VoiceProfileRow[]>(voiceProfiles);
+ const [defaults,setDefaults]=useState<DefaultVoiceRow[]>([]);
+ const [error,setError]=useState<string|null>(null);
+ const [toggling,setToggling]=useState<string|null>(null);
+ const reloadAll=useCallback(async()=>{setAllVoices(await getVoiceProfiles(true));},[]);
+ useEffect(()=>{let alive=true;getVoiceProfiles(true).then(v=>{if(alive)setAllVoices(v);}).catch(()=>{if(alive)setError("Chưa tải được giọng gia đình.");});fetch("/api/voice/defaults").then(r=>r.json()).then(d=>{if(alive)setDefaults(d.voices??[]);}).catch(()=>{if(alive)setError("Chưa tải được giọng của Đóm.");});return()=>{alive=false;};},[]);
  const { settings } = useSettings();
+ const preview=useVoicePreview(settings.language);
+ const {pause}=useAudioPlayer();
+ async function toggleVoice(id:string,active:boolean){
+ setToggling(id);setError(null);preview.stop();pause();
+ try{await updateVoiceProfile(id,{is_active:active});await Promise.all([refreshVoices(),reloadAll()]);}catch{setError("Chưa đổi được trạng thái giọng. Hãy thử lại.");}finally{setToggling(null);}
+ }
  const [deletingId, setDeletingId] = useState<string | null>(null);
 
  // Edit name state
@@ -35,17 +53,12 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  const [editName, setEditName] = useState("");
  const [savingEdit, setSavingEdit] = useState(false);
 
- // Voice preview state
- const [playingId, setPlayingId] = useState<string | null>(null);
- const [loadingPreview, setLoadingPreview] = useState<string | null>(null);
- const previewRef = useRef<HTMLAudioElement | null>(null);
-
  const handleDelete = async (id: string) => {
  setDeletingId(id);
  try {
- await deleteVoiceProfile(id);
- await refreshVoices();
- } finally {
+ preview.stop();pause();await deleteVoiceProfile(id);
+ await Promise.all([refreshVoices(),reloadAll()]);
+ } catch {setError("Chưa xoá được giọng. Hãy thử lại.");} finally {
  setDeletingId(null);
  }
  };
@@ -65,58 +78,14 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  setSavingEdit(true);
  try {
  await updateVoiceProfile(editingId, { name: editName.trim() });
- await refreshVoices();
+ await Promise.all([refreshVoices(),reloadAll()]);
  setEditingId(null);
  setEditName("");
- } finally {
+ } catch {setError("Chưa lưu được tên giọng. Hãy thử lại.");} finally {
  setSavingEdit(false);
  }
  };
 
- const playPreview = useCallback(async (voiceId: string, elevenLabsId: string) => {
- // Toggle off
- if (playingId === voiceId && previewRef.current) {
- previewRef.current.pause();
- previewRef.current = null;
- setPlayingId(null);
- return;
- }
- // Stop current
- if (previewRef.current) {
- previewRef.current.pause();
- previewRef.current = null;
- }
-
- setLoadingPreview(voiceId);
- setPlayingId(voiceId);
- try {
- const res = await fetch("/api/voice/tts", {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({
- text: "Xin chào! Đây là giọng đọc của tôi. Tôi sẽ kể cho bé nghe những câu chuyện thật hay.",
- voiceId: elevenLabsId,
- apiKey: settings.elevenLabsApiKey || undefined,
- modelId: settings.elevenLabsModelId || undefined,
- }),
- });
- if (!res.ok) throw new Error("TTS failed");
- const blob = await res.blob();
- const url = URL.createObjectURL(blob);
- const audio = new Audio(url);
- previewRef.current = audio;
- audio.onended = () => {
- setPlayingId(null);
- previewRef.current = null;
- URL.revokeObjectURL(url);
- };
- audio.play();
- } catch {
- setPlayingId(null);
- } finally {
- setLoadingPreview(null);
- }
- }, [playingId, settings.elevenLabsApiKey, settings.elevenLabsModelId]);
 
  return (
  <div className="min-h-screen bg-cream pb-32">
@@ -134,17 +103,19 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  </div>
 
  <div className="px-5 pt-4 space-y-3">
+ <NarrationToggle />
+ <p className="text-[14px] text-ink-2">Công tắc đọc truyện được lưu trên thiết bị này. Nghe thử vẫn hoạt động khi đọc truyện đang tắt.</p>
+ {(error||preview.error)&&<p role="alert" className="text-[14px] text-red-700 dark:text-red-300">{error||preview.error}</p>}
  {loading && voiceProfiles.length === 0 && (
  <div className="flex justify-center py-8" role="status" aria-label="Đang tải giọng đọc">
  <GlowDots />
  </div>
  )}
 
- {voiceProfiles.map((v) => {
+ {allVoices.map((v) => {
  const quality = Math.round(v.quality_score);
  const isEditing = editingId === v.id;
- const isPlaying = playingId === v.id;
- const isLoadingPrev = loadingPreview === v.id;
+
 
  return (
  <div
@@ -204,24 +175,8 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  </div>
  </div>
  <div className="flex flex-col gap-1.5 shrink-0">
- {v.elevenlabs_voice_id && (
- <button
- onClick={() => playPreview(v.id, v.elevenlabs_voice_id!)}
- disabled={isLoadingPrev}
- className={`w-11 h-11 rounded-[14px] flex items-center justify-center active:scale-95 transition-all ${
- isPlaying ? "bg-brand text-white" : "bg-brand-soft text-brand-ink"
- }`}
- aria-label={isPlaying ? "Dừng nghe" : `Nghe giọng ${v.name}`}
- >
- {isLoadingPrev ? (
- <Loader2 size={16} className="animate-spin" />
- ) : isPlaying ? (
- <Square size={16} />
- ) : (
- <Volume2 size={16} />
- )}
- </button>
- )}
+ {v.elevenlabs_voice_id && <VoicePreviewButton preview={preview} voiceId={v.elevenlabs_voice_id} name={v.name} compact />}
+ <button type="button" role="switch" aria-label={`Bật giọng: ${v.name}`} aria-checked={v.is_active} disabled={!!toggling} onClick={()=>toggleVoice(v.id,!v.is_active)} className="min-h-11 rounded-xl border border-brand/30 px-2 text-[14px] font-bold text-brand-ink dark:text-[#F7EFD8] disabled:opacity-50">{toggling===v.id?"…":v.is_active?"Bật":"Tắt"}</button>
  <button
  onClick={() => handleDelete(v.id)}
  disabled={deletingId === v.id}
@@ -240,13 +195,19 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  );
  })}
 
- {!loading && voiceProfiles.length === 0 && (
+ {!loading && allVoices.length === 0 && (
  <div className={`bg-white rounded-[24px] p-6 text-center ${CARD_SHADOW}`}>
  <p className="font-display text-[20px] font-bold text-ink mb-0.5">Chưa có giọng nào</p>
  <p className="text-[14px] font-bold text-ink-2">Ghi 30 giây – 3 phút để tạo giọng đọc đầu tiên</p>
  </div>
  )}
 
+ {/* Curated choices: family voices remain the first group. */}
+ <section aria-label="Giọng của Đóm" className="space-y-3">
+ <h2 className="font-display text-[22px] font-bold text-ink">Giọng của Đóm</h2>
+ {defaults.filter(v=>v.language===settings.language&&v.is_active).sort((a,b)=>a.sort_order-b.sort_order).map(v=><div key={v.id} className={`flex items-center gap-3 rounded-[20px] bg-white p-4 ${CARD_SHADOW}`}><span className="min-w-0 flex-1 text-[16px] font-bold text-ink">{v.name}</span><VoicePreviewButton preview={preview} voiceId={v.voice_id} name={v.name} /></div>)}
+ {!defaults.some(v=>v.language===settings.language&&v.is_active)&&<p className="text-[14px] text-ink-2">Chưa có giọng mặc định cho ngôn ngữ này.</p>}
+ </section>
  {/* Add Voice */}
  <div className="pt-2">
  <Button3D block onClick={() => onNavigate("recording")}>

@@ -199,13 +199,13 @@ export function iconForCategory(category: string, id: string): string {
 // ============================================================
 // Voice profiles
 // ============================================================
-export async function getVoiceProfiles(): Promise<VoiceProfileRow[]> {
+export async function getVoiceProfiles(includeInactive = false): Promise<VoiceProfileRow[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("voice_profiles")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
+    .select("*");
+  if (!includeInactive) query = query.eq("is_active", true);
+  const { data, error } = await query.order("created_at", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
@@ -243,7 +243,7 @@ export async function createVoiceProfile(input: {
 
 export async function updateVoiceProfile(
   id: string,
-  updates: Partial<Pick<VoiceProfileRow, "name" | "relation" | "gender">>
+  updates: Partial<Pick<VoiceProfileRow, "name" | "relation" | "gender" | "is_active">>
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase

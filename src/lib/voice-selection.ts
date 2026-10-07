@@ -50,6 +50,7 @@ export interface FamilyNarrator {
   name: string;
   relation?: string;
   elevenlabs_voice_id: string | null;
+  is_active?: boolean;
 }
 export interface CuratedNarrator {
   id: string;
@@ -63,7 +64,7 @@ export type NarratorChoice = { kind: "family" | "default"; id: string } | null;
 export function preferredFamilyVoice<T extends FamilyNarrator>(
   voices: T[],
 ): T | undefined {
-  return voices.find((v) => !!v.elevenlabs_voice_id?.trim());
+  return voices.find((v) => v.is_active !== false && !!v.elevenlabs_voice_id?.trim());
 }
 export function rankedDefaultsForLocale<T extends CuratedNarrator>(
   voices: T[],
@@ -89,7 +90,7 @@ export function resolveNarratorChoice(
 } | null {
   const ranked = rankedDefaultsForLocale(defaults, locale);
   if (selected?.kind === "family") {
-    const f = family.find((v) => v.id === selected.id && v.elevenlabs_voice_id);
+    const f = family.find((v) => v.id === selected.id && v.is_active !== false && v.elevenlabs_voice_id);
     if (f)
       return {
         kind: "family",

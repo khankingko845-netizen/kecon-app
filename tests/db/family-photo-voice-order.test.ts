@@ -135,4 +135,25 @@ describe("private photos and atomic voice order", () => {
         .rows,
     ).toEqual(snapshot);
   });
+  it("admin toggles without deleting or changing rank; family cannot toggle defaults",async()=>{
+    const before=(await db.query<{sort_order:number}>("SELECT sort_order FROM default_voices WHERE id=$1",[ids[0]])).rows[0];
+    const denied=await asUser(db,family,tx=>tx.query("UPDATE default_voices SET is_active=false WHERE id=$1 RETURNING id",[ids[0]]));
+    expect(denied.rows).toHaveLength(0);
+    await asUser(db,admin,tx=>tx.query("UPDATE default_voices SET is_active=false WHERE id=$1",[ids[0]]));
+    expect((await db.query("SELECT sort_order,is_active FROM default_voices WHERE id=$1",[ids[0]])).rows[0]).toEqual({...before,is_active:false});
+    await expect(order(admin,"vi",[ids[0],ids[1]])).rejects.toThrow(/Danh sách/);
+    await order(admin,"vi",[ids[1]]);
+    await asUser(db,admin,tx=>tx.query("UPDATE default_voices SET is_active=true WHERE id=$1",[ids[0]]));
+    expect((await db.query("SELECT is_active FROM default_voices WHERE id=$1",[ids[0]])).rows[0]).toEqual({is_active:true});
+    expect((await db.query("SELECT action FROM admin_audit_log WHERE target_id=$1 AND action='default_voice.update'",[ids[0]])).rows.length).toBeGreaterThanOrEqual(2);
+  });
+  it("owner may disable/re-enable own family clone, another family may not",async()=>{
+    const id=randomUUID();
+    await asUser(db,family,tx=>tx.query("INSERT INTO voice_profiles(id,user_id,name,relation,gender) VALUES($1,$2,'Mẹ','parent','female')",[id,family]));
+    expect((await asUser(db,other,tx=>tx.query("UPDATE voice_profiles SET is_active=false WHERE id=$1 RETURNING id",[id]))).rows).toHaveLength(0);
+    await asUser(db,family,tx=>tx.query("UPDATE voice_profiles SET is_active=false WHERE id=$1",[id]));
+    expect((await asUser(db,family,tx=>tx.query("SELECT is_active FROM voice_profiles WHERE id=$1",[id]))).rows[0]).toEqual({is_active:false});
+    await asUser(db,family,tx=>tx.query("UPDATE voice_profiles SET is_active=true WHERE id=$1",[id]));
+  });
+
 });

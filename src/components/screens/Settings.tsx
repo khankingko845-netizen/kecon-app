@@ -23,6 +23,7 @@ import { SLEEP_TIMER_OPTIONS } from "@/lib/night-mode";
 import type { Screen } from "@/lib/types";
 import ParentHeader from "@/components/parent/ParentHeader";
 import FamilyAvatar from "@/components/ui/FamilyAvatar";
+import NarrationToggle from "@/components/ui/NarrationToggle";
 import FeedbackSettings from "@/components/parent/FeedbackSettings";
 
 interface SettingsProps {
@@ -552,6 +553,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
 
  {/* UI-11: sound, haptics, Đóm's voice */}
  <SectionHeader title="Âm thanh & rung" />
+ <NarrationToggle />
+ <p className="mt-2 mb-3 text-[14px] text-ink-2">Giọng đọc truyện được lưu trên thiết bị này; âm nền và lời Đóm có công tắc riêng.</p>
  <FeedbackSettings nightPref={nightPref} />
 
  {/* Family */}

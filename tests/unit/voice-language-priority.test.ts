@@ -69,4 +69,21 @@ describe("voice language and priority", () => {
         ...family,
       ])?.id,
     ).toBe("f1"));
+  it("ignores disabled family/default entries, including explicit stale choices", () => {
+    const offFamily = family.map((v) => ({ ...v, is_active: false }));
+    expect(preferredFamilyVoice(offFamily)).toBeUndefined();
+    const offDefaults = defaults.map((v) => ({ ...v, is_active: false }));
+    expect(
+      resolveNarratorChoice(offFamily, offDefaults, "vi", {
+        kind: "family",
+        id: "f1",
+      }),
+    ).toBeNull();
+    expect(
+      resolveNarratorChoice([], offDefaults, "vi", {
+        kind: "default",
+        id: "vi1",
+      }),
+    ).toBeNull();
+  });
 });
