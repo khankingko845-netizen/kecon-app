@@ -620,7 +620,7 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
               <div
                 key={tpl.id}
                 className={`bg-white  rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]  ${
-                  !tpl.is_active ? "opacity-50" : ""
+                  !tpl.is_active ? "border border-gray-200" : ""
                 }`}
               >
                 <div className="flex items-start gap-2.5">
@@ -681,7 +681,7 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
                     className={`py-1.5 px-2.5 rounded-lg text-sm font-bold flex items-center justify-center ${
                       tpl.is_active
                         ? "bg-emerald-50 text-emerald-800"
-                        : "bg-gray-100  text-gray-400 "
+                        : "bg-gray-100  text-ink-2 "
                     }`}
                     title={tpl.is_active ? "Ẩn" : "Hiện"}
                   >

@@ -169,7 +169,7 @@ export default function AdminCategories({ onBack }: Props) {
               <div
                 key={cat.id}
                 className={`bg-white  rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]  ${
-                  !cat.is_active ? "opacity-50" : ""
+                  !cat.is_active ? "border border-gray-200" : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -178,6 +178,9 @@ export default function AdminCategories({ onBack }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-txt  truncate">
                       {cat.label}
+                      {!cat.is_active && (
+                        <span className="ml-2 text-sm text-ink-2">· Đã ẩn</span>
+                      )}
                     </p>
                     <p className="text-sm text-txt-secondary  truncate">
                       {cat.id} · {cat.description || "Không có mô tả"}
@@ -188,7 +191,7 @@ export default function AdminCategories({ onBack }: Props) {
                       aria-label={`${cat.is_active ? "Ẩn" : "Hiện"} danh mục ${cat.label}`}
                       onClick={() => toggleActive(cat)}
                       className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                        cat.is_active ? "text-emerald-800" : "text-gray-300"
+                        cat.is_active ? "text-emerald-800" : "text-ink-2"
                       }`}
                     >
                       {cat.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -206,7 +209,7 @@ export default function AdminCategories({ onBack }: Props) {
                     <button
                       onClick={() => handleDelete(cat.id)}
                       aria-label={`Xoá danh mục ${cat.label}`}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-red-400"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-red-700"
                     >
                       <Trash2 size={14} />
                     </button>
