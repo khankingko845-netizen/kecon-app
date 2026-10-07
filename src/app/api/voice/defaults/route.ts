@@ -1,3 +1,7 @@
+import { importLibraryVoice } from "@/lib/voice-import";
+import { fetchVoiceById } from "@/lib/voice-catalog";
+import { voiceKeyPool, keyPoolErrorResponse } from "@/lib/key-pool";
+import { voiceMatchesLanguage } from "@/lib/voice-selection";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
@@ -15,6 +19,8 @@ const DefaultVoiceBody = z.object({
   description: optionalText(500),
   preview_url: optionalText(2048).pipe(z.url().optional()),
   gender: optionalText(20),
+  public_owner_id: optionalText(128).pipe(z.string().regex(/^[A-Za-z0-9]+$/).optional()),
+  languageConfirmed: z.boolean().default(false),
 });
 
 
@@ -74,8 +80,18 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, DefaultVoiceBody);
   if (!parsed.ok) return parsed.response;
-  const { voice_id, name, description, preview_url, gender } = parsed.data;
+  const { name, description, preview_url, gender, public_owner_id, languageConfirmed } = parsed.data;
+  let {voice_id}=parsed.data;
   const language=normalizeVoiceLanguage(parsed.data.language) ?? parsed.data.language;
+
+  if(!voice_id.startsWith("fish:")){
+   try{
+    if(public_owner_id){const failed=await auditAdmin(supabase,request,{action:"voice.import",targetType:"voice",targetId:voice_id});if(failed)return failed;}
+    const meta=public_owner_id?await importLibraryVoice(voice_id,public_owner_id,name):await voiceKeyPool.run("elevenlabs",key=>fetchVoiceById(key,voice_id),{voiceRef:voice_id});
+    if(!voiceMatchesLanguage(meta,language)&&!languageConfirmed)return Response.json({error:"Giọng không có nhãn phù hợp ngôn ngữ này. Nghe thử và xác nhận ngôn ngữ trước khi thêm."},{status:400});
+    voice_id=meta.voice_id;
+   }catch(e){return keyPoolErrorResponse(e,"ID chưa khả dụng. Thêm giọng vào My Voices của tài khoản có key, rồi thử lại.");}
+  }
 
   // Get max sort_order for this language
   const { data: existing } = await supabase

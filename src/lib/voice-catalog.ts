@@ -1,7 +1,7 @@
 import { elevenFetch } from "@/lib/elevenlabs";
 import {
   voiceLanguages,
-  normalizeVoiceLanguage,
+  nativeVoiceLanguage,
   type LanguageVoice,
 } from "@/lib/voice-selection";
 export interface CatalogVoice {
@@ -18,23 +18,18 @@ interface ProviderVoice extends LanguageVoice {
   name: string;
   category?: string;
   public_owner_id?: string;
-  accent?: string;
 }
-/** Provider metadata denotes native/verified languages, not universal model capabilities. */
+/** Native ≠ model support/verified languages. Never infer a label from the requested filter. */
 export function catalogVoice(
   v: ProviderVoice,
   source: "own" | "library",
-  hint?: string,
 ): CatalogVoice {
-  const languages = voiceLanguages(v);
-  if (hint && !languages.length)
-    languages.push(normalizeVoiceLanguage(hint) ?? hint);
   return {
     voice_id: v.voice_id,
     name: v.name,
     category: v.category ?? "unknown",
-    language: languages[0] ?? "",
-    languages,
+    language: nativeVoiceLanguage(v) ?? "",
+    languages: voiceLanguages(v),
     source,
     public_owner_id: v.public_owner_id,
   };
@@ -42,7 +37,9 @@ export function catalogVoice(
 export async function fetchVoiceCatalog(
   key: string,
   language?: string,
-): Promise<{ voices: CatalogVoice[]; warnings: string[] }> {
+  search = "",
+  page = 0,
+) {
   const own = await (
     await elevenFetch(
       "/voices",
@@ -51,22 +48,35 @@ export async function fetchVoiceCatalog(
       "đọc danh sách giọng",
     )
   ).json();
-  const voices: CatalogVoice[] = (own.voices ?? []).map((v: ProviderVoice) =>
-    catalogVoice(v, "own"),
-  );
+  const voices: CatalogVoice[] = (own.voices ?? [])
+    .filter(
+      (v: ProviderVoice) =>
+        !search ||
+        `${v.name} ${v.voice_id}`.toLowerCase().includes(search.toLowerCase()),
+    )
+    .map((v: ProviderVoice) => catalogVoice(v, "own"));
   const warnings: string[] = [];
+  let hasMore = false;
   await Promise.all(
     (language ? [language] : ["vi", "en", "ja"]).map(async (lang) => {
       try {
-        const r = await elevenFetch(
-          `/shared-voices?language=${encodeURIComponent(lang)}&page_size=30`,
-          key,
-          { signal: AbortSignal.timeout(12_000) },
-          "đọc thư viện giọng",
-        );
-        const data = await r.json();
+        const params = new URLSearchParams({
+          language: lang,
+          page_size: "100",
+          page: String(page),
+          ...(search ? { search } : {}),
+        });
+        const data = await (
+          await elevenFetch(
+            `/shared-voices?${params}`,
+            key,
+            { signal: AbortSignal.timeout(12_000) },
+            "đọc thư viện giọng",
+          )
+        ).json();
+        hasMore ||= Boolean(data.has_more);
         for (const v of data.voices ?? [])
-          voices.push(catalogVoice(v, "library", lang));
+          voices.push(catalogVoice(v, "library"));
       } catch {
         warnings.push(
           `Chưa tải được thư viện ${lang}. Key có thể thiếu quyền Voice Library hoặc nhà cung cấp đang lỗi; giọng trong tài khoản vẫn dùng để lựa chọn.`,
@@ -74,15 +84,28 @@ export async function fetchVoiceCatalog(
       }
     }),
   );
-  // Keep own metadata when an account voice also appears in the library; union languages.
   const unique = new Map<string, CatalogVoice>();
   for (const v of voices) {
-    const previous = unique.get(v.voice_id);
-    if (previous)
-      previous.languages = [
-        ...new Set([...previous.languages, ...v.languages]),
-      ];
-    else unique.set(v.voice_id, v);
+    const prev = unique.get(v.voice_id);
+    if (prev) {
+      prev.languages = [...new Set([...prev.languages, ...v.languages])];
+      if (!prev.language) prev.language = v.language;
+    } else unique.set(v.voice_id, v);
   }
-  return { voices: [...unique.values()], warnings };
+  return { voices: [...unique.values()], warnings, hasMore, page };
+}
+/** Exact provider lookup is separate from a bounded catalogue/name search. Try every pool key. */
+export async function fetchVoiceById(
+  key: string,
+  id: string,
+): Promise<CatalogVoice> {
+  const data = await (
+    await elevenFetch(
+      `/voices/${encodeURIComponent(id)}`,
+      key,
+      { signal: AbortSignal.timeout(12_000) },
+      "tra cứu ID giọng",
+    )
+  ).json();
+  return catalogVoice(data, "own");
 }

@@ -134,6 +134,7 @@ export interface StoryPageRow {
   illustration_url: string | null;
   audio_url: string | null;
   audio_duration: number;
+  audio_key?: string | null;
   transition_effect: string;
   particle_effect: string | null;
   ambient_sound: string | null;
@@ -1098,10 +1099,10 @@ export async function uploadTtsAudio(
   blob: Blob
 ): Promise<string> {
   const supabase = createClient();
-  const path = `${storyPageId}-${Date.now()}.mp3`;
+  const path = `${storyPageId}-${crypto.randomUUID()}.${blob.type === "audio/wav" ? "wav" : "mp3"}`;
   const { error } = await supabase.storage
     .from("tts-cache")
-    .upload(path, blob, { contentType: "audio/mpeg", upsert: true });
+    .upload(path, blob, { contentType: blob.type || "audio/mpeg", upsert: false });
   if (error) throw error;
   const { data } = supabase.storage.from("tts-cache").getPublicUrl(path);
   return data.publicUrl;
@@ -1110,13 +1111,15 @@ export async function uploadTtsAudio(
 export async function savePageAudio(
   storyPageId: string,
   audioUrl: string,
-  durationSec: number
+  durationSec: number,
+  audioKey: string | null = null
 ): Promise<void> {
   const supabase = createClient();
-  await supabase
+  const { error } = await supabase
     .from("story_pages")
-    .update({ audio_url: audioUrl, audio_duration: Math.round(durationSec) })
+    .update({ audio_url: audioUrl, audio_duration: Math.round(durationSec), audio_key: audioKey })
     .eq("id", storyPageId);
+  if (error) throw error;
 }
 
 // ============================================================
@@ -1831,6 +1834,8 @@ export async function updateStoryNarrator(
     .update({
       narrator_voice_id: narratorVoiceId,
       narrator_voice_name: narratorVoiceName,
+      last_voice_id: null,
+      last_voice_name: null,
     })
     .eq("id", storyId);
   if (error) throw error;

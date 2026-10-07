@@ -20,7 +20,7 @@ import {
 import { isSecretSettingKey, secretStatusText, type SystemSecretStatus } from "@/lib/system-secrets";
 import type { ProviderKeyRow } from "@/lib/provider-keys";
 import { FISH_MODELS } from "@/lib/fishaudio";
-import { voiceMatchesLanguage, voiceLanguages, rankedDefaultsForLocale } from "@/lib/voice-selection";
+import { voiceMatchesLanguage, nativeVoiceLanguage, voiceLanguages, rankedDefaultsForLocale } from "@/lib/voice-selection";
 import ProviderKeyPool from "@/components/screens/ProviderKeyPool";
 
 interface AdminSettingsProps {
@@ -288,7 +288,7 @@ function DefaultVoicesManager({
 }: {
  availableVoices: VoiceOption[];
  defaultVoices: DefaultVoiceRow[];
- onAdd: (voice: { voice_id: string; name: string; language: string; gender?: string }) => Promise<void>;
+ onAdd: (voice: { voice_id: string; name: string; language: string; gender?: string; public_owner_id?:string; languageConfirmed?:boolean }) => Promise<void>;
  onRemove: (id: string) => Promise<void>;
  onReorder: (language:string,ids:string[])=>Promise<void>;
  onToggle: (id:string,active:boolean)=>Promise<void>;
@@ -299,6 +299,8 @@ function DefaultVoicesManager({
  const [manualMode, setManualMode] = useState(false);
  const [manualVoiceId, setManualVoiceId] = useState("");
  const [manualName, setManualName] = useState("");
+ const [manualConfirmed,setManualConfirmed]=useState(false);
+ const [manualLanguages,setManualLanguages]=useState<string[]>([]);
  const [submitting, setSubmitting] = useState(false);
  const [removingId, setRemovingId] = useState<string | null>(null);
  const [lookingUp, setLookingUp] = useState(false);
@@ -308,7 +310,11 @@ function DefaultVoicesManager({
  const [catalogWarnings,setCatalogWarnings]=useState<string[]>([]);
  const [managerError,setManagerError]=useState<string|null>(null);
  const [ordering,setOrdering]=useState<string|null>(null);
- const [showUnknown,setShowUnknown]=useState(true);
+ const [showUnknown,setShowUnknown]=useState(false);
+ const [showVerified,setShowVerified]=useState(false);
+ const [catalogPage,setCatalogPage]=useState(0);
+ useEffect(()=>{setCatalogPage(0);setSearchQuery("");setCatalogue([]);},[addingForLang]);
+ const [hasMore,setHasMore]=useState(false);
  const preview=useVoicePreview(addingForLang||"vi");
  useEffect(()=>{preview.stop();},[addingForLang,preview.stop]);
  const [toggling,setToggling]=useState<string|null>(null);
@@ -317,13 +323,18 @@ function DefaultVoicesManager({
   try{await onToggle(id,active);}catch(e){setManagerError(e instanceof Error?e.message:"Chưa đổi được trạng thái giọng.");}finally{setToggling(null);}
  }
  useEffect(()=>{
-  if(!addingForLang)return;let alive=true;
-  fetch(`/api/admin/voice-catalog?language=${addingForLang}`).then(async r=>{
-   const d=await r.json();if(!r.ok)throw new Error(d.error||"Chưa tải được giọng.");
-   if(alive){setCatalogue(d.voices??[]);setCatalogWarnings(d.warnings??[]);}
-  }).catch(e=>{if(alive)setManagerError(e.message);}).finally(()=>{if(alive)setCatalogLoading(false);});
-  return()=>{alive=false;};
- },[addingForLang]);
+  if(!addingForLang || manualMode)return;
+  const abort=new AbortController();
+  const timer=setTimeout(()=>{
+   setCatalogLoading(true);setManagerError(null);
+   const params=new URLSearchParams({language:addingForLang,search:searchQuery.trim(),page:String(catalogPage)});
+   fetch(`/api/admin/voice-catalog?${params}`,{signal:abort.signal}).then(async r=>{
+    const d=await r.json();if(!r.ok)throw new Error(d.error||"Chưa tải được giọng.");
+    if(!abort.signal.aborted){setCatalogue(prev=>catalogPage?Array.from(new Map([...prev,...(d.voices??[])].map(v=>[v.voice_id,v])).values()):d.voices??[]);setCatalogWarnings(d.warnings??[]);setHasMore(!!d.hasMore);}
+   }).catch(e=>{if(!abort.signal.aborted)setManagerError(e.message);}).finally(()=>{if(!abort.signal.aborted)setCatalogLoading(false);});
+  },searchQuery?350:0);
+  return()=>{clearTimeout(timer);abort.abort();};
+ },[addingForLang,searchQuery,catalogPage,manualMode]);
  async function moveVoice(language:string,id:string,direction:number){
   const list=rankedDefaultsForLocale(defaultVoices,language);const from=list.findIndex(v=>v.id===id);const to=from+direction;if(to<0||to>=list.length)return;
   [list[from],list[to]]=[list[to],list[from]];setOrdering(language);setManagerError(null);
@@ -341,7 +352,7 @@ function DefaultVoicesManager({
  const res = await fetch(`/api/admin/test-provider?voice_id=${encodeURIComponent(id)}`);
  const data = await res.json();
  if (data.ok && data.voice) {
- setManualName(data.voice.name || "");
+ setManualName(data.voice.name || "");setManualLanguages(voiceLanguages(data.voice));
  // Could auto-detect language from voice info too
  } else {
  setLookupError(data.error || "Không tìm thấy voice");
@@ -360,6 +371,8 @@ function DefaultVoicesManager({
  voice_id: v.voice_id,
  name: v.name,
  language: lang,
+ public_owner_id: v.source==="library"?v.public_owner_id:undefined,
+ languageConfirmed:showVerified||showUnknown,
  });
  preview.stop();setAddingForLang(null);
  setSearchQuery("");
@@ -377,6 +390,7 @@ function DefaultVoicesManager({
  voice_id: manualVoiceId.trim(),
  name: manualName.trim(),
  language: lang,
+ languageConfirmed:manualConfirmed,
  });
  preview.stop();setAddingForLang(null);
  setManualVoiceId("");
@@ -400,7 +414,7 @@ function DefaultVoicesManager({
 
  // Filter available voices for the add modal
  const filteredVoices = catalogue.filter(v=>!searchQuery||v.name.toLowerCase().includes(searchQuery.toLowerCase())||v.voice_id.toLowerCase().includes(searchQuery.toLowerCase()));
- const matches=filteredVoices.filter(v=>voiceMatchesLanguage(v,addingForLang??"vi"));
+ const matches=filteredVoices.filter(v=>nativeVoiceLanguage(v)===(addingForLang??"vi") || (showVerified&&voiceMatchesLanguage(v,addingForLang??"vi")));
  const libraryForLang=matches.filter(v=>v.source==="library");
  const ownCloned=matches.filter(v=>v.source==="own"&&["cloned","professional"].includes(v.category));
  const ownPremade=matches.filter(v=>v.source==="own"&&!["cloned","professional"].includes(v.category));
@@ -526,7 +540,7 @@ function DefaultVoicesManager({
  <input
  type="text"
  value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
+ onChange={(e) => {setSearchQuery(e.target.value);setCatalogPage(0);}}
  aria-label="Tìm giọng theo tên hoặc ID"
  placeholder="Tìm voice theo tên hoặc ID..."
  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm outline-none focus:border-accent transition-colors"
@@ -540,6 +554,7 @@ function DefaultVoicesManager({
  >
  Nhập voice_id thủ công →
  </button>
+ {/^[A-Za-z0-9]{20}$/.test(searchQuery.trim())&&<button type="button" onClick={()=>{setManualVoiceId(searchQuery.trim());setManualName("");setManualMode(true);}} className="min-h-11 px-3 rounded-xl border border-current text-accent dark:text-amber-300 text-[12px]">Tra cứu chính xác ID này</button>}
  </>
  ) : (
  <div className="space-y-2">
@@ -547,7 +562,7 @@ function DefaultVoicesManager({
  <input
  type="text"
  value={manualVoiceId}
- onChange={(e) => { setManualVoiceId(e.target.value); setLookupError(null); }}
+ onChange={(e) => { setManualVoiceId(e.target.value);setManualName(""); setManualLanguages([]);setManualConfirmed(false);setLookupError(null); }}
  aria-label="Voice ID"
  placeholder="Voice ID (vd: pNInz6obpgDQGcFmaJgB hoặc fish:<id>)"
  className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-mono outline-none focus:border-accent transition-colors"
@@ -568,6 +583,8 @@ function DefaultVoicesManager({
  </button>
  </div>
  {manualVoiceId.trim()&&<VoicePreviewButton preview={preview} voiceId={manualVoiceId.trim()} name={manualName.trim()||manualVoiceId.trim()} language={addingForLang} />}
+ <p className="text-[12px] text-txt-secondary dark:text-white/65">Ngôn ngữ từ provider: {manualLanguages.join(", ") || "chưa xác định"}. ID không khả dụng: thêm vào My Voices của tài khoản có key trước.</p>
+ <label className="flex min-h-11 items-center gap-2 text-[12px]"><input type="checkbox" checked={manualConfirmed} onChange={e=>setManualConfirmed(e.target.checked)} /> Tôi đã nghe thử và xác nhận giọng phù hợp ngôn ngữ này</label>
  {lookupError && (
  <p className="text-[11px] text-red-500 dark:text-red-300 font-medium flex items-center gap-1">
  <AlertCircle size={11} /> {lookupError}
@@ -619,10 +636,13 @@ function DefaultVoicesManager({
  {catalogLoading && <p role="status" className="px-4 py-3 text-[14px]">Đang tải giọng theo ngôn ngữ…</p>}
  {catalogWarnings.map(w=><p key={w} role="status" className="px-4 py-2 text-[14px] text-amber-800 dark:text-amber-300">{w}</p>)}
  {managerError && <p role="alert" className="px-4 py-2 text-[14px] text-red-700 dark:text-red-300">{managerError}</p>}
+ {!manualMode && <p className="px-4 py-2 text-[12px] text-txt-secondary dark:text-white/65">Mặc định chỉ hiện giọng bản ngữ. Giọng được kiểm chứng thêm ngôn ngữ có thể vẫn mang giọng nước ngoài; nên nghe thử trước.</p>}
+ {!manualMode && <label className="flex min-h-11 items-center gap-2 px-4 text-[14px]"><input type="checkbox" checked={showVerified} onChange={e=>setShowVerified(e.target.checked)} /> Hiện giọng được kiểm chứng thêm ngôn ngữ này</label>}
  {!manualMode && <label className="flex min-h-11 items-center gap-2 px-4 text-[14px]"><input type="checkbox" checked={showUnknown} onChange={e=>setShowUnknown(e.target.checked)} /> Hiện giọng chưa có nhãn ngôn ngữ</label>}
  {/* Voice list (scrollable) */}
  {!manualMode && (
  <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-white/[0.06]">
+ {hasMore && <button type="button" onClick={()=>setCatalogPage(p=>p+1)} disabled={catalogLoading} className="m-4 min-h-11 px-4 rounded-xl border border-current text-accent dark:text-amber-300">Tải thêm giọng</button>}
  {/* Library voices for this language */}
  {libraryForLang.length > 0 && (
  <div>
@@ -692,7 +712,7 @@ function DefaultVoicesManager({
  {unknownVoices.length>0 && <div><p className="px-4 py-2 text-[14px] text-ink-2 dark:text-white/65">Chưa có nhãn ngôn ngữ — hãy thử giọng trước khi gán.</p>{unknownVoices.map(v=><VoiceRow key={v.voice_id} voice={v} preview={preview} language={addingForLang} onAdd={()=>handleAddVoice(v,addingForLang)} submitting={submitting} alreadyAdded={defaultVoices.some(d=>d.voice_id===v.voice_id&&d.language===addingForLang)} />)}</div>}
  {matches.length + unknownVoices.length === 0 && !catalogLoading && (
  <div className="px-4 py-8 text-center text-[13px] text-txt-secondary dark:text-white/50">
- Không tìm thấy voice nào
+ Không có giọng khớp bộ lọc. ID ngoài danh sách: dùng “Nhập voice_id thủ công” để tra cứu với các key đã lưu.
  </div>
  )}
  </div>
@@ -724,7 +744,8 @@ function VoiceRow({
  <div className="flex-1 min-w-0">
  <p className="text-[13px] font-semibold truncate">{voice.name}</p>
  <p className="text-[11px] text-txt-secondary dark:text-white/65">
- {voice.category} · {voiceLanguages(voice).map(code=>LANGUAGES.find(l=>l.code===code)?.label??code).join(", ") || "chưa có nhãn ngôn ngữ"}
+ {voice.category} · Bản ngữ: {LANGUAGES.find(l=>l.code===nativeVoiceLanguage(voice))?.label || nativeVoiceLanguage(voice) || "chưa xác định"}
+ {nativeVoiceLanguage(voice)!==language&&voiceMatchesLanguage(voice,language)&&<span> · Kiểm chứng thêm {LANGUAGES.find(l=>l.code===language)?.label}</span>}
  </p>
  </div>
  <VoicePreviewButton preview={preview} voiceId={voice.voice_id} name={voice.name} language={language} compact />
@@ -882,6 +903,8 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  name: string;
  language: string;
  gender?: string;
+ public_owner_id?: string;
+ languageConfirmed?: boolean;
  }) {
  const res = await fetch("/api/voice/defaults", {
  method: "POST",
@@ -890,7 +913,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  });
  const data = await res.json();
  if (data.voice) {
- setDefaultVoices((prev) => [...prev, data.voice]);
+ setDefaultVoices((prev) => [...prev.filter(v=>v.id!==data.voice.id), data.voice]);
  } else if (data.error) {
  throw new Error(data.error);
  }
@@ -1119,7 +1142,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  Eleven v3 (mới nhất, chất lượng cao nhất)
  </option>
  <option value="eleven_multilingual_v2">
- Multilingual v2 (ổn định)
+ Multilingual v2 (29 ngôn ngữ, không có tiếng Việt)
  </option>
  <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh)</option>
  <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất)</option>
@@ -1131,6 +1154,7 @@ export default function AdminSettings({ onBack, canManageSecrets = true }: Admin
  </div>
  </div>
 
+ <p className="text-[12px] text-txt-secondary dark:text-white/65">Tiếng Việt tự dùng Flash v2.5 nếu model đã chọn không hỗ trợ. Mẫu nghe thử được tạo bằng câu tiếng Việt, không dùng preview gốc của thư viện.</p>
  {/* Default voices per language (multi-select) */}
  <DefaultVoicesManager
  availableVoices={voices}

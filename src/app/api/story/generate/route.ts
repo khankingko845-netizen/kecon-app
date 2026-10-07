@@ -1,3 +1,4 @@
+import { validateStoryNarrator } from "@/lib/story-narrator";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateStory } from "@/lib/story-ai";
@@ -51,9 +52,11 @@ export async function POST(request: NextRequest) {
     extraPrompt,
     voiceId,
     narratorVoiceId,
-    narratorVoiceName,
     persist,
   } = parsed.data;
+
+  const chosenVoice=await validateStoryNarrator(supabase,user.id,language||"vi",voiceId,narratorVoiceId);
+  if("error" in chosenVoice)return Response.json({error:chosenVoice.error},{status:400});
 
   // Provider/model/key/base URL: BYO → client choice; platform key → admin defaults
   const llm = await resolveLlmTarget(parsed.data);
@@ -92,9 +95,9 @@ export async function POST(request: NextRequest) {
           theme,
           target_age_min: ageNums[0] ?? 0,
           target_age_max: ageNums[1] ?? ageNums[0] ?? 12,
-          voice_id: voiceId || null,
-          narrator_voice_id: narratorVoiceId || null,
-          narrator_voice_name: narratorVoiceName || null,
+          voice_id: chosenVoice.voiceId || null,
+          narrator_voice_id: chosenVoice.narratorId || null,
+          narrator_voice_name: chosenVoice.name || null,
           locale: language || "vi",
           page_count: story.pages.length,
           source: "ai",

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
 import { auditAdmin } from "@/lib/admin-audit";
 import { voiceKeyPool, keyPoolErrorResponse } from "@/lib/key-pool";
-import { fetchVoiceCatalog } from "@/lib/voice-catalog";
+import { fetchVoiceCatalog, fetchVoiceById } from "@/lib/voice-catalog";
 import { normalizeVoiceLanguage } from "@/lib/voice-selection";
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -20,10 +20,31 @@ export async function GET(request: NextRequest) {
     targetId: language,
   });
   if (auditFailed) return auditFailed;
+  const search = (request.nextUrl.searchParams.get("search") ?? "").trim();
+  const page = Number(request.nextUrl.searchParams.get("page") ?? 0);
+  if (search.length > 120 || !Number.isInteger(page) || page < 0 || page > 100)
+    return Response.json({ error: "Tìm kiếm không hợp lệ." }, { status: 400 });
   try {
+    if (/^[A-Za-z0-9]{20}$/.test(search)) {
+      try {
+        const voice = await voiceKeyPool.run(
+          "elevenlabs",
+          (key) => fetchVoiceById(key, search),
+          { voiceRef: search },
+        );
+        return Response.json({
+          voices: [voice],
+          warnings: [],
+          hasMore: false,
+          page: 0,
+        });
+      } catch {
+        /* A library-only ID may still be found by the library search. */
+      }
+    }
     return Response.json(
       await voiceKeyPool.run("elevenlabs", (key) =>
-        fetchVoiceCatalog(key, language),
+        fetchVoiceCatalog(key, language, search, page),
       ),
     );
   } catch (err) {

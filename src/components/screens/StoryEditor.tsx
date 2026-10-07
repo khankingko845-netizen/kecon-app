@@ -1,4 +1,5 @@
 "use client";
+import { storyAudioSegments } from "@/lib/story-audio";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -357,7 +358,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  setError(null);
  // Resolve voice: story narrator_voice_id → first default voice for locale → fallback
  const storyNarratorId = story?.narrator_voice_id ?? null;
- let voiceId = storyNarratorId || "pNInz6obpgDQGcFmaJgB";
+ let voiceId = storyNarratorId || voiceProfiles.find(v=>v.id===story?.voice_id && v.is_active)?.elevenlabs_voice_id || "";
  if (!storyNarratorId) {
  try {
  const dvRes = await fetch(`/api/voice/defaults?language=${story?.locale || "vi"}`);
@@ -370,7 +371,8 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  for (let i = 0; i < missing.length; i++) {
  setBatchTTS((prev) => ({ ...prev, current: i + 1 }));
  try {
- const text = missing[i].content;
+ const text = storyAudioSegments(missing[i].content,voiceId,[],false).map(s=>s.text).join("\n");
+ if(!voiceId)throw new Error("Chưa có giọng cho ngôn ngữ này.");
  if (!text) continue;
  const blob = await ttsApi(
  voiceId,
@@ -403,7 +405,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  try {
  // Resolve voice same as batch TTS
  const storyNarratorId = story?.narrator_voice_id ?? null;
- let voiceId = storyNarratorId || "pNInz6obpgDQGcFmaJgB";
+ let voiceId = storyNarratorId || voiceProfiles.find(v=>v.id===story?.voice_id && v.is_active)?.elevenlabs_voice_id || "";
  if (!storyNarratorId) {
  try {
  const dvRes = await fetch(`/api/voice/defaults?language=${story?.locale || "vi"}`);
@@ -411,9 +413,11 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  if (dvData.voices?.length > 0) voiceId = dvData.voices[0].voice_id;
  } catch { /* use fallback */ }
  }
+ if(!voiceId)throw new Error("Chưa có giọng cho ngôn ngữ này.");
+ const text=storyAudioSegments(page.content,voiceId,[],false).map(s=>s.text).join("\n");
  const blob = await ttsApi(
  voiceId,
- page.content,
+ text,
  settings.elevenLabsApiKey || undefined,
  settings.elevenLabsModelId || undefined,
  story?.locale || "vi"

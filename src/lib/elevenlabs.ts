@@ -1,3 +1,4 @@
+import { modelForLanguage, supportsLanguageCode } from "@/lib/tts-models";
 import { ProviderHttpError, providerHttpError } from "@/lib/provider-keys";
 
 /** `ELEVENLABS_API_BASE` overrides the host (tests point it at a local mock). */
@@ -216,18 +217,13 @@ export async function textToSpeech(
 
   const body: Record<string, unknown> = {
     text: cleanText,
-    model_id: modelId,
+    model_id: modelForLanguage(modelId, resolvedLang),
     voice_settings: emotionSettings,
   };
 
   // language_code is only supported by turbo v2.5, flash v2.5, and v3+ models.
   // eleven_multilingual_v2 does NOT support language_code (will error).
-  const supportsLangCode =
-    modelId.includes("v3") ||
-    modelId.includes("turbo_v2_5") ||
-    modelId.includes("flash_v2_5") ||
-    modelId.includes("flash_v2");
-  if (resolvedLang && supportsLangCode) {
+  if (resolvedLang && supportsLanguageCode(modelForLanguage(modelId, resolvedLang))) {
     body.language_code = resolvedLang;
   }
 

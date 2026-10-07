@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/lib/elevenlabs", () => ({ elevenFetch: vi.fn() }));
 import { elevenFetch } from "@/lib/elevenlabs";
-import { catalogVoice, fetchVoiceCatalog } from "@/lib/voice-catalog";
+import { catalogVoice, fetchVoiceCatalog, fetchVoiceById } from "@/lib/voice-catalog";
 const fetcher = vi.mocked(elevenFetch);
 beforeEach(() => {
   fetcher.mockReset();
@@ -24,9 +24,9 @@ describe("catalogue metadata and partial failure", () => {
       catalogVoice({ voice_id: "2", name: "Unknown" }, "own").languages,
     ).toEqual([]);
     expect(
-      catalogVoice({ voice_id: "3", name: "Library" }, "library", "ja")
+      catalogVoice({ voice_id: "3", name: "Library" }, "library")
         .languages,
-    ).toEqual(["ja"]);
+    ).toEqual([]);
   });
   it("keeps account voices and reports library failure without credentials", async () => {
     fetcher.mockImplementation(async (path) => {
@@ -68,3 +68,10 @@ describe("catalogue metadata and partial failure", () => {
     });
   });
 });
+
+it("server search forwards name and page, but does not label unknown results as Vietnamese",async()=>{
+ fetcher.mockImplementation(async path=>Response.json({voices:path==="/voices"?[]:[{voice_id:"u",name:"Unknown"}],has_more:path!=="/voices"}));
+ const r=await fetchVoiceCatalog("key","vi","Some name",3);
+ expect(fetcher.mock.calls[1][0]).toContain("search=Some+name");expect(fetcher.mock.calls[1][0]).toContain("page=3");expect(r.hasMore).toBe(true);expect(r.voices[0].languages).toEqual([]);
+});
+it("exact ID lookup is not limited to the first catalog page",async()=>{fetcher.mockResolvedValue(Response.json({voice_id:"exact",name:"Own",labels:{language:"vi"}}));const r=await fetchVoiceById("key","exact");expect(fetcher.mock.calls[0][0]).toBe("/voices/exact");expect(r.language).toBe("vi");});
