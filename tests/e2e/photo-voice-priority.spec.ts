@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
+import AxeBuilder from "@axe-core/playwright";
 import {
   MOCK_PHOTO_USER_ID,
   MOCK_VOICE_USER_ID,
@@ -222,6 +223,30 @@ test("Admin: lọc native/verified/category, cảnh báo, thứ tự từng ngô
   await modal.getByLabel("Hiện giọng chưa có nhãn ngôn ngữ").uncheck();
   await expect(modal.getByText("No metadata", { exact: true })).toHaveCount(0);
   await expect(modal.getByText(/Thư viện tạm thời/)).toBeVisible();
+  await page.evaluate(() =>
+    document.documentElement.classList.add("dark", "night"),
+  );
+  await modal.getByText("Professional verified", { exact: true }).hover();
+  const nightCatalogue = await new AxeBuilder({ page })
+    .include('[role="dialog"]')
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(nightCatalogue.violations).toEqual([]);
+  await modal.getByRole("button", { name: "Nhập voice_id thủ công →" }).click();
+  await modal.getByLabel("Voice ID", { exact: true }).fill("voiceManualTest");
+  await modal.getByLabel("Tên giọng", { exact: true }).fill("Giọng thử");
+  const manualA11y = await new AxeBuilder({ page })
+    .include('[role="dialog"]')
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(manualA11y.violations).toEqual([]);
+  await modal.getByRole("button", { name: "← Chọn từ danh sách" }).click();
+  await modal.getByText("Professional verified", { exact: true }).hover();
+  if (process.env.NEXT_VISUAL_QA === "1")
+    await page.screenshot({ path: "/data/next-voice-hover-night.png" });
+  await page.evaluate(() =>
+    document.documentElement.classList.remove("dark", "night"),
+  );
   if (process.env.NEXT_VISUAL_QA === "1") {
     await page.setViewportSize({ width: 414, height: 896 });
     await page.screenshot({ path: "/data/next-voice-filter.png" });
@@ -354,15 +379,9 @@ test("Player: lựa chọn narrator được giữ dù gia đình có clone; pic
   });
   await expect(current).toBeVisible();
   await current.click();
-  await expect(
-    page.getByRole("button", { name: /Bà của bé/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /Vi A/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /English A/ }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Bà của bé/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Vi A/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /English A/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Bà của bé/ }).click();
   await expect(
     page.getByRole("button", { name: "Giọng: Bà của bé", exact: true }),
