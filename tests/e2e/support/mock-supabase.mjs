@@ -447,6 +447,7 @@ function rpc(name, sub, body, claims={}) {
       return ids.length;
     }
     case "record_measurement_event":return true;
+    case "my_household_context":return {household_id:sub,role:"owner"};
     case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
     case "set_ai_price_v2":case "set_ai_price": {
       if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");
