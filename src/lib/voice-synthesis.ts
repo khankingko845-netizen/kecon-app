@@ -16,6 +16,8 @@ import {
 import { scrubSecret } from "@/lib/system-secrets";
 import { guardUsage } from "@/lib/usage-guard";
 import { fishBillingUsage } from "@/lib/tts-billing";
+import { PACE_TIMINGS, paceNarration, pacingStyle } from "@/lib/narration-pacing";
+import type { NarrationPace } from "@/lib/story-brief";
 const audioResponse = (audio: ArrayBuffer, model?: string) =>
   new Response(audio, {
     headers: {
@@ -34,9 +36,11 @@ export async function synthesizeSpeech(
     language?: string;
     modelId?: string;
     apiKey?: string;
+    pace?: NarrationPace;
   },
 ) {
-  const { voiceId, text, language, modelId: userModelId } = input;
+  const { voiceId, text, language, modelId: userModelId, pace } = input;
+  const speed = pace ? PACE_TIMINGS[pace].speed : undefined;
   const provider = voiceProviderOf(voiceId);
   const voiceRef = providerVoiceRef(voiceId);
   // A BYO key is an ElevenLabs key (Cài đặt → key riêng); Fish Audio voices always use the platform pool.
@@ -62,18 +66,20 @@ export async function synthesizeSpeech(
   try {
     if (provider === "fishaudio") {
       const model = await resolveFishAudioModel();
+      const spoken = pace ? paceNarration(text, pacingStyle("fishaudio", model), pace) : text;
       const audio = await voiceKeyPool.run(
         "fishaudio",
         async (key) =>
           (
-            await fishTextToSpeech(key, voiceRef, text, {
+            await fishTextToSpeech(key, voiceRef, spoken, {
               model,
+              speed,
               fetchImpl: meteredFetch({
                 provider: "fishaudio",
                 payer: "platform",
                 model,
                 kind: "tts",
-                ...fishBillingUsage(text),
+                ...fishBillingUsage(spoken),
               }),
             })
           ).arrayBuffer(),
@@ -87,12 +93,13 @@ export async function synthesizeSpeech(
       await resolveElevenLabsModel(userKey ? userModelId : undefined),
       language,
     );
+    const spoken = pace ? paceNarration(stripEmotionTags(text), pacingStyle("elevenlabs", modelId), pace) : text;
     const speak = async (key: string) =>
       (
         await textToSpeech(
           key,
           voiceRef,
-          text,
+          spoken,
           modelId,
           language,
           undefined,
@@ -100,8 +107,9 @@ export async function synthesizeSpeech(
             provider: "elevenlabs",
             model: modelId,
             kind: "tts",
-            units: [...stripEmotionTags(text)].length,
+            units: [...stripEmotionTags(spoken)].length,
           }),
+          { speed },
         )
       ).arrayBuffer();
     if (userKey) {

@@ -25,7 +25,7 @@ describe("generateStory", () => {
   it("OpenAI: gọi chat/completions với Bearer key và trả truyện đã parse", async () => {
     fetchMock.mockResolvedValue(openAIReply(JSON.stringify(story)));
 
-    await expect(generateStory("openai", "sk-test", "gpt-4o-mini", params)).resolves.toEqual(story);
+    await expect(generateStory("openai", "sk-test", "gpt-4o-mini", params)).resolves.toMatchObject(story);
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("https://api.openai.com/v1/chat/completions");
@@ -56,14 +56,14 @@ describe("generateStory", () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ candidates: [{ content: { parts: [{ text: JSON.stringify(story) }] } }] })
     );
-    await expect(generateStory("gemini", "g-key", "gemini-2.0-flash", params)).resolves.toEqual(story);
+    await expect(generateStory("gemini", "g-key", "gemini-2.0-flash", params)).resolves.toMatchObject(story);
     expect(String(fetchMock.mock.calls[0][0])).toContain("models/gemini-2.0-flash:generateContent");
     // Key goes in a header, never in the URL
     expect(String(fetchMock.mock.calls[0][0])).not.toContain("key=");
     expect((fetchMock.mock.calls[0][1]?.headers as Record<string, string>)["x-goog-api-key"]).toBe("g-key");
 
     fetchMock.mockResolvedValueOnce(jsonResponse({ content: [{ text: JSON.stringify(story) }] }));
-    await expect(generateStory("anthropic", "a-key", "claude", params)).resolves.toEqual(story);
+    await expect(generateStory("anthropic", "a-key", "claude", params)).resolves.toMatchObject(story);
     expect(fetchMock.mock.calls[1][0]).toBe("https://api.anthropic.com/v1/messages");
   });
 

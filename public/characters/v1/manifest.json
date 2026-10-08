@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "note": "Character portraits for the Create Story cast picker (256x256 WebP, soft 3D clay style). AI-generated for KểCon.",
+  "license": "Generated for KểCon; owned by the KểCon project. No third-party artwork.",
+  "items": [
+    {
+      "id": "astronaut",
+      "file": "astronaut.webp",
+      "bytes": 7364,
+      "sha256": "207c6ba4f37b55bc2db4caa5554e097ccd09ae0697a3868c134e9f2ed666443a",
+      "label": "Phi hành gia Tí"
+    },
+    {
+      "id": "bunny",
+      "file": "bunny.webp",
+      "bytes": 6408,
+      "sha256": "4b3c56a77816989dbea84337a2b34f719f9c5f814f524f9b2e7474935d9945a8",
+      "label": "Thỏ Bông"
+    },
+    {
+      "id": "cuoi",
+      "file": "cuoi.webp",
+      "bytes": 7320,
+      "sha256": "ea48fbc4e961592658641a37c77e3620f5f02a517e679d7db9f9541b928a3e62",
+      "label": "Chú Cuội"
+    },
+    {
+      "id": "custom",
+      "file": "custom.webp",
+      "bytes": 5400,
+      "sha256": "a7e6f5995e256aafb570d74d202876aa210c12ca5bd968e0e7b2c7dc3c76527c",
+      "label": "Tự tạo nhân vật"
+    },
+    {
+      "id": "dragon",
+      "file": "dragon.webp",
+      "bytes": 6834,
+      "sha256": "56be3c21ca382af4cbd365f606750e61944da7422bb95130d3b3a1abdb71d354",
+      "label": "Rồng Xanh"
+    },
+    {
+      "id": "explorer",
+      "file": "explorer.webp",
+      "bytes": 7042,
+      "sha256": "0615a09252af96961aa435e09a4a106151b95116476a06fd1d110b7ccbee2cf6",
+      "label": "Nhà thám hiểm Bo"
+    },
+    {
+      "id": "fairy",
+      "file": "fairy.webp",
+      "bytes": 5504,
+      "sha256": "0ab8407212262d02c837be37ff43647c36d3c6356985f02e60e3cdf5cfa891fa",
+      "label": "Tiên Nhỏ"
+    },
+    {
+      "id": "hero",
+      "file": "hero.webp",
+      "bytes": 6584,
+      "sha256": "34ae2a2ce6b7b3e6d28dba4231eaeefcee5432c11e0592dc720e2acf33c281ed",
+      "label": "Siêu nhân Nhí"
+    },
+    {
+      "id": "princess",
+      "file": "princess.webp",
+      "bytes": 7034,
+      "sha256": "3896a3cdfc3055d7e0dd4bad98fbab67b924448d0665fa122ebe18edc9ac4f79",
+      "label": "Công chúa Mây"
+    },
+    {
+      "id": "robot",
+      "file": "robot.webp",
+      "bytes": 5634,
+      "sha256": "450bbf3f5489ef26ba9d686b9a478112dff760151b0f94f5bd81c968e656b32b",
+      "label": "Rô-bốt Bíp"
+    }
+  ]
+}

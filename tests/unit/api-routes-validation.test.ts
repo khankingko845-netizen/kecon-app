@@ -44,6 +44,7 @@ beforeEach(() => {
 
 const cases: Array<{ name: string; load: () => Promise<{ POST: (r: NextRequest) => Promise<Response> }>; bad: unknown }> = [
   { name: "story/generate", load: () => import("@/app/api/story/generate/route"), bad: { theme: "", age: 5, extraPrompt: "x".repeat(5000) } },
+  { name: "story/generate (v2 brief)", load: () => import("@/app/api/story/generate/route"), bad: { theme: "dongvat", age: "3-5", characters: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }], length: "huge" } },
   { name: "story/personalize", load: () => import("@/app/api/story/personalize/route"), bad: { storyId: "not-a-uuid", childName: "Bin" } },
   { name: "story/translate", load: () => import("@/app/api/story/translate/route"), bad: { storyId: "00000000-0000-4000-8000-000000000001", targetLanguage: "xx" } },
   { name: "story/vocabulary", load: () => import("@/app/api/story/vocabulary/route"), bad: {} },
@@ -52,6 +53,7 @@ const cases: Array<{ name: string; load: () => Promise<{ POST: (r: NextRequest) 
   { name: "story/scan", load: () => import("@/app/api/story/scan/route"), bad: { images: [] } },
   { name: "story/illustrate", load: () => import("@/app/api/story/illustrate/route"), bad: { prompt: "x", size: "9999x9999" } },
   { name: "story/illustrate-batch", load: () => import("@/app/api/story/illustrate-batch/route"), bad: { storyId: "00000000-0000-4000-8000-000000000001", style: "evil" } },
+  { name: "story/illustrate-page", load: () => import("@/app/api/story/illustrate-page/route"), bad: { storyId: "not-a-uuid", pageNumber: 0 } },
   { name: "voice/tts", load: () => import("@/app/api/voice/tts/route"), bad: { voiceId: "abc", text: "x".repeat(10_001) } },
   { name: "voice/ambient", load: () => import("@/app/api/voice/ambient/route"), bad: { categoryId: "rain", duration: 600 } },
   { name: "push/subscribe", load: () => import("@/app/api/push/subscribe/route"), bad: { endpoint: "http://insecure.example.com" } },
@@ -85,7 +87,7 @@ describe("story/generate: body hợp lệ đi qua guard rồi gọi provider qua
       k === "default_ai_provider" ? "gemini" : k === "default_ai_model" ? "gemini-2.0-flash" : ""
     );
     rpc.mockResolvedValue({ data: { allowed: true }, error: null });
-    fetchMock.mockResolvedValue(
+    fetchMock.mockImplementation(async () =>
       new Response(
         JSON.stringify({
           candidates: [{ content: { parts: [{ text: JSON.stringify({ title: "T", summary: "S", pages: [{ text: "a", sceneDescription: "b" }] }) }] } }],
@@ -97,10 +99,56 @@ describe("story/generate: body hợp lệ đi qua guard rồi gọi provider qua
     const { POST } = await import("@/app/api/story/generate/route");
     const res = await POST(post({ theme: "dongvat", age: "4-6", persist: false }));
     expect(res.status).toBe(200);
+    // Streamed: whitespace heartbeats, then one JSON document.
+    const raw = await res.text();
+    expect(raw.startsWith(" ")).toBe(true);
+    const json = JSON.parse(raw);
+    expect(json).toMatchObject({ title: "T", storyId: null, generatorVersion: 2 });
+    expect(res.headers.get("cache-control")).toContain("no-transform");
     expect(rpc).toHaveBeenCalledWith("consume_usage", { p_kind: "story", p_amount: 1, p_byo: false });
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).not.toContain("key=");
     expect((init?.headers as Record<string, string>)["x-goog-api-key"]).toBe("platform-key");
+  });
+});
+
+describe("story/generate v2: stream lỗi + thử lại khi truyện quá ngắn", () => {
+  it("provider lỗi sau khi stream bắt đầu → JSON { error } (HTTP 200), client phải đọc error", async () => {
+    const settings = await import("@/lib/server-settings");
+    vi.mocked(settings.getSystemSetting).mockImplementation(async (k: string) =>
+      k === "default_ai_provider" ? "gemini" : k === "default_ai_model" ? "gemini-2.0-flash" : ""
+    );
+    rpc.mockResolvedValue({ data: { allowed: true }, error: null });
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ error: { message: "quota exceeded" } }), { status: 429 }));
+    const { POST } = await import("@/app/api/story/generate/route");
+    const res = await POST(post({ theme: "dongvat", age: "4-6", persist: false }));
+    expect(res.status).toBe(200);
+    expect(JSON.parse(await res.text()).error).toContain("quota exceeded");
+  });
+
+  it("bản nháp quá ngắn → hỏi lại đúng một lần với phản hồi, giữ bản tốt hơn", async () => {
+    const settings = await import("@/lib/server-settings");
+    vi.mocked(settings.getSystemSetting).mockImplementation(async (k: string) =>
+      k === "default_ai_provider" ? "gemini" : k === "default_ai_model" ? "gemini-2.0-flash" : ""
+    );
+    rpc.mockResolvedValue({ data: { allowed: true }, error: null });
+    const line = "[narrator]" + "Thỏ Bông đi chơi trong rừng xanh. ".repeat(9) + "[/narrator]\n[character:Thỏ Bông]Vui quá đi thôi![/character]";
+    const long = { title: "Dài", summary: "S", pages: Array.from({ length: 8 }, () => ({ text: line, sceneDescription: "rừng" })) };
+    const short = { title: "Ngắn", summary: "S", pages: [{ text: "a", sceneDescription: "b" }] };
+    let call = 0;
+    fetchMock.mockImplementation(async () => {
+      const body = ++call === 1 ? short : long;
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(body) }] } }] }), { status: 200 });
+    });
+    const { POST } = await import("@/app/api/story/generate/route");
+    const res = await POST(post({ theme: "dongvat", age: "3-5", persist: false, characters: [{ name: "Thỏ Bông", role: "hero", presetId: "bunny" }] }));
+    const json = JSON.parse(await res.text());
+    expect(call).toBe(2);
+    expect(json.title).toBe("Dài");
+    expect(json.pages).toHaveLength(8);
+    const retryPrompt = JSON.stringify(JSON.parse(String(fetchMock.mock.calls[1][1]?.body)));
+    expect(retryPrompt).toContain("CHƯA ĐẠT");
+    expect(retryPrompt).toContain("Thỏ Bông");
   });
 });
 

@@ -32,13 +32,17 @@ export async function storyAudioKey(
   segments: ParsedSegment[],
   locale: string,
   model: string,
+  pace?: "calm" | "normal" | null,
 ): Promise<string> {
-  const payload = JSON.stringify({
-    version: 2,
-    locale,
-    model,
-    segments: segments.map((s) => [s.voiceId, s.text]),
-  });
+  // Legacy (unpaced) stories keep the exact v2 payload so saved audio still matches.
+  const payload = pace
+    ? JSON.stringify({ version: 3, locale, model, pace, segments: segments.map((s) => [s.voiceId, s.text]) })
+    : JSON.stringify({
+        version: 2,
+        locale,
+        model,
+        segments: segments.map((s) => [s.voiceId, s.text]),
+      });
   const hash = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(payload),

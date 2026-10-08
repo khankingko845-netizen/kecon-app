@@ -8,6 +8,7 @@ export function ambientForScene(
     forest: "forest",
     night: "night",
     ocean: "waves",
+    waves: "waves",
     rain: "rain",
     lullaby: "lullaby",
     underwater: "waves",

@@ -38,7 +38,11 @@ import { ambientForScene } from "@/lib/story-ambient";
 import SceneEffects from "@/components/ui/SceneEffects";
 import RatingStars from "@/components/ui/RatingStars";
 import ShareModal from "@/components/ui/ShareModal";
-import LyricsText from "@/components/ui/LyricsText";
+import StoryBook, { type BookPage } from "@/components/ui/StoryBook";
+import { sceneArtUrl, sceneForPage } from "@/lib/scene-library";
+import { playSfx, preloadSfx } from "@/lib/sfx-player";
+import { pageGap, segmentGap } from "@/lib/narration-pacing";
+import type { NarrationPace } from "@/lib/story-brief";
 import {
  effectForScene,
  asEffectType,
@@ -97,6 +101,16 @@ function formatClock(seconds: number): string {
  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 }
 
+/** Legacy stories have no theme: map the category to the wizard theme for scene art. */
+const CATEGORY_THEME: Record<string, string> = {
+ fairy_tale: "cotich",
+ folk: "cotich",
+ adventure: "phieuluu",
+ bedtime: "ngungon",
+ animal: "dongvat",
+ educational: "hocchoi",
+};
+
 const CATEGORY_LABEL: Record<string, string> = {
  fairy_tale: "Cổ tích",
  adventure: "Phiêu lưu",
@@ -114,7 +128,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const narrationEpochRef=useRef(0);
  // UI-08 night mode: bedtime palette, sleep timer, screen-off.
  const { isBedtime } = useTheme();
- const { cue, say } = useFeedback();
+ const { cue, say, prefs: feedbackPrefs } = useFeedback();
  // Sleep mode follows the 19:30–06:00 window (or the parent's choice); the pill overrides it for this story.
  const [sleepOverride, setSleepOverride] = useState<boolean | null>(null);
  const isNight = sleepOverride ?? isBedtime;
@@ -272,6 +286,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if (!active) return;
  setStory(s);
  setPages(p);
+ // Story Studio v2: voiced characters and the scene soundscape start on as the family chose.
+ setMultiVoice(Boolean(s?.cast_voices));
+ setAutoAmbient(Boolean(s?.auto_ambience));
  })
  .catch(() => {})
  .finally(() => active && setLoading(false));
@@ -320,16 +337,23 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  ? generatedStory?.pages[currentPage]?.text || ""
  : pages[currentPage]?.content || "";
 
- // Strip voice markup for display — show clean text
- const displayText = currentText
- .replace(/\[(narrator|character:[^\]]*)\]/g, "")
- .replace(/\[\/(narrator|character)\]/g, "")
- .trim();
 
- // Get illustration URL for the current page
- const currentIllustration = isGenerated
- ? null
- : pages[currentPage]?.illustration_url;
+ // Picture-book pages: the AI illustration when there is one, else bundled scene art.
+ const storyTheme = story?.theme || CATEGORY_THEME[story?.category ?? ""] || null;
+ const bookPages = useMemo<BookPage[]>(() => {
+  const strip = (t: string) => t.replace(/\[(narrator|character:[^\]]*)\]/g, "").replace(/\[\/(narrator|character)\]/g, "").trim();
+  if (isGenerated) {
+   return (generatedStory?.pages ?? []).map((g) => ({
+    text: strip(g.text || ""),
+    art: sceneArtUrl(sceneForPage({ sceneId: g.scene, sceneDescription: g.sceneDescription, illustration: g.illustration, text: g.text, theme: null })),
+   }));
+  }
+  return pages.map((p) => ({
+   text: strip(p.content || ""),
+   art: p.illustration_url || sceneArtUrl(sceneForPage({ sceneId: p.scene_id, sceneDescription: p.scene_description, illustration: p.illustration_prompt, text: p.content, theme: storyTheme })),
+  }));
+ }, [isGenerated, generatedStory, pages, storyTheme]);
+ const currentArt = bookPages[currentPage]?.art || "/images/night-bg.webp";
 
  // Resolve which ElevenLabs voice to use for TTS.
  // Explicit / remembered story choices first; automatic selection: family clones → ranked locale defaults.
@@ -358,8 +382,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  || "";
  const elevenVoiceId = resolvedVoiceId;
  const preview=useVoicePreview(storyLocale);
+ // Unpaced narration read sentences back-to-back; every story now gets real pauses (v2 stories carry their own pace).
+ const narrationPace: NarrationPace = story?.narration_pace ?? "normal";
  const effectiveModel=modelForLanguage(settings.elevenLabsApiKey ? settings.elevenLabsModelId || systemStatus.elevenLabsModel : systemStatus.elevenLabsModel || "eleven_multilingual_v2",storyLocale);
- const audioIdentity=JSON.stringify([resolvedVoiceId,storyLocale,effectiveModel,multiVoice,pages.map(p=>p.content),storyCharacters.map(c=>[c.name,c.voice_id])]);
+ const audioIdentity=JSON.stringify([resolvedVoiceId,storyLocale,effectiveModel,narrationPace,multiVoice,pages.map(p=>p.content),storyCharacters.map(c=>[c.name,c.voice_id])]);
  const stopNarration=useCallback(()=>{
  narrationEpochRef.current++;mergeAbortRef.current=true;audioJobsRef.current.clear();
  setPendingAutoPlay(false);setIsPlaying(false);setIsTTSLoading(false);setCurrentSpeaker(null);setAudioClock(null);
@@ -476,6 +502,75 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   }
  },[currentAutoAmbient,isPlaying,ambientOn,getEngine]);
 
+ // Page-turn sound (book feel) — not at bedtime or when the parent muted app sounds.
+ const lastTurnRef = useRef(currentPage);
+ useEffect(() => {
+  if (lastTurnRef.current === currentPage) return;
+  lastTurnRef.current = currentPage;
+  if (!isNightRef.current && feedbackPrefs.sound) playSfx("page-turn", 0.45);
+ }, [currentPage, feedbackPrefs.sound]);
+
+ // Story sound effects authored on the page (door knock, sparkle…), part of the scene soundscape.
+ const pageSfx = isGenerated ? [] : pages[currentPage]?.sfx_sounds ?? [];
+ const pageSfxKey = pageSfx.join(",");
+ useEffect(() => {
+  if (pageSfxKey) preloadSfx(pageSfxKey.split(","));
+ }, [pageSfxKey]);
+ useEffect(() => {
+  if (!autoAmbient || !isPlaying || !pageSfxKey) return;
+  const ids = pageSfxKey.split(",");
+  const volume = isNightRef.current ? 0.2 : 0.42;
+  // First effect soon after the page starts, a second one mid-page.
+  const timers = ids.slice(0, 2).map((id, i) => setTimeout(() => playSfx(id, volume), i === 0 ? 1800 : 9000));
+  return () => timers.forEach(clearTimeout);
+ }, [autoAmbient, isPlaying, currentPage, pageSfxKey]);
+
+ // v2 stories that asked for AI pictures: draw them page by page (current page first, 2 at a time).
+ const [drawingPages, setDrawingPages] = useState<Set<number>>(() => new Set());
+ const illustrationQueueRef = useRef<{ storyId: string; stopped: boolean; inFlight: Set<number> } | null>(null);
+ const wantsAiPictures = !isGenerated && Boolean(storyId && story?.illustration_style && story?.source === "ai")
+  && features.enabled("ai_illustrations") && Boolean(systemStatus.hasIllustrationProvider);
+ useEffect(() => {
+  if (!wantsAiPictures || !storyId) return;
+  if (illustrationQueueRef.current?.storyId !== storyId) illustrationQueueRef.current = { storyId, stopped: false, inFlight: new Set() };
+  const q = illustrationQueueRef.current;
+  if (q.stopped) return;
+  const missing = pages
+   .map((p, i) => ({ p, i }))
+   .filter(({ p, i }) => !p.illustration_url && !q.inFlight.has(i))
+   .sort((a, b) => ((a.i - currentPage + pages.length) % pages.length) - ((b.i - currentPage + pages.length) % pages.length));
+  const slots = Math.max(0, 2 - q.inFlight.size);
+  for (const { p, i } of missing.slice(0, slots)) {
+   q.inFlight.add(i);
+   setDrawingPages((prev) => new Set(prev).add(i));
+   fetch("/api/story/illustrate-page", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ storyId, pageNumber: p.page_number }),
+   })
+    .then(async (res) => {
+     const data = await res.json().catch(() => ({}));
+     if (!res.ok || !data.url) {
+      // Not configured / not the owner / out of quota: keep the scene art, stop asking.
+      q.stopped = true;
+      return;
+     }
+     setPages((prev) => prev.map((row) => (row.id === p.id ? { ...row, illustration_url: data.url } : row)));
+    })
+    .catch(() => {
+     q.stopped = true;
+    })
+    .finally(() => {
+     q.inFlight.delete(i);
+     setDrawingPages((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+     });
+    });
+  }
+ }, [wantsAiPictures, storyId, pages, currentPage, drawingPages.size]);
+
  // Every path (play, prefetch, merge) uses the same segments and audio identity.
  const generatePageAudio = useCallback(async (text:string,pageIdx:number):Promise<string>=>{
   const epoch=narrationEpochRef.current;
@@ -484,7 +579,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   if(!elevenVoiceId)throw new Error("Chưa có giọng khả dụng cho ngôn ngữ truyện. Bố mẹ cần thêm giọng phù hợp.");
   const segments=storyAudioSegments(text,elevenVoiceId,storyCharacters,multiVoice);
   if(!segments.length)throw new Error("Trang truyện chưa có nội dung để đọc.");
-  const key=await storyAudioKey(segments,storyLocale,effectiveModel);
+  const key=await storyAudioKey(segments,storyLocale,effectiveModel,narrationPace);
   if(epoch!==narrationEpochRef.current)throw new Error("Đã đổi giọng đọc.");
   const pageRow=pages[pageIdx];
   if(pageRow?.audio_url && pageRow.audio_key===key){playbackUrlsRef.current.set(pageIdx,pageRow.audio_url);return pageRow.audio_url;}
@@ -494,10 +589,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
     const blobs:Blob[]=[];
     for(const seg of segments){
      if(epoch!==narrationEpochRef.current || !narrationEnabledRef.current)throw new Error("Đã dừng giọng đọc.");
-     blobs.push(await ttsApi(seg.voiceId,seg.text,settings.elevenLabsApiKey||undefined,settings.elevenLabsApiKey ? effectiveModel : undefined,storyLocale));
+     blobs.push(await ttsApi(seg.voiceId,seg.text,settings.elevenLabsApiKey||undefined,settings.elevenLabsApiKey ? effectiveModel : undefined,storyLocale,narrationPace));
     }
     if(blobs.length===1)return blobs[0];
-    const merged=await mergeAudioBlobs(blobs);
+    const merged=await mergeAudioBlobs(blobs,undefined,{gap:segmentGap(narrationPace)});
     try{return await (await fetch(merged.blobUrl)).blob();}finally{URL.revokeObjectURL(merged.blobUrl);}
    })();
    audioJobsRef.current.set(key,job);
@@ -514,7 +609,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
    if(epoch===narrationEpochRef.current)setPages(prev=>prev.map(p=>p.id===pageRow.id?{...p,audio_url:remoteUrl,audio_key:key}:p));
   }).catch(()=>{audioSavesRef.current.delete(saveKey);});}
   return url;
- },[localeAllowed,storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,settings.elevenLabsApiKey,pages]);
+ },[localeAllowed,storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,narrationPace,settings.elevenLabsApiKey,pages]);
  const prefetchNextPage=useCallback((from:number)=>{
   const idx=from+1;const epoch=narrationEpochRef.current;
   if(idx>=totalPages || !hasElevenLabs || !narrationEnabledRef.current || prefetchCache.current.has(idx) || !pages[idx]?.content)return;
@@ -559,7 +654,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if (p.phase === "decoding") {
  setMergeProgress(`Xử lý ${p.current}/${p.total}`);
  }
- });
+ }, { gap: pageGap(narrationPace) });
 
  if (mergeAbortRef.current||epoch!==narrationEpochRef.current||!narrationEnabledRef.current) {
  URL.revokeObjectURL(result.blobUrl);
@@ -575,7 +670,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setMergeStatus("idle"); // allow retry
  setMergeProgress("");
  }
- }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages,generatePageAudio]);
+ }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages,generatePageAudio,narrationPace]);
 
  // Switch to merged audio playback
  const switchToMerged = useCallback(() => {
@@ -722,12 +817,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
  // Auto-play next page when audio ends and advances
+ // A breath between pages (the page flips meanwhile) instead of reading straight on.
  useEffect(() => {
- if (pendingAutoPlay && settings.narrationEnabled) {
+ if (!pendingAutoPlay || !settings.narrationEnabled) return;
+ const t = setTimeout(() => {
  setPendingAutoPlay(false);
  playWithTTS();
- }
- }, [pendingAutoPlay, currentPage, playWithTTS,settings.narrationEnabled]);
+ }, Math.round(pageGap(narrationPace) * 1000));
+ return () => clearTimeout(t);
+ }, [pendingAutoPlay, currentPage, playWithTTS,settings.narrationEnabled,narrationPace]);
 
  // Fake progress when there is no audio element (no API key configured).
  useEffect(() => {
@@ -1070,24 +1168,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  return (
  <div className="relative flex min-h-screen flex-col overflow-hidden bg-night text-moon" data-sfx={isNight ? "off" : undefined}>
- {/* Scene (board `.pbg` + `.pov`): the page illustration, else the night sky */}
+ {/* Backdrop: the current page picture, softly blurred behind the book */}
  <div aria-hidden className="absolute inset-0">
- {currentIllustration ? (
- // eslint-disable-next-line @next/next/no-img-element
+ {/* eslint-disable-next-line @next/next/no-img-element */}
  <img
- key={`art-${currentPage}`}
- src={currentIllustration}
+ key={`bg-${currentArt}`}
+ src={currentArt}
  alt=""
- className="fx-page-enter h-full w-full object-cover"
- style={{ filter: isNight ? "brightness(.62) saturate(.85)" : "brightness(.9)" }}
+ className="fx-page-enter h-full w-full scale-110 object-cover blur-2xl"
+ style={{ filter: isNight ? "brightness(.45) saturate(.8)" : "brightness(.7) saturate(1.05)" }}
  />
- ) : (
- <div
- className="h-full w-full bg-cover bg-center"
- style={{ backgroundImage: "url(/images/night-bg.webp)", filter: isNight ? "brightness(.8) saturate(.9)" : "brightness(1.05) saturate(1.05)" }}
- />
- )}
- <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,18,51,0.15)_0%,rgba(21,18,51,0.1)_38%,rgba(21,18,51,0.88)_62%,#151233_100%)]" />
+ <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,18,51,0.55)_0%,rgba(21,18,51,0.35)_30%,rgba(21,18,51,0.85)_70%,#151233_100%)]" />
  </div>
  <SceneEffects effect={activeEffect} active={isPlaying && !isNight} />
 
@@ -1112,24 +1203,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </button>
  </div>
 
- {/* Đóm (board `.sleepy` + `.zz`) — swipe area for pages */}
- <div className="relative z-10 min-h-[170px] flex-1" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
- {isNight && (
- <span aria-hidden className="absolute bottom-[136px] right-[30px] font-display text-[22px] font-bold text-amber/70">
- z z
- </span>
- )}
- <Mascot
- state={isNight ? "sleepy" : "story"}
- size={122}
- label={null}
- className={`absolute bottom-1 right-[26px] ${isNight ? "brightness-[.82]" : ""}`}
- />
- </div>
-
  <div className="relative z-10 px-[22px] pb-9">
  {/* Title + meta (board `.ptitle`) */}
- <h2 className="font-display text-[31px] font-bold leading-[1.1] text-moon">{title}</h2>
+ <h2 className="font-display text-[25px] font-bold leading-[1.15] text-moon">{title}</h2>
  <div className="relative mt-1 flex flex-wrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
  <button type="button" onClick={handleLike} aria-pressed={liked} aria-label={liked ? "Bỏ thích" : "Thích truyện"} className="-ml-1 flex h-9 w-8 items-center justify-center">
  <Heart size={16} weight="fill" className={liked ? "text-[#FF8FA3]" : "text-moon-2"} />
@@ -1186,6 +1262,39 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  )}
  </div>
 
+ {/* The book (board `.sleepy` + `.kar` → picture-book page); swipe to turn pages */}
+ <div className="relative mt-3">
+ <StoryBook
+ pages={bookPages}
+ index={currentPage}
+ isNight={isNight}
+ progress={progress}
+ isPlaying={isPlaying}
+ onTouchStart={onSwipeStart}
+ onTouchEnd={onSwipeEnd}
+ pictureOverlay={
+ <>
+ {drawingPages.has(currentPage) && (
+ <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-night/75 px-2.5 py-1 text-[12px] font-bold text-moon">
+ <GlowDots size={3} /> Đóm đang vẽ tranh…
+ </span>
+ )}
+ {isNight && (
+ <span aria-hidden className="absolute bottom-[78px] right-[22px] font-display text-[20px] font-bold text-amber/80">
+ z z
+ </span>
+ )}
+ <Mascot
+ state={isNight ? "sleepy" : "story"}
+ size={88}
+ label={null}
+ className={`absolute -bottom-1 right-2 ${isNight ? "brightness-[.82]" : ""}`}
+ />
+ </>
+ }
+ />
+ </div>
+
  <div className="mt-3"><NarrationToggle /></div>
  {(audioError||preview.error)&&<p role="alert" className="mt-2 text-[14px] text-red-200">{audioError||preview.error}</p>}
  {/* Status chips: continuous playback, scene effect, speaker */}
@@ -1229,14 +1338,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  </div>
  )}
-
- {/* Karaoke text (board `.kar`) */}
- <div
- key={`txt-${currentPage}`}
- className="fx-page-enter mt-4 max-h-[150px] overflow-y-auto rounded-[22px] border border-moon/[0.08] bg-[rgba(34,28,74,0.72)] px-[18px] py-4 text-[19px] font-bold leading-[1.6] text-[#CFC6E6] no-scrollbar"
- >
- {displayText ? <LyricsText text={displayText} progress={progress} isPlaying={isPlaying} /> : <span className="text-moon-2/60">…</span>}
- </div>
 
  {/* Progress (board `.prog` + `.times`) */}
  <div

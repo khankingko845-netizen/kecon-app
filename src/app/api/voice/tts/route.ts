@@ -6,6 +6,7 @@ import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { guardDisabledVoice } from "@/lib/voice-availability";
 import { z } from "zod";
 import { languageCode, modelId, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+import { NARRATION_PACES } from "@/lib/story-brief";
 
 const MAX_TTS_CHARS = 10_000;
 
@@ -16,6 +17,8 @@ const TtsBody = z.object({
   modelId,
   apiKey: optionalText(512),
   language: languageCode,
+  /** Story Studio v2: compile sentence/paragraph pauses for the provider (omitted = legacy unpaced). */
+  pace: z.enum(NARRATION_PACES).optional(),
 });
 
 import { synthesizeSpeech } from "@/lib/voice-synthesis";

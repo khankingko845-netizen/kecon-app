@@ -70,9 +70,12 @@ export async function fishTextToSpeech(
   text: string,
   opts: {
     model?: string;
+    /** Narration pace (Story Studio v2) → `prosody.speed`. */
+    speed?: number;
     fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>;
   } = {},
 ): Promise<Blob> {
+  const speed = opts.speed && opts.speed !== 1 ? Math.min(1.5, Math.max(0.5, opts.speed)) : undefined;
   const res = await fishFetch(
     "/v1/tts",
     apiKey,
@@ -89,6 +92,7 @@ export async function fishTextToSpeech(
         mp3_bitrate: 128,
         normalize: true,
         latency: "normal",
+        ...(speed ? { prosody: { speed, volume: 0 } } : {}),
       }),
     },
     "TTS lỗi",

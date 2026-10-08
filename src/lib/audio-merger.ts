@@ -89,7 +89,8 @@ export interface MergeProgress {
  */
 export async function mergeAudioBlobs(
   blobs: Blob[],
-  onProgress?: (p: MergeProgress) => void
+  onProgress?: (p: MergeProgress) => void,
+  options: { gap?: number } = {}
 ): Promise<MergeResult> {
   if (blobs.length === 0) {
     throw new Error("No audio blobs to merge");
@@ -119,7 +120,8 @@ export async function mergeAudioBlobs(
 
   const sampleRate = buffers[0].sampleRate;
   const numChannels = Math.max(...buffers.map((b) => b.numberOfChannels));
-  const gapSamples = Math.round(PAGE_GAP * sampleRate);
+  const gap = Number.isFinite(options.gap) ? Math.min(5, Math.max(0, options.gap!)) : PAGE_GAP;
+  const gapSamples = Math.round(gap * sampleRate);
 
   let totalSamples = 0;
   const pageMarkers: number[] = [];

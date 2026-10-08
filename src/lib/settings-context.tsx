@@ -42,6 +42,8 @@ export interface SystemStatus {
   defaultStoryModel: string;
   hasCustomUrl: boolean;
   elevenLabsModel: string;
+  /** An image provider (GPT Image / Gemini) is configured for AI page pictures. */
+  hasIllustrationProvider?: boolean;
 }
 
 const defaultSettings: AppSettings = {
@@ -67,6 +69,7 @@ const defaultSystemStatus: SystemStatus = {
   defaultStoryModel: "",
   hasCustomUrl: false,
   elevenLabsModel: "",
+  hasIllustrationProvider: false,
 };
 
 interface SettingsContextValue {
