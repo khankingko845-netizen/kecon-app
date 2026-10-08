@@ -1,4 +1,5 @@
 "use client";
+import { IssuedStoryLink } from "@/lib/story-links";
 
 import { requireHouseholdId } from "@/lib/household-query";
 
@@ -1259,81 +1260,19 @@ export async function deleteReview(reviewId: string): Promise<void> {
 // Story Sharing (Migration 005)
 // ============================================================
 export interface StoryShareRow {
-  id: string;
-  story_id: string;
-  user_id: string;
-  share_token: string;
-  is_active: boolean;
-  view_count: number;
-  expires_at: string | null;
-  created_at: string;
+  id: string; story_id: string; share_token: string;
+  is_active: boolean; view_count: number; expires_at: string;
 }
-
-export async function createShareLink(storyId: string): Promise<StoryShareRow> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
-
-  // Check for existing active share
-  const { data: existing } = await supabase
-    .from("story_shares")
-    .select("*")
-    .eq("story_id", storyId)
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (existing) return existing;
-
-  const { data, error } = await supabase
-    .from("story_shares")
-    .insert({ story_id: storyId, user_id: user.id })
-    .select("*")
-    .single();
-  if (error) throw error;
-
-  // Increment share count (best-effort)
-  try { await supabase.rpc("increment_play_count", { p_story_id: storyId }); } catch {}
-  await logBehavior("share", storyId);
-
-  return data;
+export async function createShareLink(storyId: string, hours: 24 | 72 | 168 = 168): Promise<StoryShareRow> {
+  const res = await fetch("/api/share/links", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({storyId,hours})});
+  const data = await res.json();
+  if (!res.ok) throw new Error(res.status===403 ? "Chỉ chia sẻ được truyện nền tảng công khai; truyện riêng chưa được mở chia sẻ." : res.status===429 ? "Đã đạt giới hạn link. Hãy thu hồi link cũ hoặc thử lại sau." : "Chưa tạo được link. Hãy thử lại sau.");
+  return IssuedStoryLink.parse(data);
 }
-
-export async function getShareByToken(token: string): Promise<{
-  share: StoryShareRow;
-  story: StoryRow;
-  pages: StoryPageRow[];
-} | null> {
-  const supabase = createClient();
-  const { data: share } = await supabase
-    .from("story_shares")
-    .select("*")
-    .eq("share_token", token)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (!share) return null;
-
-  // Check expiry
-  if (share.expires_at && new Date(share.expires_at) < new Date()) return null;
-
-  const [story, pages] = await Promise.all([
-    getStory(share.story_id),
-    getStoryPages(share.story_id),
-  ]);
-  if (!story) return null;
-
-  // Increment view count
-  await supabase
-    .from("story_shares")
-    .update({ view_count: (share.view_count || 0) + 1 })
-    .eq("id", share.id);
-
-  return { share, story, pages };
-}
-
 export async function deactivateShare(shareId: string): Promise<void> {
-  const supabase = createClient();
-  await supabase.from("story_shares").update({ is_active: false }).eq("id", shareId);
+  const res = await fetch("/api/share/links", {method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:shareId})});
+  const data = await res.json();
+  if (!res.ok || data?.revoked!==true) throw new Error("Chưa thu hồi được link. Hãy thử lại.");
 }
 
 // ============================================================
