@@ -245,3 +245,60 @@ describe("story audio identity", () => {
     expect(new Set([legacy, calm, normal]).size).toBe(3);
   });
 });
+
+describe("writer v2: expansion pass + sound fallback", () => {
+  const target = { provider: "openai" as const, apiKey: "k", model: "gpt-4o-mini" };
+  const brief = { theme: "phieuluu", childName: "", age: "6-8", language: "vi", length: "medium" as const, characters: [{ name: "Mèo Mướp", description: "chú mèo", role: "hero" as const, appearance: undefined }] };
+  const shortPage = (i: number) => `[narrator]Trang ${i}: Mèo Mướp đi vào rừng xanh.[/narrator]\n[character:Mèo Mướp]Đi thôi![/character]`;
+  const longPage = (i: number) =>
+    `[narrator]Trang ${i}: ` + "Mèo Mướp bước chậm qua khu rừng xanh mát, nghe chim hót líu lo trên cành cao. ".repeat(6) + `[/narrator]\n[character:Mèo Mướp]Rừng hôm nay đẹp quá![/character]`;
+  const reply = (body: unknown) =>
+    new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(body) } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
+
+  it("short pages are rewritten in parallel chunks; structure kept, no full rewrite", async () => {
+    const { generateStoryWithUsage } = await import("@/lib/story-ai");
+    const prompts: string[] = [];
+    const fetchImpl = async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      const prompt = body.messages.map((m: { content: string }) => m.content).join("\n");
+      prompts.push(prompt);
+      if (prompts.length === 1)
+        return reply({ title: "Mèo Mướp", summary: "S", characters: [{ name: "Mèo Mướp", description: "chú mèo" }], pages: Array.from({ length: 10 }, (_, i) => ({ text: shortPage(i + 1), sceneDescription: "rừng", scene: "forest" })) });
+      const pages = [...prompt.matchAll(/các trang ([\d, ]+) đang QUÁ NGẮN/g)][0][1].split(",").map((n: string) => Number(n.trim()));
+      return reply({ pages: pages.map((n: number) => ({ page: n, text: longPage(n) })) });
+    };
+    const out = await generateStoryWithUsage(target, brief, fetchImpl as never, { qualityRetry: true, budgetMs: 200_000 });
+    expect(prompts).toHaveLength(1 + 4); // draft + ceil(10 / 3) expansion chunks
+    expect(prompts.slice(1).every((p) => !p.includes("CHƯA ĐẠT"))).toBe(true);
+    expect(out.story.pages).toHaveLength(10);
+    expect(out.story.pages.every((p, i) => p.text.startsWith(`[narrator]Trang ${i + 1}:`))).toBe(true);
+    expect(out.assessment.shortPages).toEqual([]);
+    expect(out.assessment.ok).toBe(true);
+    expect(out.attempts).toBe(2);
+    expect(out.story.pages[0].scene).toBe("forest");
+  });
+
+  it("a failed or non-longer expansion keeps the original page", async () => {
+    const { expandShortPages } = await import("@/lib/story-ai");
+    const story = { title: "t", summary: "", pages: [1, 2, 3, 4].map((i) => ({ text: shortPage(i), sceneDescription: "" })) };
+    let call = 0;
+    const fetchImpl = async () => (++call === 1 ? reply({ pages: [{ page: 1, text: "[narrator]Ngắn.[/narrator]" }, { page: 2, text: longPage(2) }, { page: 9, text: longPage(9) }] }) : new Response("{}", { status: 500 }));
+    const { story: out, expanded } = await expandShortPages(target, story, brief, pagePlan("6-8"), [0, 1, 2, 3], 10_000, fetchImpl as never);
+    expect(expanded).toBe(1);
+    expect(out.pages[1].text).toContain("líu lo");
+    expect(out.pages[0].text).toBe(story.pages[0].text);
+    expect(out.pages[3].text).toBe(story.pages[3].text);
+  });
+
+  it("pages that describe a sound get a matching effect; writer choices win", async () => {
+    const { inferSfx, withInferredSfx } = await import("@/lib/story-ai");
+    expect(inferSfx("[narrator]Cốc cốc! Có tiếng gõ cửa.[/narrator]")).toEqual(["door-knock"]);
+    expect(inferSfx("[narrator]Cô tiên vẫy đũa thần, phép màu lấp lánh.[/narrator]")).toEqual(["magic-sparkle"]);
+    expect(inferSfx("[narrator]Bé ngủ ngon.[/narrator]")).toEqual([]);
+    const story = withInferredSfx({ title: "t", summary: "", pages: [
+      { text: "[narrator]Leng keng, tiếng chuông reo.[/narrator]", sceneDescription: "", sfx: ["coins"] },
+      { text: "[narrator]Leng keng, tiếng chuông reo.[/narrator]", sceneDescription: "" },
+    ] });
+    expect(story.pages.map((p) => p.sfx)).toEqual([["coins"], ["bell"]]);
+  });
+});
