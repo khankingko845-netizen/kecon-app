@@ -1,9 +1,10 @@
 "use client";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { Screen, TabId } from "@/lib/types";
+import { backScreenHistory, tabScreenHistory, type ScreenState } from "@/lib/screen-navigation";
 import { useAuth } from "@/lib/auth-context";
 import TabBar from "@/components/ui/TabBar";
 import { KidLoading } from "@/components/ui/states";
@@ -67,11 +68,6 @@ function prefetchScreens() {
  for (const load of loaders) void load().catch(() => {});
 }
 
-interface ScreenState {
- screen: Screen;
- data?: Record<string, string>;
-}
-
 const tabScreenMap: Record<TabId, Screen> = {
  home: "home",
  library: "library",
@@ -108,8 +104,10 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  rawCurrent.screen === "login" ||
  rawCurrent.screen === "signup";
  // Authenticated users should never see auth screens (e.g. on reload).
- const current: ScreenState =
- !loading && user && onAuthScreen ? { screen: "home" } : rawCurrent;
+ const current = useMemo<ScreenState>(
+ () => (!loading && user && onAuthScreen ? { screen: "home" } : rawCurrent),
+ [loading, user, onAuthScreen, rawCurrent],
+ );
  // T19 / UI-10: parent area (tab "Bố mẹ" + everything under it) opens only
  // through the parent gate; kid screens lock on daily limit / bedtime.
  const inParentArea = isParentArea(current.screen);
@@ -155,15 +153,15 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  );
 
  const goBack = useCallback(() => {
- setHistory((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+ setHistory(backScreenHistory);
  }, [setHistory]);
 
  const handleTabChange = useCallback((tab: TabId) => {
  const screen = tabScreenMap[tab];
  // Leaving the parent area through a kid tab closes the gate again.
  if (!isParentArea(screen)) lockParent();
- setHistory([{ screen }]);
- }, [lockParent, setHistory]);
+ setHistory(tabScreenHistory(current, screen));
+ }, [current, lockParent, setHistory]);
 
  const leaveGate = useCallback(() => {
  lockParent();
