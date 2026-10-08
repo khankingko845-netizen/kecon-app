@@ -341,6 +341,7 @@ export async function textToSpeech(
   languageCode?: string,
   emotion?: EmotionType,
   fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = fetch,
+  options: { speed?: number } = {},
 ): Promise<Blob> {
   // Map short codes to ElevenLabs language_code format
   const langCodeMap: Record<string, string> = {
@@ -366,10 +367,12 @@ export async function textToSpeech(
   // Strip emotion tags from text before sending to TTS
   const cleanText = stripEmotionTags(text);
 
+  // Narration pace (Story Studio v2): ElevenLabs accepts speed 0.7–1.2.
+  const speed = options.speed && options.speed !== 1 ? Math.min(1.2, Math.max(0.7, options.speed)) : undefined;
   const body: Record<string, unknown> = {
     text: cleanText,
     model_id: modelForLanguage(modelId, resolvedLang),
-    voice_settings: emotionSettings,
+    voice_settings: speed ? { ...emotionSettings, speed } : emotionSettings,
   };
 
   // language_code is only supported by turbo v2.5, flash v2.5, and v3+ models.

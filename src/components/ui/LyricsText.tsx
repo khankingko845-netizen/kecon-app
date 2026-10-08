@@ -6,13 +6,15 @@ interface LyricsTextProps {
  text: string;
  progress: number; // 0-100
  isPlaying: boolean;
+ /** Classes for the word being read (default: amber on the night card). */
+ currentClassName?: string;
 }
 
 /**
  * Lyrics-style text with word-by-word highlight based on audio progress.
  * Estimates word timing from progress % (no word-level timestamps needed).
  */
-export default function LyricsText({ text, progress, isPlaying }: LyricsTextProps) {
+export default function LyricsText({ text, progress, isPlaying, currentClassName = "rounded-md bg-amber/[0.14] px-[3px] text-amber" }: LyricsTextProps) {
  const words = useMemo(() => {
  // Split into words preserving punctuation
  return text.split(/(\s+)/).filter(Boolean);
@@ -41,7 +43,7 @@ export default function LyricsText({ text, progress, isPlaying }: LyricsTextProp
  key={i}
  className={`transition-colors duration-300 ${
  isCurrent
- ? "rounded-md bg-amber/[0.14] px-[3px] text-amber"
+ ? currentClassName
  : isPast
  ? "opacity-55"
  : ""

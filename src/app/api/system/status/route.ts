@@ -5,10 +5,11 @@
  */
 import { getSystemSetting } from "@/lib/server-settings";
 import { voiceKeyPool } from "@/lib/key-pool";
+import { resolveIllustrationTarget } from "@/lib/illustration";
 
 export async function GET() {
   try {
-    const [hasElevenLabs, hasFishAudio, storyKey, geminiKey, anthropicKey, customKey, customUrl, elevenModel, defaultModel] =
+    const [hasElevenLabs, hasFishAudio, storyKey, geminiKey, anthropicKey, customKey, customUrl, elevenModel, defaultModel, illustration] =
       await Promise.all([
         // A-04b: voice keys live in the rotating pool (+ env fallback).
         voiceKeyPool.configured("elevenlabs"),
@@ -20,6 +21,7 @@ export async function GET() {
         getSystemSetting("custom_provider_url"),
         getSystemSetting("elevenlabs_model_id"),
         getSystemSetting("default_ai_model"),
+        resolveIllustrationTarget().catch(() => null),
       ]);
 
     // Determine if at least one story AI provider is configured
@@ -39,6 +41,7 @@ export async function GET() {
       defaultStoryModel: defaultModel || "",
       hasCustomUrl: Boolean(customUrl),
       elevenLabsModel: elevenModel || "",
+      hasIllustrationProvider: Boolean(illustration),
     });
   } catch {
     return Response.json({
@@ -49,6 +52,7 @@ export async function GET() {
       defaultStoryModel: "",
       hasCustomUrl: false,
       elevenLabsModel: "",
+      hasIllustrationProvider: false,
     });
   }
 }

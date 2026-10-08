@@ -65,15 +65,17 @@ describe("prompt tạo truyện theo nhóm tuổi", () => {
     return body.messages.map((m: { content: string }) => m.content).join("\n");
   }
 
-  it("3–5 tuổi: truyện ngắn 6–8 trang, câu ngắn", async () => {
+  it("3–5 tuổi: 8 trang (độ dài Vừa), câu ngắn", async () => {
     const prompt = await promptFor("3-5");
-    expect(prompt).toContain("Phong cách theo độ tuổi (3–5 tuổi)");
-    expect(prompt).toContain("(6-8 trang)");
+    expect(prompt).toContain("cho trẻ 3–5 tuổi");
+    expect(prompt).toContain("ĐÚNG 8 trang");
+    expect(prompt).toContain("Mỗi trang 55–75 chữ");
   });
 
   it("9–12 tuổi: truyện dài hơn", async () => {
     const prompt = await promptFor("10+");
-    expect(prompt).toContain("(9–12 tuổi)");
-    expect(prompt).toContain("(10-12 trang)");
+    expect(prompt).toContain("9–12 tuổi");
+    expect(prompt).toContain("ĐÚNG 12 trang");
+    expect(prompt).toContain("Mỗi trang 100–125 chữ");
   });
 });

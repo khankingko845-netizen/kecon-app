@@ -58,6 +58,13 @@ export interface StoryRow {
   narrator_voice_name: string | null;
   last_voice_id: string | null;
   last_voice_name: string | null;
+  /** Story Studio v2 (migration 033); absent/NULL on legacy stories. */
+  generator_version?: number | null;
+  story_length?: "short" | "medium" | "long" | null;
+  narration_pace?: "calm" | "normal" | null;
+  cast_voices?: boolean | null;
+  auto_ambience?: boolean | null;
+  illustration_style?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +79,11 @@ export interface StoryCharacterRow {
   emoji: string | null;
   description: string | null;
   sort_order: number;
+  /** v2 (migration 033) */
+  role?: "hero" | "friend" | null;
+  voice_type?: string | null;
+  appearance?: string | null;
+  preset_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -144,6 +156,10 @@ export interface StoryPageRow {
   sfx_sounds: string[];
   choices: PageChoice[];
   voice_segments: VoiceSegment[] | null;
+  /** v2: bundled scene art id, writer's English picture prompt, page mood. */
+  scene_id?: string | null;
+  illustration_prompt?: string | null;
+  mood?: string | null;
 }
 
 export interface VoiceSegment {

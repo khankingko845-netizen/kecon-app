@@ -34,12 +34,13 @@ export async function ttsApi(
   text: string,
   apiKey?: string,
   modelId?: string,
-  language?: string
+  language?: string,
+  pace?: "calm" | "normal"
 ): Promise<Blob> {
   const res = await fetch("/api/voice/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voiceId, text, modelId, apiKey, language }),
+    body: JSON.stringify({ voiceId, text, modelId, apiKey, language, ...(pace ? { pace } : {}) }),
   });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
@@ -62,8 +63,19 @@ export async function listVoicesApi(
 export interface GeneratedStory {
   title: string;
   summary: string;
-  pages: { text: string; sceneDescription: string }[];
+  pages: { text: string; sceneDescription: string; scene?: string | null; illustration?: string }[];
   storyId: string | null;
+  generatorVersion?: number;
+}
+
+export interface StoryBriefCharacterInput {
+  name: string;
+  description?: string;
+  role?: "hero" | "friend";
+  presetId?: string;
+  isChild?: boolean;
+  voiceType?: "girl" | "boy" | "woman" | "man" | "grandma" | "grandpa" | "creature";
+  appearance?: string;
 }
 
 export async function illustrateApi(
@@ -94,13 +106,28 @@ export async function generateStoryApi(input: {
   apiKey?: string;
   baseUrl?: string;
   persist?: boolean;
-}): Promise<GeneratedStory> {
+  characters?: StoryBriefCharacterInput[];
+  length?: "short" | "medium" | "long";
+  pace?: "calm" | "normal";
+  castVoices?: boolean;
+  illustrate?: boolean;
+  ambience?: boolean;
+}, init: { signal?: AbortSignal } = {}): Promise<GeneratedStory> {
   const res = await fetch("/api/story/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
+    signal: init.signal,
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || "Tạo truyện thất bại");
+  // The route streams whitespace heartbeats before one JSON document; errors
+  // that happen after streaming started arrive as `{ error }` with HTTP 200.
+  const raw = await res.text();
+  let json: (GeneratedStory & { error?: string }) | null = null;
+  try {
+    json = raw.trim() ? JSON.parse(raw) : null;
+  } catch {
+    json = null;
+  }
+  if (!res.ok || !json || json.error) throw new Error(json?.error || "Tạo truyện thất bại");
   return json;
 }

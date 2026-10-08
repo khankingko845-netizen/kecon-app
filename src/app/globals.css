@@ -464,3 +464,47 @@ html:not([data-density="high"]) [data-kid-extra] { display: none !important; }
 .night [data-admin-shell] .text-red-800 {color:#991B1B;}
 
 [data-admin-shell] .voice-preview-button {color:var(--color-brand-ink);background:var(--color-brand-soft);}
+
+/* ── Story book reader (StoryBook): paper page + 3D page flip ── */
+.kc-book { perspective: 1800px; }
+.kc-paper {
+  background: #FBF3E2;
+  color: #2B2350;
+  box-shadow: 0 18px 40px rgba(10, 8, 30, 0.45), inset 10px 0 18px -12px rgba(90, 60, 20, 0.35);
+}
+.kc-paper .kc-page-number { color: #6B5A3A; }
+.kc-paper-night {
+  background: #262046;
+  color: #E6DCC3;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5), inset 10px 0 18px -12px rgba(0, 0, 0, 0.6);
+}
+.kc-paper-night .kc-page-number { color: #B5AACF; }
+.kc-flip { transform-style: preserve-3d; will-change: transform; }
+.kc-face-front, .kc-face-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.kc-face-back { transform: rotateY(180deg); }
+.kc-flip-forward { transform-origin: left center; animation: kc-flip-forward 0.75s cubic-bezier(0.45, 0.05, 0.35, 1) forwards; }
+.kc-flip-back { transform-origin: right center; animation: kc-flip-back 0.75s cubic-bezier(0.45, 0.05, 0.35, 1) forwards; }
+.kc-flip-shade {
+  position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.28) 100%);
+  animation: kc-flip-shade 0.75s ease-in forwards;
+}
+.kc-flip-back .kc-flip-shade { background: linear-gradient(270deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.28) 100%); }
+@keyframes kc-flip-forward {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(-180deg); }
+}
+@keyframes kc-flip-back {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(180deg); }
+}
+@keyframes kc-flip-shade {
+  0% { opacity: 0; }
+  60% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kc-flip-forward, .kc-flip-back { transform-origin: center; animation: kc-fade-out 0.25s ease-out forwards; }
+  .kc-flip-shade, .kc-face-back { display: none; }
+}
+@keyframes kc-fade-out { from { opacity: 1; } to { opacity: 0; } }

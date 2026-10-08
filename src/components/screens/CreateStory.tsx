@@ -2,9 +2,9 @@
 import { useToast } from "@/components/ui/Toast";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
- Sparkles, AlertCircle, ArrowRight, ChevronRight, PenLine, Camera, Check,
+ Sparkles, AlertCircle, ArrowRight, ChevronRight, PenLine, Camera, Check, X,
 } from "@/components/ui/icons";
 import { GlowDots, KidLoading } from "@/components/ui/states";
 import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
@@ -23,6 +23,13 @@ import { rankedDefaultsForLocale, resolveNarratorChoice, type NarratorChoice } f
 import { DOM_LINES } from "@/lib/dom-lines";
 import { useFeedback } from "@/lib/feedback-context";
 import type { Screen } from "@/lib/types";
+import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
+import { CHARACTER_PRESETS, CHARACTER_TRAITS, VOICE_TYPE_LABEL, characterArtUrl } from "@/lib/story-characters";
+import {
+ LENGTH_LABEL, MAX_BRIEF_CHARACTERS, PACE_LABEL, STORY_LENGTHS, VOICE_TYPES, defaultPace, estimatedMinutes, pagePlan,
+ type NarrationPace, type StoryLength, type VoiceType,
+} from "@/lib/story-brief";
+import type { StoryBriefCharacterInput } from "@/lib/api-client";
 
 interface DefaultVoice {
  id: string;
@@ -47,15 +54,67 @@ interface CreateStoryProps {
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
 
-/** Step 2 — main character (concept board screen 4). */
-const CHARACTERS: { id: string; label: string; icon: Icon3DName }[] = [
- { id: "thu-rung", label: "Bạn thú rừng", icon: "paw" },
- { id: "phi-hanh-gia", label: "Phi hành gia", icon: "rocket" },
- { id: "cong-chua", label: "Công chúa", icon: "castle" },
- { id: "chu-cuoi", label: "Chú Cuội", icon: "lantern" },
- { id: "co-tien", label: "Cô tiên nhỏ", icon: "wand" },
- { id: "hai-tac", label: "Bạn tìm kho báu", icon: "chest" },
-];
+/** Step 2 — cast member (preset card, custom character or the child). */
+interface CastMember {
+ key: string;
+ name: string;
+ description: string;
+ presetId?: string;
+ voiceType?: VoiceType;
+ appearance?: string;
+ isChild?: boolean;
+}
+
+const PACE_SUB: Record<NarrationPace, string> = {
+ calm: "Ngắt nghỉ dài, êm như lời ru",
+ normal: "Tự nhiên, sinh động",
+};
+
+/** Accessible on/off row (role="switch"). */
+function SwitchRow({ checked, onChange, label, sub }: { checked: boolean; onChange: (v: boolean) => void; label: string; sub: string }) {
+ return (
+ <button
+ type="button"
+ role="switch"
+ aria-checked={checked}
+ onClick={() => onChange(!checked)}
+ className={`mt-3 flex min-h-14 w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3 text-left text-ink ${CARD_SHADOW} focus-visible:outline-2 focus-visible:outline-brand`}
+ >
+ <span className="flex-1">
+ <b className="block text-[15px] font-black">{label}</b>
+ <span className="block text-[13px] font-bold text-ink-2">{sub}</span>
+ </span>
+ <span aria-hidden className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 ${checked ? "justify-end bg-brand" : "justify-start bg-gray-500"}`}>
+ <span className="h-5 w-5 rounded-full bg-[#F7EFD8]" />
+ </span>
+ </button>
+ );
+}
+
+/** Character card with its own portrait (not the theme tile). */
+function CharacterCard({ selected, role, onClick, img, name, kind }: { selected: boolean; role?: "hero" | "friend"; onClick: () => void; img: string; name: string; kind: string }) {
+ return (
+ <button
+ type="button"
+ onClick={onClick}
+ aria-pressed={selected}
+ data-say={name}
+ className={`relative w-full rounded-[22px] border-[3px] px-1.5 pb-2.5 pt-2 text-center transition-colors active:scale-[0.98] ${CARD_SHADOW} ${
+ selected ? "border-brand bg-[#F5F3FF]" : "border-transparent bg-white"
+ }`}
+ >
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ <img src={img} alt="" width={84} height={84} className="mx-auto block h-[84px] w-[84px] rounded-[18px] object-cover" draggable={false} />
+ <b className="mt-1 block text-[14px] font-black leading-tight text-ink">{name}</b>
+ <small className="block text-[11.5px] font-bold leading-tight text-ink-2">{selected && role ? (role === "hero" ? "Nhân vật chính" : "Bạn đồng hành") : kind}</small>
+ {selected && (
+ <span aria-hidden className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-white">
+ <Check size={14} weight="bold" />
+ </span>
+ )}
+ </button>
+ );
+}
 
 const STEPS: { ask: string; mascot: MascotState }[] = [
  { ask: "Tối nay bé muốn nghe truyện gì nào?", mascot: "hello" },
@@ -104,6 +163,30 @@ const THEME_ICON3D: Record<string, Icon3DName> = {
 };
 
 
+/** After a network drop, look for the story the server finished meanwhile (own stories only via RLS). */
+async function findStoryCreatedSince(startedAt: number): Promise<string | null> {
+ try {
+ const supabase = createBrowserSupabase();
+ const { data: auth } = await supabase.auth.getUser();
+ if (!auth.user) return null;
+ for (let i = 0; i < 12; i++) {
+ const { data } = await supabase
+ .from("stories")
+ .select("id, created_at")
+ .eq("user_id", auth.user.id)
+ .eq("source", "ai")
+ .gte("created_at", new Date(startedAt - 5000).toISOString())
+ .order("created_at", { ascending: false })
+ .limit(1);
+ if (data?.[0]?.id) return data[0].id as string;
+ await new Promise((r) => setTimeout(r, 10_000));
+ }
+ } catch {
+ /* fall through */
+ }
+ return null;
+}
+
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const features = useFeatureFlags();
  const { settings, systemStatus } = useSettings();
@@ -117,7 +200,18 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [error, setError] = useState<string | null>(null);
  const { toast } = useToast();
  const [step, setStep] = useState(0);
- const [character, setCharacter] = useState<string | null>(null);
+ const [cast, setCast] = useState<CastMember[]>([]);
+ const [customOpen, setCustomOpen] = useState(false);
+ const [customName, setCustomName] = useState("");
+ const [customKind, setCustomKind] = useState("");
+ const [customTraits, setCustomTraits] = useState<string[]>([]);
+ const [customVoice, setCustomVoice] = useState<VoiceType | undefined>(undefined);
+ const [storyLength, setStoryLength] = useState<StoryLength>("medium");
+ const [paceChoice, setPaceChoice] = useState<NarrationPace | null>(null);
+ const [castVoicesOn, setCastVoicesOn] = useState(true);
+ const [ambienceOn, setAmbienceOn] = useState(true);
+ const [illustrateOn, setIllustrateOn] = useState(true);
+ const castSeq = useRef(0);
  const [genProgress, setGenProgress] = useState(0);
  const { cue, say } = useFeedback();
 
@@ -148,9 +242,60 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const { hasStoryProvider } = useSettings();
  const hasStoryKey=hasStoryProvider;
 
- const characterLabel = CHARACTERS.find((c) => c.id === character)?.label;
+ const pace: NarrationPace = paceChoice ?? defaultPace(selectedAge, selectedTheme);
+ const canIllustrate = features.enabled("ai_illustrations") && Boolean(systemStatus.hasIllustrationProvider);
+ const childInCast = cast.some((c) => c.isChild);
+ const castFull = cast.length >= MAX_BRIEF_CHARACTERS;
+ const castName = (c: CastMember) => (c.isChild ? childName.trim() || "Bé" : c.name.trim());
+
+ const toggleCast = (member: CastMember) => {
+ setCast((prev) => {
+ if (prev.some((c) => c.key === member.key)) return prev.filter((c) => c.key !== member.key);
+ if (prev.length >= MAX_BRIEF_CHARACTERS) {
+ toast("info", `Tối đa ${MAX_BRIEF_CHARACTERS} nhân vật cho một truyện nhé.`);
+ return prev;
+ }
+ return member.isChild ? [member, ...prev] : [...prev, member];
+ });
+ };
+ const togglePreset = (id: string) => {
+ const p = CHARACTER_PRESETS.find((x) => x.id === id);
+ if (!p) return;
+ toggleCast({ key: `preset:${p.id}`, name: p.name, description: p.description, presetId: p.id, voiceType: p.voiceType, appearance: p.appearance });
+ };
+ const addCustom = () => {
+ const name = customName.trim();
+ if (!name) return;
+ const description = [customKind.trim(), customTraits.length ? `tính cách ${customTraits.join(", ")}` : ""].filter(Boolean).join(", ");
+ castSeq.current += 1;
+ toggleCast({ key: `custom:${castSeq.current}`, name, description, voiceType: customVoice });
+ setCustomName("");
+ setCustomKind("");
+ setCustomTraits([]);
+ setCustomVoice(undefined);
+ setCustomOpen(false);
+ };
+ const makeHero = (key: string) =>
+ setCast((prev) => {
+ const m = prev.find((c) => c.key === key);
+ return m ? [m, ...prev.filter((c) => c.key !== key)] : prev;
+ });
+ const updateMember = (key: string, patch: Partial<CastMember>) =>
+ setCast((prev) => prev.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+ const briefCharacters: StoryBriefCharacterInput[] = cast
+ .map((c, i) => ({
+ name: castName(c),
+ description: c.isChild ? "" : c.description,
+ role: (i === 0 ? "hero" : "friend") as "hero" | "friend",
+ ...(c.presetId ? { presetId: c.presetId } : {}),
+ ...(c.isChild ? { isChild: true } : {}),
+ ...(c.voiceType ? { voiceType: c.voiceType } : {}),
+ ...(c.appearance ? { appearance: c.appearance } : {}),
+ }))
+ .filter((c) => c.name);
+ const plan = pagePlan(selectedAge, storyLength);
+
  const composedPrompt = [
- characterLabel ? `Nhân vật chính: ${characterLabel}` : null,
  speech.transcript ? `Bé kể: ${speech.transcript}` : null,
  extraPrompt || null,
  ]
@@ -160,7 +305,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  // Fake-but-honest progress while the story is written (caps at 92% until done).
  useEffect(() => {
  if (!isGenerating) return;
- const t = setInterval(() => setGenProgress((p) => (p >= 92 ? p : p + Math.max(1, (92 - p) / 12))), 600);
+ // Long stories take 1–3 minutes: creep slowly so the bar never looks stuck at the end.
+ const t = setInterval(() => setGenProgress((p) => (p >= 94 ? p : p + Math.max(0.3, (94 - p) / 45))), 1000);
  return () => clearInterval(t);
  }, [isGenerating]);
 
@@ -171,8 +317,9 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  }
 
  setIsGenerating(true);
- setGenProgress(6);
+ setGenProgress(4);
  setError(null);
+ const startedAt = Date.now();
  // UI-11: Đóm báo đang nghĩ truyện (màn chờ đã có Đóm → chỉ giọng nói).
  say("thinking", { bubble: false });
 
@@ -197,7 +344,20 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  ? defaultVoices.find((v) => v.voice_id === narratorVoiceId)?.name
  : undefined,
  persist: true,
+ characters: briefCharacters,
+ length: storyLength,
+ pace,
+ castVoices: castVoicesOn,
+ illustrate: canIllustrate && illustrateOn,
+ ambience: ambienceOn,
+ }).catch(async (err) => {
+ // A dropped connection does not stop the server: the story may already be saved.
+ if (!(err instanceof TypeError)) throw err;
+ const recovered = await findStoryCreatedSince(startedAt);
+ if (!recovered) throw new Error("Mất kết nối khi Đóm đang viết. Thử lại hoặc mở Thư viện để xem truyện đã xong chưa.");
+ return { title: "", summary: "", pages: [], storyId: recovered };
  });
+ setGenProgress(100);
 
  await refreshStories();
  toast("success", "Đã tạo truyện.");
@@ -253,7 +413,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  {/* Writing state (board screen 6 "Đang tạo") */}
  {isGenerating && (
  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-cream/95 px-5 backdrop-blur-sm">
- <KidLoading tag="Đang tạo" title="Đóm đang viết truyện cho bé…" funFact progress={genProgress} />
+ <KidLoading tag="Đang tạo" title="Đóm đang viết truyện cho bé…" message={`Truyện ${plan.pages} trang, khoảng ${estimatedMinutes(plan, pace)} phút nghe — Đóm cần 1–2 phút để viết thật hay nhé.`} progress={genProgress} />
  </div>
  )}
 
@@ -309,14 +469,133 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </>
  )}
 
- {/* Step 2 — character */}
+ {/* Step 2 — cast: presets with their own portraits, custom characters, the child */}
  {step === 1 && (
  <>
- <div className="grid grid-cols-2 gap-3">
- {CHARACTERS.map((c) => (
- <OptionCard key={c.id} selected={character === c.id} onClick={() => setCharacter(character === c.id ? null : c.id)} icon={c.icon} label={c.label} />
+ <p className="-mt-3 mb-3 text-[14px] font-bold text-ink-2">
+ Chọn tối đa {MAX_BRIEF_CHARACTERS} nhân vật — bạn chọn đầu tiên là nhân vật chính. Có thể bỏ qua để Đóm tự nghĩ.
+ </p>
+ <SwitchRow
+ checked={childInCast}
+ onChange={(on) => (on ? toggleCast({ key: "child", name: "", description: "", isChild: true }) : setCast((prev) => prev.filter((c) => !c.isChild)))}
+ label="Bé là nhân vật chính"
+ sub="Đóm viết truyện về chính bé"
+ />
+ {childInCast && (
+ <input
+ aria-label="Tên của bé trong truyện"
+ value={childName}
+ onChange={(e) => setChildName(e.target.value)}
+ placeholder="Tên bé, VD: Bông, Bin, Na…"
+ maxLength={40}
+ className={`mt-2 h-12 w-full rounded-[16px] bg-white px-4 text-[15px] font-bold text-ink outline-none placeholder:text-ink-2/70 focus:ring-2 focus:ring-brand ${CARD_SHADOW}`}
+ />
+ )}
+ <div className="mt-3 grid grid-cols-3 gap-2.5">
+ {CHARACTER_PRESETS.map((p) => {
+ const index = cast.findIndex((c) => c.presetId === p.id);
+ return (
+ <CharacterCard
+ key={p.id}
+ selected={index >= 0}
+ role={index === 0 ? "hero" : "friend"}
+ onClick={() => togglePreset(p.id)}
+ img={characterArtUrl(p.id)}
+ name={p.name}
+ kind={p.kind}
+ />
+ );
+ })}
+ <CharacterCard selected={customOpen} onClick={() => setCustomOpen(!customOpen)} img={characterArtUrl(null)} name="Tự tạo" kind="Nhân vật của bé" />
+ </div>
+
+ {customOpen && (
+ <div className={`mt-3 rounded-[22px] bg-white p-3.5 ${CARD_SHADOW}`}>
+ <label htmlFor="custom-name" className="block text-[15px] font-black text-ink">Tên nhân vật</label>
+ <input
+ id="custom-name"
+ value={customName}
+ onChange={(e) => setCustomName(e.target.value)}
+ placeholder="VD: Mèo Mun, Bà Tiên Gió, Khủng long Su…"
+ maxLength={40}
+ className="mt-1.5 h-12 w-full rounded-[14px] bg-cream px-3.5 text-[15px] font-bold text-ink outline-none placeholder:text-ink-2/70 focus:ring-2 focus:ring-brand"
+ />
+ <label htmlFor="custom-kind" className="mt-3 block text-[15px] font-black text-ink">Là ai, con gì?</label>
+ <input
+ id="custom-kind"
+ value={customKind}
+ onChange={(e) => setCustomKind(e.target.value)}
+ placeholder="VD: chú mèo đen thích nấu ăn"
+ maxLength={160}
+ className="mt-1.5 h-12 w-full rounded-[14px] bg-cream px-3.5 text-[15px] font-bold text-ink outline-none placeholder:text-ink-2/70 focus:ring-2 focus:ring-brand"
+ />
+ <p className="mt-3 text-[15px] font-black text-ink">Tính cách</p>
+ <div className="mt-1.5 flex flex-wrap gap-1.5">
+ {CHARACTER_TRAITS.map((t) => {
+ const on = customTraits.includes(t);
+ return (
+ <button key={t} type="button" aria-pressed={on} onClick={() => setCustomTraits((prev) => (on ? prev.filter((x) => x !== t) : [...prev, t].slice(-3)))}
+ className={`min-h-[40px] rounded-2xl px-3 text-[13px] font-extrabold ${on ? "bg-brand text-white" : "bg-brand-soft text-brand-ink"}`}>
+ {t}
+ </button>
+ );
+ })}
+ </div>
+ <p className="mt-3 text-[15px] font-black text-ink">Giọng nói</p>
+ <div className="mt-1.5 flex flex-wrap gap-1.5">
+ {VOICE_TYPES.map((v) => (
+ <button key={v} type="button" aria-pressed={customVoice === v} onClick={() => setCustomVoice(customVoice === v ? undefined : v)}
+ className={`min-h-[40px] rounded-2xl px-3 text-[13px] font-extrabold ${customVoice === v ? "bg-brand text-white" : "bg-brand-soft text-brand-ink"}`}>
+ {VOICE_TYPE_LABEL[v]}
+ </button>
  ))}
  </div>
+ <Button3D block size="md" className="mt-3.5" onClick={addCustom} disabled={!customName.trim() || castFull}>
+ Thêm vào truyện
+ </Button3D>
+ {castFull && <p className="mt-2 text-[13px] font-bold text-ink-2">Đã đủ {MAX_BRIEF_CHARACTERS} nhân vật — bỏ bớt một bạn để thêm.</p>}
+ </div>
+ )}
+
+ {cast.length > 0 && (
+ <section aria-label="Nhân vật trong truyện" className={`mt-3 rounded-[22px] bg-white p-3 ${CARD_SHADOW}`}>
+ <h3 className="mb-2 text-[15px] font-black text-ink">Nhân vật trong truyện ({cast.length}/{MAX_BRIEF_CHARACTERS})</h3>
+ <ul className="space-y-2">
+ {cast.map((c, i) => (
+ <li key={c.key} className="flex items-center gap-2.5 rounded-[16px] bg-cream p-2">
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ <img src={c.isChild ? "/characters/v1/hero.webp" : characterArtUrl(c.presetId)} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-[12px] object-cover" />
+ <span className="min-w-0 flex-1">
+ {c.isChild ? (
+ <b className="block truncate text-[15px] font-black text-ink">{castName(c)}</b>
+ ) : (
+ <input
+ aria-label={`Tên nhân vật ${i + 1}`}
+ value={c.name}
+ onChange={(e) => updateMember(c.key, { name: e.target.value })}
+ maxLength={40}
+ className="h-9 w-full rounded-[10px] bg-white px-2.5 text-[14px] font-black text-ink outline-none focus:ring-2 focus:ring-brand"
+ />
+ )}
+ <span className="mt-0.5 flex items-center gap-1.5 text-[12px] font-bold text-ink-2">
+ {i === 0 ? (
+ <span className="rounded-full bg-brand px-2 py-0.5 text-[11.5px] font-black text-white">Nhân vật chính</span>
+ ) : (
+ <button type="button" onClick={() => makeHero(c.key)} aria-label={`Chọn nhân vật ${i + 1} làm nhân vật chính`} className="min-h-[28px] rounded-full bg-brand-soft px-2 text-[11.5px] font-black text-brand-ink">
+ Bạn đồng hành · đổi làm chính
+ </button>
+ )}
+ {c.voiceType && <span>{VOICE_TYPE_LABEL[c.voiceType]}</span>}
+ </span>
+ </span>
+ <button type="button" onClick={() => setCast((prev) => prev.filter((x) => x.key !== c.key))} aria-label={`Bỏ nhân vật ${i + 1}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-2">
+ <X size={16} />
+ </button>
+ </li>
+ ))}
+ </ul>
+ </section>
+ )}
  {speakRow("Hoặc bé tự nói cho Đóm nghe")}
  </>
  )}
@@ -381,6 +660,25 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </button>
  ))}
  </div>
+
+ <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Nhịp đọc</h3>
+ <div className="grid grid-cols-2 gap-2">
+ {(["calm", "normal"] as const).map((p) => (
+ <button
+ key={p}
+ type="button"
+ onClick={() => setPaceChoice(p)}
+ aria-pressed={pace === p}
+ className={`min-h-[64px] rounded-[18px] px-3 py-2 text-left transition-colors ${pace === p ? "bg-brand text-white shadow-[0_4px_0_var(--color-brand-press)]" : `bg-white text-ink ${CARD_SHADOW}`}`}
+ >
+ <b className="block text-[16px] font-black">{PACE_LABEL[p]}</b>
+ <span className="block text-[12.5px] font-bold">{PACE_SUB[p]}</span>
+ </button>
+ ))}
+ </div>
+ {defaultVoicesForLocale.length > 1 && (
+ <SwitchRow checked={castVoicesOn} onChange={setCastVoicesOn} label="Nhân vật có giọng riêng" sub="Mỗi nhân vật nói bằng một giọng khác, như kịch truyền thanh" />
+ )}
  </>
  )}
 
@@ -393,10 +691,33 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </span>
  <span className="min-w-0 flex-1 text-[14px] font-bold leading-snug text-ink-2">
  <b className="block font-display text-[19px] font-bold text-ink">{theme?.name ?? "Truyện mới"}</b>
- {characterLabel ?? "Đóm chọn nhân vật"} · {AGE_BANDS.find((b) => b.id === selectedAge)?.label}
+ {cast.length ? cast.map(castName).join(", ") : "Đóm chọn nhân vật"} · {AGE_BANDS.find((b) => b.id === selectedAge)?.label}
  {voiceName ? ` · ${voiceName}` : ""}
  </span>
  </div>
+
+ <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Truyện dài bao nhiêu?</h3>
+ <div className="grid grid-cols-3 gap-2">
+ {STORY_LENGTHS.map((len) => {
+ const pl = pagePlan(selectedAge, len);
+ return (
+ <button
+ key={len}
+ type="button"
+ onClick={() => setStoryLength(len)}
+ aria-pressed={storyLength === len}
+ className={`min-h-[64px] rounded-[18px] px-2 py-2 transition-colors ${storyLength === len ? "bg-brand text-white shadow-[0_4px_0_var(--color-brand-press)]" : `bg-white text-ink ${CARD_SHADOW}`}`}
+ >
+ <b className="block text-[16px] font-black">{LENGTH_LABEL[len]}</b>
+ <span className="block text-[12px] font-bold">~{estimatedMinutes(pl, pace)} phút · {pl.pages} trang</span>
+ </button>
+ );
+ })}
+ </div>
+ <SwitchRow checked={ambienceOn} onChange={setAmbienceOn} label="Âm thanh khung cảnh" sub="Tiếng rừng, mưa, sóng… và hiệu ứng nhẹ theo từng trang" />
+ {canIllustrate && (
+ <SwitchRow checked={illustrateOn} onChange={setIllustrateOn} label="Tranh vẽ riêng cho từng trang" sub="Đóm vẽ thêm tranh theo truyện (vài phút đầu dùng tranh khung cảnh)" />
+ )}
 
  <label htmlFor="child-name" className="mb-2 mt-5 block font-display text-[19px] font-bold text-ink">
  Tên bé <small className="font-sans text-[13px] font-bold text-ink-2">(không bắt buộc)</small>

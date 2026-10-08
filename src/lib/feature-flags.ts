@@ -92,6 +92,7 @@ export const API_FEATURE: Record<string, FeatureKey> = {
   "story.translate": "multilingual",
   "story.illustrate": "ai_illustrations",
   "story.illustrate-batch": "ai_illustrations",
+  "story.illustrate-page": "ai_illustrations",
 };
 export function isFeatureKey(v: unknown): v is FeatureKey {
   return (
