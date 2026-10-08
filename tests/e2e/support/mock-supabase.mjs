@@ -420,12 +420,21 @@ function permissionsOf(sub) {
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
 const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience'].map(k=>[k,true]));
+const platformLinks=new Map();
+const publicLinkStory="00000000-0000-4000-8000-000000009a01";
 function rpc(name, sub, body, claims={}) {
   const hasPin = sub === MOCK_PIN_USER_ID;
   const rawPermissions = permissionsOf(sub);
   const access=mockAdminAccess(sub,claims);
   const permissions=access.state==="ready"?rawPermissions:[];
   switch (name) {
+    case "issue_platform_story_link": {
+      if(body.p_story!==publicLinkStory)return rpcError(400,"42501","Only public platform text");
+      const token=randomUUID().replaceAll("-","")+randomUUID().replaceAll("-","");const l={id:randomUUID(),story_id:body.p_story,share_token:token,expires_at:new Date(Date.now()+body.p_hours*3600000).toISOString(),is_active:true,view_count:0,owner:sub};platformLinks.set(token,l);const {owner,...out}=l;void owner;return out;
+    }
+    case "list_platform_story_links":return [...platformLinks.values()].filter(l=>l.owner===sub&&l.story_id===body.p_story).map(l=>({id:l.id,expires_at:l.expires_at,is_active:l.is_active,view_count:l.view_count}));
+    case "revoke_platform_story_link": {const l=[...platformLinks.values()].find(l=>l.id===body.p_id&&l.owner===sub);if(!l)return false;l.is_active=false;return true;}
+    case "resolve_platform_story_link": {const l=platformLinks.get(body.p_token);if(!l||!l.is_active||Date.parse(l.expires_at)<=Date.now())return null;l.view_count++;return {story:{id:l.story_id,title:"Truyện công khai QA",description:null},pages:[{page_number:1,content:"Chú sóc cùng thỏ đọc truyện."}]};}
     case "unsubscribe_push": return null;
     case "public_feature_flags": return {...FEATURE_FLAGS};
     case "set_feature_flag": {
@@ -670,7 +679,7 @@ createServer((req, res) => {
       readJson(req).then((body) => {
         const served = isServiceRole ? serviceRpc(name, body) : undefined;
         if (served !== undefined) return send(res, 200, served);
-        const out = name === "public_feature_flags" ? {...FEATURE_FLAGS} : authed ? rpc(name, sub, body,tokenClaims(req.headers.authorization)) : null;
+        const out = name === "public_feature_flags" ? {...FEATURE_FLAGS} : (authed || name === "resolve_platform_story_link") ? rpc(name, sub, body,tokenClaims(req.headers.authorization)) : null;
         if (out && typeof out === "object" && "__rpcError" in out) return send(res, out.__rpcError.status, out.__rpcError.body);
         send(res, 200, out);
       });
