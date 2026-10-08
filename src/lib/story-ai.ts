@@ -319,6 +319,10 @@ export interface StoryAssessment {
   totalWords: number;
   averageWords: number;
   reasons: string[];
+  /** Page indexes below the minimum words per page (fixed by the expansion pass). */
+  shortPages: number[];
+  /** Problems a full rewrite must fix (missing pages, cast or dialogue) — not just length. */
+  structural: boolean;
 }
 
 /** Is the draft long, cast-complete and voiced enough to ship? */
@@ -337,7 +341,9 @@ export function assessStory(story: GeneratedStory, plan: PagePlan, brief: BriefC
   const dialoguePages = story.pages.filter((p) => /\[character:/.test(p.text)).length;
   if (dialoguePages < Math.ceil(story.pages.length / 2))
     reasons.push("quá ít lời thoại của nhân vật, cần lời thoại trên hầu hết các trang");
-  return { ok: reasons.length === 0, totalWords, averageWords, reasons };
+  const shortPages = counts.flatMap((n, i) => (n < plan.words[0] ? [i] : []));
+  const structural = story.pages.length < plan.pages - 1 || missing.length > 0 || dialoguePages < Math.ceil(story.pages.length / 2);
+  return { ok: reasons.length === 0 && shortPages.length <= Math.floor(story.pages.length / 4), totalWords, averageWords, reasons, shortPages, structural };
 }
 
 // ── Generation ────────────────────────────────────────────────────────────
@@ -387,6 +393,113 @@ async function draft(target: LlmTarget, params: StoryParams, plan: PagePlan, tim
   return { story: normalizeStory(parsed.data, params), result };
 }
 
+// ── Expansion pass: fixes drafts whose pages are too short ───────────────
+
+const EXPAND_CHUNK = 3;
+const ExpandSchema = z.object({
+  pages: z.array(z.object({ page: z.coerce.number().int(), text: z.string() })).max(EXPAND_CHUNK + 2),
+});
+
+/** Vietnamese editing brief: rewrite only `indexes` (0-based) to the target length, same events. */
+export function buildExpandPrompt(story: GeneratedStory, params: StoryParams, plan: PagePlan, indexes: number[]): string {
+  const band = getAgeBand(params.age);
+  const cast = story.characters?.length
+    ? story.characters.map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`).join("\n")
+    : "- (người kể và các nhân vật trong truyện)";
+  const pages = story.pages.map((p, i) => `Trang ${i + 1}:\n${p.text}`).join("\n\n");
+  const list = indexes.map((i) => i + 1).join(", ");
+  const [min, max] = plan.words;
+  return `Bạn đang biên tập truyện thiếu nhi "${story.title}" (${band.label}) để đọc to cho bé nghe.
+Nhân vật:
+${cast}
+
+Toàn bộ truyện hiện tại (để giữ mạch truyện):
+${pages}
+
+Nhiệm vụ: các trang ${list} đang QUÁ NGẮN. Viết lại CHỈ các trang ${list}, mỗi trang dài ${min}–${max} chữ (hãy nhắm khoảng ${max} chữ, đếm cả lời thoại).
+Cách viết dài mà vẫn hay:
+- Giữ nguyên sự việc và thứ tự của từng trang; không kể trước sự việc của trang sau, không kết thúc truyện sớm.
+- Thêm miêu tả bằng các giác quan (âm thanh, màu sắc, mùi hương, cảm giác), cảm xúc và suy nghĩ của nhân vật.
+- Thêm 2–3 câu thoại ngắn giữa các nhân vật; có thể dùng từ tượng thanh (rì rào, lách tách, róc rách…).
+- Câu ngắn, rõ, dễ đọc to; mỗi câu kết thúc bằng dấu câu. Giữ đúng ngôn ngữ đang dùng trong truyện.
+Định dạng: lời dẫn trong [narrator]...[/narrator], lời thoại trong [character:Tên nhân vật]...[/character], mỗi khối trên một dòng.
+Chỉ trả về JSON: {"pages":[{"page": <số trang>, "text": "<nội dung trang đã viết lại>"}]}`;
+}
+
+/** Rewrites short pages in parallel chunks; keeps the original page when a chunk fails or is not longer. */
+export async function expandShortPages(
+  target: LlmTarget,
+  story: GeneratedStory,
+  params: StoryParams,
+  plan: PagePlan,
+  indexes: number[],
+  timeoutMs: number,
+  fetchImpl?: FetchLike
+): Promise<{ story: GeneratedStory; expanded: number }> {
+  const chunks: number[][] = [];
+  for (let i = 0; i < indexes.length; i += EXPAND_CHUNK) chunks.push(indexes.slice(i, i + EXPAND_CHUNK));
+  const pages = story.pages.map((p) => ({ ...p }));
+  let expanded = 0;
+  const results = await Promise.allSettled(
+    chunks.map((chunk) =>
+      callLlmJson(
+        {
+          ...target,
+          system: SYSTEM_PROMPT,
+          prompt: buildExpandPrompt(story, params, plan, chunk),
+          temperature: 0.7,
+          maxTokens: target.provider === "anthropic" ? Math.min(8_000, 600 + chunk.length * plan.words[1] * 6) : undefined,
+          timeoutMs,
+        },
+        fetchImpl
+      ).then(({ data }) => ({ chunk, data }))
+    )
+  );
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    const parsed = ExpandSchema.safeParse(r.value.data);
+    if (!parsed.success) continue;
+    for (const item of parsed.data.pages) {
+      const index = item.page - 1;
+      if (!r.value.chunk.includes(index)) continue;
+      const text = normalizePageText(item.text);
+      const before = spokenWordCount(pages[index].text);
+      const after = spokenWordCount(text);
+      // Accept only a real expansion that is not runaway long.
+      if (after > before * 1.2 && after <= plan.words[1] * 2) {
+        pages[index] = { ...pages[index], text };
+        expanded++;
+      }
+    }
+  }
+  return { story: { ...story, pages }, expanded };
+}
+
+// ── Sound fallback: a page that clearly describes a sound gets the matching effect ──
+
+const SFX_HINTS: [SfxId, RegExp][] = [
+  ["door-knock", /gõ cửa|cốc cốc|cộc cộc|knock/i],
+  ["door-open", /mở cửa|cửa (bật|mở) ra|door open/i],
+  ["creak", /kẽo kẹt|cót két|creak/i],
+  ["bell", /tiếng chuông|chuông (reo|kêu|ngân)|leng keng|bell/i],
+  ["coins", /đồng xu|tiền vàng|kho báu|coins?\b|treasure/i],
+  ["magic-sparkle", /phép thuật|phép màu|đũa thần|lấp lánh|biến (thành|hóa|hoá)|magic|sparkl/i],
+  ["water-drop", /giọt nước|tí tách|nhỏ giọt|róc rách|drip/i],
+  ["footsteps", /bước chân|rón rén|lộp cộp|thình thịch|footsteps|tiptoe/i],
+  ["happy-jingle", /hoan hô|reo hò|ăn mừng|vỗ tay|hooray|celebrat/i],
+];
+
+export function inferSfx(text: string): SfxId[] {
+  const plain = text.replace(/\[\/?(narrator|character)(:[^\]]*)?\]/g, " ");
+  const hit = SFX_HINTS.find(([, re]) => re.test(plain));
+  return hit ? [hit[0]] : [];
+}
+
+/** Fill missing page sound effects from the page text (writer choices always win). */
+export function withInferredSfx(story: GeneratedStory): GeneratedStory {
+  return { ...story, pages: story.pages.map((p) => (p.sfx?.length ? p : { ...p, sfx: inferSfx(p.text) })) };
+}
+
 /** Same as generateStory but also returns provider usage (for cost tracking). */
 export async function generateStoryWithUsage(
   target: LlmTarget,
@@ -397,25 +510,41 @@ export async function generateStoryWithUsage(
   const now = options.now ?? Date.now;
   const started = now();
   const budget = options.budgetMs ?? 240_000;
+  const remaining = () => budget - (now() - started);
   const plan = pagePlan(params.age, params.length);
   const brief = params.characters ?? [];
-  const first = await draft(target, params, plan, Math.min(180_000, budget), fetchImpl);
-  const firstAssessment = assessStory(first.story, plan, brief);
-  const elapsed = now() - started;
-  // Retry once only if the first draft was clearly lacking and a second call fits the budget.
-  if (!options.qualityRetry || firstAssessment.ok || elapsed * 1.25 > budget - elapsed) {
-    return { ...first, assessment: firstAssessment, attempts: 1 };
+  let best = await draft(target, params, plan, Math.min(180_000, budget), fetchImpl);
+  let assessment = assessStory(best.story, plan, brief);
+  let attempts = 1;
+  const firstCallMs = now() - started;
+  // 1) Missing pages / cast / dialogue → one full rewrite, if a second call fits the budget.
+  if (options.qualityRetry && assessment.structural && firstCallMs * 1.25 < remaining()) {
+    attempts++;
+    try {
+      const second = await draft(target, params, plan, Math.max(30_000, remaining() - 5_000), fetchImpl, assessment.reasons.join("; "));
+      const secondAssessment = assessStory(second.story, plan, brief);
+      if (secondAssessment.ok || (!secondAssessment.structural && assessment.structural) || secondAssessment.totalWords > assessment.totalWords) {
+        best = second;
+        assessment = secondAssessment;
+      }
+    } catch {
+      /* keep the first draft */
+    }
   }
-  try {
-    const second = await draft(target, params, plan, Math.max(30_000, budget - elapsed - 5_000), fetchImpl, firstAssessment.reasons.join("; "));
-    const secondAssessment = assessStory(second.story, plan, brief);
-    const better = secondAssessment.ok || secondAssessment.totalWords > firstAssessment.totalWords;
-    return better
-      ? { ...second, assessment: secondAssessment, attempts: 2 }
-      : { ...first, assessment: firstAssessment, attempts: 2 };
-  } catch {
-    return { ...first, assessment: firstAssessment, attempts: 2 };
+  // 2) Pages still too short → expand only those pages (parallel, much faster than a rewrite).
+  //    Small models undershoot word targets, so allow a second round for pages still short.
+  for (let round = 0; round < 2 && options.qualityRetry && assessment.shortPages.length && remaining() > 25_000; round++) {
+    attempts++;
+    try {
+      const { story, expanded } = await expandShortPages(target, best.story, params, plan, assessment.shortPages, Math.min(90_000, remaining() - 5_000), fetchImpl);
+      best = { ...best, story };
+      assessment = assessStory(story, plan, brief);
+      if (!expanded) break;
+    } catch {
+      break;
+    }
   }
+  return { story: withInferredSfx(best.story), result: best.result, assessment, attempts };
 }
 
 export { PROVIDER_MODELS } from "@/lib/llm";
