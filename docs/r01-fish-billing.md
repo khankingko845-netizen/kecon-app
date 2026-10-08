@@ -17,7 +17,7 @@
 - Unicode Vietnamese NFC/NFD, emoji, stripped/unknown tags and exact provider payload contract; old/missing price, explicit zero, retry and no secret/body leakage.
 - Migrate legacy fixtures first then 029: preserve raw history, quarantine incompatible aggregate estimates, reject mismatched unit/version/snapshot, verify MFA/permission/direct-access/audit.
 - Full unit/DB, typecheck/lint/build, full E2E and exact-head CI. Isolated Fish E2E uses the hermetic fake provider after feature flags; no live paid call.
-- Fresh verified DB backup and real migration BEGIN/ROLLBACK dry-run before rollout. Deploy exact merge tree; staging uses supported Webpack build after the observed Next 16.2.6 Turbopack font-resolver failure.
+- Fresh verified DB backup and real migration BEGIN/ROLLBACK dry-run before rollout. Deploy exact merge tree; build, E2E and staging consistently use supported Webpack after the observed Next 16.2.6 Turbopack font-resolver failure. No tests are skipped to work around the build error.
 - Scoped QA tests new pricing APIs and aggregates without calling real Fish/ElevenLabs. Remove QA users/rates/ledger rows, retain immutable audit, restore browser cookies. Compare real settings/pool/default voices/MFA and pre-existing history/price values.
 - Application rollback leaves additive columns; old Fish requests would be legacy/unknown and old Fish pricing rejects. Do not drop audit/history or apply byte prices to old usage. Exact rollout evidence is recorded in PR/workspace after verification.
 
