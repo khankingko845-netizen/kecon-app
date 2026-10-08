@@ -247,17 +247,19 @@ export async function updateVoiceProfile(
   updates: Partial<Pick<VoiceProfileRow, "name" | "relation" | "gender" | "is_active">>
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("voice_profiles")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function deleteVoiceProfile(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("voice_profiles").delete().eq("id", id);
+  const { data, error } = await supabase.from("voice_profiles").delete().eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 // ============================================================
@@ -349,8 +351,9 @@ export async function updateStory(
   >
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("stories").update(patch).eq("id", id);
+  const { data, error } = await supabase.from("stories").update(patch).eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function publishStory(
@@ -434,34 +437,26 @@ export async function updateStoryPage(
   >
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("story_pages")
     .update(patch)
-    .eq("id", pageId);
+    .eq("id", pageId).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function deleteStoryPage(pageId: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("story_pages")
     .delete()
-    .eq("id", pageId);
+    .eq("id", pageId).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
-export async function syncPageOrder(
-  pages: { id: string; page_number: number }[]
-): Promise<void> {
-  const supabase = createClient();
-  await Promise.all(
-    pages.map((p) =>
-      supabase
-        .from("story_pages")
-        .update({ page_number: p.page_number })
-        .eq("id", p.id)
-    )
-  );
+export async function syncPageOrder(pages: {id:string;page_number:number}[]):Promise<void> {
+  await Promise.all(pages.map(p => updateStoryPage(p.id, {page_number:p.page_number})));
 }
 
 export async function setStoryPageCount(
@@ -725,11 +720,12 @@ export async function softDeleteStory(id: string): Promise<void> {
 
 export async function restoreStory(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("stories")
     .update({ deleted_at: null })
-    .eq("id", id);
+    .eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function bulkPublishStories(
@@ -737,14 +733,15 @@ export async function bulkPublishStories(
   publish: boolean
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("stories")
     .update({
       is_published: publish,
       status: publish ? "published" : "draft",
     })
-    .in("id", ids);
+    .in("id", ids).select("id");
   if (error) throw error;
+  if (data?.length !== new Set(ids).size) throw new Error("Chưa cập nhật đủ truyện đã chọn.");
 }
 
 export async function bulkSoftDeleteStories(ids: string[]): Promise<void> {
@@ -1359,28 +1356,17 @@ export async function getUserFavorites(): Promise<StoryRow[]> {
   return storyIds.map((id) => storyMap.get(id)).filter(Boolean) as StoryRow[];
 }
 
-export async function toggleFavorite(storyId: string): Promise<boolean> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Chưa đăng nhập");
-
-  const { data: existing } = await supabase
-    .from("user_favorites")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("story_id", storyId)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase.from("user_favorites").delete().eq("id", existing.id);
-    return false;
-  } else {
-    await supabase.from("user_favorites").insert({
-      user_id: user.id,
-      story_id: storyId,
-    });
-    return true;
-  }
+export async function toggleFavorite(storyId:string):Promise<boolean> {
+  const supabase=createClient();const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error("Chưa đăng nhập");
+  const {data:existing,error:readError}=await supabase.from("user_favorites").select("id").eq("user_id",user.id).eq("story_id",storyId).maybeSingle();
+  if(readError)throw readError;
+  const result=existing
+    ? await supabase.from("user_favorites").delete().eq("id",existing.id).select("id")
+    : await supabase.from("user_favorites").insert({user_id:user.id,story_id:storyId}).select("id");
+  if(result.error)throw result.error;
+  if(!result.data?.length)throw new Error("Chưa cập nhật được yêu thích.");
+  return !existing;
 }
 
 export async function isFavorited(storyId: string): Promise<boolean> {
@@ -1805,21 +1791,23 @@ export async function updateStoryCharacter(
   }>
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("story_characters")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 /** Delete a character. */
 export async function deleteStoryCharacter(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("story_characters")
     .delete()
-    .eq("id", id);
+    .eq("id", id).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 /** Update story narrator voice. */
@@ -1829,7 +1817,7 @@ export async function updateStoryNarrator(
   narratorVoiceName: string | null
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("stories")
     .update({
       narrator_voice_id: narratorVoiceId,
@@ -1837,8 +1825,9 @@ export async function updateStoryNarrator(
       last_voice_id: null,
       last_voice_name: null,
     })
-    .eq("id", storyId);
+    .eq("id", storyId).select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
 }
 
 // ============================================================
@@ -2137,16 +2126,19 @@ export async function removeDownloadedStory(userId: string, storyId: string): Pr
 
 export async function getStoryCategories(): Promise<StoryCategoryRow[]> {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("story_categories")
     .select("*")
     .order("sort_order", { ascending: true });
+  if (error) throw error;
   return (data as StoryCategoryRow[]) || [];
 }
 
 export async function upsertStoryCategory(cat: Partial<StoryCategoryRow> & { id: string; label: string }): Promise<void> {
   const supabase = createClient();
-  await supabase.from("story_categories").upsert(cat, { onConflict: "id" });
+  const {data,error}=await supabase.from("story_categories").upsert(cat, { onConflict: "id" }).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function deleteStoryCategory(id: string): Promise<void> {
@@ -2160,17 +2152,20 @@ export async function deleteStoryCategory(id: string): Promise<void> {
 
 export async function getAllStoryTemplates(): Promise<StoryTemplateRow[]> {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("story_templates")
     .select("*")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+  if (error) throw error;
   return (data as StoryTemplateRow[]) || [];
 }
 
 export async function upsertStoryTemplate(tpl: Partial<StoryTemplateRow> & { title: string; category: string; pages: StoryTemplateRow["pages"] }): Promise<void> {
   const supabase = createClient();
-  await supabase.from("story_templates").upsert(tpl as Record<string, unknown>);
+  const {data,error}=await supabase.from("story_templates").upsert(tpl as Record<string, unknown>).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
 }
 
 export async function deleteStoryTemplate(id: string): Promise<void> {
@@ -2180,5 +2175,7 @@ export async function deleteStoryTemplate(id: string): Promise<void> {
 
 export async function toggleStoryTemplateActive(id: string, isActive: boolean): Promise<void> {
   const supabase = createClient();
-  await supabase.from("story_templates").update({ is_active: isActive }).eq("id", id);
+  const {data,error}=await supabase.from("story_templates").update({ is_active: isActive }).eq("id", id).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
 }

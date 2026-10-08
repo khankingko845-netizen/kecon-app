@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect, useMemo } from "react";
 import { Heart, Play, Star, Trash2 } from "@/components/ui/icons";
@@ -15,6 +16,7 @@ interface FavoritesProps {
 }
 
 export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
+ const { toast } = useToast();
  const [allFavorites, setFavorites] = useState<StoryRow[]>([]);
  const { contentRules } = useParentalControls();
  // T19: hidden stories stay hidden here too.
@@ -32,9 +34,12 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
  const handleRemove = async (storyId: string) => {
  setRemoving(storyId);
  try {
- await toggleFavorite(storyId);
+ const active=await toggleFavorite(storyId);
+ if(active){toast("info","Truyện đang trong yêu thích. Tải lại danh sách để kiểm tra.");return;}
  setFavorites((prev) => prev.filter((s) => s.id !== storyId));
- } catch {}
+ toast("success", "Đã bỏ khỏi yêu thích.");
+ } catch {toast("error","Chưa cập nhật được yêu thích.");}
+ finally {setRemoving(null);}
  setRemoving(null);
  };
 

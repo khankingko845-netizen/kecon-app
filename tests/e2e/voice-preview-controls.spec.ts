@@ -176,7 +176,7 @@ test("User family/default auditions, per-family toggle, silent reading survives 
     if (r.request().method() === "PATCH") {
       const b = r.request().postDataJSON();
       if ("is_active" in b) active = b.is_active;
-      return r.fulfill({ status: 204 });
+      return r.fulfill({ json: [{id:"acknowledged-voice"}] });
     }
     const response = await r.fetch();
     let rows = await response.json();

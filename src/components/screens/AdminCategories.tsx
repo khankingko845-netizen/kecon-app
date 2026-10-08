@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useAdminConfirm } from "@/components/admin/AdminConfirm";
 import { confirmedAdminAction } from "@/lib/admin-confirmed-actions";
@@ -60,6 +61,7 @@ export default function AdminCategories({ onBack }: Props) {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -67,6 +69,8 @@ export default function AdminCategories({ onBack }: Props) {
     try {
       const data = await getStoryCategories();
       setCategories(data);
+    } catch {
+      setDeleteError("Chưa tải được danh mục. Hãy thử lại.");
     } finally {
       setLoading(false);
     }
@@ -103,9 +107,12 @@ export default function AdminCategories({ onBack }: Props) {
         is_active: editing.is_active,
         parent_id: editing.parent_id,
       });
+      toast("success", "Đã lưu danh mục.");
       setEditing(null);
       setIsNew(false);
       await load();
+    } catch {
+      toast("error", "Chưa lưu được danh mục. Kiểm tra quyền hoặc mạng rồi thử lại.");
     } finally {
       setSaving(false);
     }
@@ -125,16 +132,23 @@ export default function AdminCategories({ onBack }: Props) {
     setDeleteError(null);
     try {
       await confirmedAdminAction("category.delete", [id], reason);
+      toast("success", "Đã xoá danh mục.");
       await load();
     } catch (e) {
+      toast("error", "Chưa xoá được danh mục. Kiểm tra lỗi và thử lại.");
       setDeleteError(e instanceof Error ? e.message : "Xoá thất bại");
     } finally {
       setSaving(false);
     }
   };
   const toggleActive = async (cat: StoryCategoryRow) => {
-    await upsertStoryCategory({ ...cat, is_active: !cat.is_active });
-    await load();
+    if (saving) return; setSaving(true);
+    try {
+      await upsertStoryCategory({ ...cat, is_active: !cat.is_active });
+      toast("success", cat.is_active ? "Đã ẩn danh mục." : "Đã hiện danh mục.");
+      await load();
+    } catch { toast("error", "Chưa đổi được trạng thái danh mục."); }
+    finally { setSaving(false); }
   };
 
   return (

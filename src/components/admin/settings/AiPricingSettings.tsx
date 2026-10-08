@@ -1,7 +1,9 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 export default function AiPricingSettings() {
+ const { toast } = useToast();
   const [allowed, setAllowed] = useState(false);
   useEffect(() => {
     let live = true;
@@ -52,10 +54,12 @@ export default function AiPricingSettings() {
       });
       const b = await r.json();
       if (!r.ok) throw Error(b.error);
+      toast("success", "Đã lưu đơn giá cho các lần gọi mới.");
       setMessage(
         "Đã lưu đơn giá. Chỉ áp dụng cho lần gọi mới; lịch sử giữ snapshot cũ.",
       );
     } catch (e) {
+      toast("error", "Chưa lưu được đơn giá. Kiểm tra lỗi và thử lại.");
       setMessage(e instanceof Error ? e.message : "Không lưu được đơn giá");
     } finally {
       setBusy(false);

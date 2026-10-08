@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 import { storyAudioSegments } from "@/lib/story-audio";
 
@@ -81,6 +82,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  total: 0,
  });
  const [error, setError] = useState<string | null>(null);
+ const { toast } = useToast();
 
  // Character management
  const [characters, setCharacters] = useState<StoryCharacterRow[]>([]);
@@ -152,7 +154,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  setNewCharVoiceName("");
  setNewCharColor("#6B7280");
  setAddingChar(false);
+ toast("success", "Đã thêm nhân vật.");
  } catch (e) {
+ toast("error", "Chưa thêm được nhân vật.");
  setError(e instanceof Error ? e.message : "Lỗi thêm nhân vật");
  }
  };
@@ -161,7 +165,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  try {
  await deleteStoryCharacter(id);
  setCharacters((prev) => prev.filter((c) => c.id !== id));
+ toast("success", "Đã xoá nhân vật.");
  } catch (e) {
+ toast("error", "Chưa xoá được nhân vật.");
  setError(e instanceof Error ? e.message : "Lỗi xóa nhân vật");
  }
  };
@@ -172,7 +178,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  setCharacters((prev) =>
  prev.map((c) => (c.id === charId ? { ...c, voice_id: voiceId, voice_name: voiceName } : c))
  );
+ toast("success","Đã lưu giọng nhân vật.");
  } catch (e) {
+ toast("error", "Chưa lưu được giọng nhân vật.");
  setError(e instanceof Error ? e.message : "Lỗi cập nhật giọng");
  }
  };
@@ -182,7 +190,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  try {
  await updateStoryNarrator(storyId, voiceId || null, voiceName || null);
  setStory((prev) => prev ? { ...prev, narrator_voice_id: voiceId || null, narrator_voice_name: voiceName || null } : prev);
+ toast("success", "Đã lưu giọng người kể.");
  } catch (e) {
+ toast("error", "Chưa lưu được giọng người kể.");
  setError(e instanceof Error ? e.message : "Lỗi cập nhật giọng narrator");
  }
  };
@@ -308,12 +318,16 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  );
  await refreshStories();
  setSavedAt(Date.now());
+ toast("success", "Đã lưu truyện.");
+ return true;
  } catch (e) {
+ toast("error", "Chưa lưu hết truyện. Kiểm tra nội dung trước khi thử lại.");
  setError(e instanceof Error ? e.message : "Lưu thất bại");
+ return false;
  } finally {
  setSaving(false);
  }
- }, [storyId, title, category, description, ageMin, ageMax, pages, refreshStories]);
+ }, [storyId, title, category, description, ageMin, ageMax, pages, refreshStories, toast]);
 
  const handleIllustrate = async (page: StoryPageRow) => {
  if(!features.enabled("ai_illustrations")) return;
@@ -325,7 +339,9 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  const url = await illustrateApi(prompt, settings.storyApiKey || undefined);
  updatePageLocal(page.id, { illustration_url: url });
  await updateStoryPage(page.id, { illustration_url: url });
+ toast("success", "Đã lưu minh hoạ cho trang.");
  } catch (e) {
+ toast("error", "Chưa hoàn tất tạo minh hoạ. Kiểm tra trang trước khi thử lại.");
  setError(e instanceof Error ? e.message : "Tạo minh hoạ thất bại");
  } finally {
  setIllustrating(null);
@@ -336,11 +352,14 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  if (!storyId || !story) return;
  setSaving(true);
  try {
- await handleSave();
+ if(!await handleSave()) return;
+ setSaving(true);
  await publishStory(storyId, !story.is_published);
  setStory({ ...story, is_published: !story.is_published });
+ toast("success", story.is_published ? "Đã ẩn truyện." : "Đã xuất bản truyện.");
  await refreshStories();
  } catch (e) {
+ toast("error", "Chưa đổi được trạng thái xuất bản.");
  setError(e instanceof Error ? e.message : "Lỗi xuất bản");
  } finally {
  setSaving(false);

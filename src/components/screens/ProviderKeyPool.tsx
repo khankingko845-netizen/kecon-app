@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 /**
  * Admin v2 · A-04b — kho nhiều API key cho một nhà cung cấp giọng nói.
@@ -78,6 +79,7 @@ export default function ProviderKeyPool({
   locked?: boolean;
 }) {
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const info = VOICE_PROVIDER_INFO[provider];
   const [newKey, setNewKey] = useState("");
   const [newLabel, setNewLabel] = useState("");
@@ -96,17 +98,19 @@ export default function ProviderKeyPool({
 
   const active = rows.filter((r) => r.enabled && r.status === "active").length;
 
-  async function act(tag: string, fn: () => Promise<void>, fallback: string) {
+  async function act(tag: string, fn: () => Promise<void|boolean>, fallback: string, success = "Đã cập nhật kho key.") {
     setBusy(tag);
     setError(null);
     setNotice(null);
     try {
-      await fn();
+      const passed = await fn();
+      toast(passed === false ? "error" : "success", passed === false ? "Kiểm tra key chưa đạt. Xem trạng thái trong danh sách." : success);
     } catch (err) {
+      toast("error", fallback);
       setError(errorText(err, fallback));
     } finally {
       setBusy(null);
-      await onChanged();
+      await Promise.resolve(onChanged()).catch(()=>toast("info","Thay đổi đã gửi; chưa tải lại được kho key."));
     }
   }
 
@@ -155,7 +159,7 @@ export default function ProviderKeyPool({
             onClick={() =>
               act(
                 "all",
-                async () => void (await checkProviderKeys({ provider })),
+                async () => (await checkProviderKeys({ provider })).every(r=>r.ok),
                 "Kiểm tra thất bại",
               )
             }
@@ -227,7 +231,7 @@ export default function ProviderKeyPool({
                       act(
                         row.id,
                         async () =>
-                          void (await checkProviderKeys({ id: row.id })),
+                          (await checkProviderKeys({ id: row.id })).every(r=>r.ok),
                         "Kiểm tra thất bại",
                       )
                     }

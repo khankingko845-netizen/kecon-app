@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useAdminConfirm } from "@/components/admin/AdminConfirm";
 import { confirmedAdminAction } from "@/lib/admin-confirmed-actions";
@@ -66,6 +67,7 @@ export default function AdminStories({
 }: AdminStoriesProps) {
   const { refreshStories } = useData();
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const [actionError, setActionError] = useState<string | null>(null);
   const [stories, setStories] = useState<StoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,9 +141,11 @@ export default function AdminStories({
           ids,
           reason!,
         );
+      toast("success", action === "publish" ? "Đã xuất bản các truyện đã chọn." : action === "delete" ? "Đã chuyển truyện vào thùng rác." : "Đã ẩn các truyện đã chọn.");
       await refreshStories();
       await load();
     } catch (err) {
+      toast("error", "Thao tác truyện chưa hoàn tất. Kiểm tra danh sách trước khi thử lại.");
       setActionError(
         err instanceof Error ? err.message : "Thao tác chưa thành công",
       );
@@ -182,9 +186,11 @@ export default function AdminStories({
       else if (action === "publish") await publishStory(story.id, true);
       else if (action === "restore") await restoreStory(story.id);
       else if (action === "template") await createTemplateFromStory(story.id);
+      toast("success", action === "delete" ? "Đã chuyển truyện vào thùng rác." : action === "restore" ? "Đã khôi phục truyện." : action === "template" ? "Đã lưu thành mẫu truyện." : story.is_published ? "Đã ẩn truyện." : "Đã xuất bản truyện.");
       await refreshStories();
       await load();
     } catch (err) {
+      toast("error", "Thao tác truyện chưa hoàn tất. Kiểm tra danh sách trước khi thử lại.");
       setActionError(
         err instanceof Error ? err.message : "Thao tác chưa thành công",
       );

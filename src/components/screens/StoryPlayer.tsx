@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
@@ -158,6 +159,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const [reviewText, setReviewText] = useState("");
  const [submittingReview, setSubmittingReview] = useState(false);
  const [showShare, setShowShare] = useState(false);
+ const { toast } = useToast();
  const [isFav, setIsFav] = useState(false);
 
  // Swipe gesture
@@ -848,9 +850,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  try {
  const result = await toggleFavorite(storyId);
  setIsFav(result);
+ toast("success", result ? "Đã thêm vào yêu thích." : "Đã bỏ khỏi yêu thích.");
  // UI-11: Đóm vui cùng bé; không nói chen khi truyện đang đọc.
  if (result && !isNight) say("favorite", { quiet: isPlaying });
- } catch {}
+ } catch {toast("error","Chưa cập nhật được yêu thích.");}
  setFavLoading(false);
  };
 

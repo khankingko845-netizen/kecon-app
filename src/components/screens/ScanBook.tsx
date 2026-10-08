@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState, useRef, useCallback } from "react";
@@ -56,6 +57,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  const [step, setStep] = useState<ScanStep>("capture");
  const [result, setResult] = useState<ScanResult | null>(null);
  const [error, setError] = useState("");
+ const { toast } = useToast();
  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
  const [editTitle, setEditTitle] = useState("");
  const [editPages, setEditPages] = useState<ScannedPage[]>([]);
@@ -210,6 +212,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  });
  } catch { /* ignore tracking errors */ }
 
+ toast("success", "Đã lưu truyện từ ảnh.");
  setSavingProgress("Hoàn tất!");
  refreshStories();
 
@@ -218,6 +221,7 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  onNavigate(features.canOpen("editor") ? "editor" : "player", { storyId: storyRow.id });
  }, 800);
  } catch (err) {
+ toast("error", "Chưa lưu xong truyện từ ảnh. Kiểm tra thư viện trước khi thử lại.");
  setError(err instanceof Error ? err.message : "Lỗi khi lưu");
  setStep("review");
  }

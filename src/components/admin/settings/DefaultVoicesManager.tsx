@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -56,6 +57,7 @@ export default function DefaultVoicesManager({
   const [catalogue, setCatalogue] = useState<VoiceOption[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogWarnings, setCatalogWarnings] = useState<string[]>([]);
+  const { toast } = useToast();
   const [managerError, setManagerError] = useState<string | null>(null);
   const [ordering, setOrdering] = useState<string | null>(null);
   const [showUnknown, setShowUnknown] = useState(false);
@@ -148,6 +150,7 @@ export default function DefaultVoicesManager({
         list.map((v) => v.id),
       );
     } catch (e) {
+      toast("error", "Thao tác giọng chưa thành công. Xem lỗi và thử lại.");
       setManagerError(e instanceof Error ? e.message : "Chưa sắp xếp được.");
     } finally {
       setOrdering(null);
@@ -193,6 +196,7 @@ export default function DefaultVoicesManager({
       setAddingForLang(null);
       setSearchQuery("");
     } catch (e) {
+      toast("error", "Thao tác giọng chưa thành công. Xem lỗi và thử lại.");
       setManagerError(e instanceof Error ? e.message : "Chưa thêm được giọng.");
     } finally {
       setSubmitting(false);
@@ -215,6 +219,7 @@ export default function DefaultVoicesManager({
       setManualName("");
       setManualMode(false);
     } catch (e) {
+      toast("error", "Thao tác giọng chưa thành công. Xem lỗi và thử lại.");
       setManagerError(e instanceof Error ? e.message : "Chưa thêm được giọng.");
     } finally {
       setSubmitting(false);
@@ -226,6 +231,7 @@ export default function DefaultVoicesManager({
     try {
       await onRemove(id);
     } catch (e) {
+      toast("error", "Thao tác giọng chưa thành công. Xem lỗi và thử lại.");
       setManagerError(e instanceof Error ? e.message : "Chưa xoá được giọng.");
     } finally {
       setRemovingId(null);

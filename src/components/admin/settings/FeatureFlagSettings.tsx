@@ -1,11 +1,13 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import {useState} from "react";
 import {FEATURES,type FeatureKey} from "@/lib/feature-flags";
 import {useFeatureFlags} from "@/lib/feature-flags-context";
 import {useAdminConfirm} from "@/components/admin/AdminConfirm";
 export default function FeatureFlagSettings(){
  const {flags,canManage,error:loadError,refresh}=useFeatureFlags();
- const confirm=useAdminConfirm(); const [busy,setBusy]=useState<FeatureKey|null>(null); const [error,setError]=useState("");
+ const confirm=useAdminConfirm();
+ const { toast } = useToast(); const [busy,setBusy]=useState<FeatureKey|null>(null); const [error,setError]=useState("");
  const toggle=async(key:FeatureKey,label:string)=>{
   const expected=flags[key];
   const reason=await confirm({title:`${expected?"Tắt":"Bật"} ${label}?`,description:"Thay đổi dùng chung, có nhật ký. Bật cờ không cấp thêm quyền. Server chặn request mới ngay; màn đang mở cập nhật trong tối đa một phút khi trực tuyến.",confirmLabel:expected?"Tắt tính năng":"Bật tính năng"});
@@ -13,7 +15,8 @@ export default function FeatureFlagSettings(){
   try {
    const r=await fetch("/api/admin/features",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:key,enabled:!expected,expected,reason})});
    if(!r.ok) throw Error(r.status===409?"Cờ đã được người khác đổi. Đã tải lại; kiểm tra trước khi thử lại.":"Không đổi được cờ; kiểm tra quyền và phiên quản trị.");
-  } catch(e){setError(e instanceof Error?e.message:"Không đổi được cờ");}
+   toast("success", expected ? "Đã tắt tính năng." : "Đã bật tính năng.");
+  } catch(e){toast("error","Chưa đổi được tính năng. Kiểm tra lỗi và thử lại.");setError(e instanceof Error?e.message:"Không đổi được cờ");}
   finally{await refresh();setBusy(null);}
  };
  return <section aria-labelledby="feature-flags-title" className="rounded-xl border border-gray-200 bg-white p-5">

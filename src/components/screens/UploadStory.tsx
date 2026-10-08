@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState } from "react";
 import {
@@ -51,6 +52,7 @@ const categories = [
 
 export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
  const { refreshStories } = useData();
+ const { toast } = useToast();
  const [title, setTitle] = useState("");
  const [category, setCategory] = useState("fairy_tale");
  const [text, setText] = useState("");
@@ -105,8 +107,10 @@ export default function UploadStory({ onBack, onNavigate }: UploadStoryProps) {
  }
  await setStoryPageCount(storyId, pages.length);
  await refreshStories();
+ toast("success", "Đã nhập truyện.");
  onNavigate("editor", { storyId });
  } catch (e) {
+ toast("error", "Chưa nhập xong truyện. Kiểm tra thư viện trước khi thử lại.");
  setError(e instanceof Error ? e.message : "Nhập truyện thất bại");
  } finally {
  setProcessing(false);
