@@ -1,4 +1,5 @@
 "use client";
+import { toggleFavorite } from "@/lib/db";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useSettings } from "@/lib/settings-context";
@@ -67,6 +68,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  const {settings}=useSettings();
  const narrationEnabledRef=useRef(settings.narrationEnabled);
  const previewEpochRef=useRef(0);
+ const [favoriteBusy, setFavoriteBusy] = useState<string|null>(null);
  const [activeFilter, setActiveFilter] = useState(initialCategory || "all");
  const [searchQuery, setSearchQuery] = useState("");
  const [showSearch, setShowSearch] = useState(false);
@@ -97,7 +99,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  try {
  const pages = await getStoryPages(storyId);
  const firstPageWithAudio = pages.find((p) => p.audio_url);
- if (!firstPageWithAudio?.audio_url) { setLoadingAudio(null); return; }
+ if (!firstPageWithAudio?.audio_url) { toast("info","Truyện chưa có audio nghe thử."); setLoadingAudio(null); return; }
  if(!narrationEnabledRef.current||epoch!==previewEpochRef.current)return;
  const audio = new Audio(firstPageWithAudio.audio_url);
  previewAudioRef.current = audio;
@@ -105,7 +107,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  await audio.play();
  if(!narrationEnabledRef.current||epoch!==previewEpochRef.current){audio.pause();return;}
  setPlayingStoryId(storyId);
- } catch { /* no audio */ }
+ } catch { if(epoch===previewEpochRef.current)toast("error","Chưa phát được đoạn nghe thử. Hãy thử lại."); }
  setLoadingAudio(null);
  }, [playingStoryId,toast]);
 
@@ -238,12 +240,17 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  { id: "share", icon: Share2, label: "Chia sẻ", color: "text-success" },
  { id: "delete", icon: Trash2, label: "Xoá", destructive: true },
  ]}
- onSelect={(action) => {
+ onSelect={async (action) => {
  if (action === "play") onNavigate("player", { storyId: story.id });
  else if (action === "edit") onNavigate("editor", { storyId: story.id });
  else if (action === "share") { navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {}); }
  else if (action === "delete") { toast("info", "Tính năng xoá đang phát triển"); }
- else if (action === "favorite") { toast("success", "Đã thêm vào yêu thích"); }
+ else if (action === "favorite") {
+ if(favoriteBusy)return;setFavoriteBusy(story.id);
+ try {const saved=await toggleFavorite(story.id);toast("success",saved?"Đã thêm vào yêu thích.":"Đã bỏ khỏi yêu thích.");}
+ catch {toast("error","Chưa cập nhật được yêu thích. Hãy thử lại.");}
+ finally {setFavoriteBusy(null);}
+ }
  }}
  >
  <div className={`relative w-full overflow-hidden rounded-[24px] bg-white p-2 text-left ${CARD_SHADOW}`}>

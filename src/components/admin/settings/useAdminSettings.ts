@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useState, useEffect, useCallback } from "react";
 import {
   getAppSettings,
@@ -23,6 +24,7 @@ import {
 } from "./types";
 export function useAdminSettings(canManageSecrets: boolean) {
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [original, setOriginal] = useState<Record<string, string>>({});
   // A-04: API keys — status only (never the value) + keys newly typed in this session.
@@ -117,6 +119,7 @@ export function useAdminSettings(canManageSecrets: boolean) {
     if (!res.ok || !data.voice)
       throw new Error(data.error || "Chưa đổi được trạng thái giọng.");
     setDefaultVoices((prev) => prev.map((v) => (v.id === id ? data.voice : v)));
+    toast("success", active ? "Đã bật giọng mặc định." : "Đã tắt giọng mặc định.");
   }
   async function handleReorderDefaultVoices(language: string, ids: string[]) {
     const response = await fetch("/api/voice/defaults", {
@@ -126,6 +129,7 @@ export function useAdminSettings(canManageSecrets: boolean) {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Chưa sắp xếp được.");
+    toast("success", "Đã lưu thứ tự giọng.");
     setDefaultVoices((prev) =>
       prev.map((v) =>
         ids.includes(v.id) ? { ...v, sort_order: ids.indexOf(v.id) } : v,
@@ -170,9 +174,11 @@ export function useAdminSettings(canManageSecrets: boolean) {
     setError(null);
     try {
       await setSystemSecret(key, "", reason);
+      toast("success", "Đã xoá key khỏi cấu hình.");
       setDrafts((prev) => ({ ...prev, [key]: "" }));
       await loadSecrets();
     } catch (err) {
+      toast("error", "Chưa xoá được key. Kiểm tra lỗi và thử lại.");
       setError(err instanceof Error ? err.message : "Xoá key thất bại");
     } finally {
       setClearingKey(null);
@@ -194,7 +200,9 @@ export function useAdminSettings(canManageSecrets: boolean) {
       body: JSON.stringify(voice),
     });
     const data = await res.json();
+    if (!res.ok || !data.voice) throw new Error(data.error || "Chưa thêm được giọng.");
     if (data.voice) {
+      toast("success", "Đã thêm giọng vào danh sách mặc định.");
       setDefaultVoices((prev) => [
         ...prev.filter((v) => v.id !== data.voice.id),
         data.voice,
@@ -218,7 +226,9 @@ export function useAdminSettings(canManageSecrets: boolean) {
     try {
       await confirmedAdminAction("default_voice.delete", [id], reason);
       setDefaultVoices((prev) => prev.filter((v) => v.id !== id));
+      toast("success", "Đã xoá giọng khỏi danh sách mặc định.");
     } catch (err) {
+      toast("error", "Chưa xoá được giọng mặc định.");
       setError(
         err instanceof Error
           ? err.message
@@ -256,10 +266,12 @@ export function useAdminSettings(canManageSecrets: boolean) {
     try {
       const result = await testProvider("elevenlabs", undefined);
       setElevenTest(result);
+      toast(result.ok ? "success" : "error", result.ok ? "Kết nối ElevenLabs đạt." : "Kiểm tra ElevenLabs chưa đạt. Xem chi tiết bên dưới.");
       if (result.ok && result.voices) {
         setVoices(result.voices);
       }
     } catch {
+      toast("error", "Chưa kiểm tra được kết nối ElevenLabs.");
       setElevenTest({ ok: false, error: "Lỗi kết nối" });
     } finally {
       setElevenTesting(false);
@@ -301,10 +313,12 @@ export function useAdminSettings(canManageSecrets: boolean) {
           : undefined,
       );
       setAiTest(result);
+      toast(result.ok ? "success" : "error", result.ok ? "Kết nối AI đạt." : "Kiểm tra AI chưa đạt. Xem chi tiết bên dưới.");
       if (result.ok && result.models) {
         setAiModels(result.models);
       }
     } catch {
+      toast("error", "Chưa kiểm tra được kết nối AI.");
       setAiTest({ ok: false, error: "Lỗi kết nối" });
     } finally {
       setAiTesting(false);
@@ -324,7 +338,9 @@ export function useAdminSettings(canManageSecrets: boolean) {
     try {
       const result = await testProvider("dalle", key);
       setDalleTest(result);
+      toast(result.ok ? "success" : "error", result.ok ? "Kết nối minh hoạ đạt." : "Kiểm tra minh hoạ chưa đạt. Xem chi tiết bên dưới.");
     } catch {
+      toast("error", "Chưa kiểm tra được kết nối minh hoạ.");
       setDalleTest({ ok: false, error: "Lỗi kết nối" });
     } finally {
       setDalleTesting(false);
@@ -356,8 +372,10 @@ export function useAdminSettings(canManageSecrets: boolean) {
         setDrafts((prev) => ({ ...prev, [k]: "" }));
       }
       setSaved(true);
+      toast("success", "Đã lưu cài đặt hệ thống.");
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
+      toast("error", "Chưa lưu hết cài đặt. Kiểm tra trạng thái trước khi thử lại.");
       setError(err instanceof Error ? err.message : "Lưu thất bại");
     } finally {
       if (touchedSecrets) await loadSecrets().catch(() => {});

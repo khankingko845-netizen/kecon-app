@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
@@ -39,6 +40,7 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  const [isEraser, setIsEraser] = useState(false);
  const [isGenerating, setIsGenerating] = useState(false);
  const [error, setError] = useState<string | null>(null);
+ const { toast } = useToast();
  const [childName, setChildName] = useState(settings.childName || "");
  const [hasDrawn, setHasDrawn] = useState(false);
  const undoStack = useRef<ImageData[]>([]);
@@ -164,8 +166,10 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  if (!res.ok) throw new Error(data.error || "Lỗi tạo truyện");
 
  await refreshStories();
+ toast("success", "Đã tạo truyện từ tranh.");
  onNavigate("player", { storyId: data.storyId });
  } catch (err) {
+ toast("error", "Chưa tạo được truyện từ tranh.");
  setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
  } finally {
  setIsGenerating(false);

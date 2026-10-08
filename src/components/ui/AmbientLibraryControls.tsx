@@ -1,8 +1,10 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useEffect, useRef, useState } from "react";
 import { AMBIENT_TRACKS, cachedAmbientTypes, downloadAmbientLibrary } from "@/lib/ambient-library";
 /** Shared offline and credits controls. */
 export default function AmbientLibraryControls() {
+ const { toast } = useToast();
   const [saved, setSaved] = useState(0);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -18,9 +20,10 @@ export default function AmbientLibraryControls() {
       const types = await downloadAmbientLibrary(done => {
         if (!controller.signal.aborted) setProgress(done);
       }, controller.signal);
-      if (!controller.signal.aborted) setSaved(types.length);
+      if (!controller.signal.aborted) {setSaved(types.length);toast("success","Đã lưu thư viện âm nền trên thiết bị này.");}
     } catch (e) {
       if (!controller.signal.aborted) {
+        toast("error","Chưa tải đủ âm nền offline. Hãy thử lại.");
         setError((e as Error).message);
         const types = await cachedAmbientTypes().catch(() => []);
         if (!controller.signal.aborted) setSaved(types.length);

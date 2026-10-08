@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect } from "react";
 import { ChevronLeft, Check, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
@@ -18,6 +19,7 @@ interface ProfileEditProps {
 }
 
 export default function ProfileEdit({ onBack }: ProfileEditProps) {
+ const { toast } = useToast();
  const { profile, refreshProfile } = useAuth();
  const { updateSettings } = useSettings();
  const [displayName, setDisplayName] = useState(profile?.display_name || "");
@@ -64,11 +66,13 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  const previousId=avatarIdFromUrl(profile.avatar_url);
  if(previousId && profile.avatar_url!==update.avatar_url)fetch(`/api/profile/avatar/${previousId}`,{method:"DELETE"}).catch(()=>{});
  if(uploaded){setSelectedAvatar(uploaded);selectPhoto(null);}
+ toast("success", "Đã lưu hồ sơ gia đình.");
  setSaved(true);
  setTimeout(() => setSaved(false), 2000);
  } catch (err) {
  if(uploaded)await fetch(uploaded,{method:"DELETE"}).catch(()=>{});
  if(photo)setPhotoError(err instanceof Error?err.message:"Chưa tải được ảnh.");
+ toast("error", "Chưa lưu được hồ sơ. Kiểm tra lỗi và thử lại.");
  setSaveError(true);
  }
  setSaving(false);

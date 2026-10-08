@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect, useCallback } from "react";
 import { CategoryIcon } from "@/components/ui/Icon3D";
@@ -31,6 +32,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  const [loading, setLoading] = useState(true);
  const [saving, setSaving] = useState(false);
  const [saved, setSaved] = useState(false);
+ const { toast } = useToast();
 
  const [enabled, setEnabled] = useState(false);
  const [pin, setPin] = useState("");
@@ -83,6 +85,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  const supabase = createClient();
  const result = await setParentPin(supabase, pin, pinStatus?.hasPin ? currentPin : undefined);
  if (!result.ok) {
+ toast("error", "Chưa đổi được mã PIN. Kiểm tra lỗi và thử lại.");
  setPinError(pinErrorMessage(result));
  setSaving(false);
  return;
@@ -100,10 +103,11 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  max_age_rating: maxAge,
  });
  window.dispatchEvent(new Event(PARENTAL_CONTROLS_EVENT));
+ toast("success", "Đã lưu cài đặt kiểm soát của bố mẹ.");
  setSaved(true);
  setTimeout(() => setSaved(false), 2000);
  } catch {
- // ignore
+ toast("error", "Chưa lưu hết cài đặt kiểm soát. Kiểm tra trạng thái trước khi thử lại.");
  }
  setSaving(false);
  };

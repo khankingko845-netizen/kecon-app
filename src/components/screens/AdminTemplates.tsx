@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useAdminConfirm } from "@/components/admin/AdminConfirm";
 import { confirmedAdminAction } from "@/lib/admin-confirmed-actions";
@@ -62,6 +63,7 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
 
@@ -74,6 +76,8 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
       ]);
       setTemplates(tpls);
       setCategories(cats);
+    } catch {
+      setDeleteError("Chưa tải được mẫu truyện. Hãy thử lại.");
     } finally {
       setLoading(false);
     }
@@ -173,9 +177,12 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
       await upsertStoryTemplate(
         payload as Parameters<typeof upsertStoryTemplate>[0],
       );
+      toast("success", "Đã lưu mẫu truyện.");
       setEditing(null);
       setIsNew(false);
       await load();
+    } catch {
+      toast("error", "Chưa lưu được mẫu truyện. Kiểm tra quyền hoặc mạng rồi thử lại.");
     } finally {
       setSaving(false);
     }
@@ -195,16 +202,23 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
     setDeleteError(null);
     try {
       await confirmedAdminAction("template.delete", [id], reason);
+      toast("success", "Đã xoá mẫu truyện.");
       await load();
     } catch (e) {
+      toast("error", "Chưa xoá được mẫu truyện. Kiểm tra lỗi và thử lại.");
       setDeleteError(e instanceof Error ? e.message : "Xoá thất bại");
     } finally {
       setSaving(false);
     }
   };
   const handleToggle = async (tpl: StoryTemplateRow) => {
-    await toggleStoryTemplateActive(tpl.id, !tpl.is_active);
-    await load();
+    if (saving) return; setSaving(true);
+    try {
+      await toggleStoryTemplateActive(tpl.id, !tpl.is_active);
+      toast("success", tpl.is_active ? "Đã ẩn mẫu truyện." : "Đã hiện mẫu truyện.");
+      await load();
+    } catch { toast("error", "Chưa đổi được trạng thái mẫu truyện."); }
+    finally { setSaving(false); }
   };
 
   const duplicate = (tpl: StoryTemplateRow) => {
@@ -222,9 +236,10 @@ export default function AdminTemplates({ onBack, onNavigate }: Props) {
     setCreatingStory(tpl.id);
     try {
       const storyId = await createStoryFromTemplate(tpl.id);
+      toast("success", "Đã tạo truyện từ mẫu.");
       onNavigate("editor" as Screen, { storyId });
-    } catch (e) {
-      alert("Lỗi tạo truyện: " + (e instanceof Error ? e.message : "Unknown"));
+    } catch {
+      toast("error", "Chưa tạo được truyện từ mẫu. Hãy thử lại.");
     } finally {
       setCreatingStory(null);
     }

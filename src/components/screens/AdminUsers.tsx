@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useCallback, useEffect, useState } from "react";
 import {
   AdminHeader,
@@ -25,6 +26,7 @@ export default function AdminUsers({
 }) {
   const { profile } = useAuth();
   const confirm = useAdminConfirm();
+ const { toast } = useToast();
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -61,7 +63,9 @@ export default function AdminUsers({
     try {
       await confirmedAdminAction("role.change", [u.id], reason, role);
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
+      toast("success", "Đã đổi vai trò người dùng.");
     } catch (e) {
+      toast("error", "Chưa đổi được vai trò. Kiểm tra lỗi và thử lại.");
       setError(e instanceof Error ? e.message : "Không đổi được vai trò");
     } finally {
       setWorking(null);

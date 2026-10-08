@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -56,6 +57,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const [isCloning, setIsCloning] = useState(false);
  const [cloneResult, setCloneResult] = useState<{ voice_id: string; name: string } | null>(null);
  const [error, setError] = useState<string | null>(null);
+ const { toast } = useToast();
  const [selectedScript, setSelectedScript] = useState<string>(SAMPLE_SCRIPTS[0].id);
  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -167,8 +169,10 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  });
  await refreshVoices();
 
+ toast("success", "Đã tạo và lưu hồ sơ giọng.");
  setCloneResult(result);
  } catch (err) {
+ toast("error", "Chưa hoàn tất tạo giọng. Kiểm tra trạng thái trước khi thử lại.");
  setError(err instanceof Error ? err.message : "Clone thất bại");
  } finally {
  setIsCloning(false);

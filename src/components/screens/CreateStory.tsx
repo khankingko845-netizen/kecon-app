@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState, useEffect } from "react";
@@ -114,6 +115,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [extraPrompt, setExtraPrompt] = useState("");
  const [isGenerating, setIsGenerating] = useState(false);
  const [error, setError] = useState<string | null>(null);
+ const { toast } = useToast();
  const [step, setStep] = useState(0);
  const [character, setCharacter] = useState<string | null>(null);
  const [genProgress, setGenProgress] = useState(0);
@@ -198,6 +200,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  });
 
  await refreshStories();
+ toast("success", "Đã tạo truyện.");
  cue("celebrate");
  say("created");
 
@@ -210,7 +213,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  onNavigate("player", { storyId: "__generated__" });
  }
  } catch (err) {
- cue("oops");
+ toast("error", "Chưa tạo được truyện. Xem lỗi trước khi thử lại.");
  setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
  } finally {
  setIsGenerating(false);

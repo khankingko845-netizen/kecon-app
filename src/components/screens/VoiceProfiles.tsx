@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect, useCallback } from "react";
 import { User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X } from "@/components/ui/icons";
@@ -32,6 +33,7 @@ function relationLabel(relation: string): string {
 }
 
 export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
+ const { toast } = useToast();
  const { voiceProfiles, loading, refreshVoices } = useData();
  const [allVoices,setAllVoices]=useState<VoiceProfileRow[]>(voiceProfiles);
  const [defaults,setDefaults]=useState<DefaultVoiceRow[]>([]);
@@ -44,7 +46,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  const {pause}=useAudioPlayer();
  async function toggleVoice(id:string,active:boolean){
  setToggling(id);setError(null);preview.stop();pause();
- try{await updateVoiceProfile(id,{is_active:active});await Promise.all([refreshVoices(),reloadAll()]);}catch{setError("Chưa đổi được trạng thái giọng. Hãy thử lại.");}finally{setToggling(null);}
+ try{await updateVoiceProfile(id,{is_active:active});await Promise.all([refreshVoices(),reloadAll()]);toast("success",active?"Đã bật giọng gia đình.":"Đã tắt giọng gia đình.");}catch{toast("error","Chưa đổi được trạng thái giọng.");setError("Chưa đổi được trạng thái giọng. Hãy thử lại.");}finally{setToggling(null);}
  }
  const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -58,7 +60,8 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  try {
  preview.stop();pause();await deleteVoiceProfile(id);
  await Promise.all([refreshVoices(),reloadAll()]);
- } catch {setError("Chưa xoá được giọng. Hãy thử lại.");} finally {
+ toast("success", "Đã xoá hồ sơ giọng khỏi thư viện.");
+ } catch {toast("error","Chưa xoá được giọng.");setError("Chưa xoá được giọng. Hãy thử lại.");} finally {
  setDeletingId(null);
  }
  };
@@ -81,7 +84,8 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  await Promise.all([refreshVoices(),reloadAll()]);
  setEditingId(null);
  setEditName("");
- } catch {setError("Chưa lưu được tên giọng. Hãy thử lại.");} finally {
+ toast("success", "Đã lưu tên giọng.");
+ } catch {toast("error","Chưa lưu được tên giọng.");setError("Chưa lưu được tên giọng. Hãy thử lại.");} finally {
  setSavingEdit(false);
  }
  };
