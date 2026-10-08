@@ -14,6 +14,7 @@ export const PriceSchema = z
     input: z.number().min(0).max(1e6).nullable(),
     output: z.number().min(0).max(1e6).nullable(),
     unit: z.number().min(0).max(1e6).nullable(),
+    billingUnit: z.literal("utf8_bytes").optional(),
     source: z
       .url()
       .max(240)
@@ -23,6 +24,11 @@ export const PriceSchema = z
     v.kind === "llm"
       ? v.input !== null && v.output !== null && v.unit === null
       : v.unit !== null && v.input === null && v.output === null,
+  )
+  .refine((v) =>
+    v.provider === "fishaudio"
+      ? v.kind === "tts" && v.billingUnit === "utf8_bytes"
+      : v.billingUnit === undefined,
   );
 export type Price = {
   input_per_million: number | null;
@@ -30,6 +36,8 @@ export type Price = {
   unit_usd: number | null;
   source: string;
   updated_at: string;
+  billing_unit?: string | null;
+  price_version?: number;
 };
 export type CostRow = {
   day: string;
@@ -44,6 +52,7 @@ export type CostRow = {
   byo_attempts: number;
   input_tokens: number;
   output_tokens: number;
+  legacy_unit_attempts?: number;
 };
 export type MeasurementSummary = {
   days: number;
@@ -56,6 +65,7 @@ export type MeasurementSummary = {
     unknown_cost: number;
     pending: number;
     byo_attempts: number;
+    legacy_unit_attempts?: number;
   };
   funnel: {
     signup: number;
@@ -70,8 +80,19 @@ export function estimateUsd(
   input: number | null,
   output: number | null,
   units: number | null,
+  usage?: { provider: string; billingUnit?: string; usageVersion?: number },
 ): number | null {
   if (!price) return null;
+  // Never multiply new byte usage by an unversioned historical character rate.
+  if (
+    usage?.provider === "fishaudio" &&
+    (kind !== "tts" ||
+      usage.billingUnit !== "utf8_bytes" ||
+      usage.usageVersion !== 2 ||
+      price.billing_unit !== "utf8_bytes" ||
+      price.price_version !== 2)
+  )
+    return null;
   if (kind === "llm") {
     if (
       input === null ||

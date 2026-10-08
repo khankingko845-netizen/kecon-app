@@ -18,12 +18,19 @@ export default function AiPricingSettings() {
     [kind, setKind] = useState("llm"),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const fishBytes = provider === "fishaudio" && kind === "tts";
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setMessage("");
     const f = new FormData(e.currentTarget);
     try {
+      const enteredUnit = Number(f.get("unit"));
+      const unit = fishBytes
+        ? Number((enteredUnit / 1e6).toFixed(12))
+        : enteredUnit;
+      if (fishBytes && enteredUnit > 0 && unit === 0)
+        throw Error("Giá quá nhỏ; cần ít nhất 0.000001 USD / 1M bytes.");
       const db = createClient();
       const { data: allowed } = await db.rpc("has_permission", {
         p_permission: "settings.write",
@@ -38,7 +45,8 @@ export default function AiPricingSettings() {
           model: String(f.get("model")),
           input: kind === "llm" ? Number(f.get("input")) : null,
           output: kind === "llm" ? Number(f.get("output")) : null,
-          unit: kind !== "llm" ? Number(f.get("unit")) : null,
+          unit: kind !== "llm" ? unit : null,
+          ...(fishBytes ? { billingUnit: "utf8_bytes" } : {}),
           source: String(f.get("source")),
         }),
       });
@@ -62,7 +70,7 @@ export default function AiPricingSettings() {
         required
         min={type === "number" ? 0 : undefined}
         max={type === "number" ? 1e6 : undefined}
-        step={type === "number" ? "any" : undefined}
+        step={type === "number" ? (fishBytes && name === "unit" ? "0.000001" : "any") : undefined}
         className="mt-1 block w-full rounded-xl border border-line p-3"
       />
     </label>
@@ -77,15 +85,20 @@ export default function AiPricingSettings() {
       <p className="mt-2 text-sm text-txt-secondary">
         Chỉ nhân sự có quyền Cài đặt được lưu. Kiểm tra giá theo tài khoản/hợp
         đồng của bạn; không có đơn giá mặc định suy đoán. USD/1M token cho LLM;
-        USD mỗi ảnh, ký tự TTS, lần clone hoặc giây âm nền. Key riêng được tách
+        USD mỗi ảnh, ký tự ElevenLabs, lần clone hoặc giây âm nền; Fish TTS nhập
+        USD / 1 triệu UTF-8 bytes (không phải số ký tự). Key riêng được tách
         khỏi chi phí nền tảng. Không nhập API key hay thông tin riêng.
       </p>
       <form onSubmit={submit} className="mt-3 grid gap-3 sm:grid-cols-2">
         <label>
           Provider
           <select
+            aria-label="Provider"
             value={provider}
-            onChange={(e) => setProvider(e.target.value)}
+            onChange={(e) => {
+              setProvider(e.target.value);
+              if (e.target.value === "fishaudio") setKind("tts");
+            }}
             className="ml-2 rounded-xl border border-line p-2"
           >
             {[
@@ -103,7 +116,9 @@ export default function AiPricingSettings() {
         <label>
           Loại
           <select
+            aria-label="Loại"
             value={kind}
+            disabled={provider === "fishaudio"}
             onChange={(e) => setKind(e.target.value)}
             className="ml-2 rounded-xl border border-line p-2"
           >
@@ -124,7 +139,14 @@ export default function AiPricingSettings() {
             {field("output", "USD / 1M output token")}
           </>
         ) : (
-          field("unit", "USD / đơn vị")
+          field("unit", fishBytes ? "USD / 1M UTF-8 bytes" : "USD / đơn vị")
+        )}
+        {fishBytes && (
+          <p className="text-sm sm:col-span-2">
+            Bytes của văn bản thực gửi sau bỏ tag không hỗ trợ; không phải dung
+            lượng file audio. Giá Fish cũ chưa có đơn vị không dùng cho lượt mới.
+            Nhập giá đã kiểm chứng, kể cả giá 0; không tự áp giá tài liệu.
+          </p>
         )}
         <button
           disabled={busy}

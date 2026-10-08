@@ -56,6 +56,8 @@ export type MeterMeta = {
   kind: "llm" | "image" | "tts" | "clone" | "ambient";
   units?: number;
   payer?: "platform" | "byo";
+  billingUnit?: "utf8_bytes";
+  usageVersion?: 2;
 };
 const safeModel = (v: string) =>
   /^[A-Za-z0-9_.:/-]{1,120}$/.test(v) ? v : "unknown";
@@ -72,12 +74,22 @@ export function meteredFetch(
     if (!ctx) throw new MeteringUnavailableError("Thiếu ngữ cảnh đo lường AI");
     const db = getServiceClient();
     if (!db) throw new MeteringUnavailableError("Sổ chi phí AI chưa sẵn sàng");
+    if (
+      meta.provider === "fishaudio" &&
+      (meta.kind !== "tts" ||
+        meta.billingUnit !== "utf8_bytes" ||
+        meta.usageVersion !== 2 ||
+        !Number.isSafeInteger(meta.units) ||
+        meta.units! < 0 ||
+        meta.units! > 1e9)
+    )
+      throw new MeteringUnavailableError("Đơn vị đo Fish chưa hợp lệ");
     const model = safeModel(meta.model),
       id = randomUUID(),
       start = Date.now();
     const rate = await db
       .from("ai_price_rates")
-      .select("input_per_million,output_per_million,unit_usd,source,updated_at")
+      .select("input_per_million,output_per_million,unit_usd,source,updated_at,billing_unit,price_version")
       .eq("provider", meta.provider)
       .eq("model", model)
       .eq("kind", meta.kind)
@@ -95,6 +107,8 @@ export function meteredFetch(
       kind: meta.kind,
       payer: meta.payer ?? (ctx.byo ? "byo" : "platform"),
       units: meta.units ?? null,
+      billing_unit: meta.billingUnit ?? null,
+      usage_version: meta.usageVersion ?? 1,
       price_snapshot: price,
     });
     if (begin.error)
@@ -139,7 +153,7 @@ export function meteredFetch(
         input_tokens: input,
         output_tokens: output,
         estimated_usd: res?.ok
-          ? estimateUsd(meta.kind, price, input, output, meta.units ?? null)
+          ? estimateUsd(meta.kind, price, input, output, meta.units ?? null, meta)
           : null,
         finished_at: new Date().toISOString(),
         duration_ms: Math.max(0, Date.now() - start),

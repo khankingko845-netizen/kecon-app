@@ -8,7 +8,7 @@
  * Every failure is thrown as a {@link ProviderHttpError}.
  */
 import { ProviderHttpError, providerHttpError } from "@/lib/provider-keys";
-import { stripEmotionTags } from "@/lib/elevenlabs";
+import { fishSubmittedText } from "@/lib/tts-billing";
 
 export const FISH_MODELS = [
   { id: "s2.1-pro", name: "S2.1 Pro (khuyên dùng)" },
@@ -83,7 +83,7 @@ export async function fishTextToSpeech(
         model: opts.model || DEFAULT_FISH_MODEL,
       },
       body: JSON.stringify({
-        text: stripEmotionTags(text),
+        text: fishSubmittedText(text),
         reference_id: referenceId,
         format: "mp3",
         mp3_bitrate: 128,

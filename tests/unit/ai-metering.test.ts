@@ -277,3 +277,32 @@ it("Gemini thinking usage contributes to output; invalid thinking usage remains 
     estimated_usd: 0.00016,
   });
 });
+
+it("Fish meter rejects old character contracts before outbound HTTP", async () => {
+  const f = vi.fn(async () => new Response("audio"));
+  await expect(run(() => meteredFetch({ provider: "fishaudio", model: "s2.1-pro", kind: "tts", units: 10 }, f)("u"))).rejects.toBeInstanceOf(MeteringUnavailableError);
+  expect(f).not.toHaveBeenCalled();
+  expect(state.rows).toHaveLength(0);
+});
+it("Fish UTF-8 usage cannot use an old/unlabelled character rate; missing price remains unknown", async () => {
+  for (const p of [null, { ...rate, unit_usd: 0.001 }, { ...rate, unit_usd: 0.001, billing_unit: "utf8_bytes", price_version: 1 }]) {
+    state.rate = p;
+    await run(() => meteredFetch({ provider: "fishaudio", model: "s2.1-pro", kind: "tts", units: 27, billingUnit: "utf8_bytes", usageVersion: 2 }, async () => new Response("audio"))("u"));
+    expect(state.rows.at(-1)).toMatchObject({ units: 27, billing_unit: "utf8_bytes", usage_version: 2, estimated_usd: null });
+  }
+});
+it("compatible Fish price snapshots distinguish explicit zero and count each retry separately", async () => {
+  const meta = { provider: "fishaudio", model: "s2.1-pro", kind: "tts" as const, units: 27, billingUnit: "utf8_bytes" as const, usageVersion: 2 as const };
+  state.rate = { ...rate, unit_usd: 0.000015, billing_unit: "utf8_bytes", price_version: 2 };
+  await run(async () => {
+    await meteredFetch(meta, async () => new Response("quota", { status: 402 }))("u");
+    await meteredFetch(meta, async () => new Response("audio"))("u");
+  });
+  expect(state.rows[0].estimated_usd).toBeNull();
+  expect(state.rows[1].estimated_usd).toBeCloseTo(27 * 0.000015, 12);
+  expect(state.rows[1].price_snapshot).toEqual(state.rate);
+  expect(new Set(state.rows.map(r => r.id)).size).toBe(2);
+  state.rate = { ...rate, unit_usd: 0, billing_unit: "utf8_bytes", price_version: 2 };
+  await run(() => meteredFetch(meta, async () => new Response("audio"))("u"));
+  expect(state.rows.at(-1)?.estimated_usd).toBe(0);
+});

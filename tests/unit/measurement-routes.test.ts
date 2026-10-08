@@ -102,7 +102,7 @@ it("pricing cannot bypass staff permission, schema or snapshot RPC", async () =>
   ).toBe(400);
   expect((await pricePost(req(b))).status).toBe(200);
   expect(state.calls.at(-1)).toEqual({
-    name: "set_ai_price",
+    name: "set_ai_price_v2",
     body: {
       p_provider: "openai",
       p_model: "model",
@@ -111,6 +111,16 @@ it("pricing cannot bypass staff permission, schema or snapshot RPC", async () =>
       p_output: 2,
       p_unit: null,
       p_source: b.source,
+      p_billing_unit: null,
     },
   });
+});
+it("Fish pricing requires an explicit byte unit and cannot contaminate other provider contracts", async () => {
+  const b = { provider: "fishaudio", model: "s2.1-pro", kind: "tts", input: null, output: null, unit: 0.000015, source: "https://provider.example/pricing" };
+  expect((await pricePost(req(b))).status).toBe(400);
+  expect((await pricePost(req({ ...b, billingUnit: "characters" }))).status).toBe(400);
+  expect((await pricePost(req({ ...b, provider: "elevenlabs", billingUnit: "utf8_bytes" }))).status).toBe(400);
+  expect((await pricePost(req({ ...b, billingUnit: "utf8_bytes" }))).status).toBe(200);
+  expect(state.calls.at(-1)).toMatchObject({ name: "set_ai_price_v2", body: { p_unit: 0.000015, p_billing_unit: "utf8_bytes" } });
+  expect((await pricePost(req({ ...b, unit: 0, billingUnit: "utf8_bytes" }))).status).toBe(200);
 });
