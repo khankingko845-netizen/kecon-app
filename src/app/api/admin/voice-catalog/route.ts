@@ -1,3 +1,4 @@
+import { authorizedVoiceCatalog } from "@/lib/voice-catalog-access";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin-permissions";
@@ -32,8 +33,11 @@ export async function GET(request: NextRequest) {
           (key) => fetchVoiceById(key, search),
           { voiceRef: search },
         );
+        const checked = await authorizedVoiceCatalog(supabase, [voice]);
+        if ("response" in checked) return checked.response;
+        if (!checked.voices.length) return Response.json({error:"Giọng không khả dụng."},{status:404,headers:{"Cache-Control":"private, no-store"}});
         return Response.json({
-          voices: [voice],
+          voices: checked.voices,
           warnings: [],
           hasMore: false,
           page: 0,
@@ -42,11 +46,10 @@ export async function GET(request: NextRequest) {
         /* A library-only ID may still be found by the library search. */
       }
     }
-    return Response.json(
-      await voiceKeyPool.run("elevenlabs", (key) =>
-        fetchVoiceCatalog(key, language, search, page),
-      ),
-    );
+    const catalog = await voiceKeyPool.run("elevenlabs", key => fetchVoiceCatalog(key, language, search, page));
+    const checked = await authorizedVoiceCatalog(supabase, catalog.voices);
+    if ("response" in checked) return checked.response;
+    return Response.json({ ...catalog, voices: checked.voices }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (err) {
     return keyPoolErrorResponse(err, "Không tải được danh sách giọng.");
   }

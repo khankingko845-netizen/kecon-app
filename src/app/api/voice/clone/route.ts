@@ -1,3 +1,4 @@
+import { voiceClaimWriter, recordClonedVoice } from "@/lib/voice-provider-claim";
 import { withAiContext, meteredFetch } from "@/lib/ai-metering";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -61,12 +62,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const claimWriter = await voiceClaimWriter(supabase);
+  if (!claimWriter) return Response.json({error:"Chưa sẵn sàng xác minh quyền giọng đọc."},{status:503});
+
   const usageBlocked = await guardUsage(supabase, "voice_clone", { byo: Boolean(userKey) });
   if (usageBlocked) return usageBlocked;
 
   if (userKey) {
     try {
-      return Response.json(await cloneVoice(userKey, name, audioFile, language, meteredFetch({provider:"elevenlabs",model:"ivc",kind:"clone",units:1})));
+      const result = await cloneVoice(userKey, name, audioFile, language, meteredFetch({provider:"elevenlabs",model:"ivc",kind:"clone",units:1}));
+      const pending = await recordClonedVoice(claimWriter, user.id, result.voice_id);
+      return pending ?? Response.json(result);
     } catch (err) {
       const message = err instanceof Error ? scrubSecret(err.message, userKey) : "Voice cloning failed";
       return Response.json({ error: message }, { status: 500 });
@@ -78,7 +84,8 @@ export async function POST(request: NextRequest) {
     const result = await voiceKeyPool.run("elevenlabs", (key) => cloneVoice(key, name, audioFile, language, meteredFetch({provider:"elevenlabs",model:"ivc",kind:"clone",units:1})), {
       bindVoiceFrom: (r) => r.voice_id,
     });
-    return Response.json(result);
+    const pending = await recordClonedVoice(claimWriter, user.id, result.voice_id);
+    return pending ?? Response.json(result);
   } catch (err) {
     return keyPoolErrorResponse(err, "Voice cloning failed");
   }

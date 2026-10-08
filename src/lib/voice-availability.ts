@@ -1,43 +1,32 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasPermission } from "@/lib/admin-permissions";
 import { normalizeVoiceLanguage } from "@/lib/voice-selection";
-
-/** Deactivation blocks new synthesis, including stale story/character selections. */
+/** Validate actual scope before key selection/quota/provider work. Actor comes from JWT,
+ * never the caller-supplied userId. Keep the old name for route compatibility. */
 export async function guardDisabledVoice(
   supabase: SupabaseClient,
-  userId: string,
+  _userId: string,
   voiceId: string,
   language = "vi",
 ): Promise<Response | null> {
-  const [family, defaults] = await Promise.all([
-    supabase
-      .from("voice_profiles")
-      .select("is_active")
-      .eq("user_id", userId)
-      .eq("elevenlabs_voice_id", voiceId),
-    supabase
-      .from("default_voices")
-      .select("is_active")
-      .eq("voice_id", voiceId)
-      .eq("language", normalizeVoiceLanguage(language) ?? language),
-  ]);
-  if (family.error || defaults.error)
+  void _userId; // Compatibility argument is deliberately not an authorization input.
+  const { data, error } = await supabase.rpc("authorize_tts_voice", {
+    p_voice_id: voiceId,
+    p_locale: normalizeVoiceLanguage(language) ?? language,
+  });
+  if (error || !["allowed", "disabled", "unavailable"].includes(data))
     return Response.json(
-      { error: "Chưa kiểm tra được trạng thái giọng đọc." },
+      { error: "Chưa kiểm tra được quyền giọng đọc." },
       { status: 503 },
     );
-  const rows = [...(family.data ?? []), ...(defaults.data ?? [])];
-  if (
-    rows.length &&
-    !rows.some((row) => row.is_active !== false) &&
-    !(await hasPermission(supabase, "voices.manage"))
-  )
-    return Response.json(
-      {
-        error: "Giọng này đã tắt. Hãy chọn một giọng đang bật.",
-        code: "voice_disabled",
-      },
-      { status: 403 },
-    );
-  return null;
+  if (data === "allowed") return null;
+  return Response.json(
+    {
+      error:
+        data === "disabled"
+          ? "Giọng này đã tắt. Hãy chọn một giọng đang bật."
+          : "Giọng không khả dụng cho tài khoản hoặc ngôn ngữ này.",
+      code: data === "disabled" ? "voice_disabled" : "voice_unavailable",
+    },
+    { status: 403 },
+  );
 }

@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
     .eq("id", storyId)
     .single();
 
+  if (!story) return Response.json({ error: "Không tìm thấy truyện" }, { status: 404 });
+
   const { data: pages } = await supabase
     .from("story_pages")
     .select("page_number, content")

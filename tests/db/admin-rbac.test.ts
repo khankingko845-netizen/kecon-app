@@ -168,7 +168,7 @@ describe("019 · vai trò cũ vẫn chạy", () => {
     expect(await isAdmin(u.ops)).toBe(false);
   });
 
-  it("admin cũ: thấy + đặt API key (021: key cũ đã vào Vault), đọc mọi tài khoản và truyện của gia đình", async () => {
+  it("admin cũ: thấy + đặt API key (021: key cũ đã vào Vault), đọc tài khoản nhưng T08b không mở truyện riêng gia đình", async () => {
     // A-04: the plaintext key set before 019 now lives in Vault — only "set" + last 4 chars are visible.
     const secret = await rows<{ value: string }>(u.legacyAdmin, "SELECT value FROM public.app_settings WHERE key = 'openai_api_key'");
     expect(secret).toEqual([{ value: "" }]);
@@ -183,7 +183,7 @@ describe("019 · vai trò cũ vẫn chạy", () => {
       )
     ).toBe(true);
     expect(await rows(u.legacyAdmin, "SELECT id FROM public.profiles WHERE id = $1", [u.family])).toHaveLength(1);
-    expect(await rows(u.legacyAdmin, "SELECT id FROM public.stories WHERE id = $1", [familyStory])).toHaveLength(1);
+    expect(await rows(u.legacyAdmin, "SELECT id FROM public.stories WHERE id = $1", [familyStory])).toHaveLength(0);
   });
 
   it("admin cũ không đổi được vai trò (như trước 019)", async () => {
