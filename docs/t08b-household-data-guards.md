@@ -1,0 +1,40 @@
+# T08b — Default-household data guards (migration 031)
+
+## Shipped contract
+
+- Additive **restrictive** RLS: old permissive policies cannot widen the new boundary. No owner data, voice IDs, content, key pool or historical costs are rewritten/deleted.
+- Canonical `current_household_id()` binds verified JWT actor → profile → default owner household → live membership. No client-supplied tenant, global tenant cache or automatic switch when another membership appears. This release deliberately keeps actor ownership as well as household scope; parent collaboration/invitations await T09/T12 consent.
+- Private stories remain private even if `is_published=true`. Platform public reads require published flag + published status + not trashed; authenticated staff platform scope still requires RBAC/MFA. Owner can still see own drafts/trash; child safety/parent approval gates are **not** completed by this migration.
+- Page/character access follows the authorized parent story. Voice/family-person access requires actor + canonical household, even for full admin/support/editor. `audio_cache` metadata needs an accessible parent and permitted private voice; parentless legacy cache metadata is hidden, not deleted.
+- Favorites, downloads, sessions, behavior, shares, streaks, push endpoints, parental controls, usage, notifications and tracking remain account-private. Ratings/reviews follow story accessibility (visible platform reviews remain public); account actor cannot forge a relation to another family's private story/voice. FK existence alone is never authorization.
+- Reference triggers validate new/changed story/voice associations even for service-role SQL. Invalid historical associations are not silently moved; census/dry-run required before rollout. Membership revocation removes default scope immediately.
+- Counter SECURITY DEFINER RPCs cannot target a hidden story; like delta restricted to ±1 and signed-in actor; XP cannot target another actor. Pure checked counter/ratings changes do not require an admin lease; ordinary platform client mutation remains RLS/MFA/reason protected.
+- Server-managed private `voice_provider_claims` prevents forging an owned voice metadata row with an arbitrary/foreign ID. Legacy identities are backfilled under their existing owner without a claim of independently verified historical provider consent. Ambiguous legacy ownership aborts migration for reviewed repair. Clone checks service writer/context/migration availability **before quota/provider**, then registers the provider-returned ID; registration failure returns `voice_binding_pending`, not success or automatic paid regeneration. Receipts survive deleting metadata until actor deletion / future T12 revoke cleanup. Receipts are not consent, key affinity, idempotent clone jobs or complete provider reconciliation.
+- Bounded `authorize_tts_voice`: active owned clone or active curated locale; staff can audition catalog IDs only if not known private to another household. Ordinary unknown/legacy/unregistered IDs fail closed, not silent fallback. Inactive owned/default voices require explicit staff audition permission. Known private provider IDs are filtered from both catalog paths; raw-role legacy catalog gate now requires RBAC/MFA, and publishing known private clone IDs to default voices is blocked. Unknown orphan provider clones still require T12 provenance reconciliation. Both TTS and preview check **before** key selection/quota/provider calls. RPC/network/schema failure → sanitized 503, denied voice → 403; no raw diagnostics.
+- Family voice/people/recent/own-library queries use fresh strict self-context RPC and explicit household filter. Guest `ownOnly` returns empty, never an unfiltered library. Story APIs use session-bound Supabase clients (not the service-role key client); vocabulary rejects an unavailable parent before processing pages. Existing story narrator/creation validation remains before quota.
+
+## Table classification / what was not widened
+
+| Class | Tables / rules |
+| --- | --- |
+| Household identity | households, household_memberships: T08a member-only SELECT, no client CRUD/private provisioning RPC |
+| Household content | stories, story_pages, story_characters, voice_profiles, family_members, audio_cache: explicit scope or authorized parent; private voice does not become public on story reclassification |
+| Actor records | play_sessions, user_behavior, story_shares, user_favorites, downloaded_stories, reading_streaks, push_subscriptions, parental_controls, daily_usage, notifications, user_badges, user_challenge_progress, usage_tracking: actor-bound; feature gates remain restrictive; original no-write grants still apply |
+| Story-attached public/own metadata | story_ratings, story_reviews: accessible story; actor-only mutations; review visibility remains |
+| Account/billing/profile administration | profiles, user_subscriptions, usage_limits: own actor rules + existing MFA/RBAC billing/account administration, protected role/plan/household columns; no household quota conversion. **Masked profile support lookup A-12 still pending**; this slice is not an all-field staff privacy redesign |
+| Public platform catalog | subscription_plans, default_voices, story_categories, story_templates, badge_definitions, daily_challenges: existing catalog/active/feature visibility + MFA/RBAC writes; no family cast copied to public catalog |
+| Administrative/service-only | voice_provider_claims (no client access, service-issued identity receipts), admin_roles, admin_permissions, admin_role_permissions, app_settings, admin_audit_log, admin_sessions, system_secrets, provider_api_keys, analytics_events, ai_price_rates, ai_cost_ledger: existing RBAC/MFA/Vault/service restrictions and append-only audit retained; raw billing ledger not client-readable; T07 aggregate permission retained |
+| Storage | recordings/family-avatars keep owner-path/private bucket policies. **Legacy public tts-cache/illustrations URL and download access are NOT fixed here**. Private manifests, URL migration, CDN/offline revocation, retention/GC/portable asset backups remain R-06/T12/T27/A-14 |
+
+Legacy `story_shares` is no longer a public token directory. Do **not** restore broad SELECT to make public sharing work: T09 must provide bounded expiring/revocable token resolution. No link ACL widens private story RLS here. Old share URLs for non-owners will fail closed until that contract ships.
+
+## Verification / deployment
+
+- PGlite applies real migrations and roles; negative fixtures contain real private/published/platform rows, characters, voices, cache, links, actor records and foreign FK attempts. Full admin/editor/support/anon, stale MFA, membership removal and invoker confirmation RPC tested, not just an empty-table test.
+- Unit API authorization asserts no synthesis on denial/error; E2E uses fake provider only and distinguishes authorized-but-no-key 400 from rejected voice 403. This is not a paid synthesis, Vietnamese pronunciation or subjective listening evaluation.
+- Real staging: fresh pg_dump custom archive + readable pg_restore TOC; 031 BEGIN/ROLLBACK dry-run; scope/reference census; content/provider/default/key/MFA fingerprints before/after; isolated two-household QA with no provider spend and cleanup. Database backup is **not** a full Storage/Vault deployment portability drill.
+- Deploy only after full tests, typecheck, lint, build, full E2E and exact-head CI. App expects 031 voice RPC; missing migration fails closed. Roll forward preferred; emergency code rollback retains restrictive SQL. No broad policy rollback, force push, disabled MFA/audit or data restore over a live server without a separate approved recovery procedure.
+
+## Remaining
+
+T09 invitations/token resolver, T10 child identities, T11 server consent, T12 voice consent/revoke, A-12 masked staff profile lookup, R-06 private Storage/manifests/asset export/restore, T21 household quota/idempotent reservations, pronunciation/SpeechPlan/SFX timeline and cached LLM pricing are separate unfinished gates. Do not label all T08/private voice security or all remaining plans complete.

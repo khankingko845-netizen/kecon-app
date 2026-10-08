@@ -447,6 +447,15 @@ function rpc(name, sub, body, claims={}) {
       return ids.length;
     }
     case "record_measurement_event":return true;
+    case "allowed_catalog_voice_ids":return (body.p_voice_ids??[]).filter(id=>!(TABLES.voice_profiles??[]).some(v=>v.elevenlabs_voice_id===id&&v.user_id!==sub));
+    case "authorize_tts_voice": {
+      const owned=(TABLES.voice_profiles??[]).filter(v=>v.elevenlabs_voice_id===body.p_voice_id&&v.user_id===sub);
+      if(owned.some(v=>v.is_active!==false))return "allowed";
+      if((TABLES.voice_profiles??[]).some(v=>v.elevenlabs_voice_id===body.p_voice_id&&v.user_id!==sub))return "unavailable";
+      const defs=(TABLES.default_voices??[]).filter(v=>v.voice_id===body.p_voice_id&&v.language===body.p_locale);
+      if(defs.some(v=>v.is_active!==false)||permissions.includes("voices.manage"))return "allowed";
+      return owned.length||defs.length?"disabled":"unavailable";
+    }
     case "my_household_context":return {household_id:sub,role:"owner"};
     case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
     case "set_ai_price_v2":case "set_ai_price": {
@@ -600,6 +609,10 @@ function send(res, status, body, headers = {}) {
   res.end(body === undefined ? "" : JSON.stringify(body));
 }
 
+// Household identity fixtures mirror migration 030; this fake is not evidence of RLS.
+for (const table of ["profiles","voice_profiles","stories","story_pages","family_members"]) for(const row of TABLES[table]??[]) {
+ row.household_id = table==="profiles" ? row.id : table==="story_pages" ? (TABLES.stories.find(s=>s.id===row.story_id)?.household_id??null) : row.is_platform_content ? null : row.user_id;
+}
 const photos=new Map();
 createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://127.0.0.1:${PORT}`);

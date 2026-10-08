@@ -165,32 +165,11 @@ describe("025 · MFA + server idle session", () => {
     );
     expect(n.affectedRows ?? 0).toBe(0);
   });
-  it("expired owner cannot write platform story/page through owner policy", async () => {
-    await expect(
-      asRole(
-        db,
-        "authenticated",
-        uid,
-        (tx) =>
-          tx.query("UPDATE public.stories SET title='bad' WHERE id=$1", [
-            platformId,
-          ]),
-        claims(),
-      ),
-    ).rejects.toThrow(/truyện nền tảng/);
-    await expect(
-      asRole(
-        db,
-        "authenticated",
-        uid,
-        (tx) =>
-          tx.query(
-            "UPDATE public.story_pages SET content='bad' WHERE story_id=$1",
-            [platformId],
-          ),
-        claims(),
-      ),
-    ).rejects.toThrow(/truyện nền tảng/);
+  it("expired owner cannot write platform story/page through owner policy (T08b hides rows before mutation)", async () => {
+    for(const [table,q] of [["stories","UPDATE public.stories SET title='bad' WHERE id=$1"],["story_pages","UPDATE public.story_pages SET content='bad' WHERE story_id=$1"]]) {
+      const r=await asRole(db,"authenticated",uid,tx=>tx.query(q,[platformId]),claims());
+      expect(r.affectedRows??0,table).toBe(0);
+    }
   });
   it("expired secret RPC is blocked directly", async () => {
     await expect(

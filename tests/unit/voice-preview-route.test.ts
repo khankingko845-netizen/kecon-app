@@ -4,13 +4,14 @@ const mocks = vi.hoisted(() => ({
   user: vi.fn(),
   permission: vi.fn(),
   from: vi.fn(),
+  rpc: vi.fn(),
   speech: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mocks.user },
     from: mocks.from,
-    rpc: async () => ({data:{multilingual:true},error:null}),
+    rpc: mocks.rpc,
   }),
 }));
 vi.mock("@/lib/admin-permissions", () => ({ hasPermission: mocks.permission }));
@@ -50,6 +51,7 @@ beforeEach(() => {
       new Response("audio", { headers: { "content-type": "audio/mpeg" } }),
   );
   rows();
+  mocks.rpc.mockImplementation(async(name: string)=>({data:name==="authorize_tts_voice"?"unavailable":{multilingual:true},error:null}));
 });
 describe("voice preview boundary", () => {
   it("requires a session and rejects cross-site requests before synthesis", async () => {
@@ -79,7 +81,8 @@ describe("voice preview boundary", () => {
     ).toBe(403);
     expect(mocks.speech).not.toHaveBeenCalled();
   });
-  it("permits an owned (even inactive) family sample or active curated choice, no cache", async () => {
+  it("permits an authorized active family sample or active curated choice, no cache", async () => {
+    mocks.rpc.mockImplementation(async(name: string)=>({data:name==="authorize_tts_voice"?"allowed":{multilingual:true},error:null}));
     rows([{ id: "owned" }]);
     const r = await POST(req({ voiceId: "clone", language: "ja" }));
     expect(r.status).toBe(200);
@@ -96,6 +99,7 @@ describe("voice preview boundary", () => {
   });
   it("admin may audition catalogue/manual/inactive voices; provider and quota errors propagate", async () => {
     mocks.permission.mockResolvedValue(true);
+    mocks.rpc.mockImplementation(async(name: string)=>({data:name==="authorize_tts_voice"?"allowed":{multilingual:true},error:null}));
     mocks.speech.mockResolvedValue(
       Response.json({ error: "Hết hạn mức" }, { status: 402 }),
     );
@@ -105,7 +109,7 @@ describe("voice preview boundary", () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
   it("fails closed on authorization database errors", async () => {
-    rows([], [], { message: "unavailable" });
+    mocks.rpc.mockImplementation(async(name: string)=>name==="authorize_tts_voice"?{data:null,error:{message:"unavailable"}}:{data:{multilingual:true},error:null});
     expect((await POST(req({ voiceId: "v", language: "vi" }))).status).toBe(
       503,
     );

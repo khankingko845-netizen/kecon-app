@@ -1,5 +1,7 @@
 "use client";
 
+import { requireHouseholdId } from "@/lib/household-query";
+
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/admin-permissions";
 import type { ProviderKeyCheckResult, ProviderKeyRow, VoiceProvider } from "@/lib/provider-keys";
@@ -204,7 +206,8 @@ export async function getVoiceProfiles(includeInactive = false): Promise<VoicePr
   const supabase = createClient();
   let query = supabase
     .from("voice_profiles")
-    .select("*");
+    .select("*")
+    .eq("household_id", await requireHouseholdId(supabase));
   if (!includeInactive) query = query.eq("is_active", true);
   const { data, error } = await query.order("created_at", { ascending: true });
   if (error) throw error;
@@ -276,7 +279,8 @@ export async function getStories(opts?: {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) query = query.eq("user_id", user.id);
+    if (!user) return [];
+    query = query.eq("user_id", user.id).eq("household_id", await requireHouseholdId(supabase)).eq("is_platform_content", false);
   }
   const { data, error } = await query;
   if (error) throw error;
@@ -293,6 +297,8 @@ export async function getRecentStories(limit = 3): Promise<StoryRow[]> {
     .from("stories")
     .select("*")
     .eq("user_id", user.id)
+    .eq("household_id", await requireHouseholdId(supabase))
+    .eq("is_platform_content", false)
     .order("updated_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -478,6 +484,7 @@ export async function getFamilyMembers(): Promise<FamilyMemberRow[]> {
   const { data, error } = await supabase
     .from("family_members")
     .select("*")
+    .eq("household_id", await requireHouseholdId(supabase))
     .order("created_at", { ascending: true });
   if (error) throw error;
   return data ?? [];

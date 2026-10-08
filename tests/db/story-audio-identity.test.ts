@@ -51,7 +51,7 @@ describe("audio identity migration preserves tenant RLS", () => {
     );
     expect(rows[0].audio_key).toBe("a".repeat(64));
   });
-  it("anonymous cannot read private draft/audio fingerprint (RBAC denies before data)",async()=>{
-    await expect(asAnon(db,tx=>tx.query("select audio_key from story_pages where id=$1",[page]))).rejects.toThrow(/permission denied/);
+  it("anonymous cannot read private draft/audio fingerprint while published platform remains usable",async()=>{
+    expect((await asAnon(db,tx=>tx.query("select audio_key from story_pages where id=$1",[page]))).rows).toEqual([]);
   });
 });

@@ -174,7 +174,7 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
     expect(logs[4].before).not.toHaveProperty("embedding");
   });
 
-  it("admin sửa truyện của gia đình: ghi; gia đình (hoặc nhân sự) sửa truyện riêng của mình: không ghi", async () => {
+  it("T08b: admin không sửa truyện gia đình; gia đình hoặc nhân sự sửa truyện riêng của mình không ghi", async () => {
     const { rows } = await db.query<{ id: string }>(
       "INSERT INTO public.stories (user_id, title) VALUES ($1, 'Truyện của bé') RETURNING id",
       [u.family]
@@ -190,8 +190,8 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
     expect(await logsSince(from)).toEqual([]);
     await run(u.admin, "UPDATE public.stories SET status = 'archived' WHERE id = $1", [familyStory]);
     const logs = await logsSince(from);
-    expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatchObject({ action: "story.update", actor_role: "admin", target_id: familyStory, after: { status: "archived" } });
+    expect(logs).toHaveLength(0);
+    expect((await db.query("SELECT status FROM public.stories WHERE id=$1",[familyStory])).rows[0]).toEqual({status:"draft"});
   });
 
   it("danh mục, mẫu truyện (chỉ ghi số trang), giọng mặc định", async () => {
