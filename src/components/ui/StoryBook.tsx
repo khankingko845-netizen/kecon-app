@@ -33,6 +33,7 @@ function Paper({
   isNight,
   overlay,
   textRef,
+  dense,
 }: {
   art?: string;
   body: ReactNode;
@@ -41,10 +42,12 @@ function Paper({
   isNight: boolean;
   overlay?: ReactNode;
   textRef?: Ref<HTMLDivElement>;
+  /** Long pages (v2 stories run 80–145 words) use a slightly smaller type. */
+  dense?: boolean;
 }) {
   return (
     <div className={`kc-paper flex h-full flex-col overflow-hidden rounded-[22px] ${isNight ? "kc-paper-night" : ""}`}>
-      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden">
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden">
         {art && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -59,7 +62,7 @@ function Paper({
       </div>
       <div
         ref={textRef}
-        className="kc-page-text min-h-[120px] flex-1 overflow-y-auto whitespace-pre-line px-[18px] pb-2 pt-3.5 text-[18px] font-bold leading-[1.65] no-scrollbar"
+        className={`kc-page-text min-h-[120px] max-h-[34vh] flex-1 overflow-y-auto whitespace-pre-line px-[18px] pb-2 pt-3.5 font-bold no-scrollbar ${dense ? "text-[16.5px] leading-[1.6]" : "text-[18px] leading-[1.65]"}`}
       >
         {body}
       </div>
@@ -99,6 +102,7 @@ export default function StoryBook({ pages, index, isNight, progress, isPlaying, 
 
   const page = pages[index];
   const from = flip ? pages[flip.from] : undefined;
+  const isDense = (text?: string) => (text ?? "").split(/\s+/).length > 70;
   return (
     <section
       aria-label={`Trang ${index + 1} trên ${total}`}
@@ -114,6 +118,7 @@ export default function StoryBook({ pages, index, isNight, progress, isPlaying, 
         isNight={isNight}
         overlay={pictureOverlay}
         textRef={textRef}
+        dense={isDense(page?.text)}
         body={
           page?.text ? (
             <LyricsText
@@ -138,7 +143,7 @@ export default function StoryBook({ pages, index, isNight, progress, isPlaying, 
           }}
         >
           <div className="kc-face-front absolute inset-0">
-            <Paper art={from.art} number={flip.from + 1} total={total} isNight={isNight} body={from.text || "…"} />
+            <Paper art={from.art} number={flip.from + 1} total={total} isNight={isNight} dense={isDense(from.text)} body={from.text || "…"} />
             <span className="kc-flip-shade" />
           </div>
           <div className={`kc-face-back absolute inset-0 rounded-[22px] ${isNight ? "kc-paper-night" : "kc-paper"}`} />
