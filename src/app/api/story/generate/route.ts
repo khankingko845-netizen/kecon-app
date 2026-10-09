@@ -9,7 +9,7 @@ import { resolveLlmTarget } from "@/lib/llm-config";
 import { z } from "zod";
 import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
 import { BriefCharactersSchema, NARRATION_PACES, STORY_LENGTHS, defaultPace } from "@/lib/story-brief";
-import { castVoices } from "@/lib/voice-casting";
+import { castVoices, castingNarrator, type CastableVoice } from "@/lib/voice-casting";
 import { sceneForPage } from "@/lib/scene-library";
 import { DEFAULT_ART_STYLE } from "@/lib/illustration-prompt";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -50,6 +50,30 @@ const HEARTBEAT_MS = 10_000;
 const GENERATION_BUDGET_MS = 210_000;
 
 export const maxDuration = 300;
+
+/**
+ * The voice the player will actually narrate with when the parent did not pick
+ * one: their first active family clone, otherwise the top-ranked default voice.
+ * Casting must avoid it, or a character would sound exactly like the narrator.
+ */
+async function effectiveNarratorId(
+  supabase: SupabaseClient,
+  userId: string,
+  narrator: { narratorId: string | null },
+  voices: CastableVoice[],
+): Promise<string | null> {
+  if (narrator.narratorId) return narrator.narratorId;
+  const { data: clone } = await supabase
+    .from("voice_profiles")
+    .select("elevenlabs_voice_id")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .not("elevenlabs_voice_id", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return castingNarrator(null, (clone?.elevenlabs_voice_id as string | undefined) ?? null, voices);
+}
 
 async function persistStory(
   supabase: SupabaseClient,
@@ -115,7 +139,7 @@ async function persistStory(
         .select("voice_id,name,gender,description,sort_order")
         .eq("language", locale)
         .eq("is_active", true);
-      cast = castVoices(characters, voices ?? [], narrator.narratorId);
+      cast = castVoices(characters, voices ?? [], await effectiveNarratorId(supabase, userId, narrator, voices ?? []));
     }
     const brief = new Map((input.characters ?? []).map((b) => [b.name.toLocaleLowerCase("vi"), b]));
     const charRows = characters.map((c, i) => {

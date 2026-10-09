@@ -18,7 +18,8 @@ Status: implemented on `feat/create-story-v2`. Replaces the v1 wizard/writer for
 1. Wizard (4 steps): theme → cast → narrator/age/language/pace/voiced characters → summary, length, ambience, optional AI pictures.
 2. `POST /api/story/generate` validates everything before streaming, writes the story (`generator_version = 2`), pages (illustration prompt, scene, mood, ambient, sfx) and characters (role, voice type, appearance, preset, auto-cast voice).
 3. Player: `StoryBook` shows the page picture (AI illustration → scene art) and karaoke text; page changes animate a page flip (reduced-motion: fade). Ambience/SFX follow the page when `auto_ambience`.
-4. AI illustrations (flag `ai_illustrations` + configured provider): `/api/story/illustrate-page` draws pages on demand, current page first, 2 at a time; stops on the first failure. Provider/model/quality are admin settings (`illustration_provider|model|quality`; default `gpt-image-2` / `gemini-2.5-flash-image`). DALL·E 3 is retired.
+4. AI illustrations (flag `ai_illustrations` + configured provider): `/api/story/illustrate-page` draws pages on demand, current page first, 2 at a time; stops on the first failure. Provider/model/quality are admin settings (`illustration_provider|model|quality`; default `gpt-image-2` / `gemini-2.5-flash-image`). `auto` tries OpenAI → Gemini → the **custom OpenAI-compatible gateway** from Settings → AI (e.g. CometAPI; model `gpt-image-1-mini` unless a `gpt-image-*` model is set). Gateways only get portable Images-API fields (CometAPI rejects `output_format: webp`); the PNG/JPEG (b64 or https URL) is re-encoded server-side to a ≤1200 px WebP (~40–80 KB instead of ~2 MB). DALL·E 3 is retired.
+5. Voice casting excludes the voice the story will actually be narrated with — the chosen narrator, else the first family clone, else the top-ranked default voice — so a character never gets a "copy" of the narrator. The wizard shows "Nhân vật có giọng riêng" only when another default voice exists.
 
 ## Data (migration 033)
 
@@ -29,7 +30,7 @@ All additive with CHECK constraints; existing RLS applies.
 
 ## Limits / not in this slice
 
-- Without an image provider key, pages use the bundled scene art (no per-story drawing).
-- Voice casting uses the admin's active default voices for the story language; with one voice, characters share the narrator.
+- Without an image provider (OpenAI, Gemini or custom gateway key) or with the `ai_illustrations` flag off, pages use the bundled scene art (no per-story drawing).
+- Voice casting uses the admin's active default voices for the story language; with only the narrator's voice, the narrator reads the characters. Add voices with clear gender/age in name/description (e.g. "giọng bé gái", "giọng ông") so casting can match voice types.
 - Quality gate is length/structure based, not a human or child-tested quality review.
 - Asset provenance: `docs/licenses/story-studio-v1.md`.

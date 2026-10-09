@@ -105,6 +105,81 @@ describe("resolveIllustrationTarget", () => {
   });
 });
 
+describe("resolveIllustrationTarget — custom OpenAI-compatible gateway", () => {
+  it("auto falls back to the custom gateway (key + https URL), default gpt-image-1-mini", async () => {
+    const { resolveIllustrationTarget } = await import("@/lib/illustration");
+    keys.custom = "comet-key";
+    settings.custom_provider_url = "https://api.cometapi.com/v1/";
+    expect(await resolveIllustrationTarget()).toMatchObject({
+      provider: "custom",
+      apiKey: "comet-key",
+      baseUrl: "https://api.cometapi.com/v1",
+      model: "gpt-image-1-mini",
+      quality: "low",
+      byo: false,
+    });
+    settings.illustration_model = "gpt-image-2";
+    expect(await resolveIllustrationTarget()).toMatchObject({ provider: "custom", model: "gpt-image-2" });
+    settings.illustration_model = "gemini-2.5-flash-image";
+    expect(await resolveIllustrationTarget()).toMatchObject({ provider: "custom", model: "gpt-image-1-mini" });
+  });
+  it("OpenAI/Gemini keys still win in auto; explicit provider does not fall through; http or missing URL → none", async () => {
+    const { resolveIllustrationTarget } = await import("@/lib/illustration");
+    keys.custom = "comet-key";
+    settings.custom_provider_url = "https://api.cometapi.com/v1";
+    keys.gemini = "g-key";
+    expect(await resolveIllustrationTarget()).toMatchObject({ provider: "gemini" });
+    delete keys.gemini;
+    settings.illustration_provider = "gemini";
+    expect(await resolveIllustrationTarget()).toBeNull();
+    settings.illustration_provider = "custom";
+    settings.custom_provider_url = "http://insecure.example/v1";
+    expect(await resolveIllustrationTarget()).toBeNull();
+    settings.custom_provider_url = "";
+    expect(await resolveIllustrationTarget()).toBeNull();
+  });
+});
+
+describe("generateIllustration — custom gateway", () => {
+  const target = { provider: "custom" as const, apiKey: "ck", baseUrl: "https://gw.example/v1", model: "gpt-image-1-mini", quality: "low" as const, byo: false };
+  async function realPng(width: number, height: number) {
+    const { default: sharp } = await import("sharp");
+    return sharp({ create: { width, height, channels: 3, background: { r: 250, g: 200, b: 120 } } }).png().toBuffer();
+  }
+  it("posts only portable fields, decodes b64 PNG and re-encodes ≤1200px WebP", async () => {
+    const { generateIllustration } = await import("@/lib/illustration");
+    const big = await realPng(1536, 1024);
+    const f = vi.fn(async () => new Response(JSON.stringify({ data: [{ b64_json: big.toString("base64") }] })));
+    const out = await generateIllustration(target, "p", f);
+    expect(out.mimeType).toBe("image/webp");
+    const { default: sharp } = await import("sharp");
+    const meta = await sharp(Buffer.from(out.bytes)).metadata();
+    expect(meta.format).toBe("webp");
+    expect(meta.width).toBe(1200);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://gw.example/v1/images/generations");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer ck");
+    const body = JSON.parse(String(init.body));
+    expect(body).toEqual({ model: "gpt-image-1-mini", prompt: "p", n: 1, size: "1536x1024", quality: "low" });
+  });
+  it("URL responses are downloaded; junk bytes and gateway errors are refused", async () => {
+    const { generateIllustration } = await import("@/lib/illustration");
+    const small = await realPng(600, 400);
+    const viaUrl = vi.fn(async (u: string) =>
+      u.endsWith("/images/generations")
+        ? new Response(JSON.stringify({ data: [{ url: "https://cdn.gw.example/a.png" }] }))
+        : new Response(new Uint8Array(small), { headers: { "content-type": "image/png" } }),
+    );
+    const out = await generateIllustration(target, "p", viaUrl);
+    expect(out.mimeType).toBe("image/webp");
+    expect(viaUrl).toHaveBeenCalledTimes(2);
+    const junk = vi.fn(async () => new Response(JSON.stringify({ data: [{ b64_json: png }] })));
+    await expect(generateIllustration(target, "p", junk)).rejects.toThrow("không hợp lệ");
+    const err = vi.fn(async () => new Response(JSON.stringify({ error: { message: "Invalid value: 'webp'" } }), { status: 400 }));
+    await expect(generateIllustration(target, "p", err)).rejects.toThrow("Invalid value");
+  });
+});
+
 describe("generateIllustration", () => {
   it("OpenAI: 3:2 webp, base64 decoded", async () => {
     const { generateIllustration } = await import("@/lib/illustration");

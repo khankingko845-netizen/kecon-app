@@ -9,9 +9,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSystemSetting, resolveApiKey } from "@/lib/server-settings";
 import { meteredFetch } from "@/lib/ai-metering";
 
-export type IllustrationProvider = "openai" | "gemini";
-import { DEFAULT_GEMINI_IMAGE_MODEL, DEFAULT_OPENAI_IMAGE_MODEL } from "@/lib/illustration-models";
-export { DEFAULT_GEMINI_IMAGE_MODEL, DEFAULT_OPENAI_IMAGE_MODEL };
+export type IllustrationProvider = "openai" | "gemini" | "custom";
+import { DEFAULT_CUSTOM_IMAGE_MODEL, DEFAULT_GEMINI_IMAGE_MODEL, DEFAULT_OPENAI_IMAGE_MODEL } from "@/lib/illustration-models";
+export { DEFAULT_CUSTOM_IMAGE_MODEL, DEFAULT_GEMINI_IMAGE_MODEL, DEFAULT_OPENAI_IMAGE_MODEL };
 const QUALITIES = ["low", "medium", "high"] as const;
 type Quality = (typeof QUALITIES)[number];
 
@@ -21,11 +21,27 @@ export interface IllustrationTarget {
   model: string;
   quality: Quality;
   byo: boolean;
+  /** custom only: OpenAI-compatible base URL (…/v1). */
+  baseUrl?: string;
 }
 
 const MODEL_RE = /^[A-Za-z0-9_.:-]{1,80}$/;
 
-/** auto → OpenAI (dalle/openai key) → Gemini key. `off` disables. BYO keys are OpenAI keys. */
+/** HTTPS base URL of the admin's OpenAI-compatible gateway, without a trailing slash. */
+function customBaseUrl(raw: string): string | null {
+  try {
+    const u = new URL(raw.trim());
+    if (u.protocol !== "https:" || u.username || u.password) return null;
+    return u.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * auto → OpenAI (dalle/openai key) → Gemini key → the custom OpenAI-compatible
+ * gateway (Settings → AI). `off` disables. BYO keys are OpenAI keys.
+ */
 export async function resolveIllustrationTarget(userKey?: string): Promise<IllustrationTarget | null> {
   const [pref, modelSetting, qualitySetting] = await Promise.all([
     getSystemSetting("illustration_provider"),
@@ -58,6 +74,20 @@ export async function resolveIllustrationTarget(userKey?: string): Promise<Illus
         quality,
         byo: false,
       };
+    if (provider === "gemini") return null;
+  }
+  if (provider === "auto" || provider === "custom") {
+    const [key, url] = await Promise.all([resolveApiKey("custom"), getSystemSetting("custom_provider_url")]);
+    const baseUrl = customBaseUrl(url || "");
+    if (key && baseUrl)
+      return {
+        provider: "custom",
+        apiKey: key,
+        baseUrl,
+        model: model.startsWith("gpt-image") ? model : DEFAULT_CUSTOM_IMAGE_MODEL,
+        quality,
+        byo: false,
+      };
   }
   return null;
 }
@@ -84,6 +114,7 @@ export async function generateIllustration(
   prompt: string,
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>,
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
+  if (target.provider === "custom") return generateViaGateway(target, prompt, fetchImpl);
   if (target.provider === "openai") {
     const doFetch =
       fetchImpl ?? meteredFetch({ provider: "openai", model: `${target.model}.${target.quality}.1536x1024`, kind: "image", units: 1 });
@@ -132,6 +163,60 @@ export async function generateIllustration(
     if (data && mime.startsWith("image/")) return { bytes: base64ToBytes(data), mimeType: mime };
   }
   throw new IllustrationError("Không nhận được ảnh");
+}
+
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+
+/**
+ * OpenAI-compatible gateway (Images API). Gateways differ on optional fields
+ * (CometAPI rejects output_format "webp"), so only the common ones are sent and
+ * the PNG/JPEG result is re-encoded here to a ~1200px WebP for the book.
+ */
+async function generateViaGateway(
+  target: IllustrationTarget,
+  prompt: string,
+  fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>,
+): Promise<{ bytes: Uint8Array; mimeType: string }> {
+  if (!target.baseUrl) throw new IllustrationError("Chưa cấu hình địa chỉ nhà cung cấp tuỳ chỉnh", 503);
+  const doFetch =
+    fetchImpl ?? meteredFetch({ provider: "custom", model: `${target.model}.${target.quality}.1536x1024`, kind: "image", units: 1 });
+  const res = await doFetch(`${target.baseUrl}/images/generations`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${target.apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: target.model, prompt, n: 1, size: "1536x1024", quality: target.quality }),
+    signal: AbortSignal.timeout(120_000),
+    redirect: "error",
+  });
+  if (!res.ok) throw new IllustrationError(await errorMessage(res), res.status === 429 ? 429 : 502);
+  const json = await res.json();
+  const item = json?.data?.[0];
+  let raw: Uint8Array | null = null;
+  if (typeof item?.b64_json === "string" && item.b64_json) raw = base64ToBytes(item.b64_json);
+  else if (typeof item?.url === "string" && /^https:\/\//.test(item.url)) {
+    const img = await (fetchImpl ?? fetch)(item.url, { signal: AbortSignal.timeout(60_000) });
+    if (!img.ok || !(img.headers.get("content-type") ?? "").startsWith("image/"))
+      throw new IllustrationError("Không tải được ảnh");
+    if (Number(img.headers.get("content-length") ?? 0) > MAX_IMAGE_BYTES) throw new IllustrationError("Ảnh quá lớn");
+    raw = new Uint8Array(await img.arrayBuffer());
+  }
+  if (!raw?.length) throw new IllustrationError("Không nhận được ảnh");
+  if (raw.length > MAX_IMAGE_BYTES) throw new IllustrationError("Ảnh quá lớn");
+  return { bytes: await toBookWebp(raw), mimeType: "image/webp" };
+}
+
+/** Decode → strip metadata → ≤1200px wide WebP (≈40–80 KB instead of ~2 MB PNG). */
+async function toBookWebp(raw: Uint8Array): Promise<Uint8Array> {
+  const { default: sharp } = await import("sharp");
+  try {
+    const out = await sharp(raw, { limitInputPixels: 4096 * 4096 })
+      .rotate()
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    return new Uint8Array(out);
+  } catch {
+    throw new IllustrationError("Ảnh trả về không hợp lệ");
+  }
 }
 
 const EXT: Record<string, string> = { "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" };
