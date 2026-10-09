@@ -84,6 +84,8 @@ test("Trình đọc: truyện như cuốn sách — tranh cảnh theo trang và 
   await expect(book).toHaveAttribute("aria-label", "Trang 1 trên 2");
   // Bundled scene art (not the category tile) until an AI illustration exists.
   await expect(book.locator("img").first()).toHaveAttribute("src", /\/scenes\/v1\/.+\.webp/);
+  // Long v2 pages scroll inside the page instead of pushing the controls off screen.
+  expect(await book.locator(".kc-page-text").first().evaluate((e) => getComputedStyle(e).maxHeight)).not.toBe("none");
 
   await page.evaluate(() => {
     const w = window as unknown as { __sawFlip?: boolean };
