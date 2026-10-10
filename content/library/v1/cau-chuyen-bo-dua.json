@@ -1,0 +1,122 @@
+{
+  "slug": "cau-chuyen-bo-dua",
+  "title": "Câu chuyện bó đũa",
+  "category": "fairy_tale",
+  "ageMin": 4,
+  "ageMax": 7,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Ba anh em hay cãi nhau. Người cha đưa ra một bó đũa và một câu đố, giúp các con hiểu vì sao anh em phải thương yêu, đoàn kết.",
+  "moral": "Anh chị em đoàn kết, nhường nhịn thì sẽ mạnh mẽ.",
+  "tags": [
+    "ngu-ngon",
+    "doan-ket",
+    "gia-dinh"
+  ],
+  "origin": "Ngụ ngôn dân gian có ở nhiều nền văn hoá (trong đó có Việt Nam và ngụ ngôn Aesop 'Ông già và các con').",
+  "adaptation": [
+    "Người cha già nhưng khoẻ, không có chi tiết ốm nặng.",
+    "Lời văn và câu đố được viết mới, không theo bản sách giáo khoa."
+  ],
+  "characters": [
+    {
+      "name": "Người Cha",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Người cha già hiền từ, thông thái",
+      "appearance": "ông cụ râu bạc, áo the nâu"
+    },
+    {
+      "name": "Anh Cả",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Người anh cả khoẻ mạnh nhưng hay giành phần",
+      "appearance": "chàng trai cao lớn, áo nâu"
+    },
+    {
+      "name": "Chị Hai",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người chị khéo tay, hay giận dỗi",
+      "appearance": "cô gái áo tứ thân, tóc dài"
+    },
+    {
+      "name": "Em Út",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Cô em út nhanh nhẹn, hay cãi lại",
+      "appearance": "bé gái tóc buộc hai bên, áo yếm đỏ"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ở một làng nọ, có một người cha già và ba người con. Anh Cả khoẻ mạnh, chị Hai khéo tay, em Út nhanh nhẹn. Nhưng ba anh em lại hay cãi nhau, chẳng ai chịu nhường ai.[/narrator]\n[character:Anh Cả]Cái chổi này của anh, em không được lấy![/character]\n[character:Em Út]Em lấy trước mà! Anh lúc nào cũng giành phần.[/character]",
+      "sceneDescription": "Ba anh em cãi nhau trong nhà",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chị Hai thì giận dỗi, ngồi quay mặt vào góc nhà. Người cha nhìn các con, lòng buồn lắm.[/narrator]\n[character:Người Cha]Các con cứ cãi nhau mãi thế này, mai sau biết sống sao cho êm ấm?[/character]\n[narrator]Tối hôm ấy, ông ngồi bên bếp lửa, suy nghĩ thật lâu. Rồi ông khẽ mỉm cười. Ông đã nghĩ ra một cách.[/narrator]",
+      "sceneDescription": "Người cha ngồi suy nghĩ bên bếp lửa",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, người cha gọi ba con lại. Ông đặt lên bàn một bó đũa, buộc chặt bằng một sợi lạt.[/narrator]\n[character:Người Cha]Cha có một câu đố. Đứa nào bẻ gãy được bó đũa này, đứa ấy thắng.[/character]\n[character:Anh Cả]Dễ thôi cha ạ! Để con thử trước![/character]\n[narrator]Hai em đứng bên cạnh, tò mò nhìn anh.[/narrator]",
+      "sceneDescription": "Người cha đặt bó đũa lên bàn trước ba người con",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Anh Cả cầm bó đũa, gồng hết sức bẻ. Mặt anh đỏ bừng, tay run run, mà bó đũa vẫn chẳng hề hấn gì.[/narrator]\n[character:Anh Cả]Lạ thật, sao bó đũa cứng thế này?[/character]\n[narrator]Đến lượt chị Hai. Chị bẻ đi bẻ lại, bẻ xuôi rồi bẻ ngược, bó đũa vẫn nguyên.[/narrator]\n[character:Chị Hai]Con chịu thôi, cha ạ.[/character]",
+      "sceneDescription": "Anh Cả gồng sức bẻ bó đũa",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Em Út nghĩ mình nhanh nhẹn, chắc sẽ làm được. Em đặt bó đũa lên đầu gối, ấn mạnh một cái. Bó đũa vẫn cứ thẳng tắp.[/narrator]\n[character:Em Út]Không ai bẻ được bó đũa này đâu cha ơi![/character]\n[narrator]Ba anh em nhìn nhau ngơ ngác. Không ai nghĩ một bó đũa nhỏ lại cứng đến thế.[/narrator]",
+      "sceneDescription": "Em Út đặt bó đũa lên đầu gối cố bẻ",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Người cha mỉm cười. Ông cởi sợi lạt, rút từng chiếc đũa ra. Rắc, rắc, rắc! Từng chiếc đũa gãy đôi thật dễ dàng.[/narrator]\n[character:Người Cha]Các con thấy không? Từng chiếc đũa thì rất dễ gãy.[/character]\n[character:Anh Cả]Nhưng buộc lại thành bó thì không ai bẻ được cha ạ.[/character]\n[narrator]Ba anh em nhìn nhau, bỗng hiểu ra lời cha dạy.[/narrator]",
+      "sceneDescription": "Người cha bẻ từng chiếc đũa một",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "creak"
+      ]
+    },
+    {
+      "text": "[character:Người Cha]Đúng rồi. Anh em trong nhà cũng như bó đũa này. Nếu chia rẽ, mỗi đứa sẽ yếu đi. Nếu biết thương yêu, đùm bọc nhau, các con sẽ mạnh hơn bất cứ ai.[/character]\n[narrator]Ba anh em lặng đi. Các con cúi đầu, thấy mình thật có lỗi.[/narrator]\n[character:Chị Hai]Con xin lỗi cha. Từ nay chúng con sẽ không cãi nhau nữa.[/character]",
+      "sceneDescription": "Ba anh em cúi đầu nghe cha nói",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Từ hôm đó, ba anh em luôn giúp đỡ nhau. Anh Cả gánh nước, chị Hai nấu cơm, em Út quét sân. Có miếng ngon, ba người cùng chia nhau.[/narrator]\n[character:Em Út]Anh Cả ơi, chị Hai ơi, mình cùng làm cho nhanh nhé![/character]\n[narrator]Người cha ngồi nhìn các con, cười thật hiền. Nhà nhỏ mà lúc nào cũng rộn rã tiếng cười.[/narrator]",
+      "sceneDescription": "Ba anh em cùng làm việc vui vẻ trong vườn",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

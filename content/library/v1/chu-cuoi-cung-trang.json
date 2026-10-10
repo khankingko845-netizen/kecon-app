@@ -1,0 +1,107 @@
+{
+  "slug": "chu-cuoi-cung-trang",
+  "title": "Chú Cuội cung trăng",
+  "category": "bedtime",
+  "ageMin": 3,
+  "ageMax": 7,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Chàng tiều phu Cuội tìm được cây đa thần chữa lành vết thương. Một hôm cây đa bay lên trời, mang Cuội lên tận cung trăng.",
+  "moral": "Giữ lời dặn và giúp đỡ mọi người bằng điều mình có.",
+  "tags": [
+    "truyen-dan-gian",
+    "trung-thu",
+    "ru-ngu"
+  ],
+  "origin": "Truyện dân gian người Việt về chú Cuội và cây đa trên cung trăng, gắn với Tết Trung thu.",
+  "adaptation": [
+    "Không có cảnh Cuội làm hại hổ con; thay bằng hổ con bị ngã trầy chân.",
+    "Vợ Cuội quên lời dặn, đổ nước rửa rau vào gốc cây (thay chi tiết thô trong bản gốc).",
+    "Không dùng dị bản 'Cuội nói dối'."
+  ],
+  "characters": [
+    {
+      "name": "Cuội",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Chàng tiều phu hiền lành, tốt bụng",
+      "appearance": "chàng trai áo nâu, khăn quấn đầu, vác rìu"
+    },
+    {
+      "name": "Vợ Cuội",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Vợ của Cuội, chăm chỉ nhưng hay quên",
+      "appearance": "người phụ nữ áo tứ thân, tóc vấn khăn"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một chàng tiều phu tên là Cuội. Ngày ngày, Cuội vác rìu vào rừng đốn củi. Tiếng rìu vang lên cộc cộc, chim chóc hót ríu rít trên cành.[/narrator]\n[narrator]Một hôm, Cuội đang đi thì nghe tiếng kêu khe khẽ sau bụi cây. Anh rón rén lại gần nhìn.[/narrator]\n[character:Cuội]Ồ, có một chú hổ con bị ngã. Chân chú trầy xước cả rồi.[/character]",
+      "sceneDescription": "Cuội vác rìu trong rừng, nhìn thấy hổ con sau bụi cây",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cuội vội nấp sau gốc cây. Một lát sau, hổ mẹ chạy đến. Hổ mẹ ngửi ngửi hổ con, rồi đến bên một cây đa nhỏ, nhai mấy chiếc lá và đắp lên vết xước.[/narrator]\n[narrator]Thật kỳ lạ! Chỉ một lát sau, hổ con đã đứng dậy, chạy nhảy tung tăng theo mẹ.[/narrator]\n[character:Cuội]Cây đa này là cây thần rồi! Lá cây chữa lành được vết thương![/character]",
+      "sceneDescription": "Hổ mẹ đắp lá đa lên chân hổ con",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Đợi hổ mẹ đi xa, Cuội cẩn thận đào cây đa, mang về trồng ở góc vườn. Từ đó, ai trong làng bị đau, Cuội đều lấy lá đa chữa cho.[/narrator]\n[character:Cuội]Bà con đừng lo. Lá đa thần sẽ giúp mọi người khoẻ lại.[/character]\n[narrator]Người làng ai cũng quý Cuội. Trẻ con thì thích ra gốc đa ngồi chơi, nghe chim hót líu lo.[/narrator]",
+      "sceneDescription": "Cuội chữa bệnh cho người làng bên cây đa",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cây đa lớn nhanh lắm. Tán lá xanh mướt, toả bóng mát cả khu vườn. Trước khi đi rừng, Cuội dặn vợ thật kỹ.[/narrator]\n[character:Cuội]Mình nhớ nhé, phải tưới cây bằng nước sạch. Nếu tưới nước bẩn, cây sẽ bay mất lên trời đấy.[/character]\n[character:Vợ Cuội]Ừ, em nhớ rồi. Mình cứ yên tâm đi rừng đi.[/character]",
+      "sceneDescription": "Cuội dặn vợ bên cây đa xanh mướt trong vườn",
+      "scene": "garden",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Một hôm, vợ Cuội bận rộn quá nên quên mất lời dặn. Chị đổ chậu nước rửa rau vào gốc cây đa.[/narrator]\n[narrator]Bỗng mặt đất rung rinh. Gió thổi ào ào, lá đa xào xạc. Cây đa từ từ bật rễ, bay lên khỏi mặt đất.[/narrator]\n[character:Vợ Cuội]Ôi thôi! Mình ơi, về mau! Cây đa bay mất rồi![/character]",
+      "sceneDescription": "Cây đa bật rễ bay lên, vợ Cuội hốt hoảng gọi chồng",
+      "scene": "garden",
+      "mood": "tense",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vừa lúc ấy, Cuội vác củi về đến cổng. Thấy cây đa đang bay lên, anh vội đặt bó củi xuống, chạy đến túm chặt lấy rễ cây.[/narrator]\n[character:Cuội]Cây ơi, đừng đi! Ở lại với làng mình đi mà![/character]\n[narrator]Nhưng cây đa cứ bay lên, bay lên mãi, mang theo cả Cuội. Cuội bay qua mây trắng, qua những vì sao lấp lánh.[/narrator]",
+      "sceneDescription": "Cuội bám rễ cây đa bay qua mây trời",
+      "scene": "sky",
+      "mood": "tense",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cây đa bay lên tận cung trăng rồi dừng lại. Cuội nhìn quanh. Mặt trăng sáng bạc, yên tĩnh và mát rượi.[/narrator]\n[character:Cuội]Ở đây đẹp quá. Nhưng mình nhớ làng, nhớ mọi người lắm.[/character]\n[narrator]Từ đó, Cuội ngồi dưới gốc cây đa trên cung trăng. Ngày ngày, chú nhìn xuống làng quê, nơi có cánh đồng và những mái nhà quen thuộc.[/narrator]",
+      "sceneDescription": "Chú Cuội ngồi dưới gốc cây đa trên cung trăng",
+      "scene": "moon-festival",
+      "mood": "calm",
+      "ambient": "night",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mỗi năm, đến rằm tháng Tám, trăng tròn và sáng nhất. Các bạn nhỏ rước đèn ông sao, ngước nhìn lên trời.[/narrator]\n[narrator]Nếu nhìn thật kỹ, bé sẽ thấy hình cây đa và chú Cuội trên cung trăng. Chú Cuội mỉm cười, vẫy tay chúc các bạn nhỏ ngủ ngon.[/narrator]\n[character:Cuội]Ngủ ngon nhé các bạn nhỏ. Nhớ tưới cây bằng nước sạch nhé![/character]",
+      "sceneDescription": "Đêm Trung thu, trẻ em rước đèn dưới trăng tròn",
+      "scene": "moon-festival",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

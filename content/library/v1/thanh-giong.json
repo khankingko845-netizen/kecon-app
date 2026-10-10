@@ -1,0 +1,117 @@
+{
+  "slug": "thanh-giong",
+  "title": "Thánh Gióng",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 9,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Cậu bé làng Gióng ba tuổi chưa biết nói, nghe tiếng sứ giả tìm người đánh giặc liền cất tiếng xin đi. Cả làng góp gạo nuôi Gióng lớn nhanh như thổi, rồi Gióng đánh tan giặc Ân và bay về trời.",
+  "moral": "Yêu quê hương; khi đất nước cần, mọi người cùng chung tay.",
+  "tags": [
+    "truyen-dan-gian",
+    "anh-hung",
+    "hung-vuong"
+  ],
+  "origin": "Truyền thuyết người Việt thời Hùng Vương, gắn với làng Gióng (Phù Đổng, Hà Nội) và Hội Gióng.",
+  "adaptation": [
+    "Cảnh đánh giặc ngắn, không mô tả thương vong; giặc thua và bỏ chạy.",
+    "Lời kể diễn đạt lại bằng câu ngắn cho trẻ, không chép văn bản sách giáo khoa."
+  ],
+  "characters": [
+    {
+      "name": "Gióng",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé làng Gióng, lớn lên thành tráng sĩ",
+      "appearance": "cậu bé tóc để chỏm, yếm đỏ; lớn lên là tráng sĩ áo giáp sắt, cưỡi ngựa sắt"
+    },
+    {
+      "name": "Mẹ Gióng",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người mẹ hiền, thương con",
+      "appearance": "người mẹ nông dân áo nâu, khăn mỏ quạ, tay bế con"
+    },
+    {
+      "name": "Sứ Giả",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Sứ giả của vua đi tìm người tài",
+      "appearance": "người đàn ông áo xanh, mũ quan, cầm loa và cờ vàng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Đời Hùng Vương thứ sáu, ở làng Gióng có hai vợ chồng ông lão chăm chỉ làm ăn, nhưng mãi không có con.[/narrator]\n[narrator]Một hôm, bà lão ra đồng, thấy một vết chân rất to. Bà ướm thử chân mình vào. Không lâu sau, bà có mang, rồi sinh được một bé trai khôi ngô.[/narrator]\n[character:Mẹ Gióng]Con của mẹ đây rồi! Mẹ mừng quá, con ơi![/character]",
+      "sceneDescription": "Bà lão ướm chân vào vết chân khổng lồ trên ruộng",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Lạ thay, cậu bé lên ba tuổi mà vẫn chưa biết nói, chưa biết cười, đặt đâu nằm đấy. Mẹ cậu lo lắng lắm.[/narrator]\n[character:Mẹ Gióng]Con ơi, bao giờ con mới gọi được một tiếng mẹ?[/character]\n[narrator]Bà vẫn ngày ngày ru con, chăm con hết lòng. Cậu bé chỉ nằm im trên chiếc chõng tre, đôi mắt sáng long lanh nhìn mẹ, như đang chờ đợi một điều gì đó.[/narrator]",
+      "sceneDescription": "Mẹ Gióng ngồi ru cậu bé nằm im trên chõng tre",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": "lullaby",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bấy giờ, giặc Ân kéo đến xâm lược nước ta. Thế giặc rất mạnh. Vua lo lắng, sai sứ giả đi khắp nơi tìm người tài giỏi cứu nước.[/narrator]\n[narrator]Sứ giả đến làng Gióng, rao to:[/narrator]\n[character:Sứ Giả]Ai có tài đánh giặc, hãy ra giúp vua cứu nước![/character]\n[narrator]Nghe tiếng rao, cậu bé bỗng cất tiếng nói đầu tiên.[/narrator]\n[character:Gióng]Mẹ ơi, mẹ mời sứ giả vào đây cho con![/character]",
+      "sceneDescription": "Sứ giả cầm loa rao giữa làng, dân làng tụ lại nghe",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Mẹ Gióng vừa mừng vừa lo, vội mời sứ giả vào nhà. Cậu bé nói rõ ràng từng tiếng.[/narrator]\n[character:Gióng]Ông về tâu vua, rèn cho tôi một con ngựa sắt, một cây roi sắt và một tấm áo giáp sắt. Tôi sẽ đánh tan lũ giặc.[/character]\n[character:Sứ Giả]Cậu bé này thật lạ! Ta về tâu vua ngay.[/character]\n[narrator]Sứ giả vội vàng lên ngựa về kinh.[/narrator]",
+      "sceneDescription": "Cậu bé Gióng ngồi dậy nói chuyện với sứ giả trong nhà",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "door-open"
+      ]
+    },
+    {
+      "text": "[narrator]Từ hôm ấy, Gióng lớn nhanh như thổi. Cơm ăn mấy cũng không no, áo vừa mặc xong đã chật. Mẹ Gióng làm lụng vất vả mà không đủ nuôi con.[/narrator]\n[narrator]Bà con trong làng thương lắm, ai cũng vui lòng góp gạo, góp cà, nuôi cậu bé.[/narrator]\n[character:Mẹ Gióng]Cảm ơn bà con. Con tôi lớn lên là nhờ cả làng đấy.[/character]",
+      "sceneDescription": "Dân làng mang thúng gạo, rổ cà đến nhà Gióng",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Giặc đã đến chân núi Trâu. Vừa lúc ấy, ngựa sắt, roi sắt, áo giáp sắt được mang tới. Gióng vươn vai một cái, bỗng thành một tráng sĩ cao lớn, oai phong.[/narrator]\n[character:Gióng]Mẹ ơi, con đi đánh giặc đây! Mẹ ở nhà chờ con nhé.[/character]\n[narrator]Gióng mặc áo giáp, cầm roi, nhảy lên lưng ngựa. Ngựa sắt hí vang, phun lửa, phi như bay ra trận.[/narrator]",
+      "sceneDescription": "Tráng sĩ Gióng mặc giáp sắt cưỡi ngựa sắt phun lửa",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Gióng xông thẳng vào đám giặc. Roi sắt vung lên, giặc chạy tán loạn. Bỗng roi sắt gãy, Gióng liền nhổ những bụi tre bên đường quật về phía giặc. Người ta kể, lửa ngựa sắt làm bụi tre cháy sém, từ đó có giống tre đằng ngà vàng óng.[/narrator]\n[narrator]Giặc Ân thua to, bỏ chạy về nước, không dám quay lại nữa.[/narrator]\n[character:Gióng]Đất nước yên bình rồi! Bà con ơi, hãy về làm ăn vui vẻ nhé![/character]",
+      "sceneDescription": "Gióng cưỡi ngựa sắt cầm bụi tre, giặc bỏ chạy xa",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đánh tan giặc rồi, Gióng một mình một ngựa lên đỉnh núi Sóc. Chàng cởi áo giáp sắt để lại, rồi cả người lẫn ngựa từ từ bay lên trời.[/narrator]\n[narrator]Vua nhớ công ơn, phong cho Gióng là Phù Đổng Thiên Vương. Hằng năm, vào tháng Tư âm lịch, làng Gióng lại mở hội để nhớ ơn người anh hùng nhỏ tuổi.[/narrator]",
+      "sceneDescription": "Gióng cưỡi ngựa sắt bay lên trời từ đỉnh núi",
+      "scene": "sky",
+      "mood": "calm",
+      "ambient": "wind",
+      "sfx": []
+    }
+  ]
+}

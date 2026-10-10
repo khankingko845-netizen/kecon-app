@@ -1,0 +1,115 @@
+{
+  "slug": "su-tich-dua-hau",
+  "title": "Sự tích dưa hấu",
+  "category": "fairy_tale",
+  "ageMin": 5,
+  "ageMax": 9,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Mai An Tiêm bị đưa ra đảo hoang vì một câu nói làm vua phật lòng. Nhờ chăm chỉ, vợ chồng An Tiêm trồng được thứ quả ruột đỏ ngọt mát, đổi lấy lương thực và được vua đón về.",
+  "moral": "Chăm chỉ, tự lực thì ở đâu cũng sống tốt; biết nhận ra lỗi của mình.",
+  "tags": [
+    "co-tich-viet-nam",
+    "cham-chi",
+    "hung-vuong"
+  ],
+  "origin": "Truyện cổ tích người Việt thời Hùng Vương về Mai An Tiêm và nguồn gốc quả dưa hấu.",
+  "adaptation": [
+    "Câu nói của An Tiêm diễn đạt cho trẻ dễ hiểu (bản gốc: 'Của biếu là của lo, của cho là của nợ').",
+    "Nhấn mạnh tinh thần tự lực và vua biết nhận lỗi; nhắc địa danh theo lời kể dân gian (Nga Sơn, Thanh Hoá)."
+  ],
+  "characters": [
+    {
+      "name": "Mai An Tiêm",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Con nuôi vua Hùng, chăm chỉ, tự lực",
+      "appearance": "chàng trai rám nắng, áo nâu, quần xắn gối, tay cầm cuốc"
+    },
+    {
+      "name": "Vợ An Tiêm",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người vợ đảm đang, luôn ở bên chồng",
+      "appearance": "người phụ nữ áo tứ thân nâu, khăn vấn, tay bế con nhỏ"
+    },
+    {
+      "name": "Vua Hùng",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Vua Hùng, nóng giận nhưng biết nhận lỗi",
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, vua Hùng có một người con nuôi tên là Mai An Tiêm. An Tiêm chăm chỉ, thông minh, được vua thương yêu, cho cưới vợ và ban nhiều của cải.[/narrator]\n[narrator]Một hôm, trong bữa tiệc, mọi người khen nhà An Tiêm giàu có. An Tiêm nói:[/narrator]\n[character:Mai An Tiêm]Những thứ con có đều nhờ đôi bàn tay con làm ra cả.[/character]\n[narrator]Vua nghe vậy, cho là An Tiêm không biết ơn.[/narrator]",
+      "sceneDescription": "Bữa tiệc ở làng, Mai An Tiêm đang nói, vua Hùng nhíu mày",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vua giận lắm.[/narrator]\n[character:Vua Hùng]Ngươi nói tự làm ra được tất cả ư? Vậy ta cho ngươi ra đảo hoang mà tự lo lấy![/character]\n[narrator]Thế là vợ chồng An Tiêm cùng đứa con nhỏ bị đưa ra một hòn đảo giữa biển. Trên đảo chỉ có cát trắng, đá xám, vài bụi cây và tiếng sóng vỗ rì rào suốt ngày đêm.[/narrator]",
+      "sceneDescription": "Gia đình An Tiêm đứng trên bãi cát hoang vắng giữa biển",
+      "scene": "beach",
+      "mood": "sad",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[character:Vợ An Tiêm]Mình ơi, ở đây hoang vắng quá, nhà mình biết sống thế nào?[/character]\n[character:Mai An Tiêm]Mình đừng lo. Còn đôi bàn tay là còn làm được. Mình cùng nhau cố gắng nhé.[/character]\n[narrator]An Tiêm dựng một túp lều nhỏ bằng cây và lá. Chàng bắt cá, hái rau, nhặt củi. Vợ chàng tìm nước ngọt, nấu cơm, chăm con. Ngày nào cũng vất vả, nhưng cả nhà vẫn ở bên nhau.[/narrator]",
+      "sceneDescription": "An Tiêm dựng lều lá, vợ nấu cơm, con nhỏ chơi trên cát",
+      "scene": "beach",
+      "mood": "calm",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Một hôm, có một đàn chim bay từ phía tây tới. Chim thả xuống bãi cát mấy hạt nhỏ đen nhánh. Ít lâu sau, chỗ ấy mọc lên những dây leo xanh mướt, rồi ra những quả tròn to, vỏ xanh thẫm.[/narrator]\n[character:Mai An Tiêm]Chim ăn được thì người cũng ăn được. Mình thử xem nào![/character]\n[character:Vợ An Tiêm]Quả to quá, chắc phải nặng lắm đây![/character]",
+      "sceneDescription": "Đàn chim bay qua, dây leo xanh có quả tròn to trên bãi cát",
+      "scene": "beach",
+      "mood": "curious",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]An Tiêm bổ quả ra. Bên trong ruột đỏ tươi, hạt đen nhánh, ăn vào thấy ngọt mát, thơm lừng.[/narrator]\n[character:Vợ An Tiêm]Ngon quá! Quả này vừa ngọt vừa mát, thật là quý![/character]\n[character:Mai An Tiêm]Mình giữ hạt lại, đem gieo khắp đảo nhé.[/character]\n[narrator]Hai vợ chồng chăm chỉ gieo hạt, tưới cây. Chẳng bao lâu, dây xanh quả to đã mọc kín cả bãi cát.[/narrator]",
+      "sceneDescription": "Quả dưa bổ đôi ruột đỏ, vợ chồng An Tiêm cười vui",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Một ngày, An Tiêm khắc tên mình lên vỏ quả, rồi thả xuống biển. Sóng đưa những quả dưa trôi đi rất xa. Có thuyền buôn vớt được, ăn thử thấy ngon, liền tìm ra đảo.[/narrator]\n[narrator]Họ mang gạo, vải, đồ dùng đến đổi lấy quả. Cuộc sống của gia đình An Tiêm ngày càng đầy đủ.[/narrator]\n[character:Vợ An Tiêm]Nhờ chăm chỉ, nhà mình đã có cái ăn cái mặc rồi mình ạ.[/character]",
+      "sceneDescription": "Quả dưa trôi trên sóng, thuyền buôn cập bến đảo",
+      "scene": "beach",
+      "mood": "curious",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ít lâu sau, có người mang thứ quả lạ ấy dâng lên vua Hùng. Vua cắn thử một miếng, thấy ngọt mát lạ thường. Vua thấy tên An Tiêm khắc trên vỏ, lại nghe kể chuyện gia đình An Tiêm chăm chỉ trên đảo, liền hiểu ra.[/narrator]\n[character:Vua Hùng]An Tiêm quả thật giỏi giang, chăm chỉ. Ta đã trách nhầm con rồi. Mau đón gia đình An Tiêm về đây![/character]",
+      "sceneDescription": "Vua Hùng cầm quả dưa có khắc tên An Tiêm",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]An Tiêm cùng vợ con trở về đất liền, mang theo thật nhiều hạt giống. Chàng dạy mọi người cách trồng loại quả ấy. Người ta gọi đó là quả dưa hấu.[/narrator]\n[narrator]Người dân vùng Nga Sơn, Thanh Hoá, vẫn kể rằng nơi An Tiêm trồng dưa năm xưa chính là quê hương mình.[/narrator]\n[character:Mai An Tiêm]Có chăm chỉ làm lụng, thì ở đâu cũng sống được, các con ạ.[/character]",
+      "sceneDescription": "An Tiêm chia hạt dưa cho dân làng, ruộng dưa xanh mướt",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}
