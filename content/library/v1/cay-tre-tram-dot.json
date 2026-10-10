@@ -1,0 +1,117 @@
+{
+  "slug": "cay-tre-tram-dot",
+  "title": "Cây tre trăm đốt",
+  "category": "fairy_tale",
+  "ageMin": 4,
+  "ageMax": 8,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Phú ông lừa anh Khoai đi tìm cây tre trăm đốt để khỏi giữ lời hứa. Nhờ ông Bụt và câu thần chú khắc nhập, khắc xuất, anh Khoai được đền đáp.",
+  "moral": "Phải giữ lời hứa; người hiền lành, chăm chỉ sẽ được giúp đỡ.",
+  "tags": [
+    "co-tich-viet-nam",
+    "giu-loi-hua",
+    "ong-but"
+  ],
+  "origin": "Truyện cổ tích người Việt (dân tộc Kinh), lưu truyền dân gian.",
+  "adaptation": [
+    "Giữ nguyên câu thần chú dân gian 'khắc nhập, khắc xuất'.",
+    "Phần phú ông bị dính vào tre kể theo hướng hài hước, không bêu riếu."
+  ],
+  "characters": [
+    {
+      "name": "Anh Khoai",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Anh nông dân hiền lành, chăm chỉ",
+      "appearance": "chàng trai áo nâu, khăn mỏ rìu, vai vác dao"
+    },
+    {
+      "name": "Phú Ông",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông nhà giàu keo kiệt, hay nuốt lời",
+      "appearance": "ông già béo, áo gấm, râu dê"
+    },
+    {
+      "name": "Ông Bụt",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông Bụt hiền từ, giúp người ngay thẳng",
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một anh nông dân hiền lành tên là Khoai. Anh làm thuê cho nhà phú ông giàu nhất làng. Sáng sớm anh đã ra đồng, tối mịt mới về.[/narrator]\n[character:Phú Ông]Khoai này, con chịu khó làm cho ta ba năm. Ta sẽ gả con gái cho con.[/character]\n[character:Anh Khoai]Dạ, con xin hứa sẽ làm việc thật chăm chỉ.[/character]",
+      "sceneDescription": "Anh Khoai cày ruộng cho nhà phú ông",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ba năm trôi qua. Nhờ anh Khoai, ruộng nhà phú ông lúa chín vàng, kho thóc đầy ắp. Nhưng phú ông lại không muốn giữ lời hứa. Lão muốn gả con gái cho một nhà giàu khác.[/narrator]\n[narrator]Phú ông nghĩ ra một mẹo.[/narrator]\n[character:Phú Ông]Khoai à, con vào rừng tìm cho ta một cây tre có đủ một trăm đốt. Có tre ấy, ta mới cho cưới.[/character]",
+      "sceneDescription": "Phú ông giao việc tìm cây tre trăm đốt",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Anh Khoai vác dao vào rừng. Anh đi hết bụi tre này đến bụi tre khác, đếm mãi mà chẳng cây nào đủ một trăm đốt. Cây dài nhất cũng chỉ hơn hai mươi đốt.[/narrator]\n[narrator]Trời đã về chiều. Anh ngồi xuống gốc tre, buồn bã thở dài.[/narrator]\n[character:Anh Khoai]Làm sao tìm được cây tre trăm đốt bây giờ?[/character]",
+      "sceneDescription": "Anh Khoai ngồi buồn bên bụi tre trong rừng",
+      "scene": "forest",
+      "mood": "sad",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bỗng ông Bụt hiện ra, râu tóc bạc phơ, tay chống gậy trúc.[/narrator]\n[character:Ông Bụt]Con ơi, vì sao con buồn thế?[/character]\n[narrator]Anh Khoai kể hết mọi chuyện. Ông Bụt mỉm cười hiền hậu.[/narrator]\n[character:Ông Bụt]Con hãy chặt đủ một trăm đốt tre. Rồi đọc thật to: khắc nhập, khắc nhập! Các đốt tre sẽ liền lại với nhau.[/character]",
+      "sceneDescription": "Ông Bụt hiện ra bên anh Khoai",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Anh Khoai làm theo lời Bụt. Anh chặt từng đốt tre, xếp thành một hàng dài, đếm đủ một trăm đốt.[/narrator]\n[character:Anh Khoai]Khắc nhập, khắc nhập![/character]\n[narrator]Kỳ lạ chưa! Một trăm đốt tre liền lại thành một cây tre dài thật dài. Nhưng cây tre dài quá, anh không vác về được.[/narrator]\n[character:Ông Bụt]Con đọc: khắc xuất, khắc xuất, các đốt tre sẽ rời ra.[/character]",
+      "sceneDescription": "Một trăm đốt tre liền lại thành cây tre thật dài",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Anh Khoai bó các đốt tre lại, vác về làng. Lúc ấy, nhà phú ông đang làm cỗ cưới con gái cho nhà giàu kia. Anh Khoai xếp các đốt tre ra giữa sân.[/narrator]\n[character:Anh Khoai]Khắc nhập, khắc nhập![/character]\n[narrator]Các đốt tre liền lại thành cây tre trăm đốt. Phú ông tò mò chạy lại, đưa tay sờ thử.[/narrator]",
+      "sceneDescription": "Cây tre trăm đốt giữa sân nhà phú ông",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[character:Anh Khoai]Khắc nhập, khắc nhập![/character]\n[narrator]Thế là phú ông dính chặt vào cây tre, giãy mãi không ra. Ông nhà giàu kia chạy đến kéo, cũng dính luôn. Cả làng đứng xem, cười ồ lên. Mọi người xúm vào gỡ mà không ai gỡ ra được.[/narrator]\n[character:Phú Ông]Ối, gỡ ta ra! Khoai ơi, ta sai rồi! Ta xin giữ lời hứa![/character]",
+      "sceneDescription": "Phú ông dính chặt vào cây tre, cả làng cười",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Anh Khoai mỉm cười, rồi đọc thật to câu thần chú.[/narrator]\n[character:Anh Khoai]Khắc xuất, khắc xuất![/character]\n[narrator]Phú ông được gỡ ra, xấu hổ đỏ mặt. Từ đó, phú ông giữ đúng lời hứa. Đám cưới của anh Khoai diễn ra vui vẻ, cả làng đến chúc mừng. Ai cũng nói: người hiền lành, chăm chỉ sẽ được đền đáp.[/narrator]",
+      "sceneDescription": "Đám cưới vui vẻ của anh Khoai",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

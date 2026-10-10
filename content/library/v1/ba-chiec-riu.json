@@ -1,0 +1,111 @@
+{
+  "slug": "ba-chiec-riu",
+  "title": "Ba chiếc rìu",
+  "category": "fairy_tale",
+  "ageMin": 3,
+  "ageMax": 7,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Anh tiều phu nghèo làm rơi chiếc rìu sắt xuống sông. Ông Bụt mang lên rìu vàng, rìu bạc, nhưng anh chỉ nhận đúng chiếc rìu của mình.",
+  "moral": "Thật thà, không tham của người khác.",
+  "tags": [
+    "co-tich-viet-nam",
+    "that-tha",
+    "ong-but"
+  ],
+  "origin": "Truyện cổ tích được kể phổ biến ở Việt Nam; cùng mô-típ với ngụ ngôn Aesop về người tiều phu thật thà.",
+  "adaptation": [
+    "Kể lại bằng lời văn mới cho trẻ nhỏ, ba lần thử lặp lại để bé dễ đoán."
+  ],
+  "characters": [
+    {
+      "name": "Anh Tiều Phu",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Anh tiều phu nghèo, chăm chỉ và thật thà",
+      "appearance": "chàng trai áo nâu vá, quần xắn, vác bó củi"
+    },
+    {
+      "name": "Ông Bụt",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông Bụt hiền từ, hay giúp người tốt",
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một anh tiều phu nghèo sống ở bìa rừng. Cả gia tài của anh chỉ có một chiếc rìu sắt cũ. Ngày nào anh cũng vào rừng đốn củi, mang ra chợ đổi lấy gạo.[/narrator]\n[character:Anh Tiều Phu]Rìu ơi, hôm nay mình cùng cố gắng nhé. Đốn thật nhiều củi để mua gạo nào![/character]\n[narrator]Tiếng rìu vang lên cộc cộc giữa rừng xanh.[/narrator]",
+      "sceneDescription": "Anh tiều phu đốn củi ở bìa rừng",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hôm ấy, anh đốn củi bên một dòng sông. Mồ hôi ướt đẫm, tay anh trơn tuột. Chiếc rìu tuột khỏi tay, rơi tõm xuống nước sâu.[/narrator]\n[narrator]Anh lội xuống tìm mãi mà không thấy. Anh ngồi bên bờ sông, buồn rầu ôm mặt, nước mắt rưng rưng.[/narrator]\n[character:Anh Tiều Phu]Mất rìu rồi, mình biết lấy gì kiếm sống đây?[/character]",
+      "sceneDescription": "Anh tiều phu ngồi buồn bên bờ sông",
+      "scene": "stream",
+      "mood": "sad",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Bỗng có ánh sáng lấp lánh trên mặt nước. Một ông cụ râu tóc bạc phơ hiện ra, nét mặt hiền từ. Đó là ông Bụt.[/narrator]\n[character:Ông Bụt]Con ơi, vì sao con buồn thế?[/character]\n[character:Anh Tiều Phu]Thưa ông, con làm rơi chiếc rìu xuống sông. Con chỉ có chiếc rìu ấy để kiếm sống.[/character]\n[character:Ông Bụt]Con đừng buồn. Để ông tìm giúp con.[/character]",
+      "sceneDescription": "Ông Bụt hiện ra trên mặt sông",
+      "scene": "stream",
+      "mood": "curious",
+      "ambient": "stream",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Ông Bụt lặn xuống sông. Một lúc sau, ông ngoi lên, trên tay cầm một chiếc rìu bằng vàng sáng chói.[/narrator]\n[character:Ông Bụt]Có phải rìu của con đây không?[/character]\n[narrator]Anh tiều phu nhìn chiếc rìu vàng lấp lánh, rồi chậm rãi lắc đầu. Rìu vàng đẹp thật, nhưng đó không phải rìu của anh.[/narrator]\n[character:Anh Tiều Phu]Thưa ông, không phải ạ. Rìu của con chỉ là rìu sắt thôi.[/character]",
+      "sceneDescription": "Ông Bụt giơ chiếc rìu vàng sáng chói",
+      "scene": "stream",
+      "mood": "curious",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông Bụt lại lặn xuống lần nữa. Lần này, ông mang lên một chiếc rìu bằng bạc trắng ngời, sáng như ánh trăng.[/narrator]\n[character:Ông Bụt]Thế chiếc rìu bạc này có phải của con không?[/character]\n[narrator]Anh tiều phu vẫn thật thà lắc đầu.[/narrator]\n[character:Anh Tiều Phu]Cũng không phải đâu ạ. Rìu của con có cán gỗ, lưỡi sắt đã cũ lắm rồi.[/character]",
+      "sceneDescription": "Ông Bụt giơ chiếc rìu bạc trắng ngời",
+      "scene": "stream",
+      "mood": "curious",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông Bụt lặn xuống lần thứ ba. Khi ngoi lên, ông cầm một chiếc rìu sắt cũ, cán gỗ đã mòn.[/narrator]\n[narrator]Vừa nhìn thấy, anh tiều phu reo lên vui sướng. Anh đưa hai tay đón lấy chiếc rìu, ôm vào lòng như ôm một người bạn cũ.[/narrator]\n[character:Anh Tiều Phu]Đúng rồi! Đây mới là rìu của con. Con cảm ơn ông nhiều lắm![/character]",
+      "sceneDescription": "Anh tiều phu vui mừng nhận lại chiếc rìu sắt",
+      "scene": "stream",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông Bụt mỉm cười, vuốt chòm râu bạc, gật gù khen ngợi.[/narrator]\n[character:Ông Bụt]Con là người thật thà, không tham của người khác. Ông tặng con cả ba chiếc rìu này.[/character]\n[narrator]Anh tiều phu cảm ơn ông Bụt rối rít. Chớp mắt một cái, ông Bụt đã biến mất, chỉ còn mặt sông lấp lánh nắng vàng.[/narrator]",
+      "sceneDescription": "Ông Bụt trao cả ba chiếc rìu cho anh tiều phu",
+      "scene": "stream",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Anh tiều phu mang ba chiếc rìu về làng. Anh đổi rìu vàng, rìu bạc lấy tiền, giúp đỡ những nhà nghèo trong làng. Còn chiếc rìu sắt, anh vẫn mang theo vào rừng mỗi ngày.[/narrator]\n[character:Anh Tiều Phu]Chăm chỉ và thật thà thì lòng mình lúc nào cũng nhẹ nhàng.[/character]\n[narrator]Từ đó, ai trong làng cũng quý mến anh.[/narrator]",
+      "sceneDescription": "Anh tiều phu giúp đỡ người nghèo trong làng",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

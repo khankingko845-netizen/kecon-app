@@ -1,0 +1,121 @@
+{
+  "slug": "em-be-thong-minh",
+  "title": "Em bé thông minh",
+  "category": "fairy_tale",
+  "ageMin": 5,
+  "ageMax": 9,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Viên quan đi tìm người tài gặp một cậu bé đáp lại câu đố rất nhanh trí. Cậu bé giải được câu đố trâu đực đẻ con của vua và câu đố xâu chỉ qua vỏ ốc của sứ giả nước láng giềng.",
+  "moral": "Nhanh trí, bình tĩnh và dùng sự thông minh để giúp mọi người.",
+  "tags": [
+    "co-tich-viet-nam",
+    "thong-minh",
+    "cau-do"
+  ],
+  "origin": "Truyện cổ tích người Việt (truyện về nhân vật thông minh), lưu truyền dân gian.",
+  "adaptation": [
+    "Không nhắc chuyện mẹ cậu bé qua đời; không có cảnh mổ trâu.",
+    "Lược bớt thử thách con chim sẻ để truyện gọn cho trẻ.",
+    "Giữ bài đồng dao 'Tang tình tang… bắt con kiến càng' (văn vần dân gian)."
+  ],
+  "characters": [
+    {
+      "name": "Em Bé",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé bảy, tám tuổi, nhanh trí, lễ phép",
+      "appearance": "cậu bé tóc để chỏm, áo cánh nâu, quần lửng, mắt sáng"
+    },
+    {
+      "name": "Viên Quan",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Viên quan được vua sai đi tìm người tài",
+      "appearance": "ông quan áo dài xanh, mũ cánh chuồn, cưỡi ngựa"
+    },
+    {
+      "name": "Nhà Vua",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Nhà vua thích người tài, vui tính",
+      "appearance": "ông vua già râu bạc, mũ vàng, áo bào vàng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một ông vua muốn tìm người tài giúp nước. Vua sai một viên quan đi khắp nơi, ra những câu đố thật khó để thử tài mọi người.[/narrator]\n[narrator]Một hôm, viên quan đi qua cánh đồng, thấy hai cha con đang cày ruộng. Ông liền hỏi người cha:[/narrator]\n[character:Viên Quan]Này ông kia! Trâu của ông cày một ngày được mấy đường?[/character]\n[narrator]Người cha ngẩn người, chưa biết trả lời ra sao.[/narrator]",
+      "sceneDescription": "Viên quan cưỡi ngựa dừng bên ruộng, hai cha con đang cày",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Cậu con trai mới bảy, tám tuổi, nhanh nhảu đáp lại:[/narrator]\n[character:Em Bé]Thưa ông, thế ngựa của ông đi một ngày được mấy bước ạ?[/character]\n[narrator]Viên quan sững sờ, không trả lời được. Ông thầm nghĩ, cậu bé này thật thông minh, chắc là người tài mình đang tìm. Ông vội về kinh tâu với vua.[/narrator]\n[character:Viên Quan]Tâu bệ hạ, thần đã tìm được một cậu bé rất lanh lợi.[/character]",
+      "sceneDescription": "Cậu bé đứng cạnh con trâu, mỉm cười hỏi lại viên quan",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vua muốn thử thêm. Vua ban cho làng cậu bé ba thúng gạo nếp và ba con trâu đực, rồi ra lệnh:[/narrator]\n[character:Nhà Vua]Nuôi ba con trâu đực này cho đẻ thành chín con. Sang năm phải nộp đủ![/character]\n[narrator]Cả làng lo sợ, vì trâu đực làm sao mà đẻ được? Cậu bé thì chỉ mỉm cười.[/narrator]\n[character:Em Bé]Cha ơi, cha đừng lo. Con có cách rồi![/character]",
+      "sceneDescription": "Dân làng lo lắng nhìn ba con trâu đực, cậu bé mỉm cười",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cậu bé bảo dân làng lấy gạo nếp đồ xôi chia nhau ăn cho vui, còn trâu thì cứ đem đi cày ruộng. Rồi cậu theo cha lên kinh thành. Đến trước cổng cung vua, cậu khóc ầm lên.[/narrator]\n[character:Nhà Vua]Cậu bé kia, sao lại khóc ở đây?[/character]\n[character:Em Bé]Tâu đức vua, con muốn có em bé để chơi cùng, mà cha con nhất định không chịu đẻ em bé cho con![/character]",
+      "sceneDescription": "Cậu bé đứng khóc trước cổng cung, nhà vua bước ra hỏi",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Vua cùng các quan bật cười.[/narrator]\n[character:Nhà Vua]Cha con là đàn ông, làm sao mà đẻ được em bé![/character]\n[character:Em Bé]Thưa đức vua, đàn ông không đẻ được, thì trâu đực làm sao đẻ được ạ?[/character]\n[narrator]Vua cười vang, biết cậu bé thông minh thật. Vua ban thưởng cho làng cậu, không bắt nộp trâu nữa. Nhưng vua vẫn muốn xem cậu còn giỏi đến đâu.[/narrator]",
+      "sceneDescription": "Nhà vua và các quan cười vang, cậu bé đứng lễ phép",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Một hôm, sứ giả nước láng giềng đến, mang theo một chiếc vỏ ốc vặn rất dài, rỗng hai đầu. Họ đố: làm sao xâu được sợi chỉ mảnh xuyên qua ruột ốc quanh co?[/narrator]\n[character:Viên Quan]Đường ruột ốc quanh co thế này, xâu sao nổi?[/character]\n[narrator]Các quan đều lắc đầu, chẳng ai nghĩ ra cách. Vua liền cho người đi mời cậu bé.[/narrator]",
+      "sceneDescription": "Sứ giả nước láng giềng giơ chiếc vỏ ốc dài, các quan lắc đầu",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cậu bé đang chơi nhảy dây, nghe chuyện, liền vừa nhảy vừa hát:[/narrator]\n[character:Em Bé]Tang tình tang, tính tang tình. Bắt con kiến càng, buộc chỉ ngang lưng. Bên thì lấy giấy mà bưng, bên thì bôi mỡ, kiến mừng kiến sang![/character]\n[narrator]Người ta làm theo. Con kiến ngửi thấy mùi mỡ, bò quanh co trong ruột ốc, kéo sợi chỉ sang bên kia.[/narrator]",
+      "sceneDescription": "Cậu bé nhảy dây và hát, con kiến buộc chỉ bò vào vỏ ốc",
+      "scene": "garden",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sứ giả nước láng giềng phục lắm, khen nước ta có người tài.[/narrator]\n[character:Nhà Vua]Cậu bé tuy nhỏ tuổi mà thông minh hơn người. Ta phong cho cậu làm trạng nguyên![/character]\n[narrator]Vua cho xây nhà cho cậu ở gần cung để tiện hỏi han. Cậu bé vẫn chăm học, chăm hỏi, và dùng sự thông minh của mình để giúp đỡ mọi người.[/narrator]",
+      "sceneDescription": "Nhà vua trao mũ trạng nguyên cho cậu bé, dân làng vui mừng",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "bell",
+        "happy-jingle"
+      ]
+    }
+  ]
+}

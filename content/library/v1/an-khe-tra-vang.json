@@ -1,0 +1,120 @@
+{
+  "slug": "an-khe-tra-vang",
+  "title": "Ăn khế trả vàng",
+  "category": "fairy_tale",
+  "ageMin": 4,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Người em hiền lành chỉ được chia cây khế. Chim thần ăn khế, trả vàng và chở người em ra đảo. Người anh tham lam may túi thật to và bị mất sạch vàng giữa biển.",
+  "moral": "Sống hiền lành, biết đủ thì được hạnh phúc; tham lam sẽ mất tất cả.",
+  "tags": [
+    "co-tich-viet-nam",
+    "tham-lam",
+    "anh-em"
+  ],
+  "origin": "Truyện cổ tích người Việt (dân tộc Kinh), lưu truyền dân gian.",
+  "adaptation": [
+    "Không nhắc cha mẹ qua đời; hai anh em lớn lên rồi chia nhà ở riêng.",
+    "Kết thúc nhẹ nhàng: túi vàng rơi xuống biển, người anh được chim đưa về, biết lỗi và xin lỗi em (bản gốc: người anh rơi xuống biển).",
+    "Giữ câu thần chú 'Ăn một quả, trả cục vàng, may túi ba gang, mang đi mà đựng'."
+  ],
+  "characters": [
+    {
+      "name": "Người Em",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Người em hiền lành, chăm chỉ, biết đủ",
+      "appearance": "chàng nông dân trẻ, áo nâu vá vai, quần xắn gối, chân đất"
+    },
+    {
+      "name": "Người Anh",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Người anh tham lam, về sau biết lỗi",
+      "appearance": "người đàn ông béo tốt, áo the đen, khăn xếp, bụng to"
+    },
+    {
+      "name": "Chim Thần",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Con chim lạ biết nói, giữ lời hứa",
+      "appearance": "con chim lớn lông óng ánh nhiều màu như cầu vồng, đuôi dài"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, ở một làng nọ có hai anh em. Khi lớn lên, hai anh em chia nhà ra ở riêng.[/narrator]\n[narrator]Người anh tham lam, nhận hết nhà to, ruộng tốt và đàn trâu béo. Người anh chỉ chia cho em một túp lều nhỏ và một cây khế ở góc vườn.[/narrator]\n[character:Người Anh]Chú cứ lấy cây khế mà sống. Thế là công bằng lắm rồi![/character]\n[narrator]Người em hiền lành, không nói gì, vui vẻ nhận phần.[/narrator]",
+      "sceneDescription": "Người anh chỉ tay về túp lều nhỏ và cây khế, người em hiền lành đứng nghe",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Người em chăm chỉ tưới nước, bắt sâu cho cây khế. Mùa ấy, cây khế ra hoa tím biếc, rồi trĩu quả vàng ươm, ngọt lịm.[/narrator]\n[narrator]Một buổi sáng, có con chim lạ, lông óng ánh như cầu vồng, bay đến ăn khế. Nó ăn hết quả này đến quả khác.[/narrator]\n[character:Người Em]Chim ơi, nhà tôi chỉ có cây khế này thôi. Chim ăn hết thì tôi lấy gì mà sống?[/character]",
+      "sceneDescription": "Cây khế trĩu quả vàng, con chim lông cầu vồng đậu trên cành ăn khế",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Con chim bỗng cất tiếng nói, giọng trong như tiếng chuông.[/narrator]\n[character:Chim Thần]Ăn một quả, trả cục vàng. May túi ba gang, mang đi mà đựng.[/character]\n[narrator]Người em ngạc nhiên lắm. Tối hôm ấy, hai vợ chồng người em ngồi bên ngọn đèn dầu, cùng nhau may một chiếc túi nhỏ, dài đúng ba gang tay, như lời chim dặn.[/narrator]\n[character:Người Em]Chim đã hứa, chắc chắn chim sẽ quay lại.[/character]",
+      "sceneDescription": "Chim thần cất tiếng nói, người em ngạc nhiên đứng dưới gốc khế",
+      "scene": "garden",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, chim thần bay đến thật. Người em ngồi lên lưng chim. Chim bay qua núi cao, qua biển rộng, đến một hòn đảo có hang đầy vàng bạc lấp lánh.[/narrator]\n[character:Chim Thần]Anh lấy vàng đi, đựng vừa túi ba gang là đủ.[/character]\n[narrator]Người em chỉ nhặt đầy chiếc túi nhỏ, rồi cảm ơn chim. Từ đó, nhà người em đủ ăn đủ mặc. Anh còn đem gạo giúp những nhà nghèo trong xóm.[/narrator]",
+      "sceneDescription": "Người em nhặt vàng vào chiếc túi nhỏ trong hang đá lấp lánh",
+      "scene": "cave",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "coins"
+      ]
+    },
+    {
+      "text": "[narrator]Người anh nghe tin, vội vàng chạy sang nhà em.[/narrator]\n[character:Người Anh]Chú đổi cho anh cây khế đi. Anh cho chú cả nhà to, ruộng tốt của anh.[/character]\n[narrator]Người em thương anh, liền đồng ý đổi. Người anh mừng rỡ, ngày nào cũng ngồi dưới gốc khế, mắt dõi lên trời chờ chim thần.[/narrator]\n[character:Người Anh]Chim ơi, mau đến đây! Khế ngọt lắm, chim ăn đi cho anh nhờ![/character]",
+      "sceneDescription": "Người anh ngồi dưới gốc khế, ngước mắt nhìn trời chờ chim",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Rồi chim thần cũng bay đến ăn khế. Người anh giả vờ kêu ca y như em mình ngày trước. Chim thần lại nói:[/narrator]\n[character:Chim Thần]Ăn một quả, trả cục vàng. May túi ba gang, mang đi mà đựng.[/character]\n[narrator]Người anh chạy về bảo vợ may ngay một chiếc túi thật to, dài những mười hai gang tay.[/narrator]\n[character:Người Anh]Túi càng to, vàng càng nhiều. Lần này nhà mình giàu to rồi![/character]",
+      "sceneDescription": "Người anh ôm chiếc túi to dài mười hai gang, cười hớn hở",
+      "scene": "garden",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến đảo vàng, người anh nhét vàng đầy túi, lại nhét thêm vào túi áo, túi quần. Lúc bay về, chim thần nặng quá, cánh mỗi lúc một chậm.[/narrator]\n[character:Chim Thần]Anh bỏ bớt vàng đi, kẻo nặng quá tôi không bay nổi![/character]\n[character:Người Anh]Không được! Vàng của tôi, tôi không bỏ đâu![/character]\n[narrator]Đến giữa biển, chim mỏi cánh, nghiêng mình. Chiếc túi vàng tuột khỏi vai người anh, rơi tõm xuống biển sâu.[/narrator]",
+      "sceneDescription": "Chim thần bay chậm trên biển, túi vàng to tuột khỏi vai người anh",
+      "scene": "beach",
+      "mood": "tense",
+      "ambient": "waves",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Người anh sợ hãi ôm chặt lấy cổ chim. Chim thần cố gắng đưa anh về tận bờ. Người anh về nhà tay trắng, quần áo ướt sũng.[/narrator]\n[character:Người Anh]Chú ơi, anh tham lam quá nên mới ra nông nỗi này. Anh xin lỗi chú.[/character]\n[character:Người Em]Anh em mình thương nhau là quý nhất. Anh về đây, mình cùng chăm cây khế nhé.[/character]\n[narrator]Từ đó, hai anh em sống hoà thuận, vui vẻ bên nhau.[/narrator]",
+      "sceneDescription": "Hai anh em nắm tay nhau dưới gốc khế ở làng quê",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

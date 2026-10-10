@@ -1,0 +1,124 @@
+{
+  "slug": "son-tinh-thuy-tinh",
+  "title": "Sơn Tinh, Thủy Tinh",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 9,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Sơn Tinh và Thủy Tinh cùng đến cầu hôn Mị Nương. Sơn Tinh mang sính lễ đến trước nên cưới được nàng. Thủy Tinh tức giận dâng nước, Sơn Tinh dựng núi chặn lũ.",
+  "moral": "Kiên trì, đoàn kết thì vượt qua được thiên tai.",
+  "tags": [
+    "truyen-dan-gian",
+    "hung-vuong",
+    "thien-nhien"
+  ],
+  "origin": "Truyền thuyết người Việt thời Hùng Vương, giải thích hiện tượng lũ lụt hằng năm ở đồng bằng Bắc Bộ.",
+  "adaptation": [
+    "Cuộc giao tranh kể như thiên nhiên (mưa, nước dâng, núi mọc cao), không có cảnh thương vong.",
+    "Diễn đạt lại phép lạ của hai vị thần bằng lời riêng; giữ danh sách sính lễ truyền thống.",
+    "Thêm kết nối hiện đại: đắp đê, trồng cây giữ đất."
+  ],
+  "characters": [
+    {
+      "name": "Sơn Tinh",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Chúa vùng non cao núi Tản Viên",
+      "appearance": "chàng trai khoẻ mạnh, áo xanh lá, đầu đội vòng lá rừng"
+    },
+    {
+      "name": "Thủy Tinh",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Chúa vùng biển cả, nóng nảy",
+      "appearance": "chàng trai áo xanh nước biển, tóc xoăn như sóng, tay cầm cây đinh ba"
+    },
+    {
+      "name": "Vua Hùng",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Vua Hùng thứ mười tám, cha của Mị Nương",
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+    },
+    {
+      "name": "Mị Nương",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Công chúa xinh đẹp, hiền dịu",
+      "appearance": "thiếu nữ tóc dài, áo dài lụa hồng, đội vòng hoa nhỏ"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, vua Hùng thứ mười tám có một người con gái tên là Mị Nương, xinh đẹp và hiền dịu. Vua muốn tìm cho nàng một người chồng thật xứng đáng.[/narrator]\n[character:Vua Hùng]Ta sẽ chọn người tài giỏi nhất cho con gái ta.[/character]\n[character:Mị Nương]Thưa cha, con xin nghe theo lời cha.[/character]\n[narrator]Tin ấy bay đi khắp nơi. Một ngày, có hai chàng trai cùng đến cầu hôn.[/narrator]",
+      "sceneDescription": "Vua Hùng và Mị Nương đứng dưới mái đình làng",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Người thứ nhất là Sơn Tinh, chúa vùng non cao. Sơn Tinh chỉ cần giơ tay lên, mặt đất liền nhô thành gò, thành đồi, rồi núi non mọc lên trùng điệp.[/narrator]\n[character:Sơn Tinh]Tôi là Sơn Tinh, ở vùng núi Tản Viên. Xin nhà vua cho tôi được cưới Mị Nương.[/character]\n[narrator]Mọi người trầm trồ, ai cũng khen Sơn Tinh tài giỏi.[/narrator]",
+      "sceneDescription": "Sơn Tinh giơ tay, núi đồi xanh mọc lên phía sau",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Người thứ hai là Thủy Tinh, chúa vùng biển cả. Thủy Tinh khẽ vung tay, gió liền nổi lên ầm ầm. Chàng hô lên một tiếng, mây đen kéo đến, mưa trút xuống như thác.[/narrator]\n[character:Thủy Tinh]Tôi là Thủy Tinh, ở dưới biển sâu. Tôi cũng xin được cưới Mị Nương![/character]\n[narrator]Vua Hùng nhìn hai chàng trai. Người nào cũng tài giỏi, vua chẳng biết chọn ai.[/narrator]",
+      "sceneDescription": "Thủy Tinh vung tay, sóng biển dâng cao và mây đen kéo đến",
+      "scene": "beach",
+      "mood": "curious",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[character:Vua Hùng]Hai chàng đều xứng đáng. Ngày mai, ai mang sính lễ đến trước, người đó sẽ được cưới Mị Nương.[/character]\n[narrator]Sính lễ gồm một trăm ván cơm nếp, một trăm nệp bánh chưng, voi chín ngà, gà chín cựa, ngựa chín hồng mao.[/narrator]\n[character:Sơn Tinh]Núi rừng của tôi có đủ những thứ ấy![/character]\n[narrator]Thủy Tinh thì lo lắng, vì những lễ vật ấy đều ở trên rừng, trên núi.[/narrator]",
+      "sceneDescription": "Vua Hùng nói về sính lễ, Sơn Tinh mỉm cười, Thủy Tinh cau mày",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng sớm hôm sau, trời còn chưa sáng hẳn, Sơn Tinh đã mang đủ lễ vật đến trước. Đoàn voi, gà, ngựa nối nhau đi theo. Vua Hùng giữ lời hứa, cho Sơn Tinh cưới Mị Nương.[/narrator]\n[character:Mị Nương]Thưa cha, con xin chào cha để theo chồng về núi.[/character]\n[narrator]Sơn Tinh đưa Mị Nương về núi Tản Viên. Hai người sống hạnh phúc giữa núi rừng xanh mát.[/narrator]",
+      "sceneDescription": "Sơn Tinh dẫn voi chín ngà, đưa Mị Nương về núi",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": [
+        "footsteps",
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Thủy Tinh đến sau, không cưới được Mị Nương, tức giận vô cùng. Trời bỗng tối sầm lại.[/narrator]\n[character:Thủy Tinh]Ta sẽ dâng nước lên, đuổi theo đón Mị Nương về![/character]\n[narrator]Thủy Tinh hô mưa, gọi gió, làm thành giông bão rung chuyển cả đất trời. Nước sông dâng cao, cuồn cuộn tràn vào ruộng đồng, nhà cửa, rồi dâng lên cả lưng đồi, sườn núi.[/narrator]",
+      "sceneDescription": "Mưa bão lớn, nước sông dâng cao tràn ruộng đồng",
+      "scene": "rain",
+      "mood": "tense",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sơn Tinh không hề nao núng. Chàng bốc từng quả đồi, dời từng dãy núi, dựng thành bức tường chắn nước. Nước dâng đến đâu, núi lại vươn cao đến đó.[/narrator]\n[character:Sơn Tinh]Thủy Tinh, hãy về đi! Núi của ta sẽ che chở cho mọi người![/character]\n[narrator]Ròng rã mấy tháng trời, cuối cùng Thủy Tinh mỏi mệt, đành rút nước về biển.[/narrator]",
+      "sceneDescription": "Sơn Tinh nâng núi chặn dòng nước lũ",
+      "scene": "rain",
+      "mood": "triumphant",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Từ đó, năm nào Thủy Tinh cũng nhớ chuyện cũ, lại dâng nước đánh Sơn Tinh. Đó chính là những mùa mưa lũ hằng năm. Nhưng lần nào Thủy Tinh cũng phải rút lui.[/narrator]\n[narrator]Học theo Sơn Tinh, ông cha ta đã cùng nhau đắp đê thật cao, trồng cây giữ đất, để làng xóm bình yên mỗi mùa nước lớn.[/narrator]\n[character:Vua Hùng]Mọi người đồng lòng, thì không con lũ nào làm khó được chúng ta![/character]",
+      "sceneDescription": "Dân làng cùng nhau đắp đê, trồng cây bên sông",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

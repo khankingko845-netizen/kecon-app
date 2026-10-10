@@ -51,6 +51,8 @@ function voiceAge(v: CastableVoice): Age {
   return null;
 }
 
+const AGE_RANK: Record<Exclude<Age, null>, number> = { child: 0, adult: 1, elder: 2 };
+
 const WANT: Record<VoiceType, { gender: Gender; age: Age }> = {
   girl: { gender: "female", age: "child" },
   boy: { gender: "male", age: "child" },
@@ -97,7 +99,8 @@ export function castVoices(
       if (v.voice_id === narratorVoiceId) score -= 6;
       score -= (used.get(v.voice_id) ?? 0) * 5;
       if (want.gender && g) score += g === want.gender ? 3 : -3;
-      if (want.age && a) score += a === want.age ? 2 : want.age === "adult" ? 0 : -1;
+      // Age distance child–adult–elder: a grandma sounds closer to a woman than to a little girl.
+      if (want.age && a) score += a === want.age ? 2 : Math.abs(AGE_RANK[a] - AGE_RANK[want.age]) === 1 ? 0 : -2;
       if (score > bestScore) {
         bestScore = score;
         best = v;
