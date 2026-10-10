@@ -10,7 +10,7 @@ import {
   spokenWordCount,
 } from "@/lib/story-brief";
 import { pacingStyle, paceNarration, pageGap, segmentGap, splitParagraphs, splitSentences, MAX_BREAKS_PER_REQUEST } from "@/lib/narration-pacing";
-import { castVoices } from "@/lib/voice-casting";
+import { castVoices, castingNarrator } from "@/lib/voice-casting";
 import { SCENE_IDS, sceneArtUrl, sceneForPage } from "@/lib/scene-library";
 import { SFX_EFFECTS, STORY_SFX_IDS, storySfx } from "@/lib/sfx-library";
 import { buildIllustrationPrompt, charactersOnPage } from "@/lib/illustration-prompt";
@@ -110,6 +110,46 @@ describe("voice casting", () => {
     expect(cast.get("Ông Bụt")?.voice_id).toBe("grandpa");
     expect(cast.get("Chú Gấu")?.voice_id).toBe("man");
     expect([...cast.values()].some((v) => v.voice_id === "narr")).toBe(false);
+  });
+  it("reads Vietnamese gender/age words in names and descriptions (no ASCII-only \\b)", () => {
+    const pool = [
+      { voice_id: "ong", name: "Ông Tư" },
+      { voice_id: "be", name: "Bé Na", gender: "female" },
+      { voice_id: "co", name: "Cô Lan", description: "giọng người lớn, dịu dàng" },
+      { voice_id: "chu", name: "Chú Ba", description: "người lớn" },
+    ];
+    const cast = castVoices(
+      [
+        { name: "Ông Bụt", voiceType: "grandpa" },
+        { name: "Thỏ", voiceType: "girl" },
+        { name: "Mẹ Thỏ", voiceType: "woman" },
+        { name: "Bác Gấu", voiceType: "man" },
+      ],
+      pool,
+      "narr",
+    );
+    expect(cast.get("Ông Bụt")?.voice_id).toBe("ong");
+    expect(cast.get("Thỏ")?.voice_id).toBe("be");
+    expect(cast.get("Mẹ Thỏ")?.voice_id).toBe("co");
+    expect(cast.get("Bác Gấu")?.voice_id).toBe("chu");
+    // Without a gender column only the Vietnamese words tell "Bà" from "Ông".
+    const elders = castVoices([{ name: "Bà Tiên", voiceType: "grandma" }], [{ voice_id: "a-ong", name: "Ông Tư" }, { voice_id: "b-ba", name: "Bà Năm" }], "narr");
+    expect(elders.get("Bà Tiên")?.voice_id).toBe("b-ba");
+  });
+  it("no narrator chosen → casting avoids the voice the player will narrate with", () => {
+    const pool = [
+      { voice_id: "vien", name: "Viên", gender: "female", description: "giọng kể", sort_order: 0 },
+      { voice_id: "yuna", name: "Yuna", gender: "female", description: "giọng bé gái tinh nghịch", sort_order: 1 },
+    ];
+    expect(castingNarrator("chosen", "clone", pool)).toBe("chosen");
+    expect(castingNarrator(null, "clone", pool)).toBe("clone");
+    expect(castingNarrator(null, null, pool)).toBe("vien");
+    expect(castingNarrator(null, null, [])).toBeNull();
+    const cast = castVoices([{ name: "Thỏ", voiceType: "girl" }], pool, castingNarrator(null, null, pool));
+    expect(cast.get("Thỏ")?.voice_id).toBe("yuna");
+    // Only the narrator's voice exists → the narrator reads the character instead of a "cast" copy of itself.
+    const solo = castVoices([{ name: "Thỏ", voiceType: "girl" }], pool.slice(0, 1), castingNarrator(null, null, pool.slice(0, 1)));
+    expect(solo.get("Thỏ")?.voice_id ?? null).toBeNull();
   });
   it("no other voice → the narrator reads that character (null)", () => {
     const cast = castVoices([{ name: "Rồng", voiceType: "creature" }], [{ voice_id: "narr", name: "Giọng kể" }], "narr");

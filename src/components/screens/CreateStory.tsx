@@ -163,6 +163,11 @@ const THEME_ICON3D: Record<string, Icon3DName> = {
 };
 
 
+/** Wall-clock start of a generate request (event handler only; kept outside render for the React compiler). */
+function generationStartMs(): number {
+  return Date.now();
+}
+
 /** After a network drop, look for the story the server finished meanwhile (own stories only via RLS). */
 async function findStoryCreatedSince(startedAt: number): Promise<string | null> {
  try {
@@ -185,6 +190,10 @@ async function findStoryCreatedSince(startedAt: number): Promise<string | null> 
  /* fall through */
  }
  return null;
+}
+
+function hasOtherVoice(voices: { voice_id: string }[], narratorId: string | null): boolean {
+  return voices.some((v) => v.voice_id !== narratorId);
 }
 
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
@@ -239,6 +248,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const selectedVoice=activeNarrator?.kind==="family"?activeNarrator.id:null;
  const narratorVoiceId=activeNarrator?.kind==="default"?activeNarrator.voice_id:null;
  const effectiveVoice=selectedVoice;
+ // Characters can only get their own voice when a default voice other than the narrator exists.
+ const canCastVoices=hasOtherVoice(defaultVoicesForLocale,narratorVoiceId);
  const { hasStoryProvider } = useSettings();
  const hasStoryKey=hasStoryProvider;
 
@@ -319,7 +330,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  setIsGenerating(true);
  setGenProgress(4);
  setError(null);
- const startedAt = Date.now();
+ const startedAt = generationStartMs();
  // UI-11: Đóm báo đang nghĩ truyện (màn chờ đã có Đóm → chỉ giọng nói).
  say("thinking", { bubble: false });
 
@@ -347,7 +358,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  characters: briefCharacters,
  length: storyLength,
  pace,
- castVoices: castVoicesOn,
+ castVoices: castVoicesOn && canCastVoices,
  illustrate: canIllustrate && illustrateOn,
  ambience: ambienceOn,
  }).catch(async (err) => {
@@ -676,7 +687,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  </button>
  ))}
  </div>
- {defaultVoicesForLocale.length > 1 && (
+ {canCastVoices && (
  <SwitchRow checked={castVoicesOn} onChange={setCastVoicesOn} label="Nhân vật có giọng riêng" sub="Mỗi nhân vật nói bằng một giọng khác, như kịch truyền thanh" />
  )}
  </>
