@@ -1,0 +1,13 @@
+[Unit]
+Description=KểCon staging — Cloudflare quick tunnel → Caddy :8080
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=doppel
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --metrics 127.0.0.1:20241 --url http://127.0.0.1:8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

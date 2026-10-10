@@ -1,0 +1,2143 @@
+"use client";
+import { IssuedStoryLink } from "@/lib/story-links";
+
+import { requireHouseholdId } from "@/lib/household-query";
+
+import { createClient } from "@/lib/supabase/client";
+import type { UserRole } from "@/lib/admin-permissions";
+import type { ProviderKeyCheckResult, ProviderKeyRow, VoiceProvider } from "@/lib/provider-keys";
+import { isSecretSettingKey, type SetSystemSecretResult, type SystemSecretStatus } from "@/lib/system-secrets";
+
+// ============================================================
+// Row types (mirror supabase/migrations/001_initial_schema.sql)
+// ============================================================
+export interface VoiceProfileRow {
+  id: string;
+  user_id: string;
+  name: string;
+  relation: string;
+  gender: "male" | "female";
+  elevenlabs_voice_id: string | null;
+  sample_audio_url: string | null;
+  quality_score: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryRow {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  theme: string | null;
+  target_age_min: number;
+  target_age_max: number;
+  voice_id: string | null;
+  cover_image_url: string | null;
+  total_duration: number;
+  page_count: number;
+  is_published: boolean;
+  is_template: boolean;
+  is_branching: boolean;
+  source: "ai" | "manual" | "upload" | "template";
+  tags: string[];
+  moral_lesson: string | null;
+  play_count: number;
+  like_count: number;
+  completion_rate: number;
+  status: "draft" | "published" | "archived" | "pending_review" | "rejected";
+  is_platform_content: boolean;
+  deleted_at: string | null;
+  avg_rating: number;
+  rating_count: number;
+  share_count: number;
+  locale: string;
+  narrator_voice_id: string | null;
+  narrator_voice_name: string | null;
+  last_voice_id: string | null;
+  last_voice_name: string | null;
+  /** Story Studio v2 (migration 033); absent/NULL on legacy stories. */
+  generator_version?: number | null;
+  story_length?: "short" | "medium" | "long" | null;
+  narration_pace?: "calm" | "normal" | null;
+  cast_voices?: boolean | null;
+  auto_ambience?: boolean | null;
+  illustration_style?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryCharacterRow {
+  id: string;
+  story_id: string;
+  name: string;
+  voice_id: string | null;
+  voice_name: string | null;
+  color: string;
+  emoji: string | null;
+  description: string | null;
+  sort_order: number;
+  /** v2 (migration 033) */
+  role?: "hero" | "friend" | null;
+  voice_type?: string | null;
+  appearance?: string | null;
+  preset_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryCategoryRow {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  parent_id: string | null;
+  created_at: string;
+}
+
+export interface StoryTemplateRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  emoji?: string;
+  age_min?: number;
+  age_max?: number;
+  moral_lesson?: string | null;
+  tags?: string[];
+  locale?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  pages: {
+    content: string;
+    scene_description?: string | null;
+    particle_effect?: string | null;
+    ambient_sound?: string | null;
+  }[];
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface AdminUserRow {
+  id: string;
+  display_name: string | null;
+  family_name: string | null;
+  role: string;
+  child_name: string | null;
+  child_age: number | null;
+  created_at: string;
+  storyCount: number;
+  voiceCount: number;
+}
+
+export interface PageChoice {
+  label: string;
+  description?: string;
+  target: number; // page_number to jump to
+}
+
+export interface StoryPageRow {
+  id: string;
+  story_id: string;
+  page_number: number;
+  content: string;
+  scene_description: string | null;
+  illustration_url: string | null;
+  audio_url: string | null;
+  audio_duration: number;
+  audio_key?: string | null;
+  transition_effect: string;
+  particle_effect: string | null;
+  ambient_sound: string | null;
+  sfx_sounds: string[];
+  choices: PageChoice[];
+  voice_segments: VoiceSegment[] | null;
+  /** v2: bundled scene art id, writer's English picture prompt, page mood. */
+  scene_id?: string | null;
+  illustration_prompt?: string | null;
+  mood?: string | null;
+}
+
+export interface VoiceSegment {
+  speaker: string;       // "narrator" or character name
+  text: string;
+  voiceId: string;       // ElevenLabs voice_id
+  voiceName?: string;    // Display name
+}
+
+export interface FamilyMemberRow {
+  id: string;
+  user_id: string;
+  name: string;
+  relation: string;
+  avatar_url: string | null;
+  voice_profile_id: string | null;
+}
+
+// ============================================================
+// Visual identity helpers (deterministic gradient/icon from id)
+// ============================================================
+const GRADIENTS = [
+  "from-pink-400 to-pink-600",
+  "from-blue-500 to-blue-700",
+  "from-amber-400 to-amber-500",
+  "from-emerald-400 to-emerald-600",
+  "from-violet-400 to-violet-600",
+  "from-rose-400 to-rose-500",
+];
+
+const STORY_ICONS = ["flame", "rabbit", "castle", "wand", "rocket", "paw"];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export function gradientFor(id: string): string {
+  return GRADIENTS[hashString(id) % GRADIENTS.length];
+}
+
+export function iconForCategory(category: string, id: string): string {
+  const map: Record<string, string> = {
+    cotich: "castle",
+    fairy_tale: "castle",
+    phieuluu: "rocket",
+    adventure: "rocket",
+    dongvat: "paw",
+    animal: "paw",
+    ngungon: "wand",
+    bedtime: "wand",
+  };
+  return map[category] || STORY_ICONS[hashString(id) % STORY_ICONS.length];
+}
+
+// ============================================================
+// Voice profiles
+// ============================================================
+export async function getVoiceProfiles(includeInactive = false): Promise<VoiceProfileRow[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from("voice_profiles")
+    .select("*")
+    .eq("household_id", await requireHouseholdId(supabase));
+  if (!includeInactive) query = query.eq("is_active", true);
+  const { data, error } = await query.order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createVoiceProfile(input: {
+  name: string;
+  relation: string;
+  gender: "male" | "female";
+  elevenlabs_voice_id?: string | null;
+  sample_audio_url?: string | null;
+  quality_score?: number;
+}): Promise<VoiceProfileRow> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const { data, error } = await supabase
+    .from("voice_profiles")
+    .insert({
+      user_id: user.id,
+      name: input.name,
+      relation: input.relation,
+      gender: input.gender,
+      elevenlabs_voice_id: input.elevenlabs_voice_id ?? null,
+      sample_audio_url: input.sample_audio_url ?? null,
+      quality_score: input.quality_score ?? 0,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateVoiceProfile(
+  id: string,
+  updates: Partial<Pick<VoiceProfileRow, "name" | "relation" | "gender" | "is_active">>
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("voice_profiles")
+    .update(updates)
+    .eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function deleteVoiceProfile(id: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("voice_profiles").delete().eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+// ============================================================
+// Stories
+// ============================================================
+export async function getStories(opts?: {
+  ownOnly?: boolean;
+}): Promise<StoryRow[]> {
+  const supabase = createClient();
+  let query = supabase.from("stories").select("*").order("created_at", {
+    ascending: false,
+  });
+  if (opts?.ownOnly) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    query = query.eq("user_id", user.id).eq("household_id", await requireHouseholdId(supabase)).eq("is_platform_content", false);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getRecentStories(limit = 3): Promise<StoryRow[]> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("household_id", await requireHouseholdId(supabase))
+    .eq("is_platform_content", false)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getStory(id: string): Promise<StoryRow | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getStoryPages(storyId: string): Promise<StoryPageRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .select("*")
+    .eq("story_id", storyId)
+    .order("page_number", { ascending: true });
+  if (error) throw error;
+  // Normalize choices (column may be absent on rows created before migration).
+  return (data ?? []).map((p) => ({ ...p, choices: p.choices ?? [] }));
+}
+
+export async function deleteStory(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("stories").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateStory(
+  id: string,
+  patch: Partial<
+    Pick<
+      StoryRow,
+      | "title"
+      | "description"
+      | "category"
+      | "is_published"
+      | "is_branching"
+      | "is_platform_content"
+      | "target_age_min"
+      | "target_age_max"
+      | "tags"
+      | "status"
+      | "moral_lesson"
+      | "cover_image_url"
+      | "last_voice_id"
+      | "last_voice_name"
+    >
+  >
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("stories").update(patch).eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function publishStory(
+  id: string,
+  publish: boolean
+): Promise<void> {
+  await updateStory(id, {
+    is_published: publish,
+    status: publish ? "published" : "draft",
+  });
+}
+
+export async function createBlankStory(input: {
+  title: string;
+  category?: string;
+  source?: StoryRow["source"];
+  isPlatformContent?: boolean;
+  description?: string;
+  targetAgeMin?: number;
+  targetAgeMax?: number;
+}): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const { data, error } = await supabase
+    .from("stories")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      category: input.category ?? "custom",
+      source: input.source ?? "manual",
+      description: input.description ?? null,
+      target_age_min: input.targetAgeMin ?? 3,
+      target_age_max: input.targetAgeMax ?? 8,
+      is_platform_content: input.isPlatformContent ?? false,
+      status: "draft",
+      page_count: 0,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function createStoryPage(
+  storyId: string,
+  pageNumber: number,
+  content = "",
+  sceneDescription = ""
+): Promise<StoryPageRow> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .insert({
+      story_id: storyId,
+      page_number: pageNumber,
+      content,
+      scene_description: sceneDescription,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateStoryPage(
+  pageId: string,
+  patch: Partial<
+    Pick<
+      StoryPageRow,
+      | "content"
+      | "scene_description"
+      | "page_number"
+      | "illustration_url"
+      | "particle_effect"
+      | "transition_effect"
+      | "choices"
+    >
+  >
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .update(patch)
+    .eq("id", pageId).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function deleteStoryPage(pageId: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .delete()
+    .eq("id", pageId).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function syncPageOrder(pages: {id:string;page_number:number}[]):Promise<void> {
+  await Promise.all(pages.map(p => updateStoryPage(p.id, {page_number:p.page_number})));
+}
+
+export async function setStoryPageCount(
+  storyId: string,
+  count: number
+): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("stories")
+    .update({ page_count: count })
+    .eq("id", storyId);
+}
+
+// ============================================================
+// Family members
+// ============================================================
+export async function getFamilyMembers(): Promise<FamilyMemberRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("family_members")
+    .select("*")
+    .eq("household_id", await requireHouseholdId(supabase))
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createFamilyMember(input: {
+  name: string;
+  relation: string;
+  voiceProfileId?: string | null;
+}): Promise<FamilyMemberRow> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const { data, error } = await supabase
+    .from("family_members")
+    .insert({
+      user_id: user.id,
+      name: input.name,
+      relation: input.relation,
+      voice_profile_id: input.voiceProfileId ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as FamilyMemberRow;
+}
+
+export async function deleteFamilyMember(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("family_members")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// ============================================================
+// Analytics / behavior
+// ============================================================
+export async function logBehavior(
+  actionType: "play" | "like" | "share" | "search" | "create" | "complete",
+  storyId?: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("user_behavior").insert({
+    user_id: user.id,
+    action_type: actionType,
+    story_id: storyId ?? null,
+    metadata: metadata ?? {},
+  });
+}
+
+export async function logPlaySession(input: {
+  storyId: string;
+  voiceId?: string | null;
+  duration: number;
+  pagesListened: number;
+  completed: boolean;
+}): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("play_sessions").insert({
+    user_id: user.id,
+    story_id: input.storyId,
+    voice_id: input.voiceId ?? null,
+    ended_at: new Date().toISOString(),
+    duration: input.duration,
+    pages_listened: input.pagesListened,
+    completed: input.completed,
+  });
+  await supabase.rpc("increment_play_count", { p_story_id: input.storyId });
+}
+
+export async function likeStory(storyId: string, like: boolean): Promise<void> {
+  const supabase = createClient();
+  await supabase.rpc("toggle_like", {
+    p_story_id: storyId,
+    p_delta: like ? 1 : -1,
+  });
+  if (like) await logBehavior("like", storyId);
+}
+
+// ============================================================
+// Admin / analytics
+// ============================================================
+export interface AdminStats {
+  totalStories: number;
+  publishedStories: number;
+  draftStories: number;
+  pendingReview: number;
+  totalVoices: number;
+  totalPlays: number;
+  totalLikes: number;
+  categoryBreakdown: { category: string; count: number }[];
+}
+
+export interface ContentGap {
+  category: string;
+  label: string;
+  count: number;
+  priority: "high" | "medium" | "low";
+  suggestion: string;
+}
+
+const ALL_CATEGORIES: { id: string; label: string }[] = [
+  { id: "fairy_tale", label: "Cổ tích" },
+  { id: "adventure", label: "Phiêu lưu" },
+  { id: "bedtime", label: "Ru ngủ" },
+  { id: "animal", label: "Động vật" },
+  { id: "educational", label: "Học chơi" },
+  { id: "custom", label: "Tùy chỉnh" },
+];
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const supabase = createClient();
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("id, category, status, is_published, play_count, like_count");
+  const { count: voiceCount } = await supabase
+    .from("voice_profiles")
+    .select("id", { count: "exact", head: true });
+
+  const rows = stories ?? [];
+  const categoryMap = new Map<string, number>();
+  let totalPlays = 0;
+  let totalLikes = 0;
+  let published = 0;
+  let drafts = 0;
+  let pending = 0;
+  for (const s of rows) {
+    categoryMap.set(s.category, (categoryMap.get(s.category) ?? 0) + 1);
+    totalPlays += s.play_count ?? 0;
+    totalLikes += s.like_count ?? 0;
+    if (s.is_published || s.status === "published") published++;
+    else if (s.status === "pending_review") pending++;
+    else drafts++;
+  }
+
+  return {
+    totalStories: rows.length,
+    publishedStories: published,
+    draftStories: drafts,
+    pendingReview: pending,
+    totalVoices: voiceCount ?? 0,
+    totalPlays,
+    totalLikes,
+    categoryBreakdown: Array.from(categoryMap.entries())
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export function computeContentGaps(
+  breakdown: { category: string; count: number }[]
+): ContentGap[] {
+  const counts = new Map(breakdown.map((b) => [b.category, b.count]));
+  return ALL_CATEGORIES.map((c) => {
+    const count = counts.get(c.id) ?? 0;
+    const priority: ContentGap["priority"] =
+      count === 0 ? "high" : count < 3 ? "medium" : "low";
+    return {
+      category: c.id,
+      label: c.label,
+      count,
+      priority,
+      suggestion:
+        count === 0
+          ? `Chưa có truyện "${c.label}" — nên tạo ngay`
+          : count < 3
+          ? `Chỉ có ${count} truyện "${c.label}" — nên bổ sung`
+          : `Đủ truyện "${c.label}"`,
+    };
+  }).sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2 };
+    return order[a.priority] - order[b.priority];
+  });
+}
+
+export async function getModerationQueue(): Promise<StoryRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .in("status", ["pending_review", "draft"])
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ============================================================
+// Admin: story management (Phase C)
+// ============================================================
+export interface AdminStoriesFilter {
+  status?: StoryRow["status"] | "all";
+  category?: string | "all";
+  search?: string;
+  includeDeleted?: boolean;
+}
+
+export async function getAdminStories(
+  filter: AdminStoriesFilter = {}
+): Promise<StoryRow[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from("stories")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (!filter.includeDeleted) query = query.is("deleted_at", null);
+  if (filter.status && filter.status !== "all")
+    query = query.eq("status", filter.status);
+  if (filter.category && filter.category !== "all")
+    query = query.eq("category", filter.category);
+  if (filter.search && filter.search.trim())
+    query = query.ilike("title", `%${filter.search.trim()}%`);
+  const { data, error } = await query.limit(200);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function softDeleteStory(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({ deleted_at: new Date().toISOString(), is_published: false })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function restoreStory(id: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .update({ deleted_at: null })
+    .eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function bulkPublishStories(
+  ids: string[],
+  publish: boolean
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .update({
+      is_published: publish,
+      status: publish ? "published" : "draft",
+    })
+    .in("id", ids).select("id");
+  if (error) throw error;
+  if (data?.length !== new Set(ids).size) throw new Error("Chưa cập nhật đủ truyện đã chọn.");
+}
+
+export async function bulkSoftDeleteStories(ids: string[]): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stories")
+    .update({ deleted_at: new Date().toISOString(), is_published: false })
+    .in("id", ids);
+  if (error) throw error;
+}
+
+// ============================================================
+// Admin: story templates (Phase C)
+// ============================================================
+export async function getStoryTemplates(): Promise<StoryTemplateRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_templates")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((t) => ({ ...t, pages: t.pages ?? [] }));
+}
+
+export async function createTemplateFromStory(
+  storyId: string
+): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+  const story = await getStory(storyId);
+  if (!story) throw new Error("Không tìm thấy truyện");
+  const pages = await getStoryPages(storyId);
+  const { data, error } = await supabase
+    .from("story_templates")
+    .insert({
+      title: story.title,
+      description: story.description,
+      category: story.category,
+      created_by: user.id,
+      pages: pages.map((p) => ({
+        content: p.content,
+        scene_description: p.scene_description,
+        particle_effect: p.particle_effect,
+        ambient_sound: p.ambient_sound,
+      })),
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_templates")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function createStoryFromTemplate(
+  templateId: string
+): Promise<string> {
+  const supabase = createClient();
+  const { data: tpl, error: tErr } = await supabase
+    .from("story_templates")
+    .select("*")
+    .eq("id", templateId)
+    .single();
+  if (tErr) throw tErr;
+  const storyId = await createBlankStory({
+    title: tpl.title,
+    category: tpl.category,
+    source: "template",
+    description: tpl.description ?? undefined,
+    isPlatformContent: true,
+  });
+  const pages = (tpl.pages ?? []) as StoryTemplateRow["pages"];
+  for (let i = 0; i < pages.length; i++) {
+    const page = await createStoryPage(
+      storyId,
+      i + 1,
+      pages[i].content,
+      pages[i].scene_description ?? ""
+    );
+    if (pages[i].particle_effect) {
+      await updateStoryPage(page.id, {
+        particle_effect: pages[i].particle_effect ?? null,
+      });
+    }
+  }
+  await setStoryPageCount(storyId, pages.length);
+  return storyId;
+}
+
+// ============================================================
+// Admin: user management (Phase D)
+// ============================================================
+export async function getAdminUsers(): Promise<AdminUserRow[]> {
+  const supabase = createClient();
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, family_name, role, child_name, child_age, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("user_id")
+    .is("deleted_at", null);
+  const { data: voices } = await supabase
+    .from("voice_profiles")
+    .select("user_id");
+  const storyCounts = new Map<string, number>();
+  for (const s of stories ?? [])
+    storyCounts.set(s.user_id, (storyCounts.get(s.user_id) ?? 0) + 1);
+  const voiceCounts = new Map<string, number>();
+  for (const v of voices ?? [])
+    voiceCounts.set(v.user_id, (voiceCounts.get(v.user_id) ?? 0) + 1);
+  return (profiles ?? []).map((p) => ({
+    ...p,
+    storyCount: storyCounts.get(p.id) ?? 0,
+    voiceCount: voiceCounts.get(p.id) ?? 0,
+  }));
+}
+
+// ============================================================
+// Admin v2 · A-03 — nhật ký thao tác (admin_audit_log, migration 020)
+// ============================================================
+export interface AdminAuditRow {
+  id: number;
+  created_at: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  actor_role: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  reason: string | null;
+  ip: string | null;
+  source: "db" | "api" | "system";
+}
+
+export interface AdminAuditFilter {
+  /** Part of the actor's email (case-insensitive). */
+  actor?: string;
+  action?: string;
+  /** `YYYY-MM-DD`, inclusive (local day). */
+  from?: string;
+  to?: string;
+  /** Load rows older than this id (pagination). */
+  beforeId?: number;
+  limit?: number;
+}
+
+/** Newest first; RLS returns nothing without `audit.read`. */
+export async function listAdminAudit(filter: AdminAuditFilter = {}): Promise<AdminAuditRow[]> {
+  const supabase = createClient();
+  let q = supabase
+    .from("admin_audit_log")
+    .select("id, created_at, actor_id, actor_email, actor_role, action, target_type, target_id, before, after, reason, ip, source")
+    .order("id", { ascending: false })
+    .limit(filter.limit ?? 50);
+  const actor = filter.actor?.trim().replace(/[%*,()]/g, "");
+  if (actor) q = q.ilike("actor_email", `%${actor}%`);
+  if (filter.action) q = q.eq("action", filter.action);
+  if (filter.from) q = q.gte("created_at", new Date(`${filter.from}T00:00:00`).toISOString());
+  if (filter.to) {
+    const end = new Date(`${filter.to}T00:00:00`);
+    end.setDate(end.getDate() + 1);
+    q = q.lt("created_at", end.toISOString());
+  }
+  if (filter.beforeId) q = q.lt("id", filter.beforeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as AdminAuditRow[];
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: UserRole
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
+// ============================================================
+// Admin: advanced analytics (Phase D)
+// ============================================================
+export interface AdminAnalytics {
+  topStories: {
+    id: string;
+    title: string;
+    play_count: number;
+    like_count: number;
+    completion_rate: number;
+  }[];
+  avgCompletion: number;
+  totalSessions: number;
+  recentSignups: number;
+  categoryPlays: { category: string; plays: number }[];
+}
+
+export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+  const supabase = createClient();
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("id, title, category, play_count, like_count, completion_rate")
+    .is("deleted_at", null);
+  const rows = stories ?? [];
+  const topStories = [...rows]
+    .sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0))
+    .slice(0, 10)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      play_count: s.play_count ?? 0,
+      like_count: s.like_count ?? 0,
+      completion_rate: s.completion_rate ?? 0,
+    }));
+  const withCompletion = rows.filter((s) => (s.completion_rate ?? 0) > 0);
+  const avgCompletion =
+    withCompletion.length > 0
+      ? withCompletion.reduce((sum, s) => sum + (s.completion_rate ?? 0), 0) /
+        withCompletion.length
+      : 0;
+  const catMap = new Map<string, number>();
+  for (const s of rows)
+    catMap.set(s.category, (catMap.get(s.category) ?? 0) + (s.play_count ?? 0));
+  const categoryPlays = Array.from(catMap.entries())
+    .map(([category, plays]) => ({ category, plays }))
+    .sort((a, b) => b.plays - a.plays);
+
+  // A-02: totals come from `admin_usage_summary()` (analytics.view) so roles
+  // without row access to families' data still see them; older DBs fall back.
+  const { data: summary, error: summaryError } = await supabase.rpc("admin_usage_summary");
+  let totalSessions = Number((summary as { total_sessions?: number } | null)?.total_sessions ?? NaN);
+  let recentSignups = Number((summary as { recent_signups?: number } | null)?.recent_signups ?? NaN);
+  if (summaryError || !Number.isFinite(totalSessions) || !Number.isFinite(recentSignups)) {
+    const { count: sessions } = await supabase
+      .from("play_sessions")
+      .select("id", { count: "exact", head: true });
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const { count: signups } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", weekAgo);
+    totalSessions = sessions ?? 0;
+    recentSignups = signups ?? 0;
+  }
+
+  return {
+    topStories,
+    avgCompletion,
+    totalSessions,
+    recentSignups,
+    categoryPlays,
+  };
+}
+
+// ============================================================
+// GDPR / data portability
+// ============================================================
+export async function exportUserData(): Promise<Record<string, unknown>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const [profile, voices, stories, members, behavior] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("voice_profiles").select("*").eq("user_id", user.id),
+    supabase.from("stories").select("*").eq("user_id", user.id),
+    supabase.from("family_members").select("*").eq("user_id", user.id),
+    supabase.from("user_behavior").select("*").eq("user_id", user.id).limit(500),
+  ]);
+
+  return {
+    exported_at: new Date().toISOString(),
+    account: { id: user.id, email: user.email },
+    profile: profile.data,
+    voice_profiles: voices.data ?? [],
+    stories: stories.data ?? [],
+    family_members: members.data ?? [],
+    behavior: behavior.data ?? [],
+  };
+}
+
+// Deletes all user-generated content (voices, stories, members, behavior).
+// Auth account removal requires a privileged server action and is requested
+// separately; this clears the personal data the client can reach under RLS.
+export async function deleteUserData(): Promise<void> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  await supabase.from("user_behavior").delete().eq("user_id", user.id);
+  await supabase.from("story_pages").delete().in(
+    "story_id",
+    (
+      (await supabase.from("stories").select("id").eq("user_id", user.id)).data ??
+      []
+    ).map((s) => s.id)
+  );
+  await supabase.from("stories").delete().eq("user_id", user.id);
+  await supabase.from("voice_profiles").delete().eq("user_id", user.id);
+  await supabase.from("family_members").delete().eq("user_id", user.id);
+}
+
+// ============================================================
+// Storage
+// ============================================================
+export async function uploadRecording(blob: Blob): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+  const path = `${user.id}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from("recordings")
+    .upload(path, blob, { contentType: blob.type, upsert: false });
+  if (error) throw error;
+  return path;
+}
+
+export async function getRecordingUrl(path: string): Promise<string | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase.storage
+    .from("recordings")
+    .createSignedUrl(path, 3600);
+  if (error) return null;
+  return data.signedUrl;
+}
+
+export async function uploadTtsAudio(
+  storyPageId: string,
+  blob: Blob
+): Promise<string> {
+  const supabase = createClient();
+  const path = `${storyPageId}-${crypto.randomUUID()}.${blob.type === "audio/wav" ? "wav" : "mp3"}`;
+  const { error } = await supabase.storage
+    .from("tts-cache")
+    .upload(path, blob, { contentType: blob.type || "audio/mpeg", upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from("tts-cache").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function savePageAudio(
+  storyPageId: string,
+  audioUrl: string,
+  durationSec: number,
+  audioKey: string | null = null
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("story_pages")
+    .update({ audio_url: audioUrl, audio_duration: Math.round(durationSec), audio_key: audioKey })
+    .eq("id", storyPageId);
+  if (error) throw error;
+}
+
+// ============================================================
+// Ratings & Reviews (Migration 005)
+// ============================================================
+export interface StoryRatingRow {
+  id: string;
+  story_id: string;
+  user_id: string;
+  rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryReviewRow {
+  id: string;
+  story_id: string;
+  user_id: string;
+  content: string;
+  rating: number | null;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+  // joined
+  display_name?: string | null;
+}
+
+export async function getStoryRating(storyId: string): Promise<{
+  avgRating: number;
+  ratingCount: number;
+  userRating: number | null;
+}> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: story } = await supabase
+    .from("stories")
+    .select("avg_rating, rating_count")
+    .eq("id", storyId)
+    .maybeSingle();
+
+  let userRating: number | null = null;
+  if (user) {
+    const { data: rating } = await supabase
+      .from("story_ratings")
+      .select("rating")
+      .eq("story_id", storyId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    userRating = rating?.rating ?? null;
+  }
+
+  return {
+    avgRating: story?.avg_rating ?? 0,
+    ratingCount: story?.rating_count ?? 0,
+    userRating,
+  };
+}
+
+export async function rateStory(storyId: string, rating: number): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const { data: existing } = await supabase
+    .from("story_ratings")
+    .select("id")
+    .eq("story_id", storyId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("story_ratings")
+      .update({ rating, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("story_ratings").insert({
+      story_id: storyId,
+      user_id: user.id,
+      rating,
+    });
+  }
+}
+
+export async function getStoryReviews(storyId: string): Promise<StoryReviewRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_reviews")
+    .select("*, profiles!inner(display_name)")
+    .eq("story_id", storyId)
+    .eq("is_visible", true)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    // Fallback without join if profiles join fails
+    const { data: fallback } = await supabase
+      .from("story_reviews")
+      .select("*")
+      .eq("story_id", storyId)
+      .eq("is_visible", true)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    return fallback ?? [];
+  }
+  return (data ?? []).map((r) => ({
+    ...r,
+    display_name: (r as Record<string, unknown>).profiles
+      ? ((r as Record<string, unknown>).profiles as { display_name: string | null }).display_name
+      : null,
+  }));
+}
+
+export async function createReview(storyId: string, content: string, rating?: number): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  await supabase.from("story_reviews").insert({
+    story_id: storyId,
+    user_id: user.id,
+    content,
+    rating: rating ?? null,
+  });
+}
+
+export async function deleteReview(reviewId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_reviews").delete().eq("id", reviewId);
+}
+
+// ============================================================
+// Story Sharing (Migration 005)
+// ============================================================
+export interface StoryShareRow {
+  id: string; story_id: string; share_token: string;
+  is_active: boolean; view_count: number; expires_at: string;
+}
+export async function createShareLink(storyId: string, hours: 24 | 72 | 168 = 168): Promise<StoryShareRow> {
+  const res = await fetch("/api/share/links", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({storyId,hours})});
+  const data = await res.json();
+  if (!res.ok) throw new Error(res.status===403 ? "Chỉ chia sẻ được truyện nền tảng công khai; truyện riêng chưa được mở chia sẻ." : res.status===429 ? "Đã đạt giới hạn link. Hãy thu hồi link cũ hoặc thử lại sau." : "Chưa tạo được link. Hãy thử lại sau.");
+  return IssuedStoryLink.parse(data);
+}
+export async function deactivateShare(shareId: string): Promise<void> {
+  const res = await fetch("/api/share/links", {method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:shareId})});
+  const data = await res.json();
+  if (!res.ok || data?.revoked!==true) throw new Error("Chưa thu hồi được link. Hãy thử lại.");
+}
+
+// ============================================================
+// User Favorites / Bookmarks (Migration 005)
+// ============================================================
+export async function getUserFavorites(): Promise<StoryRow[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: favs } = await supabase
+    .from("user_favorites")
+    .select("story_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (!favs || favs.length === 0) return [];
+
+  const storyIds = favs.map((f) => f.story_id);
+  const { data: stories } = await supabase
+    .from("stories")
+    .select("*")
+    .in("id", storyIds);
+
+  // Preserve favorites order
+  const storyMap = new Map((stories ?? []).map((s) => [s.id, s]));
+  return storyIds.map((id) => storyMap.get(id)).filter(Boolean) as StoryRow[];
+}
+
+export async function toggleFavorite(storyId:string):Promise<boolean> {
+  const supabase=createClient();const {data:{user}}=await supabase.auth.getUser();
+  if(!user)throw new Error("Chưa đăng nhập");
+  const {data:existing,error:readError}=await supabase.from("user_favorites").select("id").eq("user_id",user.id).eq("story_id",storyId).maybeSingle();
+  if(readError)throw readError;
+  const result=existing
+    ? await supabase.from("user_favorites").delete().eq("id",existing.id).select("id")
+    : await supabase.from("user_favorites").insert({user_id:user.id,story_id:storyId}).select("id");
+  if(result.error)throw result.error;
+  if(!result.data?.length)throw new Error("Chưa cập nhật được yêu thích.");
+  return !existing;
+}
+
+export async function isFavorited(storyId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("user_favorites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("story_id", storyId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+// ============================================================
+// Reading Streaks (Migration 005)
+// ============================================================
+export interface ReadingStreakRow {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_read_date: string | null;
+  total_stories_read: number;
+  total_listen_minutes: number;
+  updated_at: string;
+}
+
+export async function getReadingStreak(): Promise<ReadingStreakRow | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("reading_streaks")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return data;
+}
+
+export async function updateReadingStreak(listenMinutes: number): Promise<ReadingStreakRow> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Chưa đăng nhập");
+
+  const today = new Date().toISOString().split("T")[0];
+  const { data: existing } = await supabase
+    .from("reading_streaks")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    // Create new streak record
+    const { data, error } = await supabase
+      .from("reading_streaks")
+      .insert({
+        user_id: user.id,
+        current_streak: 1,
+        longest_streak: 1,
+        last_read_date: today,
+        total_stories_read: 1,
+        total_listen_minutes: Math.round(listenMinutes),
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // Calculate streak
+  const lastDate = existing.last_read_date;
+  let newStreak = existing.current_streak;
+
+  if (lastDate === today) {
+    // Already read today — just update minutes
+    const { data, error } = await supabase
+      .from("reading_streaks")
+      .update({
+        total_listen_minutes: existing.total_listen_minutes + Math.round(listenMinutes),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  if (lastDate === yesterdayStr) {
+    newStreak = existing.current_streak + 1;
+  } else {
+    newStreak = 1; // streak broken
+  }
+
+  const longestStreak = Math.max(existing.longest_streak, newStreak);
+
+  const { data, error } = await supabase
+    .from("reading_streaks")
+    .update({
+      current_streak: newStreak,
+      longest_streak: longestStreak,
+      last_read_date: today,
+      total_stories_read: existing.total_stories_read + 1,
+      total_listen_minutes: existing.total_listen_minutes + Math.round(listenMinutes),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", existing.id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================
+// App Settings (admin-managed system config)
+// ============================================================
+export interface AppSettingRow {
+  key: string;
+  value: string;
+  label: string | null;
+  category: string;
+  is_secret: boolean;
+  updated_at: string;
+}
+
+/** Fetch all app settings (admin sees secrets, regular users see non-secret only via RLS). */
+export async function getAppSettings(): Promise<AppSettingRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("*")
+    .order("category", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Fetch a single setting by key. */
+export async function getAppSetting(key: string): Promise<string> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", key)
+    .single();
+  if (error) return "";
+  return data?.value ?? "";
+}
+
+/** Update a setting (admin only). */
+export async function updateAppSetting(key: string, value: string): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("app_settings")
+    .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
+    .eq("key", key);
+  if (error) throw error;
+}
+
+/** Bulk update settings (admin only). API keys are skipped — they go to Vault via {@link setSystemSecret}. */
+export async function updateAppSettings(settings: Record<string, string>): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const promises = Object.entries(settings).filter(([key]) => !isSecretSettingKey(key)).map(([key, value]) =>
+    supabase
+      .from("app_settings")
+      .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
+      .eq("key", key)
+  );
+  const results = await Promise.all(promises);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
+/**
+ * A-04 · status of every system API key (set or not, last 4 chars, who / when).
+ * Needs `secrets.manage`; never returns the keys themselves.
+ */
+export async function listSystemSecrets(): Promise<SystemSecretStatus[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("list_system_secrets");
+  if (error) throw error;
+  return (data ?? []) as SystemSecretStatus[];
+}
+
+/**
+ * A-04 · write-only: store (or, with "", remove) a system API key in Vault.
+ * Logged as secret.create / update / delete without the key; returns only the new status.
+ */
+export async function setSystemSecret(key: string, value: string, reason?: string): Promise<SetSystemSecretResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("set_system_secret", { p_key: key, p_value: value, p_reason: reason ?? null });
+  if (error) throw error;
+  return data as SetSystemSecretResult;
+}
+
+/** A-04b · every key of the voice pools (status, last 4 chars, credit, usage) — never the keys. */
+export async function listProviderKeys(): Promise<ProviderKeyRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("list_provider_keys");
+  if (error) throw error;
+  return (data ?? []) as ProviderKeyRow[];
+}
+
+/** A-04b · write-only: add a key to a pool (stored in Vault; logged without the key). */
+export async function addProviderKey(provider: VoiceProvider, value: string, label?: string): Promise<{ id: string; last4: string | null }> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("add_provider_key", { p_provider: provider, p_value: value, p_label: label ?? null, p_reason: null });
+  if (error) throw error;
+  return data as { id: string; last4: string | null };
+}
+
+/** A-04b · rename / disable / re-enable (re-enabling also resets the status to "active"). */
+export async function updateProviderKey(id: string, patch: { label?: string; enabled?: boolean }): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("update_provider_key", {
+    p_id: id,
+    p_label: patch.label ?? null,
+    p_enabled: patch.enabled ?? null,
+    p_reason: null,
+  });
+  if (error) throw error;
+}
+
+export async function deleteProviderKey(id: string, reason: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("delete_provider_key", { p_id: id, p_reason: reason });
+  if (error) throw error;
+}
+
+/** A-04b · check one key (or a whole pool) on the server: validity + credit. */
+export async function checkProviderKeys(target: { id: string } | { provider: VoiceProvider }): Promise<ProviderKeyCheckResult[]> {
+  const res = await fetch("/api/admin/provider-keys/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(target),
+  });
+  const body = (await res.json().catch(() => ({}))) as { results?: ProviderKeyCheckResult[]; error?: string };
+  if (!res.ok) throw new Error(body.error || `Kiểm tra key lỗi ${res.status}`);
+  return body.results ?? [];
+}
+
+// ============================================================
+// Batch TTS Generation
+// ============================================================
+export async function getPagesMissingAudio(storyId: string): Promise<StoryPageRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_pages")
+    .select("*")
+    .eq("story_id", storyId)
+    .is("audio_url", null)
+    .order("page_number", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ============================================================
+// Default Voices (system-curated voices per language)
+// ============================================================
+
+export interface DefaultVoiceRow {
+  id: string;
+  voice_id: string;
+  name: string;
+  language: string;
+  description: string | null;
+  preview_url: string | null;
+  gender: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+/** Get all active default voices, optionally filtered by language. */
+export async function getDefaultVoices(language?: string): Promise<DefaultVoiceRow[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from("default_voices")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (language) {
+    query = query.eq("language", language);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Admin: Add a default voice. */
+export async function addDefaultVoice(voice: {
+  voice_id: string;
+  name: string;
+  language: string;
+  description?: string;
+  preview_url?: string;
+  gender?: string;
+}): Promise<DefaultVoiceRow> {
+  const supabase = createClient();
+
+  // Get the max sort_order for this language
+  const { data: existing } = await supabase
+    .from("default_voices")
+    .select("sort_order")
+    .eq("language", voice.language)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = (existing?.[0]?.sort_order ?? -1) + 1;
+
+  const { data, error } = await supabase
+    .from("default_voices")
+    .upsert(
+      {
+        voice_id: voice.voice_id,
+        name: voice.name,
+        language: voice.language,
+        description: voice.description || null,
+        preview_url: voice.preview_url || null,
+        gender: voice.gender || null,
+        sort_order: nextOrder,
+        is_active: true,
+      },
+      { onConflict: "voice_id,language" }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/** Admin: Remove a default voice. */
+export async function removeDefaultVoice(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("default_voices")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// ============================================================
+// Story Characters (multi-voice)
+// ============================================================
+
+/** Get characters for a story, ordered by sort_order. */
+export async function getStoryCharacters(storyId: string): Promise<StoryCharacterRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_characters")
+    .select("*")
+    .eq("story_id", storyId)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Add a character to a story. */
+export async function addStoryCharacter(input: {
+  storyId: string;
+  name: string;
+  voiceId?: string;
+  voiceName?: string;
+  color?: string;
+  emoji?: string;
+  description?: string;
+}): Promise<StoryCharacterRow> {
+  const supabase = createClient();
+
+  // Get max sort_order
+  const { data: existing } = await supabase
+    .from("story_characters")
+    .select("sort_order")
+    .eq("story_id", input.storyId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+  const nextOrder = (existing?.[0]?.sort_order ?? -1) + 1;
+
+  const { data, error } = await supabase
+    .from("story_characters")
+    .insert({
+      story_id: input.storyId,
+      name: input.name,
+      voice_id: input.voiceId || null,
+      voice_name: input.voiceName || null,
+      color: input.color || "#6B7280",
+      emoji: input.emoji || null,
+      description: input.description || null,
+      sort_order: nextOrder,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Update a character. */
+export async function updateStoryCharacter(
+  id: string,
+  updates: Partial<{
+    name: string;
+    voice_id: string | null;
+    voice_name: string | null;
+    color: string;
+    emoji: string | null;
+    description: string | null;
+    sort_order: number;
+  }>
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_characters")
+    .update(updates)
+    .eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+/** Delete a character. */
+export async function deleteStoryCharacter(id: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_characters")
+    .delete()
+    .eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+/** Update story narrator voice. */
+export async function updateStoryNarrator(
+  storyId: string,
+  narratorVoiceId: string | null,
+  narratorVoiceName: string | null
+): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stories")
+    .update({
+      narrator_voice_id: narratorVoiceId,
+      narrator_voice_name: narratorVoiceName,
+      last_voice_id: null,
+      last_voice_name: null,
+    })
+    .eq("id", storyId).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Không có bản ghi nào được cập nhật. Kiểm tra quyền hoặc tải lại.");
+}
+
+// ============================================================
+// GAMIFICATION — Badges, XP, Challenges
+// ============================================================
+
+export interface BadgeDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  xp_reward: number;
+  sort_order: number;
+  requirement_type: string;
+  requirement_value: number;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  earned_at: string;
+  badge?: BadgeDefinition;
+}
+
+export interface DailyChallenge {
+  id: string;
+  challenge_date: string;
+  title: string;
+  description: string;
+  icon: string;
+  xp_reward: number;
+  challenge_type: string;
+  target_value: number;
+}
+
+export interface UserChallengeProgress {
+  id: string;
+  user_id: string;
+  challenge_id: string;
+  progress: number;
+  completed: boolean;
+  completed_at: string | null;
+}
+
+export async function getAllBadges(): Promise<BadgeDefinition[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("badge_definitions")
+    .select("*")
+    .order("sort_order");
+  return (data as BadgeDefinition[]) || [];
+}
+
+export async function getUserBadges(userId: string): Promise<UserBadge[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("user_badges")
+    .select("*, badge:badge_definitions(*)")
+    .eq("user_id", userId)
+    .order("earned_at", { ascending: false });
+  return (data as UserBadge[]) || [];
+}
+
+export async function awardBadge(userId: string, badgeId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("user_badges")
+    .upsert({ user_id: userId, badge_id: badgeId }, { onConflict: "user_id,badge_id" });
+  if (error) return false;
+  // Award XP
+  await supabase.rpc("award_xp", { p_user_id: userId, p_amount: 0 }); // XP awarded by trigger
+  return true;
+}
+
+export async function checkAndAwardBadges(userId: string): Promise<string[]> {
+  const supabase = createClient();
+  const [badges, userBadges, stories, voices, sessions] = await Promise.all([
+    getAllBadges(),
+    getUserBadges(userId),
+    supabase.from("stories").select("id, category").eq("user_id", userId),
+    supabase.from("voice_profiles").select("id").eq("user_id", userId),
+    supabase.from("play_sessions").select("id, story_id").eq("user_id", userId).gte("completion_percentage", 80),
+  ]);
+
+  const earned = new Set(userBadges.map((b) => b.badge_id));
+  const newBadges: string[] = [];
+
+  const storyCount = stories.data?.length || 0;
+  const voiceCount = voices.data?.length || 0;
+  const listenCount = sessions.data?.length || 0;
+  const categories = new Set(stories.data?.map((s: { category: string }) => s.category) || []);
+
+  for (const badge of badges) {
+    if (earned.has(badge.id)) continue;
+
+    let shouldAward = false;
+    switch (badge.id) {
+      case "first_story": shouldAward = storyCount >= 1; break;
+      case "storyteller_10": shouldAward = storyCount >= 10; break;
+      case "storyteller_50": shouldAward = storyCount >= 50; break;
+      case "first_voice": shouldAward = voiceCount >= 1; break;
+      case "voice_collector": shouldAward = voiceCount >= 5; break;
+      case "first_listen": shouldAward = listenCount >= 1; break;
+      case "bookworm": shouldAward = listenCount >= 25; break;
+      case "explorer": shouldAward = categories.size >= 5; break;
+      default: break;
+    }
+
+    if (shouldAward) {
+      const { error } = await supabase
+        .from("user_badges")
+        .upsert({ user_id: userId, badge_id: badge.id }, { onConflict: "user_id,badge_id" });
+      if (!error) {
+        newBadges.push(badge.id);
+        await supabase.rpc("award_xp", { p_user_id: userId, p_amount: badge.xp_reward });
+      }
+    }
+  }
+  return newBadges;
+}
+
+export async function getProfileXP(userId: string): Promise<{ xp: number; level: number }> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("xp, level")
+    .eq("id", userId)
+    .single();
+  return { xp: data?.xp || 0, level: data?.level || 1 };
+}
+
+export async function getTodayChallenges(): Promise<DailyChallenge[]> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("daily_challenges")
+    .select("*")
+    .eq("challenge_date", today);
+  return (data as DailyChallenge[]) || [];
+}
+
+export async function getUserChallengeProgress(userId: string): Promise<UserChallengeProgress[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("user_challenge_progress")
+    .select("*")
+    .eq("user_id", userId);
+  return (data as UserChallengeProgress[]) || [];
+}
+
+// ============================================================
+// PARENTAL CONTROLS
+// ============================================================
+
+export interface ParentalControls {
+  id: string;
+  user_id: string;
+  // PIN is no longer stored here — see src/lib/parent-pin.ts (migration 017).
+  daily_limit_minutes: number;
+  bedtime_start: string | null;
+  bedtime_end: string | null;
+  allowed_categories: string[];
+  blocked_categories: string[];
+  max_age_rating: number;
+  is_enabled: boolean;
+}
+
+export async function getParentalControls(userId: string): Promise<ParentalControls | null> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("parental_controls")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  return data as ParentalControls | null;
+}
+
+export async function upsertParentalControls(
+  userId: string,
+  controls: Partial<ParentalControls>
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("parental_controls")
+    .upsert({ user_id: userId, ...controls }, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+// ============================================================
+// DAILY USAGE (for parental time limits)
+// ============================================================
+
+export interface DailyUsage {
+  user_id: string;
+  usage_date: string;
+  listening_minutes: number;
+  stories_played: number;
+  stories_created: number;
+}
+
+export async function getTodayUsage(userId: string): Promise<DailyUsage | null> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .single();
+  return data as DailyUsage | null;
+}
+
+export async function incrementUsage(
+  userId: string,
+  field: "listening_minutes" | "stories_played" | "stories_created",
+  amount: number = 1
+): Promise<void> {
+  const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
+
+  // Upsert with increment
+  const { data: existing } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .single();
+
+  if (existing) {
+    const update: Record<string, number> = {};
+    update[field] = (existing[field] || 0) + amount;
+    await supabase.from("daily_usage").update(update).eq("user_id", userId).eq("usage_date", today);
+  } else {
+    const row: Record<string, unknown> = { user_id: userId, usage_date: today };
+    row[field] = amount;
+    await supabase.from("daily_usage").insert(row);
+  }
+}
+
+export async function getUsageHistory(userId: string, days: number = 30): Promise<DailyUsage[]> {
+  const supabase = createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const { data } = await supabase
+    .from("daily_usage")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("usage_date", since.toISOString().split("T")[0])
+    .order("usage_date", { ascending: false });
+  return (data as DailyUsage[]) || [];
+}
+
+// ============================================================
+// OFFLINE DOWNLOADS
+// ============================================================
+
+export interface DownloadedStory {
+  id: string;
+  user_id: string;
+  story_id: string;
+  downloaded_at: string;
+  size_bytes: number;
+}
+
+export async function getDownloadedStories(userId: string): Promise<DownloadedStory[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("downloaded_stories")
+    .select("*")
+    .eq("user_id", userId)
+    .order("downloaded_at", { ascending: false });
+  return (data as DownloadedStory[]) || [];
+}
+
+export async function markStoryDownloaded(userId: string, storyId: string, sizeBytes: number): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("downloaded_stories")
+    .upsert({ user_id: userId, story_id: storyId, size_bytes: sizeBytes }, { onConflict: "user_id,story_id" });
+}
+
+export async function removeDownloadedStory(userId: string, storyId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from("downloaded_stories")
+    .delete()
+    .eq("user_id", userId)
+    .eq("story_id", storyId);
+}
+
+// ============================================================
+// STORY CATEGORIES CRUD
+// ============================================================
+
+export async function getStoryCategories(): Promise<StoryCategoryRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_categories")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return (data as StoryCategoryRow[]) || [];
+}
+
+export async function upsertStoryCategory(cat: Partial<StoryCategoryRow> & { id: string; label: string }): Promise<void> {
+  const supabase = createClient();
+  const {data,error}=await supabase.from("story_categories").upsert(cat, { onConflict: "id" }).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function deleteStoryCategory(id: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_categories").delete().eq("id", id);
+}
+
+// ============================================================
+// STORY TEMPLATES CRUD (admin)
+// ============================================================
+
+export async function getAllStoryTemplates(): Promise<StoryTemplateRow[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("story_templates")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as StoryTemplateRow[]) || [];
+}
+
+export async function upsertStoryTemplate(tpl: Partial<StoryTemplateRow> & { title: string; category: string; pages: StoryTemplateRow["pages"] }): Promise<void> {
+  const supabase = createClient();
+  const {data,error}=await supabase.from("story_templates").upsert(tpl as Record<string, unknown>).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
+}
+
+export async function deleteStoryTemplate(id: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("story_templates").delete().eq("id", id);
+}
+
+export async function toggleStoryTemplateActive(id: string, isActive: boolean): Promise<void> {
+  const supabase = createClient();
+  const {data,error}=await supabase.from("story_templates").update({ is_active: isActive }).eq("id", id).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Thay đổi chưa được lưu. Kiểm tra quyền hoặc tải lại.");
+}

@@ -1,0 +1,123 @@
+{
+  "slug": "su-tich-ho-guom",
+  "title": "Sự tích Hồ Gươm",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 9,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Đức Long Quân cho nghĩa quân Lam Sơn mượn gươm thần: lưỡi gươm vào lưới Lê Thận, chuôi gươm trên ngọn cây đa. Đất nước yên bình, vua Lê Lợi trả gươm cho Rùa Vàng trên hồ Tả Vọng.",
+  "moral": "Biết ơn và giữ lời hứa; đoàn kết để giữ gìn đất nước.",
+  "tags": [
+    "truyen-dan-gian",
+    "ha-noi",
+    "lich-su"
+  ],
+  "origin": "Truyền thuyết người Việt thời Lê sơ về hồ Hoàn Kiếm (Hà Nội) và cuộc khởi nghĩa Lam Sơn.",
+  "adaptation": [
+    "Không mô tả cảnh chiến trận; chỉ kể nghĩa quân thắng và giặc rút về nước.",
+    "Diễn đạt lại bằng lời riêng, câu ngắn cho trẻ; giữ chi tiết chữ 'Thuận Thiên', chuôi gươm trên cây đa, Rùa Vàng đòi gươm."
+  ],
+  "characters": [
+    {
+      "name": "Lê Lợi",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Chủ tướng nghĩa quân Lam Sơn, về sau là vua",
+      "appearance": "vị tướng áo giáp nâu, khăn đỏ, về sau mặc áo vua màu vàng"
+    },
+    {
+      "name": "Lê Thận",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Người đánh cá thật thà, theo nghĩa quân",
+      "appearance": "người đánh cá áo nâu, nón lá, tay cầm lưới"
+    },
+    {
+      "name": "Rùa Vàng",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Sứ giả của Đức Long Quân dưới hồ",
+      "appearance": "con rùa lớn mai vàng óng, đôi mắt hiền"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, giặc Minh sang đô hộ nước ta, làm cho người dân khổ cực trăm bề. Ở vùng Lam Sơn, nghĩa quân nổi lên chống giặc. Nhưng lúc đầu, nghĩa quân còn yếu, nhiều lần phải lui về rừng.[/narrator]\n[narrator]Dưới thuỷ cung, Đức Long Quân thấy vậy thì thương dân lắm. Ngài quyết định cho nghĩa quân mượn một thanh gươm thần.[/narrator]",
+      "sceneDescription": "Làng quê buồn bã, người dân vất vả trên đồng",
+      "scene": "village",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ở Thanh Hoá có một người đánh cá tên là Lê Thận. Một đêm, Lê Thận thả lưới ở bến sông. Kéo lưới lên, chàng thấy nặng tay, ngỡ được mẻ cá to. Nhưng trong lưới chỉ có một thanh sắt dài.[/narrator]\n[character:Lê Thận]Lạ thật! Sao lại có thanh sắt ở đây?[/character]\n[narrator]Chàng thả thanh sắt xuống nước, quăng lưới chỗ khác. Lần thứ hai, rồi lần thứ ba, thanh sắt ấy vẫn chui vào lưới.[/narrator]",
+      "sceneDescription": "Lê Thận kéo lưới bên bờ sông dưới ánh trăng",
+      "scene": "stream",
+      "mood": "curious",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Lê Thận đem thanh sắt về nhà. Về sau, chàng theo nghĩa quân Lam Sơn. Một hôm, chủ tướng Lê Lợi ghé thăm nhà chàng. Trong góc nhà tối, thanh sắt bỗng sáng rực lên.[/narrator]\n[character:Lê Lợi]Đây không phải thanh sắt thường. Đây là một lưỡi gươm![/character]\n[narrator]Lê Lợi lau sạch, thấy trên lưỡi gươm có hai chữ Thuận Thiên, nghĩa là thuận theo ý trời.[/narrator]",
+      "sceneDescription": "Lưỡi gươm sáng rực trong góc nhà, Lê Lợi cầm lên xem",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Một lần, Lê Lợi bị giặc đuổi, phải băng qua rừng. Bỗng ông thấy trên ngọn cây đa có ánh sáng lạ. Ông trèo lên, thì ra đó là một chuôi gươm nạm ngọc.[/narrator]\n[narrator]Ông mang chuôi gươm về, tra vào lưỡi gươm của Lê Thận. Thật kì lạ, vừa khít như in![/narrator]\n[character:Lê Thận]Đây là ý trời! Xin chủ tướng nhận gươm thần để cứu nước![/character]",
+      "sceneDescription": "Chuôi gươm nạm ngọc toả sáng trên ngọn cây đa",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Từ khi có gươm thần, nghĩa quân càng ngày càng mạnh. Đi đến đâu, giặc thua đến đó. Cuối cùng, giặc Minh phải rút hết về nước.[/narrator]\n[character:Lê Lợi]Đất nước ta đã sạch bóng quân thù! Từ nay, bà con được sống yên vui.[/character]\n[narrator]Lê Lợi lên ngôi vua, đóng đô ở Thăng Long. Ruộng đồng lại xanh tốt, trẻ em lại nô đùa khắp xóm làng.[/narrator]",
+      "sceneDescription": "Dân làng vui mừng, cờ bay, trẻ em nô đùa",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Một năm sau, vào một ngày đẹp trời, vua Lê Lợi cưỡi thuyền rồng dạo chơi trên hồ Tả Vọng, giữa kinh thành Thăng Long. Bỗng một con rùa vàng lớn nổi lên mặt nước, vươn cổ về phía thuyền vua.[/narrator]\n[character:Rùa Vàng]Xin bệ hạ trả lại gươm thần cho Đức Long Quân![/character]\n[narrator]Thanh gươm bên hông vua bỗng rung lên khe khẽ.[/narrator]",
+      "sceneDescription": "Rùa vàng nổi lên mặt hồ trước thuyền rồng của vua",
+      "scene": "stream",
+      "mood": "curious",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Vua hiểu rằng đất nước đã bình yên, đã đến lúc trả gươm.[/narrator]\n[character:Lê Lợi]Cảm ơn Đức Long Quân đã cho ta mượn gươm thần. Nay ta xin gửi lại.[/character]\n[narrator]Vua nâng gươm về phía rùa vàng. Rùa ngậm lấy thanh gươm, rồi lặn sâu xuống nước. Một lúc lâu sau, người ta vẫn thấy ánh sáng lấp lánh dưới mặt hồ xanh.[/narrator]",
+      "sceneDescription": "Rùa vàng ngậm thanh gươm lặn xuống, mặt hồ lấp lánh",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Từ đó, hồ Tả Vọng được gọi là hồ Hoàn Kiếm, nghĩa là hồ trả gươm. Người ta còn gọi là Hồ Gươm.[/narrator]\n[narrator]Ngày nay, Hồ Gươm vẫn xanh biếc giữa lòng Hà Nội. Giữa hồ có tháp Rùa nhỏ xinh, bên bờ có cầu Thê Húc đỏ thắm. Các bạn nhỏ đến chơi, ai cũng nhớ câu chuyện rùa vàng và thanh gươm thần.[/narrator]",
+      "sceneDescription": "Hồ Gươm xanh, tháp Rùa giữa hồ và cầu Thê Húc đỏ",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": []
+    }
+  ]
+}

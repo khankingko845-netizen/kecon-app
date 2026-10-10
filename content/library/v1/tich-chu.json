@@ -1,0 +1,121 @@
+{
+  "slug": "tich-chu",
+  "title": "Tích Chu",
+  "category": "fairy_tale",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Cậu bé Tích Chu mải chơi, quên lấy nước cho bà. Bà hoá thành chim bay đi, Tích Chu phải vượt rừng tìm nước suối tiên để đưa bà trở về.",
+  "moral": "Thương yêu, quan tâm ông bà ngay khi ông bà cần mình.",
+  "tags": [
+    "co-tich-viet-nam",
+    "hieu-thao",
+    "gia-dinh"
+  ],
+  "origin": "Truyện cổ tích người Việt (dân tộc Kinh), lưu truyền dân gian.",
+  "adaptation": [
+    "Không nhắc chuyện cha mẹ Tích Chu qua đời; mở đầu bằng tình thương của bà.",
+    "Giữ nguyên mô-típ bà hoá chim, bà tiên chỉ đường và nước suối tiên."
+  ],
+  "characters": [
+    {
+      "name": "Tích Chu",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé mải chơi nhưng thương bà",
+      "appearance": "cậu bé tóc trái đào, áo nâu, quần lửng"
+    },
+    {
+      "name": "Bà",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà của Tích Chu, hiền hậu, tóc bạc",
+      "appearance": "bà cụ tóc bạc búi gọn, áo nâu, khăn mỏ quạ"
+    },
+    {
+      "name": "Bà Tiên",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Bà tiên tốt bụng chỉ đường cho Tích Chu",
+      "appearance": "bà tiên tóc dài, áo trắng, ánh sáng lấp lánh"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, ở một làng nhỏ ven sông, có cậu bé tên là Tích Chu. Tích Chu sống cùng bà trong một ngôi nhà mái lá.[/narrator]\n[narrator]Bà thương Tích Chu nhất trên đời. Có miếng ngon, bà để dành cho cháu. Trời nóng, bà ngồi quạt cho cháu ngủ. Đêm lạnh, bà ôm cháu thật chặt cho ấm.[/narrator]\n[character:Bà]Cháu ngoan của bà, ngủ đi nào. Bà quạt cho cháu nhé.[/character]",
+      "sceneDescription": "Bà ngồi quạt cho Tích Chu ngủ trong ngôi nhà mái lá",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tích Chu lớn dần lên. Bà thì già đi, lưng còng xuống, tóc bạc trắng như mây. Nhưng Tích Chu chỉ mải chơi.[/narrator]\n[narrator]Sáng, cậu thả diều ngoài đồng. Chiều, cậu bắt chuồn chuồn bên bờ ao. Tối về, cậu lăn ra ngủ, chẳng nhớ hỏi han bà.[/narrator]\n[character:Tích Chu]Diều ơi, bay cao nữa đi! Chơi thêm chút nữa thôi mà![/character]",
+      "sceneDescription": "Tích Chu thả diều trên cánh đồng lúa",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Một trưa hè nắng chang chang, bà bị ốm. Bà nằm trên giường, người nóng hầm hập, cổ họng khô rát.[/narrator]\n[character:Bà]Tích Chu ơi, cháu lấy cho bà ngụm nước. Bà khát lắm cháu ạ.[/character]\n[narrator]Nhưng Tích Chu đang mải đá cầu với các bạn ngoài ngõ.[/narrator]\n[character:Tích Chu]Bà chờ cháu một lát. Cháu chơi xong ván này đã![/character]\n[narrator]Bà gọi mãi, gọi mãi, mà Tích Chu vẫn chưa về.[/narrator]",
+      "sceneDescription": "Bà ốm nằm trên giường, gọi Tích Chu",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà khát quá. Bà ước giá mình là chim, bà sẽ bay đi tìm nước uống. Thế là bà hoá thành một con chim nhỏ, vỗ cánh phành phạch bay qua cửa sổ.[/narrator]\n[narrator]Lúc ấy Tích Chu mới chạy về. Cậu thấy con chim bay vụt lên trời.[/narrator]\n[character:Tích Chu]Bà ơi! Bà đi đâu đấy? Cháu biết lỗi rồi, bà về với cháu đi![/character]\n[character:Bà]Bà khát lắm, bà phải bay đi tìm nước. Bà không về được nữa rồi.[/character]",
+      "sceneDescription": "Con chim nhỏ bay lên trời, Tích Chu chạy theo gọi",
+      "scene": "sky",
+      "mood": "sad",
+      "ambient": "wind",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Tích Chu ngồi khóc nức nở dưới gốc cây. Bỗng có ánh sáng lấp lánh, một bà tiên hiện ra.[/narrator]\n[character:Bà Tiên]Cháu bé, vì sao cháu khóc?[/character]\n[character:Tích Chu]Bà cháu hoá thành chim bay đi mất rồi. Cháu muốn bà về. Cháu sẽ không mải chơi nữa đâu.[/character]\n[character:Bà Tiên]Nếu cháu thương bà thật, hãy đến suối tiên ở cuối khu rừng. Lấy nước suối về cho bà uống, bà sẽ trở lại thành người.[/character]",
+      "sceneDescription": "Bà tiên hiện ra bên Tích Chu dưới gốc cây",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Tích Chu đi ngay. Cậu trèo qua đồi cao, lội qua ruộng sâu, băng qua khu rừng rậm. Gai cào xước chân, cậu vẫn đi.[/narrator]\n[narrator]Trời tối dần. Cậu hơi sợ, nhưng nghĩ đến bà, cậu lại bước tiếp.[/narrator]\n[character:Tích Chu]Bà ơi, chờ cháu nhé. Cháu sắp đến rồi![/character]\n[narrator]Cuối cùng, cậu nghe tiếng nước chảy róc rách. Suối tiên kia rồi![/narrator]",
+      "sceneDescription": "Tích Chu băng qua khu rừng rậm tìm suối tiên",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": "forest",
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Nước suối trong veo, mát lạnh. Tích Chu cẩn thận múc đầy một bình nước, ôm chặt vào lòng. Cậu chạy một mạch về nhà, vừa chạy vừa gọi.[/narrator]\n[character:Tích Chu]Bà ơi! Cháu có nước suối tiên đây rồi! Bà về uống nước đi bà![/character]\n[narrator]Con chim nhỏ nghe thấy, liền bay sà xuống, đậu trên tay Tích Chu. Chim uống một ngụm, hai ngụm, rồi ba ngụm nước mát.[/narrator]",
+      "sceneDescription": "Tích Chu múc nước suối tiên, con chim đậu trên tay cậu",
+      "scene": "stream",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Phép màu đã đến! Con chim nhỏ biến mất, bà hiện ra, vẫn mái tóc bạc và nụ cười hiền như ngày nào. Tích Chu ôm chầm lấy bà.[/narrator]\n[character:Tích Chu]Bà ơi, cháu thương bà lắm. Từ nay cháu sẽ chăm sóc bà thật tốt.[/character]\n[character:Bà]Bà biết cháu ngoan mà. Cháu của bà giỏi lắm.[/character]\n[narrator]Từ hôm đó, Tích Chu luôn ở bên bà, lấy nước, quạt mát cho bà mỗi ngày.[/narrator]",
+      "sceneDescription": "Tích Chu ôm bà trong ngôi nhà nhỏ",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

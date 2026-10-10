@@ -1,0 +1,113 @@
+{
+  "slug": "banh-chung-banh-giay",
+  "title": "Bánh chưng bánh giầy",
+  "category": "folk",
+  "ageMin": 4,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Vua Hùng muốn truyền ngôi cho người con dâng lễ vật ý nghĩa nhất. Lang Liêu nghèo nhưng hiểu quý nhất là hạt gạo, làm bánh vuông, bánh tròn tượng trưng cho đất và trời.",
+  "moral": "Quý trọng hạt gạo, công sức lao động và nhớ ơn tổ tiên.",
+  "tags": [
+    "truyen-dan-gian",
+    "tet",
+    "hung-vuong"
+  ],
+  "origin": "Truyền thuyết người Việt thời Hùng Vương về nguồn gốc bánh chưng, bánh giầy ngày Tết.",
+  "adaptation": [
+    "Không nhắc chuyện mẹ Lang Liêu bị vua ghẻ lạnh, qua đời sớm.",
+    "Lời thần trong mộng do người kể chuyện đọc; Lang Liêu tự nghĩ ra hình bánh vuông, bánh tròn.",
+    "Cảnh cung vua dùng tranh làng quê/trong nhà (chưa có tranh cung điện Việt)."
+  ],
+  "characters": [
+    {
+      "name": "Lang Liêu",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Hoàng tử thứ mười tám, sống giản dị, chăm làm ruộng",
+      "appearance": "chàng trai trẻ áo nâu giản dị, khăn vấn đầu, tay cầm bó lá dong"
+    },
+    {
+      "name": "Vua Hùng",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Vua Hùng thứ sáu, già và hiền minh",
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, vua Hùng thứ sáu trị vì đất nước. Vua có hai mươi người con trai. Khi đã già, vua muốn chọn một người con giỏi nhất để truyền ngôi.[/narrator]\n[narrator]Một năm, nhân dịp đầu xuân, vua gọi các con đến và phán:[/narrator]\n[character:Vua Hùng]Năm nay, con nào tìm được lễ vật ý nghĩa nhất dâng lên tổ tiên, ta sẽ truyền ngôi cho người đó.[/character]",
+      "sceneDescription": "Vua Hùng già râu tóc bạc ngồi giữa các con trai, cây đa và đồng lúa phía sau",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Các hoàng tử, người ta gọi là các lang, đua nhau đi tìm của ngon vật lạ. Người lên rừng tìm nấm quý, người xuống biển tìm tôm cá, ngọc trai.[/narrator]\n[narrator]Riêng Lang Liêu, người con thứ mười tám, sống giản dị nhất. Ngày ngày, chàng chỉ chăm lo việc đồng áng, trồng lúa, trồng khoai.[/narrator]\n[character:Lang Liêu]Nhà ta chỉ có lúa gạo, khoai sắn. Biết lấy gì làm lễ vật dâng cha đây?[/character]",
+      "sceneDescription": "Lang Liêu đứng giữa ruộng lúa, gãi đầu suy nghĩ",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Đêm ấy, Lang Liêu trằn trọc mãi mới ngủ được. Trong giấc mơ, chàng thấy một vị thần hiện ra và bảo: Trong trời đất, không gì quý bằng hạt gạo. Hãy lấy gạo làm bánh mà dâng lễ.[/narrator]\n[narrator]Tỉnh dậy, Lang Liêu ngẫm nghĩ mãi.[/narrator]\n[character:Lang Liêu]Hạt gạo nuôi sống mọi người. Ta sẽ làm một chiếc bánh vuông như mặt đất, và một chiếc bánh tròn như bầu trời.[/character]",
+      "sceneDescription": "Lang Liêu nằm ngủ, ánh sáng dịu của vị thần trong giấc mơ",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "night",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Lang Liêu chọn gạo nếp trắng tròn, ngâm cho mềm. Chàng ra vườn hái lá dong xanh, rửa thật sạch. Chàng lấy đậu xanh và thịt lợn làm nhân.[/narrator]\n[narrator]Lá dong gói bên ngoài, gạo nếp ở trong, nhân đậu thịt ở giữa. Chàng gói thành những chiếc bánh vuông vức, buộc lạt cẩn thận.[/narrator]\n[character:Lang Liêu]Bánh vuông này giống mặt đất, có cây cỏ, ruộng đồng. Ta gọi là bánh chưng.[/character]",
+      "sceneDescription": "Lang Liêu ngồi gói bánh chưng vuông bằng lá dong xanh",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Rồi Lang Liêu đồ xôi nếp thật dẻo, cho vào cối giã thật nhuyễn. Chàng nặn thành những chiếc bánh tròn, trắng mịn, xinh xắn như mặt trăng rằm.[/narrator]\n[character:Lang Liêu]Bánh tròn này giống bầu trời. Ta gọi là bánh giầy.[/character]\n[narrator]Đêm ấy, bếp lửa nhà Lang Liêu cháy đỏ. Nồi bánh chưng sôi lục bục suốt đêm, toả mùi thơm khắp xóm.[/narrator]",
+      "sceneDescription": "Bếp lửa đỏ, nồi bánh chưng nghi ngút khói, mâm bánh giầy tròn trắng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ngày lễ đến, các lang bày lên mâm đủ thứ sơn hào hải vị. Vua đi xem một lượt, chỉ gật đầu. Đến mâm của Lang Liêu, vua dừng lại thật lâu trước hai thứ bánh giản dị.[/narrator]\n[character:Vua Hùng]Bánh này tên là gì? Vì sao con làm như vậy?[/character]\n[character:Lang Liêu]Thưa cha, bánh vuông là bánh chưng, giống mặt đất. Bánh tròn là bánh giầy, giống bầu trời. Cả hai đều làm từ hạt gạo nuôi sống muôn dân.[/character]",
+      "sceneDescription": "Vua Hùng dừng lại trước mâm bánh chưng xanh và bánh giầy trắng",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vua nếm thử, thấy bánh thơm ngon, lại có ý nghĩa sâu xa. Vua vui lắm.[/narrator]\n[character:Vua Hùng]Con đã hiểu điều quý nhất là hạt gạo, là mồ hôi của người làm ruộng. Ta truyền ngôi cho con![/character]\n[narrator]Lang Liêu lên làm vua. Chàng luôn chăm lo cho dân, khuyên mọi người chăm chỉ cấy cày, để nhà nhà no ấm.[/narrator]",
+      "sceneDescription": "Vua Hùng đặt tay lên vai Lang Liêu, dân làng vui mừng",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Từ đó, mỗi khi Tết đến xuân về, nhà nhà lại gói bánh chưng, làm bánh giầy để dâng lên tổ tiên, ông bà.[/narrator]\n[narrator]Ngày nay, nhiều bạn nhỏ vẫn cùng ông bà, bố mẹ ngồi bên nồi bánh chưng, kể chuyện Lang Liêu và chờ bánh chín. Bạn có biết vì sao bánh chưng lại có hình vuông không nhỉ?[/narrator]",
+      "sceneDescription": "Cả gia đình ngồi quanh nồi bánh chưng ngày Tết",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": "fire",
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

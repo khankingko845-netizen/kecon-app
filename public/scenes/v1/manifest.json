@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "note": "Bundled scene art shown on story pages when no AI illustration exists (960x640 WebP, clay diorama, no characters). AI-generated for KểCon.",
+  "license": "Generated for KểCon; owned by the KểCon project. No third-party artwork.",
+  "items": [
+    {
+      "id": "beach",
+      "file": "beach.webp",
+      "bytes": 22284,
+      "sha256": "59a8d5e373d8f56652bd77330e2b13f2e2e2c2967a2ca3666234f8997fcb6ede",
+      "label": "Bãi biển"
+    },
+    {
+      "id": "bedroom",
+      "file": "bedroom.webp",
+      "bytes": 20804,
+      "sha256": "99eae78205bdf07360474a9d2c158e248bbf1a717f3818ec150ec83a135803bc",
+      "label": "Phòng ngủ"
+    },
+    {
+      "id": "campfire",
+      "file": "campfire.webp",
+      "bytes": 24040,
+      "sha256": "aa3e2259a89ad193550c18580b57bffcec00034f2e266f8dc848582a66678ccd",
+      "label": "Lửa trại"
+    },
+    {
+      "id": "castle",
+      "file": "castle.webp",
+      "bytes": 33168,
+      "sha256": "efca463f47b3a8df05448d82570253b41c9a6ce1b6e8c2728c533004d47fa379",
+      "label": "Lâu đài"
+    },
+    {
+      "id": "cave",
+      "file": "cave.webp",
+      "bytes": 41062,
+      "sha256": "f5591eaa98f5e3541c46def5ad47d035a334602e3b42e86e9962f3cce794497c",
+      "label": "Hang kho báu"
+    },
+    {
+      "id": "forest-night",
+      "file": "forest-night.webp",
+      "bytes": 28042,
+      "sha256": "117f8c973750bb22bcb88d312d79e982cf3bbdd6c1081c015c615f8a68ae6aae",
+      "label": "Rừng đêm"
+    },
+    {
+      "id": "forest",
+      "file": "forest.webp",
+      "bytes": 28658,
+      "sha256": "f04eec5db7b98a05b269c05c48f47bc28969ed6cbd5069198ff7d5f703a595ea",
+      "label": "Khu rừng"
+    },
+    {
+      "id": "garden",
+      "file": "garden.webp",
+      "bytes": 28606,
+      "sha256": "8097202dc22151a44267c23c760732da34b23b9af7f3b4ed53b1601d0849ed55",
+      "label": "Khu vườn"
+    },
+    {
+      "id": "home",
+      "file": "home.webp",
+      "bytes": 27296,
+      "sha256": "47e447fa552682d94be6bac25f7d5e51b604bcb3a3399a91ed6b81fff8771d50",
+      "label": "Trong nhà"
+    },
+    {
+      "id": "moon-festival",
+      "file": "moon-festival.webp",
+      "bytes": 39148,
+      "sha256": "2dfd741f1d6466db72b275c6c27fdc6a45167e44fc673e56caa73682e290dd16",
+      "label": "Đêm Trung thu"
+    },
+    {
+      "id": "rain",
+      "file": "rain.webp",
+      "bytes": 38002,
+      "sha256": "3f0411fbf070d18df2cb0fe27929c8f14838ce392d33eb8a97aaa223d44e494d",
+      "label": "Ngày mưa"
+    },
+    {
+      "id": "school",
+      "file": "school.webp",
+      "bytes": 22590,
+      "sha256": "3d13e67d5b6e06823ed08cbff6f78163ef5c1c0f2983142255b405aba7ec6e96",
+      "label": "Trường học"
+    },
+    {
+      "id": "sky",
+      "file": "sky.webp",
+      "bytes": 20002,
+      "sha256": "971f31b3b18fe7bf4c257c44eb9a83c6e75fb7a3976c06fc6f4fbc253cb133d2",
+      "label": "Trên mây"
+    },
+    {
+      "id": "snow",
+      "file": "snow.webp",
+      "bytes": 18484,
+      "sha256": "193aa60ea51eeb51aa645bfae6c8dd8d1a7f996e49a66d072309f4019d486a48",
+      "label": "Núi tuyết"
+    },
+    {
+      "id": "space",
+      "file": "space.webp",
+      "bytes": 15144,
+      "sha256": "0ce062d2b518c246ed521be962fdf11ee60ae40652194095350a0c8a4f7557d5",
+      "label": "Vũ trụ"
+    },
+    {
+      "id": "stream",
+      "file": "stream.webp",
+      "bytes": 33990,
+      "sha256": "33bae3daa7ea6465057a0361effe25c198a1c4f5c9b642fadfc81de24e133892",
+      "label": "Bờ suối"
+    },
+    {
+      "id": "underwater",
+      "file": "underwater.webp",
+      "bytes": 27390,
+      "sha256": "0a3c4d8500d3b62af4cd1815e9210a98d116580d46f486e0fdf4164e0272dcfe",
+      "label": "Đáy biển"
+    },
+    {
+      "id": "village",
+      "file": "village.webp",
+      "bytes": 74064,
+      "sha256": "a43088c65816a7dd9a3ac04ec1b7de711c82519be9dec218ee692edbfd9a1c43",
+      "label": "Làng quê"
+    }
+  ]
+}
