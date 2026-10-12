@@ -1,0 +1,116 @@
+{
+  "slug": "rua-va-tho",
+  "title": "Rùa và Thỏ",
+  "category": "animal",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Thỏ chạy nhanh nhất rừng, chê bác Rùa chậm chạp rồi rủ thi chạy. Thỏ chủ quan nằm ngủ giữa đường, còn Rùa cứ đi đều từng bước và về đích trước.",
+  "moral": "Chậm mà chắc: kiên trì đến cùng thì sẽ thành công, đừng chủ quan coi thường người khác.",
+  "tags": [
+    "ngu-ngon",
+    "dong-vat",
+    "kien-tri"
+  ],
+  "origin": "Phỏng theo truyện ngụ ngôn Aesop (Hy Lạp cổ đại), quen thuộc với thiếu nhi Việt Nam qua sách và sách giáo khoa.",
+  "adaptation": [
+    "Thêm nhân vật Bác Cú làm trọng tài và đoạn kết hai bạn đi dạo cùng nhau.",
+    "Rùa không chế giễu Thỏ; Thỏ được động viên sửa lỗi thay vì bị chê cười."
+  ],
+  "characters": [
+    {
+      "name": "Rùa",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Bác rùa chậm rãi, kiên trì, tốt bụng",
+      "appearance": "chú rùa mai xanh rêu, cổ quàng khăn đỏ, đôi mắt hiền"
+    },
+    {
+      "name": "Thỏ",
+      "role": "friend",
+      "voiceType": "boy",
+      "description": "Chú thỏ chạy nhanh, hay khoe khoang, biết sửa lỗi",
+      "appearance": "chú thỏ trắng tai dài, mắt đỏ tinh nghịch, chân sau dài"
+    },
+    {
+      "name": "Bác Cú",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Bác cú già thông thái, làm trọng tài",
+      "appearance": "cú mèo lông nâu xám, đeo kính tròn, đậu trên cành cao"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ở bìa rừng nọ, có chú Thỏ chạy nhanh nhất vùng. Thỏ hay khoe đôi chân dài của mình với mọi người.[/narrator]\n[narrator]Một buổi sáng, Thỏ gặp bác Rùa đang chậm rãi bò ra bờ suối uống nước.[/narrator]\n[character:Thỏ]Bác Rùa ơi, bác đi chậm thế thì bao giờ mới tới nơi? Cháu chạy một vòng quanh rừng rồi mà bác vẫn còn ở đây![/character]\n[character:Rùa]Chậm một chút cũng không sao cháu ạ. Bác cứ đi đều, rồi sẽ tới.[/character]",
+      "sceneDescription": "Thỏ trắng nhảy nhót trêu bác Rùa đang chậm rãi bò bên bìa rừng",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thỏ cười khúc khích, vểnh đôi tai dài lên.[/narrator]\n[character:Thỏ]Hay là bác thi chạy với cháu đi! Ai tới gốc đa đầu làng trước thì thắng.[/character]\n[narrator]Rùa suy nghĩ một lát rồi gật đầu.[/narrator]\n[character:Rùa]Được, bác thi với cháu. Nhờ bác Cú làm trọng tài nhé.[/character]\n[narrator]Bác Cú đậu trên cành cao, nheo mắt nhìn xuống, vỗ cánh đồng ý.[/narrator]\n[character:Bác Cú]Sáng mai, khi mặt trời lên, hai cháu xuất phát ở đây nhé.[/character]",
+      "sceneDescription": "Bác Cú đeo kính đậu trên cành cao, Rùa và Thỏ đứng dưới gốc cây",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, các con vật trong rừng kéo đến xem rất đông. Sóc, Nhím, Chim Sâu đứng hai bên đường cổ vũ.[/narrator]\n[character:Bác Cú]Chuẩn bị nhé! Một, hai, ba... chạy![/character]\n[narrator]Thỏ vọt đi như một cơn gió, chẳng mấy chốc đã mất hút sau bụi cây. Rùa bắt đầu bò, từng bước, từng bước một.[/narrator]\n[character:Rùa]Chậm mà chắc. Mình cứ đi đều là được.[/character]",
+      "sceneDescription": "Thỏ vọt lên phía trước, Rùa bò từng bước, các con vật hai bên cổ vũ",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": [
+        "bell",
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Chạy được nửa đường, Thỏ ngoảnh lại. Chẳng thấy bóng dáng bác Rùa đâu cả.[/narrator]\n[character:Thỏ]Bác Rùa còn lâu mới tới. Mình nằm nghỉ một lát, ăn mấy ngọn cỏ non đã.[/character]\n[narrator]Thỏ nằm dưới gốc cây mát rượi, gặm cỏ, ngắm mây. Gió hiu hiu thổi, Thỏ ngáp một cái thật dài rồi ngủ thiếp đi lúc nào không hay.[/narrator]\n[character:Thỏ]Ngủ một chút thôi... một chút thôi...[/character]",
+      "sceneDescription": "Thỏ nằm ngủ say dưới gốc cây mát, miệng còn ngậm ngọn cỏ",
+      "scene": "forest",
+      "mood": "sleepy",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Trong khi đó, Rùa vẫn bò đều đều. Nắng lên cao, đường xa, chân Rùa mỏi nhừ, nhưng Rùa không dừng lại.[/narrator]\n[narrator]Rùa bò qua bờ suối, qua bãi cỏ, rồi đi ngang qua gốc cây nơi Thỏ đang ngủ say.[/narrator]\n[character:Rùa]Thỏ ngủ say quá. Bác cứ lặng lẽ đi tiếp, từng bước một.[/character]\n[character:Bác Cú]Cố lên Rùa ơi, sắp tới gốc đa rồi![/character]",
+      "sceneDescription": "Rùa bò qua bờ suối dưới nắng, Bác Cú bay theo cổ vũ",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mãi đến chiều, Thỏ mới giật mình tỉnh dậy. Mặt trời đã ngả về tây.[/narrator]\n[character:Thỏ]Ôi, mình ngủ quên mất rồi![/character]\n[narrator]Thỏ co cẳng chạy thục mạng về phía gốc đa. Nhưng từ xa, Thỏ đã nghe tiếng reo hò vang dậy. Bác Rùa đã tới đích trước rồi! Các bạn trong rừng vỗ tay rộn ràng.[/narrator]\n[character:Bác Cú]Rùa thắng cuộc! Rùa thắng cuộc![/character]",
+      "sceneDescription": "Rùa về đích dưới gốc đa đầu làng, các con vật reo hò, Thỏ chạy tới phía xa",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Thỏ đứng thở hổn hển, cúi gằm mặt xuống, đôi tai cụp lại.[/narrator]\n[character:Thỏ]Cháu chạy nhanh hơn bác nhiều, vậy mà cháu lại thua. Cháu xấu hổ quá.[/character]\n[narrator]Rùa bò lại gần, nhẹ nhàng an ủi Thỏ.[/narrator]\n[character:Rùa]Cháu chạy rất giỏi. Chỉ tại cháu chủ quan, coi thường bạn, lại bỏ dở giữa chừng thôi.[/character]\n[character:Bác Cú]Đúng đấy. Nhanh mà không chăm thì cũng chẳng bằng chậm mà bền bỉ.[/character]",
+      "sceneDescription": "Thỏ cụp tai buồn bã, bác Rùa hiền từ an ủi, Bác Cú đậu bên cạnh",
+      "scene": "village",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Từ hôm đó, Thỏ không còn khoe khoang nữa. Thỏ hay rủ Rùa cùng đi dạo bên bờ suối. Thỏ đi chậm lại để chờ bác, còn bác Rùa kể cho Thỏ nghe bao nhiêu chuyện hay.[/narrator]\n[character:Thỏ]Lần sau thi, cháu sẽ cố đến cùng, không ngủ quên nữa đâu.[/character]\n[character:Rùa]Thế mới giỏi! Làm việc gì cũng phải kiên trì đến cùng cháu nhé.[/character]",
+      "sceneDescription": "Thỏ và Rùa thong thả đi dạo cạnh nhau bên bờ suối lúc hoàng hôn",
+      "scene": "stream",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": []
+    }
+  ]
+}

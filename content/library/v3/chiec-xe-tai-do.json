@@ -1,0 +1,119 @@
+{
+  "slug": "chiec-xe-tai-do",
+  "title": "Chiếc xe tải đỏ",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bo mang chiếc xe tải đỏ mới đến lớp nhưng không cho ai chơi cùng, rồi thấy buồn vì chơi một mình. Cô Hoa dạy các bạn chờ đến lượt bằng đồng hồ cát, và cả nhóm cùng xây một con đường thật dài.",
+  "moral": "Chia sẻ và chờ đến lượt giúp mình có thêm bạn, chơi chung vui hơn chơi một mình.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "chia-se",
+    "cho-den-luot",
+    "ban-be"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 44 (chia sẻ đồ chơi), 47 (chờ đến lượt) và 60 (quan tâm đến sự công bằng trong nhóm bạn).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Cô giáo không bắt Bo đưa xe ngay mà gợi ý cách chờ đến lượt có thời gian rõ ràng; Bo tự chọn chia sẻ và thấy kết quả vui.",
+    "Gợi ý cho cha mẹ: đừng ép bé đưa đồ chơi ngay; tập 'đến lượt' với đồng hồ cát hoặc đếm đến 20 và khen khi bé chờ hay cho bạn mượn."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+    },
+    {
+      "name": "Mai",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Bạn cùng lớp của Bo, nhanh nhẹn",
+      "appearance": "cô bé tóc tết hai bím, áo vàng"
+    },
+    {
+      "name": "Cô Hoa",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô giáo mầm non dịu dàng",
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Sáng thứ hai, Bo mang đến lớp một chiếc xe tải đỏ mới tinh. Xe có thùng nâng lên hạ xuống được, bánh xe quay vù vù, còn bấm còi kêu bim bim nữa.[/narrator]\n[character:Bo]Xe tải của tớ đấy! Bố mới mua cho tớ hôm qua![/character]\n[narrator]Các bạn xúm lại xem, mắt tròn xoe. Ai cũng muốn được sờ thử chiếc xe một lần.[/narrator]",
+      "sceneDescription": "Bo ôm chiếc xe tải đỏ mới, các bạn trong lớp xúm lại xem",
+      "scene": "school",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tin rụt rè kéo áo Bo, chỉ vào chiếc xe.[/narrator]\n[character:Mai]Bo ơi, cho tớ với Tin chơi cùng với! Cho tớ thử bấm còi một lần thôi![/character]\n[narrator]Bo sợ các bạn làm hỏng xe. Bo ôm chặt chiếc xe vào lòng, quay lưng lại.[/narrator]\n[character:Bo]Không! Xe của tớ, chỉ tớ được chơi thôi![/character]\n[narrator]Tin cúi đầu đi ra góc xếp hình. Mai cũng lặng lẽ đi chỗ khác. Hai bạn trông buồn thiu.[/narrator]",
+      "sceneDescription": "Bo ôm chặt chiếc xe quay lưng đi, Tin và Mai buồn bã bỏ đi",
+      "scene": "school",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo ngồi một mình trong góc, đẩy xe tới, đẩy xe lui. Bim bim. Vù vù. Lúc đầu thì vui, nhưng một lúc sau Bo thấy chán. Ở góc bên kia, Tin và Mai đang xây đường bằng khối gỗ, cười khúc khích.[/narrator]\n[character:Bo]Sao chơi một mình chẳng vui gì cả nhỉ?[/character]\n[narrator]Bo nhìn chiếc xe tải, rồi lại nhìn sang các bạn.[/narrator]",
+      "sceneDescription": "Bo ngồi một mình trong góc lớp với chiếc xe, nhìn sang Tin và Mai đang cười",
+      "scene": "school",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cô Hoa đến ngồi cạnh Bo.[/narrator]\n[character:Cô Hoa]Cô thấy Bo có vẻ buồn. Con sợ bạn làm hỏng xe phải không?[/character]\n[character:Bo]Vâng ạ. Con sợ bạn lấy mất xe của con.[/character]\n[character:Cô Hoa]Mình có thể chơi theo lượt. Mỗi bạn được chơi đến khi cát trong đồng hồ chảy hết, rồi xe lại về với con. Xe vẫn là của con mà.[/character]",
+      "sceneDescription": "Cô Hoa ngồi xuống cạnh Bo, cầm một chiếc đồng hồ cát nhỏ",
+      "scene": "school",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo nghĩ một lúc, rồi cầm xe đi về phía góc xếp hình.[/narrator]\n[character:Bo]Tin ơi, cậu chơi xe trước nhé. Cát chảy hết thì đến lượt Mai, rồi đến tớ.[/character]\n[narrator]Tin cười tít mắt, cảm ơn Bo rồi đẩy xe thật nhẹ tay.[/narrator]\n[narrator]Cô Hoa lật đồng hồ cát. Những hạt cát nhỏ bắt đầu chảy xuống. Bo ngồi chờ, đếm cùng các bạn: một, hai, ba...[/narrator]",
+      "sceneDescription": "Bo đưa xe tải cho Tin, cô Hoa lật đồng hồ cát, các bạn ngồi đếm",
+      "scene": "school",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến lượt Bo, Tin mang hết khối gỗ của mình ra cho Bo chở đi xây đường.[/narrator]\n[character:Mai]Còn tớ làm cây cầu cho xe tải chạy qua![/character]\n[narrator]Cả ba bạn cùng xây một con đường thật dài, có cầu, có đường hầm, có cả trạm xăng. Chiếc xe tải đỏ chở khối gỗ chạy đi chạy lại, bim bim, vù vù.[/narrator]\n[character:Bo]Chơi chung vui hơn nhiều![/character]",
+      "sceneDescription": "Bo, Tin và Mai cùng xây con đường khối gỗ dài có cầu, xe tải đỏ chạy trên đường",
+      "scene": "school",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Đến giờ về, chiếc xe tải vẫn còn nguyên, không trầy một chút nào.[/narrator]\n[character:Cô Hoa]Hôm nay Bo đã biết chia sẻ, còn Tin và Mai biết chờ đến lượt. Cô khen cả ba con![/character]\n[character:Mai]Ngày mai tớ mang búp bê đến, tớ cũng cho các cậu chơi cùng![/character]\n[character:Bo]Thế thì mai mình lại chơi chung nhé![/character]",
+      "sceneDescription": "Cô Hoa khen ba bạn, chiếc xe tải đỏ nằm cạnh con đường khối gỗ",
+      "scene": "school",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối về nhà, Bo kể cho bố mẹ nghe về con đường dài và hai người bạn. Bo đặt chiếc xe tải đỏ lên kệ.[/narrator]\n[character:Bo]Xe ơi, hôm nay xe có thêm hai người bạn đấy![/character]\n[narrator]Bé ơi, khi bạn muốn mượn đồ chơi của bé, bé sẽ nói gì nhỉ? Mình thử nói: Cậu chơi trước nhé, rồi đến lượt tớ![/narrator]",
+      "sceneDescription": "Bo đặt chiếc xe tải đỏ lên kệ trong phòng khách, mỉm cười",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

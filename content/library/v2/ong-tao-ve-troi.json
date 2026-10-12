@@ -1,0 +1,123 @@
+{
+  "slug": "ong-tao-ve-troi",
+  "title": "Ông Táo về trời",
+  "category": "educational",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Ngày 23 tháng Chạp, Bé Na cùng ông nội dọn bếp, bày lễ và thả cá chép tiễn ông Táo. Đêm ấy, Na mơ gặp ông Táo, được dặn cách giữ an toàn với bếp lửa và thấy cá chép hoá rồng.",
+  "moral": "Biết phong tục ngày Tết, giữ nhà cửa sạch sẽ và không bao giờ nghịch lửa.",
+  "tags": [
+    "phong-tuc",
+    "tet",
+    "an-toan",
+    "hoc-choi"
+  ],
+  "origin": "Tục cúng ông Công ông Táo ngày 23 tháng Chạp của người Việt; hình ảnh Táo quân cưỡi cá chép về trời và cá chép vượt Vũ Môn hoá rồng trong văn hoá dân gian.",
+  "adaptation": [
+    "Không kể truyền thuyết 'hai ông một bà' (chuyện vợ chồng tái hợp và cái chết của ba người) vì không hợp lứa tuổi.",
+    "Giấc mơ của Bé Na là phần sáng tác mới; lồng ghép bài học an toàn với bếp lửa qua lời ông Táo."
+  ],
+  "characters": [
+    {
+      "name": "Bé Na",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Cô bé tò mò, ngoan ngoãn",
+      "appearance": "cô bé tóc ngắn kẹp nơ, áo len đỏ"
+    },
+    {
+      "name": "Ông Nội",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông nội hiền từ, hiểu nhiều phong tục",
+      "appearance": "ông cụ tóc bạc, áo nâu, đội mũ len"
+    },
+    {
+      "name": "Ông Táo",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Vị thần bếp hiền hậu",
+      "appearance": "vị thần áo bào đỏ, đội mũ cánh chuồn, râu đen, tay cầm quạt"
+    },
+    {
+      "name": "Cá Chép",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Chú cá chép đỏ đưa ông Táo về trời",
+      "appearance": "cá chép đỏ vảy óng ánh, vây vàng, đuôi dài"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Hôm ấy là ngày hai mươi ba tháng Chạp. Từ sáng sớm, Ông Nội đã cùng Bé Na lau dọn gian bếp. Ông lau sạch kiềng, quét tro, còn Na xếp nồi niêu gọn gàng lên giá.[/narrator]\n[character:Bé Na]Ông ơi, sao hôm nay mình dọn bếp kỹ thế ạ?[/character]\n[character:Ông Nội]Vì hôm nay ông Táo về trời đấy cháu ạ. Nhà mình phải sạch sẽ để tiễn ông Táo.[/character]",
+      "sceneDescription": "Ông nội và bé Na lau dọn gian bếp, xếp nồi niêu gọn gàng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bé Na ngồi xuống bên ông, mắt tròn xoe.[/narrator]\n[character:Bé Na]Ông Táo là ai hả ông?[/character]\n[character:Ông Nội]Ông Táo là vị thần coi sóc bếp lửa của mỗi nhà. Cả năm ông Táo ở trong bếp, giữ cho lửa ấm, cơm thơm. Cuối năm, ông cưỡi cá chép lên trời, kể với Ngọc Hoàng mọi việc trong nhà.[/character]\n[character:Bé Na]Ông Táo cưỡi cá chép thật hả ông? Thích quá![/character]",
+      "sceneDescription": "Bé Na ngồi cạnh ông nội bên bếp lửa, tròn mắt lắng nghe",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Buổi chiều, mẹ bày mâm lễ lên bàn: có hương, có hoa, có đĩa hoa quả và bộ mũ áo giấy cho ông Táo. Bên cạnh là một chậu nước, ba chú cá chép đỏ bơi tung tăng.[/narrator]\n[character:Bé Na]Cá chép ơi, chào các bạn! Các bạn đẹp quá![/character]\n[character:Ông Nội]Thắp hương xong, ông cháu mình mang cá ra ao thả, để cá đưa ông Táo về trời.[/character]",
+      "sceneDescription": "Mâm lễ tiễn ông Táo với hương hoa, chậu cá chép đỏ, bé Na cúi nhìn cá",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông nội bưng chậu cá, Bé Na lon ton chạy theo ra ao làng. Na nhẹ nhàng thả từng chú cá xuống nước. Cá chép quẫy đuôi, bơi một vòng rồi lặn xuống.[/narrator]\n[character:Bé Na]Cá chép ơi, nhớ đưa ông Táo về trời bình an nhé![/character]\n[character:Cá Chép]Bé Na yên tâm! Chúng tớ sẽ bơi thật nhanh, đưa ông Táo đến tận cửa trời.[/character]\n[narrator]Na tròn mắt nhìn ông. Ông nội chỉ mỉm cười.[/narrator]",
+      "sceneDescription": "Bé Na thả cá chép đỏ xuống ao làng, ông nội đứng bên mỉm cười",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, Bé Na ngủ thiếp đi. Trong giấc mơ, Na thấy gian bếp sáng ấm. Một vị thần mặc áo đỏ, đội mũ cánh chuồn, đứng bên bếp lửa, cười hiền hậu.[/narrator]\n[character:Ông Táo]Chào cháu Na. Ông là ông Táo đây. Cảm ơn cháu đã giúp ông nội dọn bếp sạch sẽ.[/character]\n[character:Bé Na]Ông Táo ơi, lên trời ông sẽ kể gì với Ngọc Hoàng ạ?[/character]",
+      "sceneDescription": "Trong giấc mơ, ông Táo áo đỏ mũ cánh chuồn đứng bên bếp lửa ấm",
+      "scene": "home",
+      "mood": "sleepy",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[character:Ông Táo]Ông sẽ kể nhà cháu chăm chỉ, hoà thuận, còn cháu thì ngoan. Nhưng ông dặn cháu điều này nhé. Lửa nấu cơm cho cả nhà, nhưng lửa cũng rất nguy hiểm.[/character]\n[character:Bé Na]Vậy cháu phải làm gì ạ?[/character]\n[character:Ông Táo]Cháu không nghịch lửa, không nghịch bật lửa hay que diêm, không đến gần bếp khi đang đun nấu. Thấy khói hay lửa lạ, cháu gọi người lớn ngay.[/character]\n[character:Bé Na]Cháu nhớ rồi ạ![/character]",
+      "sceneDescription": "Ông Táo giơ ngón tay dặn dò, bé Na gật đầu, bếp lửa phía sau",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông Táo vẫy tay chào rồi bước ra sân. Một chú cá chép đỏ đã chờ sẵn trên làn mây. Ông Táo ngồi lên lưng cá.[/narrator]\n[character:Cá Chép]Ông Táo ngồi vững nhé! Cháu sẽ vượt qua cửa trời đây![/character]\n[narrator]Cá chép vẫy đuôi, vút lên cao, vượt qua cánh cổng mây. Bỗng vảy cá sáng lấp lánh, cá chép hoá thành một con rồng vàng, chở ông Táo bay về trời.[/narrator]\n[character:Bé Na]Ôi, cá chép hoá rồng rồi![/character]",
+      "sceneDescription": "Cá chép hoá rồng vàng chở ông Táo bay qua cổng mây",
+      "scene": "sky",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, Na chạy ùa xuống bếp, kể cho ông nội nghe giấc mơ.[/narrator]\n[character:Ông Nội]Ông Táo về trời rồi, đến đêm giao thừa ông lại về với nhà mình. Cá chép vượt cửa trời hoá rồng, nên người ta bảo ai chăm chỉ, kiên trì cũng sẽ thành công.[/character]\n[character:Bé Na]Cháu sẽ ngoan, không nghịch lửa, để năm sau ông Táo lại kể tốt về nhà mình![/character]\n[narrator]Ngoài ngõ, hoa đào đã chúm chím nở. Tết sắp về rồi.[/narrator]",
+      "sceneDescription": "Bé Na ôm ông nội trong gian bếp sạch sẽ, ngoài cửa có cành đào chớm nở",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "slug": "su-tich-hoa-cuc-trang",
+  "title": "Sự tích hoa cúc trắng",
+  "category": "fairy_tale",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Mẹ ốm nặng, cậu bé vào rừng tìm bông hoa trắng làm thuốc. Hoa chỉ có bốn cánh, cậu khéo léo xé mỗi cánh thành thật nhiều cánh nhỏ để mẹ khoẻ mạnh thật lâu.",
+  "moral": "Lòng hiếu thảo và sự thông minh có thể làm nên điều kỳ diệu.",
+  "tags": [
+    "co-tich",
+    "hieu-thao",
+    "tinh-me"
+  ],
+  "origin": "Truyện kể dân gian về lòng hiếu thảo, quen thuộc với thiếu nhi Việt Nam qua sách thiếu nhi; nhiều nguồn cho rằng có gốc từ truyện cổ Nhật Bản.",
+  "adaptation": [
+    "Không nói đến cái chết: mỗi cánh hoa là một năm mẹ khoẻ mạnh; cuối truyện mẹ khỏi ốm.",
+    "Ông lão là người tốt bụng chỉ đường và dặn cách sắc thuốc, ghé lại thăm hai mẹ con ở cuối truyện."
+  ],
+  "characters": [
+    {
+      "name": "Cậu Bé",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé hiếu thảo, dũng cảm, thông minh",
+      "appearance": "cậu bé gầy, áo nâu, khăn len quàng cổ, đi chân đất"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người mẹ hiền bị ốm, được con chăm sóc",
+      "appearance": "người mẹ tóc búi, áo nâu, khăn len quàng vai"
+    },
+    {
+      "name": "Ông Lão",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông lão tốt bụng chỉ đường tìm thuốc",
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có hai mẹ con sống trong một túp lều nhỏ bên bìa rừng. Cậu bé rất thương mẹ. Một mùa đông, mẹ bị ốm nặng, nằm mãi trên giường không dậy được.[/narrator]\n[character:Cậu Bé]Mẹ ơi, con nấu cháo rồi. Mẹ ăn một chút cho khoẻ nhé.[/character]\n[character:Mẹ]Con ngoan của mẹ. Mẹ mệt lắm, nhưng có con bên cạnh, mẹ thấy ấm lòng.[/character]",
+      "sceneDescription": "Cậu bé bưng bát cháo đến bên giường người mẹ đang ốm",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Một hôm, có một ông lão râu tóc bạc phơ đi ngang qua, gõ cửa xin bát nước. Cậu bé vội mời ông vào nhà.[/narrator]\n[character:Ông Lão]Cháu ngoan lắm. Sao trông cháu buồn thế?[/character]\n[character:Cậu Bé]Mẹ cháu ốm nặng, cháu không biết làm sao cho mẹ khỏi bệnh.[/character]\n[character:Ông Lão]Cháu hãy vào rừng, đi mãi về phía mặt trời mọc. Dưới gốc cây đa cổ thụ có một bông hoa trắng. Hái hoa ấy về làm thuốc cho mẹ.[/character]",
+      "sceneDescription": "Ông lão râu tóc bạc phơ chống gậy đứng ở cửa, cậu bé mời ông vào",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "door-knock"
+      ]
+    },
+    {
+      "text": "[narrator]Cậu bé cảm ơn ông lão rồi lên đường ngay. Cậu lội qua con suối lạnh buốt, vượt qua những bụi gai rậm rạp. Chân cậu mỏi nhừ, nhưng cậu không dừng lại.[/narrator]\n[character:Cậu Bé]Mẹ ơi, mẹ chờ con nhé. Con sẽ mang thuốc về cho mẹ![/character]\n[narrator]Đến chiều, cậu bé nhìn thấy một cây đa cổ thụ, rễ buông dài như mái tóc ông tiên.[/narrator]",
+      "sceneDescription": "Cậu bé lội suối, vượt bụi gai, phía xa là cây đa cổ thụ",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": "forest",
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Dưới gốc đa, có một bông hoa trắng muốt, chỉ có bốn cánh. Cậu bé vừa hái hoa lên thì nghe tiếng ông lão vang lên bên tai.[/narrator]\n[character:Ông Lão]Hoa có bao nhiêu cánh, mẹ cháu sẽ khoẻ mạnh thêm bấy nhiêu năm.[/character]\n[narrator]Cậu bé đếm từng cánh hoa.[/narrator]\n[character:Cậu Bé]Một, hai, ba, bốn... Chỉ có bốn năm thôi ư? Cháu muốn mẹ khoẻ mạnh mãi mãi cơ![/character]",
+      "sceneDescription": "Cậu bé cầm bông hoa trắng bốn cánh dưới gốc đa, đếm từng cánh",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Cậu bé ngồi xuống, nghĩ mãi. Rồi mắt cậu sáng lên. Cậu nhẹ nhàng xé mỗi cánh hoa thành thật nhiều sợi nhỏ, nhỏ như sợi tóc.[/narrator]\n[character:Cậu Bé]Mỗi sợi là một cánh. Nhiều cánh thế này, đếm mãi không hết, mẹ sẽ khoẻ mạnh thật lâu![/character]\n[narrator]Bông hoa bốn cánh giờ đã thành một bông hoa với vô số cánh nhỏ, xoè tròn như một vầng trăng trắng.[/narrator]",
+      "sceneDescription": "Cậu bé khéo léo xé cánh hoa thành vô số sợi nhỏ, bông hoa xoè tròn",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cậu bé ôm bông hoa chạy một mạch về nhà. Cậu sắc thuốc theo lời ông lão dặn, rồi bón cho mẹ từng thìa.[/narrator]\n[character:Cậu Bé]Mẹ uống thuốc đi mẹ. Bông hoa này có nhiều cánh lắm![/character]\n[narrator]Vài hôm sau, má mẹ hồng hào trở lại. Mẹ ngồi dậy được, rồi đứng dậy đi lại quanh nhà.[/narrator]\n[character:Mẹ]Mẹ khỏi bệnh rồi con ơi! Mẹ khoẻ lắm rồi![/character]",
+      "sceneDescription": "Người mẹ khoẻ lại, đứng dậy ôm cậu bé, bông hoa trắng trên bàn",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hôm ấy, ông lão lại ghé qua túp lều nhỏ. Thấy hai mẹ con vui vẻ, ông mỉm cười hiền hậu.[/narrator]\n[character:Ông Lão]Lòng hiếu thảo của cháu đã làm bông hoa nở thêm muôn cánh đấy.[/character]\n[character:Mẹ]Tôi cảm ơn cụ đã chỉ đường cho con tôi.[/character]\n[character:Cậu Bé]Cháu cảm ơn ông nhiều lắm ạ![/character]\n[narrator]Ông lão gật đầu rồi bước đi, khuất dần sau rặng tre.[/narrator]",
+      "sceneDescription": "Ông lão mỉm cười trước túp lều, hai mẹ con cúi chào cảm ơn",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cậu bé trồng bông hoa ấy ở trước sân. Năm nào hoa cũng nở trắng muốt, cánh nhiều đếm không xuể. Người ta gọi đó là hoa cúc trắng.[/narrator]\n[character:Mẹ]Mỗi lần nhìn hoa cúc, mẹ lại nhớ tấm lòng của con.[/character]\n[character:Cậu Bé]Con sẽ chăm hoa, và chăm mẹ thật tốt, mẹ nhé![/character]\n[narrator]Hai mẹ con ngồi bên khóm cúc, ngắm hoa trong nắng chiều.[/narrator]",
+      "sceneDescription": "Hai mẹ con ngồi bên khóm cúc trắng trước sân trong nắng chiều",
+      "scene": "garden",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "slug": "dao-nhac-cho-meo",
+  "title": "Đeo nhạc cho mèo",
+  "category": "animal",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Họ nhà chuột sợ Mèo Mướp nên họp bàn, nghĩ ra cách đeo chuông vào cổ mèo. Ý hay ai cũng khen, nhưng đến lúc phải đi đeo thì chẳng ai dám.",
+  "moral": "Nói thì dễ, làm mới khó; ý hay chỉ có ích khi có người làm được.",
+  "tags": [
+    "ngu-ngon",
+    "dong-vat",
+    "viet-nam"
+  ],
+  "origin": "Truyện ngụ ngôn dân gian, quen thuộc ở Việt Nam và nhiều nước (truyện Đeo nhạc cho mèo).",
+  "adaptation": [
+    "Không có cảnh mèo bắt chuột; Mèo Mướp chỉ đi tuần canh bếp.",
+    "Thêm đoạn kết các chú chuột rút ra bài học và nghĩ việc vừa sức mình."
+  ],
+  "characters": [
+    {
+      "name": "Chuột Nhắt",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Chú chuột nhỏ nhanh trí, hay nghĩ ra ý mới",
+      "appearance": "chú chuột nhỏ lông xám, tai tròn, mắt đen láy"
+    },
+    {
+      "name": "Chuột Già",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Cụ chuột già, chủ trì cuộc họp",
+      "appearance": "cụ chuột râu bạc, chống gậy tre nhỏ"
+    },
+    {
+      "name": "Chuột Cống",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Chú chuột to con, hay khoe khoang",
+      "appearance": "chú chuột cống to, lông nâu, vênh váo"
+    },
+    {
+      "name": "Mèo Mướp",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Cô mèo mướp canh gian bếp",
+      "appearance": "mèo mướp vằn xám, mắt xanh, ria dài"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Trong một ngôi nhà lớn, có một họ chuột đông vui sống dưới gầm bếp. Nhưng nhà ấy lại có cô Mèo Mướp rất tinh mắt.[/narrator]\n[narrator]Đêm nào Mèo Mướp cũng đi tuần quanh gian bếp, bước chân êm ru, chẳng nghe thấy tiếng gì.[/narrator]\n[character:Mèo Mướp]Meo meo! Đêm nay ta canh bếp. Chú chuột nào dám ra đây lấy trộm đồ ăn nào?[/character]",
+      "sceneDescription": "Mèo Mướp đi tuần trong gian bếp ban đêm, đàn chuột nấp dưới gầm",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": "night",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Họ nhà chuột sợ quá, chẳng dám ra ngoài kiếm ăn. Bụng chú nào cũng đói meo.[/narrator]\n[narrator]Cụ Chuột Già bèn gọi cả họ đến họp trong cái hang ấm dưới gầm tủ.[/narrator]\n[character:Chuột Già]Các cháu ơi, cứ thế này thì đói mất. Phải nghĩ cách để biết lúc nào Mèo Mướp đi tới.[/character]\n[character:Chuột Nhắt]Thưa cụ, cháu cũng đói lắm rồi ạ.[/character]",
+      "sceneDescription": "Họ nhà chuột họp trong hang nhỏ dưới gầm tủ",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cả họ chuột bàn tán xôn xao. Chuột Cống đứng dậy, ưỡn ngực lên.[/narrator]\n[character:Chuột Cống]Để tôi ra dọa cho mèo một trận! Tôi to khoẻ nhất ở đây mà.[/character]\n[narrator]Cả họ nhìn nhau, lắc đầu. Chuột Cống to thật, nhưng vẫn bé hơn Mèo Mướp nhiều lắm.[/narrator]\n[character:Chuột Già]Không được đâu cháu ạ. Ta cần một cách khôn ngoan hơn.[/character]",
+      "sceneDescription": "Chuột Cống ưỡn ngực khoe khoang giữa cuộc họp",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chuột Nhắt suy nghĩ một lúc, rồi giơ tay thật cao.[/narrator]\n[character:Chuột Nhắt]Cháu có cách rồi! Mình đeo một cái chuông nhỏ vào cổ Mèo Mướp. Mèo đi đến đâu, chuông kêu leng keng đến đó. Nghe tiếng chuông, mình chạy về hang là kịp.[/character]\n[narrator]Cả họ chuột reo ầm lên, vỗ tay rào rào.[/narrator]\n[character:Chuột Cống]Ý hay quá! Sao tôi không nghĩ ra nhỉ?[/character]",
+      "sceneDescription": "Chuột Nhắt giơ tay nêu ý kiến, cả họ chuột vỗ tay",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Ngay đêm ấy, họ nhà chuột đi tìm được một chiếc chuông nhỏ và một sợi dây đỏ. Chú nào cũng vui, nhảy múa quanh chiếc chuông.[/narrator]\n[character:Chuột Già]Tốt lắm, ta đã có chuông rồi. Bây giờ chỉ còn một việc nữa thôi.[/character]\n[character:Chuột Nhắt]Việc gì vậy cụ?[/character]\n[character:Chuột Già]Ai sẽ mang chuông đi đeo vào cổ Mèo Mướp?[/character]",
+      "sceneDescription": "Họ nhà chuột vui mừng quanh chiếc chuông nhỏ buộc dây đỏ",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "bell",
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Cả hang bỗng im phăng phắc. Chú nào cũng cúi mặt, nhìn xuống chân mình.[/narrator]\n[character:Chuột Cống]Tôi... tôi đang đau chân lắm. Để lần sau nhé.[/character]\n[character:Chuột Nhắt]Cháu còn bé quá, chắc mèo không cúi xuống cho cháu đeo đâu.[/character]\n[narrator]Chú này đẩy cho chú kia, chú kia lại đẩy cho chú khác. Chẳng chú nào chịu nhận việc cả.[/narrator]",
+      "sceneDescription": "Cả họ chuột cúi mặt im lặng, đẩy việc cho nhau",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chiếc chuông nằm đó, lặng im, không kêu được tiếng nào. Ngoài bếp, Mèo Mướp vẫn đi tuần như mọi đêm.[/narrator]\n[character:Mèo Mướp]Meo! Hình như trong hang có ai thì thầm thì phải.[/character]\n[narrator]Họ nhà chuột lại ôm nhau nấp kỹ.[/narrator]\n[character:Chuột Già]Các cháu thấy chưa, nói thì dễ, làm mới khó. Ý hay chỉ có ích khi có người làm được.[/character]",
+      "sceneDescription": "Chiếc chuông nằm im giữa hang, Mèo Mướp đi qua ngoài cửa hang",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": "night",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Từ hôm ấy, Chuột Nhắt hiểu ra một điều. Trước khi khoe một ý hay, phải nghĩ xem ai làm và làm thế nào.[/narrator]\n[character:Chuột Nhắt]Lần sau, cháu sẽ nghĩ cách mà chính cháu cũng làm được.[/character]\n[character:Chuột Già]Giỏi lắm. Biết nghĩ đến việc làm, cháu đã lớn thêm một chút rồi đấy.[/character]\n[narrator]Đêm ấy, cả họ chuột nằm sát bên nhau, ngủ thật ngon.[/narrator]",
+      "sceneDescription": "Chuột Nhắt nằm ngủ bên cụ Chuột Già trong hang ấm",
+      "scene": "home",
+      "mood": "sleepy",
+      "ambient": "night",
+      "sfx": []
+    }
+  ]
+}

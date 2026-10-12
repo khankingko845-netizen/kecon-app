@@ -4,6 +4,7 @@
  *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts \
  *     --pack v1 --owner <staff profile uuid> --voices voices.json [--reason "…"] > import.sql
  *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --rollback > rollback.sql
+ *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --recast --voices voices.json > recast.sql
  *
  * voices.json = active default_voices rows for the locale:
  *   [{ "voice_id": "…", "name": "…", "gender": "female", "description": "…", "sort_order": 1 }, …]
@@ -12,7 +13,13 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { LibraryStorySchema, buildLibraryImportSql, buildLibraryRollbackSql, packProblems } from "@/lib/library-pack";
+import {
+  LibraryStorySchema,
+  buildLibraryImportSql,
+  buildLibraryRecastSql,
+  buildLibraryRollbackSql,
+  packProblems,
+} from "@/lib/library-pack";
 
 const { values } = parseArgs({
   options: {
@@ -21,6 +28,7 @@ const { values } = parseArgs({
     voices: { type: "string" },
     reason: { type: "string" },
     rollback: { type: "boolean", default: false },
+    recast: { type: "boolean", default: false },
   },
 });
 
@@ -41,9 +49,14 @@ const stories = raw.map((r) => LibraryStorySchema.parse(r));
 if (values.rollback) {
   process.stdout.write(buildLibraryRollbackSql(stories.map((s) => s.slug), values.reason ?? `Gỡ kho truyện ${version}`));
 } else {
-  if (!values.owner || !values.voices) throw new Error("--owner and --voices are required");
+  if (!values.voices) throw new Error("--voices is required");
   const voices = JSON.parse(readFileSync(values.voices, "utf8"));
   if (!Array.isArray(voices) || voices.length === 0) throw new Error("voices.json must be a non-empty array");
+  if (values.recast) {
+    process.stdout.write(buildLibraryRecastSql(stories, voices, values.reason ?? `Gán lại giọng nhân vật kho truyện ${version}`));
+    process.exit(0);
+  }
+  if (!values.owner) throw new Error("--owner is required");
   process.stdout.write(
     buildLibraryImportSql(stories, {
       ownerId: values.owner,

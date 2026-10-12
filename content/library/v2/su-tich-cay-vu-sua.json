@@ -1,0 +1,119 @@
+{
+  "slug": "su-tich-cay-vu-sua",
+  "title": "Sự tích cây vú sữa",
+  "category": "fairy_tale",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Cậu bé ham chơi giận mẹ bỏ đi. Khi đói rét trở về, mẹ đã đi tìm con, chỉ còn cây mẹ trồng nở hoa, kết quả ngọt như sữa mẹ. Cậu biết lỗi và mẹ trở về.",
+  "moral": "Hãy yêu thương, vâng lời cha mẹ; tình mẹ luôn chờ con trở về.",
+  "tags": [
+    "co-tich-viet-nam",
+    "tinh-me",
+    "hieu-thao"
+  ],
+  "origin": "Truyện cổ tích người Việt gắn với cây vú sữa Nam Bộ; quen thuộc qua sách giáo khoa tiểu học.",
+  "adaptation": [
+    "Người mẹ không hoá thành cây: mẹ trồng cây vú sữa rồi đi tìm con, cuối truyện mẹ trở về.",
+    "Cây vú sữa biết nói, kể cho cậu bé nghe mẹ đã thương nhớ cậu thế nào."
+  ],
+  "characters": [
+    {
+      "name": "Cậu Bé",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé ham chơi, sau biết lỗi và thương mẹ",
+      "appearance": "cậu bé tóc ngắn, áo bà ba nâu, đi chân đất"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người mẹ hiền, luôn chờ con về",
+      "appearance": "người phụ nữ áo bà ba xanh, khăn rằn, tóc búi"
+    },
+    {
+      "name": "Cây Vú Sữa",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Cây thần do mẹ trồng, biết nói",
+      "appearance": "cây xanh tán rộng, lá mặt trên xanh bóng, mặt dưới đỏ tía, quả tròn căng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một cậu bé sống cùng mẹ trong ngôi nhà nhỏ có mảnh vườn xanh. Cậu bé rất ham chơi. Một hôm, mải chơi quên về, cậu bị mẹ nhắc nhở.[/narrator]\n[character:Mẹ]Con ơi, đi chơi phải nhớ giờ về, kẻo mẹ lo lắm.[/character]\n[character:Cậu Bé]Mẹ toàn nhắc con thôi! Con đi chơi thật xa, không về nữa![/character]\n[narrator]Nói rồi, cậu vùng vằng chạy ra khỏi nhà.[/narrator]",
+      "sceneDescription": "Cậu bé vùng vằng chạy ra cửa, người mẹ đứng nhìn theo lo lắng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": [
+        "door-open"
+      ]
+    },
+    {
+      "text": "[narrator]Cậu bé đi mãi, đi mãi. Cậu đuổi bướm ngoài đồng, hái hoa trong rừng, lội suối bắt cá con.[/narrator]\n[character:Cậu Bé]Vui quá! Ở đây chẳng ai nhắc mình phải về nhà cả![/character]\n[narrator]Ở nhà, ngày nào mẹ cũng ra cổng ngóng con. Mẹ trồng một cây non ở góc vườn, ngày ngày tưới nước.[/narrator]\n[character:Mẹ]Cây ơi, lớn nhanh lên. Con mẹ về, cây cho con mẹ quả ngọt nhé.[/character]",
+      "sceneDescription": "Cậu bé đuổi bướm trong rừng; ở nhà mẹ tưới cây non góc vườn",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Rồi một tối, trời trở lạnh. Cậu bé vừa đói vừa rét, ngồi co ro dưới gốc cây. Chẳng có ai nấu cơm, chẳng có ai đắp chăn cho cậu.[/narrator]\n[character:Cậu Bé]Mẹ ơi... con nhớ mẹ quá. Con muốn về nhà.[/character]\n[narrator]Cậu nhớ bát cơm nóng mẹ nấu, nhớ bàn tay mẹ xoa lưng mỗi tối. Cậu đứng dậy, lần theo đường cũ trở về.[/narrator]",
+      "sceneDescription": "Cậu bé ngồi co ro dưới gốc cây trong đêm lạnh",
+      "scene": "forest-night",
+      "mood": "sad",
+      "ambient": "night",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Về đến nhà, cánh cổng khép hờ, căn nhà vắng tanh. Cậu bé chạy khắp nơi tìm mẹ.[/narrator]\n[character:Cậu Bé]Mẹ ơi! Mẹ ở đâu? Con về rồi đây![/character]\n[narrator]Chỉ có tiếng gió thổi xào xạc. Mẹ đã đi tìm cậu ở những làng xa. Ở góc vườn, cây non ngày trước nay đã cao lớn, tán lá xanh rì. Cậu ôm lấy thân cây, oà khóc.[/narrator]",
+      "sceneDescription": "Cậu bé ôm thân cây lớn trong khu vườn vắng",
+      "scene": "garden",
+      "mood": "sad",
+      "ambient": "wind",
+      "sfx": [
+        "creak"
+      ]
+    },
+    {
+      "text": "[narrator]Bỗng cây khẽ rung. Từ các cành lá, những bông hoa trắng nở ra, rồi kết thành quả tròn, căng mọng. Một quả rơi vào tay cậu bé.[/narrator]\n[character:Cây Vú Sữa]Cháu ơi, đừng khóc. Mẹ cháu đã trồng ta và tưới ta mỗi ngày, mong cháu về.[/character]\n[narrator]Cậu bé khẽ cắn quả. Một dòng nước trắng ngọt ngào trào ra, thơm như sữa mẹ.[/narrator]",
+      "sceneDescription": "Cây nở hoa trắng rồi kết quả, một quả tròn rơi vào tay cậu bé",
+      "scene": "garden",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Cậu bé nhìn lên. Lá cây mặt trên xanh bóng, mặt dưới đỏ hoe như mắt mẹ khóc chờ con.[/narrator]\n[character:Cây Vú Sữa]Mẹ cháu đã đi tìm cháu khắp nơi. Mẹ thương cháu lắm.[/character]\n[character:Cậu Bé]Con biết lỗi rồi. Con không bao giờ bỏ đi như thế nữa. Mẹ ơi, mẹ về với con đi![/character]\n[narrator]Tán cây xoà xuống, ôm lấy cậu như vòng tay mẹ.[/narrator]",
+      "sceneDescription": "Tán cây vú sữa xoà xuống ôm lấy cậu bé, lá mặt dưới đỏ tía",
+      "scene": "garden",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, cậu bé ra cổng ngóng, đúng như mẹ vẫn làm ngày trước. Từ cuối con đường làng, một bóng người quen thuộc đang bước về.[/narrator]\n[character:Mẹ]Con ơi! Con về rồi! Mẹ tìm con mãi![/character]\n[character:Cậu Bé]Mẹ ơi! Con xin lỗi mẹ. Con thương mẹ nhất trên đời![/character]\n[narrator]Hai mẹ con ôm nhau thật chặt, nước mắt mừng rơi lã chã.[/narrator]",
+      "sceneDescription": "Hai mẹ con ôm nhau trước cổng nhà trên con đường làng",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Từ đó, cậu bé chăm ngoan, ngày ngày giúp mẹ tưới cây, quét vườn. Mùa quả chín, hai mẹ con hái những quả tròn căng, chia cho cả xóm.[/narrator]\n[character:Cây Vú Sữa]Mỗi quả ngọt của ta là tình thương của mẹ dành cho con đấy.[/character]\n[character:Mẹ]Người ta gọi đây là cây vú sữa, con ạ.[/character]\n[character:Cậu Bé]Con sẽ luôn nhớ về nhà với mẹ![/character]",
+      "sceneDescription": "Hai mẹ con hái quả vú sữa tròn căng dưới gốc cây",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

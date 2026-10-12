@@ -17,6 +17,9 @@ export interface CastCharacter {
   name: string;
   voiceType?: VoiceType | null;
   role?: "hero" | "friend";
+  /** Optional cues ("công chúa", "thiếu nữ"…) that pick a young-woman voice over a mother's. */
+  description?: string | null;
+  appearance?: string | null;
 }
 
 export interface CastResult {
@@ -51,7 +54,25 @@ function voiceAge(v: CastableVoice): Age {
   return null;
 }
 
+/** Young-woman cues, for voices ("chị gái") and for characters ("công chúa", "thiếu nữ"). */
+const YOUNG_WOMAN = word("chị gái|cô gái|thiếu nữ|nàng|công chúa|tiên nữ|cô dâu");
+
+function youngWomanVoice(v: CastableVoice): boolean {
+  return YOUNG_WOMAN.test(`${v.name} ${v.description ?? ""}`.normalize("NFC").toLowerCase());
+}
+
+function youngWomanCharacter(c: CastCharacter): boolean {
+  return YOUNG_WOMAN.test(`${c.name} ${c.description ?? ""} ${c.appearance ?? ""}`.normalize("NFC").toLowerCase());
+}
+
 const AGE_RANK: Record<Exclude<Age, null>, number> = { child: 0, adult: 1, elder: 2 };
+
+/** +2 same age group, 0 adjacent; a child voice for an adult/elder (or elder for a child) costs more than one reuse (-5). */
+function ageFit(voice: Exclude<Age, null>, want: Exclude<Age, null>): number {
+  if (voice === want) return 2;
+  if (voice === "child" || Math.abs(AGE_RANK[voice] - AGE_RANK[want]) > 1) return -6;
+  return 0;
+}
 
 const WANT: Record<VoiceType, { gender: Gender; age: Age }> = {
   girl: { gender: "female", age: "child" },
@@ -90,6 +111,7 @@ export function castVoices(
   const ordered = [...characters].sort((a, b) => (a.role === "hero" ? -1 : b.role === "hero" ? 1 : 0));
   for (const c of ordered) {
     const want = c.voiceType ? WANT[c.voiceType] : { gender: null, age: null };
+    const youngWoman = c.voiceType === "woman" ? youngWomanCharacter(c) : null;
     let best: CastableVoice | null = null;
     let bestScore = -Infinity;
     for (const v of pool) {
@@ -100,7 +122,10 @@ export function castVoices(
       score -= (used.get(v.voice_id) ?? 0) * 5;
       if (want.gender && g) score += g === want.gender ? 3 : -3;
       // Age distance child–adult–elder: a grandma sounds closer to a woman than to a little girl.
-      if (want.age && a) score += a === want.age ? 2 : Math.abs(AGE_RANK[a] - AGE_RANK[want.age]) === 1 ? 0 : -2;
+      // A child voice never reads a grown-up (worse than reusing the right voice).
+      if (want.age && a) score += ageFit(a, want.age);
+      // Two adult women voices: the princess gets the young one, the mother the warmer one.
+      if (youngWoman !== null && g === "female" && a === "adult") score += youngWomanVoice(v) === youngWoman ? 1 : -1;
       if (score > bestScore) {
         bestScore = score;
         best = v;
