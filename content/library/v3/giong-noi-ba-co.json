@@ -30,23 +30,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Bà",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Bà nội hiền hậu, kể chuyện hay",
-      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão",
+      "look": "kind Vietnamese grandmother, silver hair in a neat bun, round reading glasses, light lavender ao ba ba blouse, dark trousers"
     },
     {
       "name": "Su",
       "role": "friend",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a cozy family home with a baby asleep in a crib, a small garden and a kindergarten."
+  },
   "pages": [
     {
       "text": "[narrator]Bo đang chơi rô bốt giữa phòng khách. Bo giơ rô bốt lên cao, hét thật to.[/narrator]\n[character:Bo]Xông lên! Rô bốt siêu nhân đến đây! Bùm! Bùm![/character]\n[character:Su]Anh Bo ơi, to quá, em đau tai![/character]\n[narrator]Nhưng Bo mải chơi quá, cứ hét to mãi, to mãi. Tiếng hét vang khắp cả nhà. Chú mèo Mướp đang nằm ngủ trên ghế cũng giật mình chạy biến.[/narrator]",

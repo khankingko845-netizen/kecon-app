@@ -30,23 +30,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
-      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
     },
     {
       "name": "Su",
       "role": "friend",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a neighborhood playground and a cozy family living room."
+  },
   "pages": [
     {
       "text": "[narrator]Chiều thứ bảy, Bo ra sân chơi gần nhà. Mấy anh lớn đang đá bóng ở góc sân. Khi bóng lăn ra ngoài, một anh bực mình hét lên một từ rất lạ.[/narrator]\n[narrator]Bo nghe thấy, khúc khích cười.[/narrator]\n[character:Bo]Từ gì mà nghe buồn cười thế nhỉ? Mình nhớ để về nói cho Su nghe.[/character]\n[narrator]Bo đâu biết, đó là một từ không đẹp chút nào.[/narrator]",

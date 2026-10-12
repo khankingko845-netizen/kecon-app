@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé làng Gióng, lớn lên thành tráng sĩ",
-      "appearance": "cậu bé tóc để chỏm, yếm đỏ; lớn lên là tráng sĩ áo giáp sắt, cưỡi ngựa sắt"
+      "appearance": "cậu bé tóc để chỏm, yếm đỏ; lớn lên là tráng sĩ áo giáp sắt, cưỡi ngựa sắt",
+      "look": "at first a 3-year-old boy with a tuft of hair and a red yem bodice; later a giant young hero in iron armor riding a great iron horse"
     },
     {
       "name": "Mẹ Gióng",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người mẹ hiền, thương con",
-      "appearance": "người mẹ nông dân áo nâu, khăn mỏ quạ, tay bế con"
+      "appearance": "người mẹ nông dân áo nâu, khăn mỏ quạ, tay bế con",
+      "look": "Vietnamese peasant mother, brown blouse, crow-beak headscarf (khan mo qua), holding her little son"
     },
     {
       "name": "Sứ Giả",
       "role": "friend",
       "voiceType": "man",
       "description": "Sứ giả của vua đi tìm người tài",
-      "appearance": "người đàn ông áo xanh, mũ quan, cầm loa và cờ vàng"
+      "appearance": "người đàn ông áo xanh, mũ quan, cầm loa và cờ vàng",
+      "look": "royal messenger, blue robe, official's hat, holding a loudspeaker horn and a yellow flag"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese legend of the Hung King era: Phu Dong village with bamboo groves and rice fields; heroic but gentle, no battle violence."
+  },
   "pages": [
     {
       "text": "[narrator]Đời Hùng Vương thứ sáu, ở làng Gióng có hai vợ chồng ông lão chăm chỉ làm ăn, nhưng mãi không có con.[/narrator]\n[narrator]Một hôm, bà lão ra đồng, thấy một vết chân rất to. Bà ướm thử chân mình vào. Không lâu sau, bà có mang, rồi sinh được một bé trai khôi ngô.[/narrator]\n[character:Mẹ Gióng]Con của mẹ đây rồi! Mẹ mừng quá, con ơi![/character]",

@@ -31,30 +31,38 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     },
     {
       "name": "Bố",
       "role": "friend",
       "voiceType": "man",
       "description": "Bố của Bo và Su, vui tính, hay bày trò",
-      "appearance": "người bố đeo kính, áo sơ mi kẻ ca rô"
+      "appearance": "người bố đeo kính, áo sơ mi kẻ ca rô",
+      "look": "young Vietnamese father, glasses, short black hair, red-and-navy checkered shirt"
     },
     {
       "name": "Bo",
       "role": "friend",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Cô Hoa",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô giáo mầm non dịu dàng",
-      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa"
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa",
+      "look": "young Vietnamese kindergarten teacher, black ponytail, light blue ao dai, warm smile"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a family home in the morning and a kindergarten classroom with a goldfish tank."
+  },
   "pages": [
     {
       "text": "[narrator]Sáng nào bố cũng gọi Su dậy thật sớm. Nhưng Su cứ ngồi trên giường chải tóc cho búp bê, rồi ngắm chú chim ngoài cửa sổ. Một chân Su đã đi tất, chân kia vẫn chưa.[/narrator]\n[character:Bố]Su ơi, đánh răng rồi thay quần áo đi con.[/character]\n[character:Su]Dạ, con làm ngay đây ạ![/character]\n[narrator]Nói vậy, nhưng Su lại mải chơi tiếp.[/narrator]",

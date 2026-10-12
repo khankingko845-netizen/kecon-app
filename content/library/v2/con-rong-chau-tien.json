@@ -26,23 +26,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Thần nòi rồng, sức khoẻ phi thường, thương dân",
-      "appearance": "chàng trai cao lớn, áo choàng xanh biển ánh vảy rồng, tóc dài buộc cao"
+      "appearance": "chàng trai cao lớn, áo choàng xanh biển ánh vảy rồng, tóc dài buộc cao",
+      "look": "tall dragon-lord, long black hair tied high, sea-blue cloak shimmering with dragon scales"
     },
     {
       "name": "Âu Cơ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Nàng tiên xinh đẹp ở vùng núi cao, người mẹ hiền",
-      "appearance": "nàng tiên tóc dài, áo lụa trắng thêu hoa, khăn voan hồng"
+      "appearance": "nàng tiên tóc dài, áo lụa trắng thêu hoa, khăn voan hồng",
+      "look": "beautiful fairy, long black hair, white silk dress embroidered with flowers, pink veil"
     },
     {
       "name": "Con Cả",
       "role": "friend",
       "voiceType": "man",
       "description": "Người con trai cả, sau làm vua Hùng",
-      "appearance": "chàng trai khoẻ mạnh, áo nâu, đội mũ lông chim, đeo vòng đồng"
+      "appearance": "chàng trai khoẻ mạnh, áo nâu, đội mũ lông chim, đeo vòng đồng",
+      "look": "strong young man, brown tunic, feather headdress, bronze bracelets"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "the origin legend of Vietnam: misty mountains and the blue East Sea; ancient Lac Viet people wearing feather headdresses and bronze jewelry."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xửa ngày xưa, ở vùng đất Lạc Việt có một vị thần nòi rồng tên là Lạc Long Quân. Thần sống dưới thủy cung, mình rồng, sức khoẻ phi thường. Thần thường lên cạn dạy dân cách trồng lúa, chăn nuôi và làm nhà để ở.[/narrator]\n[character:Lạc Long Quân]Các con hãy cấy lúa ở đồng bằng, trồng dâu bên bờ sông. Có làm thì mới có ăn, có mặc.[/character]\n[narrator]Dân làng ai cũng biết ơn thần.[/narrator]",

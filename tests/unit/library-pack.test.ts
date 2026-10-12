@@ -4,15 +4,19 @@ import { describe, expect, it } from "vitest";
 import {
   LIBRARY_TAG_PREFIX,
   LibraryStorySchema,
+  buildLibraryArtSyncSql,
   buildLibraryImportSql,
   buildLibraryRecastSql,
   buildLibraryRollbackSql,
+  libraryAppearance,
   libraryCasting,
+  libraryPagePrompt,
   libraryStoryProblems,
   packProblems,
   type LibraryStory,
 } from "@/lib/library-pack";
 import { assessStory } from "@/lib/story-ai";
+import { buildIllustrationPrompt, charactersOnPage } from "@/lib/illustration-prompt";
 import { pagePlan } from "@/lib/story-brief";
 import { castVoices } from "@/lib/voice-casting";
 
@@ -236,5 +240,78 @@ describe("library import SQL", () => {
     expect(rb).toContain("audit_write('story.trash'");
     expect(rb).toContain("a.after ->> 'replaced_by' = ANY (ARRAY['tich-chu']::text[])");
     expect(rb).toContain("audit_write('story.restore'");
+  });
+});
+
+describe("library picture direction", () => {
+  it("every shipped story has an art style, an English setting and an English look per character", () => {
+    for (const s of ALL) {
+      expect(s.art, s.slug).toBeDefined();
+      for (const c of s.characters) expect(c.look, `${s.slug}/${c.name}`).toMatch(/^[\x20-\x7e]+$/);
+      expect(s.art!.setting, s.slug).toMatch(/^[\x20-\x7e]+$/);
+    }
+  });
+  it("recurring v3 family members look the same in every story", () => {
+    const looks = new Map<string, Set<string>>();
+    for (const s of LOADED.v3.pack) for (const c of s.characters) looks.set(c.name, (looks.get(c.name) ?? new Set()).add(c.look!));
+    for (const name of ["Bo", "Su", "Bà", "Mẹ", "Cô Hoa", "Mai"]) expect(looks.get(name)?.size, name).toBe(1);
+  });
+  it("page prompts carry the setting + scene and fit the prompt builder without clipping", () => {
+    for (const s of ALL)
+      s.pages.forEach((p, i) => {
+        const prompt = libraryPagePrompt(s, p)!;
+        expect(prompt.startsWith(`Setting: ${s.art!.setting} Scene: `), `${s.slug} p${i + 1}`).toBe(true);
+        expect(prompt.length).toBeLessThanOrEqual(700);
+      });
+    const s = LOADED.v1.pack.find((x) => x.slug === "an-khe-tra-vang")!;
+    const built = buildIllustrationPrompt({
+      style: s.art!.style,
+      title: s.title,
+      illustration: libraryPagePrompt(s, s.pages[0]),
+      sceneDescription: s.pages[0].sceneDescription,
+      text: s.pages[0].text,
+      characters: s.characters.map((c) => ({ name: c.name, role: c.role, appearance: libraryAppearance(c) })),
+    });
+    expect(built).toContain("rice paddies");
+    expect(built).toContain("Người Em: young Vietnamese farmer");
+    expect(built).toMatch(/clay/);
+  });
+  it("matches character names as whole words only", () => {
+    const characters = [
+      { name: "Cóc", role: "hero" },
+      { name: "Ong", role: "friend" },
+      { name: "Bà", role: "friend" },
+    ];
+    expect(charactersOnPage({ text: "[narrator]Cóc không sợ, ngồi cạnh bàn.[/narrator]", characters }).map((c) => c.name)).toEqual(["Cóc"]);
+    expect(charactersOnPage({ text: "[narrator]Ong bay tới chỗ bà.[/narrator]", characters }).map((c) => c.name)).toEqual(["Ong", "Bà"]);
+  });
+  it("flags Vietnamese or missing looks once a story has art direction", () => {
+    const s = structuredClone(pack[0]) as LibraryStory;
+    s.characters[0].look = "chàng trai áo nâu";
+    delete s.characters[1].look;
+    const problems = libraryStoryProblems(s);
+    expect(problems).toContain(`character "${s.characters[0].name}": look must be English`);
+    expect(problems).toContain(`character "${s.characters[1].name}" has no look (needed with art)`);
+  });
+  it("import stores style, page prompts and English looks", () => {
+    const sql = buildLibraryImportSql(pack, { ownerId: OWNER, voices: VOICES, version: "v1", reason: "x" });
+    expect(sql).toContain("auto_ambience, illustration_style)");
+    expect(sql.match(/true, true, 'clay'/g)).toHaveLength(12);
+    expect(sql).toContain("v.sfx_sounds, v.illustration_prompt FROM s");
+    expect(sql).toContain("'Setting: a Vietnamese folk tale long ago");
+    expect(sql).toContain(`'${pack[0].characters[0].look}'`);
+  });
+  it("art sync updates only differing rows of live tagged stories and audits the change", () => {
+    const sql = buildLibraryArtSyncSql(ALL, "sync art");
+    expect(sql.startsWith("BEGIN;")).toBe(true);
+    expect(sql.trimEnd().endsWith("COMMIT;")).toBe(true);
+    expect(sql.match(/public\.audit_write\('story\.update'/g)).toHaveLength(ALL.length);
+    expect(sql).toContain("p.illustration_prompt IS DISTINCT FROM pv.prompt");
+    expect(sql).toContain("c.appearance IS DISTINCT FROM cv.appearance");
+    expect(sql).toContain("WHERE EXISTS (SELECT 1 FROM st) OR EXISTS (SELECT 1 FROM pu) OR EXISTS (SELECT 1 FROM cu);");
+    expect(sql).not.toMatch(/content =|audio_url|illustration_url/);
+    const plain = structuredClone(pack[0]) as LibraryStory;
+    delete plain.art;
+    expect(buildLibraryArtSyncSql([plain], "x")).toBe("BEGIN;\n\nCOMMIT;\n");
   });
 });

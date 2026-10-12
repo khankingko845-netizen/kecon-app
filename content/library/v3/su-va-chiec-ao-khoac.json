@@ -31,23 +31,30 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
-      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
     },
     {
       "name": "Bà",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Bà nội hiền hậu, kể chuyện hay",
-      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão",
+      "look": "kind Vietnamese grandmother, silver hair in a neat bun, round reading glasses, light lavender ao ba ba blouse, dark trousers"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam on a cool winter morning: a cozy family home and the street outside."
+  },
   "pages": [
     {
       "text": "[narrator]Sáng mùa đông, gió lạnh thổi vù vù ngoài cửa sổ. Mẹ lấy chiếc áo khoác len xanh đưa cho Su.[/narrator]\n[character:Mẹ]Su ơi, con mặc áo khoác vào kẻo lạnh nhé.[/character]\n[character:Su]Không! Con không mặc đâu! Áo này xấu lắm![/character]\n[narrator]Su khoanh tay, quay mặt đi chỗ khác. Su chỉ muốn mặc chiếc váy hồng chấm bi mỏng tang thôi.[/narrator]",

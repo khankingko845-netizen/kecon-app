@@ -26,30 +26,38 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Chàng trai hiền lành, thật thà, dũng cảm",
-      "appearance": "chàng trai khoẻ mạnh, áo nâu, khăn quấn đầu, tay cầm búa"
+      "appearance": "chàng trai khoẻ mạnh, áo nâu, khăn quấn đầu, tay cầm búa",
+      "look": "strong young Vietnamese man, brown shirt, cloth wrapped around his head, holding an axe"
     },
     {
       "name": "Lý Thông",
       "role": "friend",
       "voiceType": "man",
       "description": "Kẻ gian xảo cướp công, cuối truyện biết xấu hổ",
-      "appearance": "người đàn ông mặt gầy, mắt láo liên, áo the đen, khăn xếp"
+      "appearance": "người đàn ông mặt gầy, mắt láo liên, áo the đen, khăn xếp",
+      "look": "thin-faced man with shifty eyes, black silk tunic, black khan xep turban"
     },
     {
       "name": "Công Chúa",
       "role": "friend",
       "voiceType": "woman",
       "description": "Công chúa hiền dịu, được Thạch Sanh cứu",
-      "appearance": "công chúa áo gấm hồng, đội mũ ngọc, tóc dài"
+      "appearance": "công chúa áo gấm hồng, đội mũ ngọc, tóc dài",
+      "look": "princess in a pink brocade dress, jeweled headdress, long black hair"
     },
     {
       "name": "Chằn Tinh",
       "role": "friend",
       "voiceType": "man",
       "description": "Con yêu tinh hung dữ trong miếu hoang",
-      "appearance": "con chằn tinh to lớn, lông xám, mắt đỏ, nanh vuốt dài"
+      "appearance": "con chằn tinh to lớn, lông xám, mắt đỏ, nanh vuốt dài",
+      "look": "big clumsy grey furry ogre with red eyes and long claws, drawn cartoonish, not scary"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a hut under a banyan tree at the forest edge, a cave and a royal palace; monsters are drawn cute and clumsy, never scary."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có chàng Thạch Sanh sống một mình trong túp lều dưới gốc đa. Gia tài của chàng chỉ có một lưỡi búa. Hằng ngày, chàng vào rừng đốn củi. Chàng được thần tiên dạy cho võ nghệ.[/narrator]\n[narrator]Một hôm, có người buôn bán tên là Lý Thông đi ngang qua.[/narrator]\n[character:Lý Thông]Chú em khoẻ mạnh thế này, về ở với anh, hai ta kết làm anh em nhé![/character]\n[character:Thạch Sanh]Có người anh, em mừng lắm. Em xin nghe lời anh.[/character]",

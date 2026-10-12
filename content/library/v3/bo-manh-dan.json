@@ -31,30 +31,38 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
-      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
     },
     {
       "name": "Cô Hoa",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô giáo mầm non dịu dàng",
-      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa"
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa",
+      "look": "young Vietnamese kindergarten teacher, black ponytail, light blue ao dai, warm smile"
     },
     {
       "name": "Mai",
       "role": "friend",
       "voiceType": "girl",
       "description": "Bạn cùng lớp của Bo, nhanh nhẹn",
-      "appearance": "cô bé tóc tết hai bím, áo vàng"
+      "appearance": "cô bé tóc tết hai bím, áo vàng",
+      "look": "5-year-old Vietnamese girl, two black braids, yellow T-shirt, green shorts"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a bright, friendly kindergarten classroom with colorful toys and small tables."
+  },
   "pages": [
     {
       "text": "[narrator]Hôm nay là ngày đầu tiên Bo đến lớp mới. Lớp học rộng, đồ chơi nhiều, các bạn cười nói rộn ràng. Nhưng Bo chẳng quen ai cả. Bo nấp sau lưng mẹ, tay nắm chặt vạt áo mẹ.[/narrator]\n[character:Bo]Mẹ ơi, con sợ lắm. Con muốn về nhà.[/character]\n[narrator]Tim Bo đập thình thịch, thình thịch.[/narrator]",

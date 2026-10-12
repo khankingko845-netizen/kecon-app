@@ -26,30 +26,38 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Cô bé tò mò, ngoan ngoãn",
-      "appearance": "cô bé tóc ngắn kẹp nơ, áo len đỏ"
+      "appearance": "cô bé tóc ngắn kẹp nơ, áo len đỏ",
+      "look": "6-year-old Vietnamese girl, short black hair with a bow clip, red knitted sweater"
     },
     {
       "name": "Ông Nội",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông nội hiền từ, hiểu nhiều phong tục",
-      "appearance": "ông cụ tóc bạc, áo nâu, đội mũ len"
+      "appearance": "ông cụ tóc bạc, áo nâu, đội mũ len",
+      "look": "Vietnamese grandfather, white hair, brown jacket, knitted wool cap"
     },
     {
       "name": "Ông Táo",
       "role": "friend",
       "voiceType": "man",
       "description": "Vị thần bếp hiền hậu",
-      "appearance": "vị thần áo bào đỏ, đội mũ cánh chuồn, râu đen, tay cầm quạt"
+      "appearance": "vị thần áo bào đỏ, đội mũ cánh chuồn, râu đen, tay cầm quạt",
+      "look": "friendly Kitchen God, red mandarin robe, black winged mandarin hat, black beard, holding a fan"
     },
     {
       "name": "Cá Chép",
       "role": "friend",
       "voiceType": "creature",
       "description": "Chú cá chép đỏ đưa ông Táo về trời",
-      "appearance": "cá chép đỏ vảy óng ánh, vây vàng, đuôi dài"
+      "appearance": "cá chép đỏ vảy óng ánh, vây vàng, đuôi dài",
+      "look": "shiny red carp with golden fins and a long flowing tail"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam just before Tet: a family kitchen, an altar with offerings, a pond where red carp are released; dream scenes in a golden cloud sky."
+  },
   "pages": [
     {
       "text": "[narrator]Hôm ấy là ngày hai mươi ba tháng Chạp. Từ sáng sớm, Ông Nội đã cùng Bé Na lau dọn gian bếp. Ông lau sạch kiềng, quét tro, còn Na xếp nồi niêu gọn gàng lên giá.[/narrator]\n[character:Bé Na]Ông ơi, sao hôm nay mình dọn bếp kỹ thế ạ?[/character]\n[character:Ông Nội]Vì hôm nay ông Táo về trời đấy cháu ạ. Nhà mình phải sạch sẽ để tiễn ông Táo.[/character]",

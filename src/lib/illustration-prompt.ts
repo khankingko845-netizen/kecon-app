@@ -44,7 +44,10 @@ const clean = (s: string | null | undefined, max: number) =>
 export function charactersOnPage(input: IllustrationInput): BibleCharacter[] {
   const list = (input.characters ?? []).filter((c) => c.name);
   const hay = `${input.illustration ?? ""} ${input.sceneDescription ?? ""} ${input.text ?? ""}`.toLocaleLowerCase("vi");
-  const present = list.filter((c) => hay.includes(c.name.toLocaleLowerCase("vi")));
+  // Whole words only: "Ong" (bee) must not match "không", "Bà" not "bàn".
+  const named = (name: string) =>
+    new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${name.toLocaleLowerCase("vi").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{M}\\p{N}])`, "u").test(hay);
+  const present = list.filter((c) => named(c.name));
   if (present.length) return present.slice(0, 4);
   const hero = list.find((c) => c.role === "hero") ?? list[0];
   return hero ? [hero] : [];

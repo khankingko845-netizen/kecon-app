@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé mải chơi nhưng thương bà",
-      "appearance": "cậu bé tóc trái đào, áo nâu, quần lửng"
+      "appearance": "cậu bé tóc trái đào, áo nâu, quần lửng",
+      "look": "6-year-old Vietnamese boy, peach-shaped tuft of hair, brown shirt, knee-length trousers"
     },
     {
       "name": "Bà",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Bà của Tích Chu, hiền hậu, tóc bạc",
-      "appearance": "bà cụ tóc bạc búi gọn, áo nâu, khăn mỏ quạ"
+      "appearance": "bà cụ tóc bạc búi gọn, áo nâu, khăn mỏ quạ",
+      "look": "kind old Vietnamese grandmother, silver hair in a small bun, brown blouse, crow-beak headscarf (khan mo qua)"
     },
     {
       "name": "Bà Tiên",
       "role": "friend",
       "voiceType": "woman",
       "description": "Bà tiên tốt bụng chỉ đường cho Tích Chu",
-      "appearance": "bà tiên tóc dài, áo trắng, ánh sáng lấp lánh"
+      "appearance": "bà tiên tóc dài, áo trắng, ánh sáng lấp lánh",
+      "look": "fairy lady with long black hair, flowing white dress, surrounded by soft sparkling light"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, a small thatched house in a northern village, a deep green forest and a mountain stream with magical sparkling water."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, ở một làng nhỏ ven sông, có cậu bé tên là Tích Chu. Tích Chu sống cùng bà trong một ngôi nhà mái lá.[/narrator]\n[narrator]Bà thương Tích Chu nhất trên đời. Có miếng ngon, bà để dành cho cháu. Trời nóng, bà ngồi quạt cho cháu ngủ. Đêm lạnh, bà ôm cháu thật chặt cho ấm.[/narrator]\n[character:Bà]Cháu ngoan của bà, ngủ đi nào. Bà quạt cho cháu nhé.[/character]",

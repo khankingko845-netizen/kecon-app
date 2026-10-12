@@ -5,6 +5,7 @@
  *     --pack v1 --owner <staff profile uuid> --voices voices.json [--reason "…"] > import.sql
  *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --rollback > rollback.sql
  *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --recast --voices voices.json > recast.sql
+ *   node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --art > art.sql   # picture direction only
  *
  * voices.json = active default_voices rows for the locale:
  *   [{ "voice_id": "…", "name": "…", "gender": "female", "description": "…", "sort_order": 1 }, …]
@@ -15,6 +16,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import {
   LibraryStorySchema,
+  buildLibraryArtSyncSql,
   buildLibraryImportSql,
   buildLibraryRecastSql,
   buildLibraryRollbackSql,
@@ -29,6 +31,7 @@ const { values } = parseArgs({
     reason: { type: "string" },
     rollback: { type: "boolean", default: false },
     recast: { type: "boolean", default: false },
+    art: { type: "boolean", default: false },
   },
 });
 
@@ -46,7 +49,9 @@ if (problems.length) {
 }
 const stories = raw.map((r) => LibraryStorySchema.parse(r));
 
-if (values.rollback) {
+if (values.art) {
+  process.stdout.write(buildLibraryArtSyncSql(stories, values.reason ?? `Đồng bộ chỉ dẫn tranh minh hoạ kho truyện ${version}`));
+} else if (values.rollback) {
   process.stdout.write(buildLibraryRollbackSql(stories.map((s) => s.slug), values.reason ?? `Gỡ kho truyện ${version}`));
 } else {
   if (!values.voices) throw new Error("--voices is required");

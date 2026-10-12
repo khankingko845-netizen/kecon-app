@@ -122,7 +122,8 @@ export async function POST(request: NextRequest) {
       while (next < toIllustrate.length) {
         const page = toIllustrate[next++];
         try {
-          const { url } = await illustrateStoredPage(supabase, target, user.id, story, page, { style, bible, replace });
+          // Files live under the story owner's folder (platform stories: the staff owner), not the drawer's.
+          const { url } = await illustrateStoredPage(supabase, target, story.user_id || user.id, story, page, { style, bible, replace });
           results.push({ pageNumber: page.page_number, url });
         } catch (err) {
           results.push({

@@ -30,30 +30,38 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
-      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
     },
     {
       "name": "Gấu Bông",
       "role": "friend",
       "voiceType": "creature",
       "description": "Chú gấu bông của Su, chỉ biết nói trong trí tưởng tượng của bé",
-      "appearance": "chú gấu bông màu nâu nhạt, thắt nơ đỏ ở cổ, một tai hơi cụp"
+      "appearance": "chú gấu bông màu nâu nhạt, thắt nơ đỏ ở cổ, một tai hơi cụp",
+      "look": "light-brown teddy bear with a red bow at the neck and one slightly floppy ear"
     },
     {
       "name": "Bo",
       "role": "friend",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a child's bedroom with toys, shelves and toy boxes with picture labels."
+  },
   "pages": [
     {
       "text": "[narrator]Su rất thích chơi. Sáng nay Su chơi xếp hình, trưa chơi búp bê, chiều lại chơi tô màu. Chơi xong món nào, Su để luôn món ấy ở đó. Chẳng mấy chốc, sàn phòng đầy những khối gỗ, bút màu và mảnh ghép.[/narrator]\n[character:Su]Chơi gì tiếp đây nhỉ? À, mình đi tìm Gấu Bông![/character]",

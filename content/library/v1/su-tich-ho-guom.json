@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Chủ tướng nghĩa quân Lam Sơn, về sau là vua",
-      "appearance": "vị tướng áo giáp nâu, khăn đỏ, về sau mặc áo vua màu vàng"
+      "appearance": "vị tướng áo giáp nâu, khăn đỏ, về sau mặc áo vua màu vàng",
+      "look": "Vietnamese leader Le Loi, short black beard, brown armor with a red headband; later a yellow royal robe"
     },
     {
       "name": "Lê Thận",
       "role": "friend",
       "voiceType": "man",
       "description": "Người đánh cá thật thà, theo nghĩa quân",
-      "appearance": "người đánh cá áo nâu, nón lá, tay cầm lưới"
+      "appearance": "người đánh cá áo nâu, nón lá, tay cầm lưới",
+      "look": "Vietnamese fisherman, brown shirt, conical palm-leaf hat, holding a fishing net"
     },
     {
       "name": "Rùa Vàng",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Sứ giả của Đức Long Quân dưới hồ",
-      "appearance": "con rùa lớn mai vàng óng, đôi mắt hiền"
+      "appearance": "con rùa lớn mai vàng óng, đôi mắt hiền",
+      "look": "giant gentle golden turtle with a shiny golden shell and kind eyes"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese legend of the 15th-century Le dynasty: villages, forests, the old Thang Long citadel and a green lake with a small tower; the sacred sword glows softly, no fighting shown."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, giặc Minh sang đô hộ nước ta, làm cho người dân khổ cực trăm bề. Ở vùng Lam Sơn, nghĩa quân nổi lên chống giặc. Nhưng lúc đầu, nghĩa quân còn yếu, nhiều lần phải lui về rừng.[/narrator]\n[narrator]Dưới thuỷ cung, Đức Long Quân thấy vậy thì thương dân lắm. Ngài quyết định cho nghĩa quân mượn một thanh gươm thần.[/narrator]",

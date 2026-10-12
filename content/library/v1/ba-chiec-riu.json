@@ -24,16 +24,22 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Anh tiều phu nghèo, chăm chỉ và thật thà",
-      "appearance": "chàng trai áo nâu vá, quần xắn, vác bó củi"
+      "appearance": "chàng trai áo nâu vá, quần xắn, vác bó củi",
+      "look": "young Vietnamese woodcutter, short black hair, patched brown shirt, trousers rolled up, barefoot, carrying a bundle of firewood and an iron axe"
     },
     {
       "name": "Ông Bụt",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông Bụt hiền từ, hay giúp người tốt",
-      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy"
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy",
+      "look": "kind old Buddha-like fairy grandfather (Ong But), long snow-white hair and beard, flowing white robe, bamboo walking stick, soft glow"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, a green forest beside a clear river near a northern Vietnamese village with thatched-roof houses."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một anh tiều phu nghèo sống ở bìa rừng. Cả gia tài của anh chỉ có một chiếc rìu sắt cũ. Ngày nào anh cũng vào rừng đốn củi, mang ra chợ đổi lấy gạo.[/narrator]\n[character:Anh Tiều Phu]Rìu ơi, hôm nay mình cùng cố gắng nhé. Đốn thật nhiều củi để mua gạo nào![/character]\n[narrator]Tiếng rìu vang lên cộc cộc giữa rừng xanh.[/narrator]",

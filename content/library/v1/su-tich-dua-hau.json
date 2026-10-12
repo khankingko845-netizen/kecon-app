@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Con nuôi vua Hùng, chăm chỉ, tự lực",
-      "appearance": "chàng trai rám nắng, áo nâu, quần xắn gối, tay cầm cuốc"
+      "appearance": "chàng trai rám nắng, áo nâu, quần xắn gối, tay cầm cuốc",
+      "look": "suntanned young Vietnamese man, short black hair, brown shirt, trousers rolled to the knees, holding a hoe"
     },
     {
       "name": "Vợ An Tiêm",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người vợ đảm đang, luôn ở bên chồng",
-      "appearance": "người phụ nữ áo tứ thân nâu, khăn vấn, tay bế con nhỏ"
+      "appearance": "người phụ nữ áo tứ thân nâu, khăn vấn, tay bế con nhỏ",
+      "look": "young Vietnamese mother, brown four-panel dress (ao tu than), hair wrapped in a headscarf, carrying a small child"
     },
     {
       "name": "Vua Hùng",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Vua Hùng, nóng giận nhưng biết nhận lỗi",
-      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng",
+      "look": "old Hung King of ancient Vietnam, long white hair and beard, golden crown, red cloak with bronze-drum (Dong Son) patterns"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese legend long ago: a sandy deserted island with coconut palms and a blue sea, a small hut, green watermelon vines with red-fleshed watermelons."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, vua Hùng có một người con nuôi tên là Mai An Tiêm. An Tiêm chăm chỉ, thông minh, được vua thương yêu, cho cưới vợ và ban nhiều của cải.[/narrator]\n[narrator]Một hôm, trong bữa tiệc, mọi người khen nhà An Tiêm giàu có. An Tiêm nói:[/narrator]\n[character:Mai An Tiêm]Những thứ con có đều nhờ đôi bàn tay con làm ra cả.[/character]\n[narrator]Vua nghe vậy, cho là An Tiêm không biết ơn.[/narrator]",

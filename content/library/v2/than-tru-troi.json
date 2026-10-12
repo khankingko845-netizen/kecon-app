@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Vị thần khổng lồ tách trời khỏi đất",
-      "appearance": "vị thần khổng lồ, râu tóc đen dài, khoác áo lá, cơ bắp cuồn cuộn"
+      "appearance": "vị thần khổng lồ, râu tóc đen dài, khoác áo lá, cơ bắp cuồn cuộn",
+      "look": "gentle giant god, long black hair and beard, cape made of leaves, very muscular"
     },
     {
       "name": "Chim Én",
       "role": "friend",
       "voiceType": "girl",
       "description": "Cô chim én nhỏ chăm chỉ, báo tin mùa xuân",
-      "appearance": "chim én nhỏ lưng xanh đen, bụng trắng, đuôi chẻ đôi"
+      "appearance": "chim én nhỏ lưng xanh đen, bụng trắng, đuôi chẻ đôi",
+      "look": "little swallow with a dark blue back, white belly and forked tail"
     },
     {
       "name": "Ông Mặt Trời",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông Mặt Trời hiền hậu mang ánh sáng",
-      "appearance": "quả cầu đỏ rực có khuôn mặt hiền từ, râu là những tia nắng vàng"
+      "appearance": "quả cầu đỏ rực có khuôn mặt hiền từ, râu là những tia nắng vàng",
+      "look": "glowing red sun with a kind face and golden sunbeam whiskers"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese creation myth at the dawn of the world: a dark sky pressed close to the land, then the sky lifted high, mountains, sea and sunrise."
+  },
   "pages": [
     {
       "text": "[narrator]Thuở xa xưa, khi chưa có trời, chưa có đất, mọi thứ chỉ là một vùng hỗn độn tối tăm và lạnh lẽo. Trời và đất dính sát vào nhau, chẳng có ánh sáng, chẳng có cỏ cây.[/narrator]\n[narrator]Bỗng một vị thần khổng lồ xuất hiện. Thần cao lớn đến nỗi ngồi thôi mà đầu đã chạm trời.[/narrator]\n[character:Thần Trụ Trời]Tối quá, chật quá! Ta phải tách trời ra khỏi đất mới được.[/character]",

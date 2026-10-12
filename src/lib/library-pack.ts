@@ -10,6 +10,7 @@ import { STORY_SFX_IDS, type SfxId } from "@/lib/sfx-library";
 import { STORY_AMBIENTS, STORY_MOODS } from "@/lib/story-ai";
 import { VOICE_TYPES, pagePlan, spokenWordCount } from "@/lib/story-brief";
 import { castVoices, castingNarrator, type CastableVoice } from "@/lib/voice-casting";
+import { ART_STYLES, type ArtStyle } from "@/lib/illustration-prompt";
 
 /** Kid Library filter ids (Library.tsx). */
 export const LIBRARY_CATEGORIES = ["fairy_tale", "folk", "bedtime", "animal", "adventure", "educational"] as const;
@@ -37,6 +38,8 @@ const Character = z.object({
   voiceType: z.enum(VOICE_TYPES),
   description: z.string().min(3).max(200),
   appearance: z.string().min(3).max(400),
+  /** English look for the picture prompts (story_characters.appearance); Vietnamese `appearance` is the editor's note. */
+  look: z.string().min(10).max(300).optional(),
 });
 
 const Page = z.object({
@@ -46,7 +49,11 @@ const Page = z.object({
   mood: z.enum(STORY_MOODS),
   ambient: z.enum(STORY_AMBIENTS).nullable(),
   sfx: z.array(z.enum(SFX)).max(3),
+  /** Optional English picture direction; otherwise the picture follows sceneDescription. */
+  illustration: z.string().min(10).max(380).optional(),
 });
+
+const STYLE_IDS = Object.keys(ART_STYLES) as [ArtStyle, ...ArtStyle[]];
 
 export const LibraryStorySchema = z.object({
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(60),
@@ -65,6 +72,17 @@ export const LibraryStorySchema = z.object({
   characters: z.array(Character).min(1).max(6),
   pages: z.array(Page).min(4).max(14),
   /**
+   * Picture direction shared by every page: house art style + one English
+   * setting line (era, region, clothes) so AI pictures stay Vietnamese and
+   * consistent; scripts/library-illustrate.ts draws them once for everyone.
+   */
+  art: z
+    .object({
+      style: z.enum(STYLE_IDS),
+      setting: z.string().min(20).max(300),
+    })
+    .optional(),
+  /**
    * An older platform story (exact title, without a `kc-lib:` tag — e.g. a
    * seeded template) that this edited library version supersedes. The import
    * moves it to the trash once the new story exists; rollback restores it.
@@ -77,6 +95,18 @@ export const LibraryStorySchema = z.object({
     .optional(),
 });
 export type LibraryStory = z.infer<typeof LibraryStorySchema>;
+
+/** story_pages.illustration_prompt for a library page (null when the story has no art direction). */
+export function libraryPagePrompt(story: Pick<LibraryStory, "art">, page: Pick<LibraryStory["pages"][number], "illustration" | "sceneDescription">): string | null {
+  const scene = page.illustration ?? page.sceneDescription;
+  return story.art ? `Setting: ${story.art.setting} Scene: ${scene}` : (page.illustration ?? null);
+}
+/** story_characters.appearance: the English look when present (picture prompts), else the editor's note. */
+export function libraryAppearance(c: Pick<LibraryStory["characters"][number], "look" | "appearance">): string {
+  return c.look ?? c.appearance;
+}
+/** Vietnamese-only letters: picture direction (look / setting / illustration) must be plain English. */
+const VIETNAMESE_LETTERS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
 const LINE = /^\[narrator\]([^[\]]+)\[\/narrator\]$|^\[character:([^\]]+)\]([^[\]]+)\[\/character\]$/;
 
@@ -126,6 +156,16 @@ export function libraryStoryProblems(raw: unknown): string[] {
   });
   if (dialoguePages < Math.ceil(s.pages.length / 2)) out.push(`dialogue on ${dialoguePages} pages, needs ${Math.ceil(s.pages.length / 2)}`);
   for (const c of s.characters) if (!speaking.has(c.name)) out.push(`character "${c.name}" never speaks`);
+  if (s.art) {
+    if (VIETNAMESE_LETTERS.test(s.art.setting)) out.push("art.setting must be English");
+    for (const c of s.characters) {
+      if (!c.look) out.push(`character "${c.name}" has no look (needed with art)`);
+      else if (VIETNAMESE_LETTERS.test(c.look)) out.push(`character "${c.name}": look must be English`);
+    }
+    s.pages.forEach((p, i) => {
+      if (p.illustration && VIETNAMESE_LETTERS.test(p.illustration)) out.push(`page ${i + 1}: illustration must be English`);
+    });
+  }
   return out;
 }
 
@@ -187,12 +227,12 @@ export function buildLibraryImportSql(stories: LibraryStory[], opts: ImportOptio
     const tag = `${LIBRARY_TAG_PREFIX}${s.slug}`;
     const { narrator, cast } = libraryCasting(s, opts.voices);
     const pages = s.pages
-      .map((p, i) => `(${i + 1}, ${lit(p.text)}, ${lit(p.sceneDescription)}, ${lit(p.scene)}, ${lit(p.mood)}, ${p.ambient ? lit(p.ambient) : "NULL::text"}, ${arr(p.sfx)})`)
+      .map((p, i) => `(${i + 1}, ${lit(p.text)}, ${lit(p.sceneDescription)}, ${lit(p.scene)}, ${lit(p.mood)}, ${p.ambient ? lit(p.ambient) : "NULL::text"}, ${arr(p.sfx)}, ${lit(libraryPagePrompt(s, p))}::text)`)
       .join(",\n    ");
     const chars = s.characters
       .map((c, i) => {
         const v = cast.get(c.name);
-        return `(${lit(c.name)}, ${lit(c.description)}, ${lit(CHARACTER_COLORS[i % CHARACTER_COLORS.length])}, ${i}, ${lit(c.role)}, ${lit(c.voiceType)}, ${lit(c.appearance)}, ${lit(v?.voice_id ?? null)}::text, ${lit(v?.voice_name ?? null)}::text)`;
+        return `(${lit(c.name)}, ${lit(c.description)}, ${lit(CHARACTER_COLORS[i % CHARACTER_COLORS.length])}, ${i}, ${lit(c.role)}, ${lit(c.voiceType)}, ${lit(libraryAppearance(c))}, ${lit(v?.voice_id ?? null)}::text, ${lit(v?.voice_name ?? null)}::text)`;
       })
       .join(",\n    ");
     const after = `jsonb_build_object('title', ${lit(s.title)}, 'slug', ${lit(s.slug)}, 'pack', ${lit(opts.version)}, 'category', ${lit(s.category)}, 'status', 'published', 'is_platform_content', true, 'pages', ${s.pages.length})`;
@@ -200,17 +240,17 @@ export function buildLibraryImportSql(stories: LibraryStory[], opts: ImportOptio
 WITH s AS (
   INSERT INTO public.stories (user_id, title, description, category, target_age_min, target_age_max, tags, moral_lesson,
     locale, narrator_voice_id, narrator_voice_name, page_count, source, status, is_published, is_platform_content,
-    story_length, narration_pace, cast_voices, auto_ambience)
+    story_length, narration_pace, cast_voices, auto_ambience, illustration_style)
   SELECT ${lit(opts.ownerId)}::uuid, ${lit(s.title)}, ${lit(s.summary)}, ${lit(s.category)}, ${s.ageMin}, ${s.ageMax},
     ${arr([...s.tags, tag])}, ${lit(s.moral)}, 'vi', ${lit(narrator?.voice_id)}, ${lit(narrator?.name)}, ${s.pages.length},
-    'manual', 'published', true, true, ${lit(s.length)}, ${lit(s.pace)}, true, true
+    'manual', 'published', true, true, ${lit(s.length)}, ${lit(s.pace)}, true, true, ${s.art ? lit(s.art.style) : "NULL"}
   WHERE NOT EXISTS (SELECT 1 FROM public.stories WHERE ${lit(tag)} = ANY (tags) AND deleted_at IS NULL)
   RETURNING id
 ), p AS (
-  INSERT INTO public.story_pages (story_id, page_number, content, scene_description, scene_id, mood, ambient_sound, sfx_sounds)
-  SELECT s.id, v.n, v.content, v.scene_description, v.scene_id, v.mood, v.ambient_sound, v.sfx_sounds FROM s, (VALUES
+  INSERT INTO public.story_pages (story_id, page_number, content, scene_description, scene_id, mood, ambient_sound, sfx_sounds, illustration_prompt)
+  SELECT s.id, v.n, v.content, v.scene_description, v.scene_id, v.mood, v.ambient_sound, v.sfx_sounds, v.illustration_prompt FROM s, (VALUES
     ${pages}
-  ) AS v(n, content, scene_description, scene_id, mood, ambient_sound, sfx_sounds)
+  ) AS v(n, content, scene_description, scene_id, mood, ambient_sound, sfx_sounds, illustration_prompt)
   RETURNING story_id
 ), c AS (
   INSERT INTO public.story_characters (story_id, name, description, color, sort_order, role, voice_type, appearance, voice_id, voice_name)
@@ -306,6 +346,49 @@ SELECT ${lit(s.slug)} AS slug, (SELECT count(*) FROM u) AS changed,
     jsonb_build_object('voices', (SELECT jsonb_object_agg(name, voice_name) FROM u)),
     ${lit(reason)}, NULL, NULL, 'system') AS audit_id
 FROM s WHERE EXISTS (SELECT 1 FROM old);`);
+  }
+  parts.push("COMMIT;");
+  return parts.join("\n\n") + "\n";
+}
+
+/**
+ * Bring the picture direction of already-imported stories in line with the
+ * pack (style, page prompts, English character looks) without touching text,
+ * audio or pictures. Idempotent: only differing rows change, and only stories
+ * that changed get an audit entry. Redraw pictures afterwards with
+ * scripts/library-illustrate.ts (missing pages only, or --redraw).
+ */
+export function buildLibraryArtSyncSql(stories: LibraryStory[], reason: string): string {
+  const parts: string[] = ["BEGIN;"];
+  for (const s of stories) {
+    if (!s.art) continue;
+    const tag = `${LIBRARY_TAG_PREFIX}${s.slug}`;
+    const pages = s.pages.map((p, i) => `(${i + 1}, ${lit(libraryPagePrompt(s, p))}::text)`).join(", ");
+    const chars = s.characters.map((c) => `(${lit(c.name)}, ${lit(libraryAppearance(c))}::text)`).join(", ");
+    parts.push(`-- ${s.slug}
+WITH s AS (
+  SELECT id, illustration_style FROM public.stories WHERE ${lit(tag)} = ANY (tags) AND is_platform_content AND deleted_at IS NULL
+), pv(n, prompt) AS (VALUES ${pages}
+), cv(name, appearance) AS (VALUES ${chars}
+), st AS (
+  UPDATE public.stories t SET illustration_style = ${lit(s.art.style)} FROM s
+  WHERE t.id = s.id AND t.illustration_style IS DISTINCT FROM ${lit(s.art.style)}
+  RETURNING t.id
+), pu AS (
+  UPDATE public.story_pages p SET illustration_prompt = pv.prompt FROM s, pv
+  WHERE p.story_id = s.id AND p.page_number = pv.n AND p.illustration_prompt IS DISTINCT FROM pv.prompt
+  RETURNING p.page_number
+), cu AS (
+  UPDATE public.story_characters c SET appearance = cv.appearance FROM s, cv
+  WHERE c.story_id = s.id AND c.name = cv.name AND c.appearance IS DISTINCT FROM cv.appearance
+  RETURNING c.name
+)
+SELECT ${lit(s.slug)} AS slug, (SELECT count(*) FROM pu) AS pages, (SELECT count(*) FROM cu) AS characters,
+  public.audit_write('story.update', 'story', s.id::text,
+    jsonb_build_object('illustration_style', s.illustration_style),
+    jsonb_build_object('illustration_style', ${lit(s.art.style)}, 'illustration_prompts', (SELECT count(*) FROM pu), 'appearances', (SELECT coalesce(jsonb_agg(name), '[]'::jsonb) FROM cu)),
+    ${lit(reason)}, NULL, NULL, 'system') AS audit_id
+FROM s WHERE EXISTS (SELECT 1 FROM st) OR EXISTS (SELECT 1 FROM pu) OR EXISTS (SELECT 1 FROM cu);`);
   }
   parts.push("COMMIT;");
   return parts.join("\n\n") + "\n";

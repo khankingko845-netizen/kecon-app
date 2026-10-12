@@ -25,30 +25,38 @@
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Người cha già hiền từ, thông thái",
-      "appearance": "ông cụ râu bạc, áo the nâu"
+      "appearance": "ông cụ râu bạc, áo the nâu",
+      "look": "elderly Vietnamese father, short white beard, brown silk tunic (ao the nau), gentle and wise"
     },
     {
       "name": "Anh Cả",
       "role": "hero",
       "voiceType": "man",
       "description": "Người anh cả khoẻ mạnh nhưng hay giành phần",
-      "appearance": "chàng trai cao lớn, áo nâu"
+      "appearance": "chàng trai cao lớn, áo nâu",
+      "look": "tall young Vietnamese man, eldest brother, short black hair, brown shirt and trousers"
     },
     {
       "name": "Chị Hai",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người chị khéo tay, hay giận dỗi",
-      "appearance": "cô gái áo tứ thân, tóc dài"
+      "appearance": "cô gái áo tứ thân, tóc dài",
+      "look": "young Vietnamese woman, long black hair, traditional four-panel dress (ao tu than) in earthy colors"
     },
     {
       "name": "Em Út",
       "role": "friend",
       "voiceType": "girl",
       "description": "Cô em út nhanh nhẹn, hay cãi lại",
-      "appearance": "bé gái tóc buộc hai bên, áo yếm đỏ"
+      "appearance": "bé gái tóc buộc hai bên, áo yếm đỏ",
+      "look": "little Vietnamese girl, hair in two small pigtails, red yem bodice top, dark trousers"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, a wooden Vietnamese family house with a tiled roof, a brick courtyard and rice fields beyond."
+  },
   "pages": [
     {
       "text": "[narrator]Ở một làng nọ, có một người cha già và ba người con. Anh Cả khoẻ mạnh, chị Hai khéo tay, em Út nhanh nhẹn. Nhưng ba anh em lại hay cãi nhau, chẳng ai chịu nhường ai.[/narrator]\n[character:Anh Cả]Cái chổi này của anh, em không được lấy![/character]\n[character:Em Út]Em lấy trước mà! Anh lúc nào cũng giành phần.[/character]",

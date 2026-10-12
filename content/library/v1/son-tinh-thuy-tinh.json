@@ -26,30 +26,38 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Chúa vùng non cao núi Tản Viên",
-      "appearance": "chàng trai khoẻ mạnh, áo xanh lá, đầu đội vòng lá rừng"
+      "appearance": "chàng trai khoẻ mạnh, áo xanh lá, đầu đội vòng lá rừng",
+      "look": "strong young mountain god, tanned, green tunic, crown of forest leaves"
     },
     {
       "name": "Thủy Tinh",
       "role": "friend",
       "voiceType": "man",
       "description": "Chúa vùng biển cả, nóng nảy",
-      "appearance": "chàng trai áo xanh nước biển, tóc xoăn như sóng, tay cầm cây đinh ba"
+      "appearance": "chàng trai áo xanh nước biển, tóc xoăn như sóng, tay cầm cây đinh ba",
+      "look": "young water god, wavy blue-green hair like sea waves, sea-blue robe, holding a trident"
     },
     {
       "name": "Vua Hùng",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Vua Hùng thứ mười tám, cha của Mị Nương",
-      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng",
+      "look": "old Hung King of ancient Vietnam, long white hair and beard, golden crown, red cloak with bronze-drum (Dong Son) patterns"
     },
     {
       "name": "Mị Nương",
       "role": "friend",
       "voiceType": "woman",
       "description": "Công chúa xinh đẹp, hiền dịu",
-      "appearance": "thiếu nữ tóc dài, áo dài lụa hồng, đội vòng hoa nhỏ"
+      "appearance": "thiếu nữ tóc dài, áo dài lụa hồng, đội vòng hoa nhỏ",
+      "look": "beautiful young princess, long black hair, pink silk ao dai, small flower wreath"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "the legendary Hung King era of ancient Vietnam: green mountains, rivers, rice fields and a wooden palace with Dong Son bronze-drum patterns; floods drawn gently, nobody hurt."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, vua Hùng thứ mười tám có một người con gái tên là Mị Nương, xinh đẹp và hiền dịu. Vua muốn tìm cho nàng một người chồng thật xứng đáng.[/narrator]\n[character:Vua Hùng]Ta sẽ chọn người tài giỏi nhất cho con gái ta.[/character]\n[character:Mị Nương]Thưa cha, con xin nghe theo lời cha.[/character]\n[narrator]Tin ấy bay đi khắp nơi. Một ngày, có hai chàng trai cùng đến cầu hôn.[/narrator]",

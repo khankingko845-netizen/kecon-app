@@ -26,37 +26,46 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Chú cóc nhỏ gan dạ, mưu trí",
-      "appearance": "chú cóc da sần màu nâu, mắt to, quàng khăn đỏ"
+      "appearance": "chú cóc da sần màu nâu, mắt to, quàng khăn đỏ",
+      "look": "small brave brown toad with bumpy skin, big eyes, red scarf"
     },
     {
       "name": "Cáo",
       "role": "friend",
       "voiceType": "man",
       "description": "Bác cáo nhanh nhẹn, tinh khôn",
-      "appearance": "con cáo lông đỏ cam, đuôi xù, mõm nhọn"
+      "appearance": "con cáo lông đỏ cam, đuôi xù, mõm nhọn",
+      "look": "orange-red fox with a bushy tail and pointy snout"
     },
     {
       "name": "Ong",
       "role": "friend",
       "voiceType": "creature",
       "description": "Chị ong vàng dũng cảm",
-      "appearance": "con ong vàng sọc đen, cánh trong suốt"
+      "appearance": "con ong vàng sọc đen, cánh trong suốt",
+      "look": "yellow-and-black striped bee with clear wings"
     },
     {
       "name": "Thiên Lôi",
       "role": "friend",
       "voiceType": "man",
       "description": "Thần sét hung hăng nhưng hài hước",
-      "appearance": "vị thần mặt đỏ, râu xồm, vác lưỡi tầm sét"
+      "appearance": "vị thần mặt đỏ, râu xồm, vác lưỡi tầm sét",
+      "look": "comic thunder god, red face, bushy beard, carrying a big thunder axe, more silly than scary"
     },
     {
       "name": "Ngọc Hoàng",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Vua nhà Trời",
-      "appearance": "ông vua râu dài, áo bào vàng, mũ miện ngọc, ngồi trên ngai mây"
+      "appearance": "ông vua râu dài, áo bào vàng, mũ miện ngọc, ngồi trên ngai mây",
+      "look": "Jade Emperor, long beard, golden robe, jade crown, sitting on a throne of clouds"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese animal fable: dry cracked land in a drought, then a magical sky kingdom of white clouds with a heavenly palace; funny and gentle."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một năm trời làm hạn hán rất lâu. Ruộng đồng nứt nẻ, cây cỏ héo khô, suối cạn trơ đá. Muông thú khát nước, kêu than khắp nơi.[/narrator]\n[narrator]Chú Cóc nhỏ nhìn ao làng khô cạn, nghiến răng tức giận.[/narrator]\n[character:Cóc]Trời không chịu mưa thì mình lên tận nơi kiện Trời![/character]\n[character:Ong]Cậu bé tí như thế mà dám lên kiện Trời ư? Thôi được, tớ đi cùng cậu![/character]",
