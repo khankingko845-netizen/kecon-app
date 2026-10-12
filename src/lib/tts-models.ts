@@ -1,5 +1,10 @@
 import { normalizeVoiceLanguage } from "@/lib/voice-selection";
-/** Vietnamese is NOT among Multilingual v2's 29 languages. Never send it there. */
+/**
+ * Vietnamese is NOT among Multilingual v2's 29 languages. Never send it there.
+ * Fallback is Eleven v3: Flash/Turbo v2.5 got Vietnamese tones wrong on staging
+ * (speech-to-text heard "Bo" as "Bồ/Bố", "dặn" as "dẫn", "chợ" as "chỗ"), v3 read
+ * the same lines exactly. An explicitly chosen Flash/Turbo v2.5 is still honoured.
+ */
 export function modelForLanguage(
   configured: string,
   language?: string,
@@ -11,7 +16,7 @@ export function modelForLanguage(
       configured,
     )
   )
-    return "eleven_flash_v2_5";
+    return "eleven_v3";
   if (
     locale &&
     locale !== "en" &&

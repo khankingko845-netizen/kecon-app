@@ -85,6 +85,17 @@ KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=sta
 - **Đã dựng trên staging:** 12 truyện / 96 trang, **27.393 ký tự TTS** (282 lượt gọi, ~37 phút audio). Kiểm tra trình duyệt: phát *Tích Chu*
   không có POST TTS nào, chỉ tải file đã lưu.
 
+### Phát âm tiếng Việt: dùng Eleven v3
+
+- Phụ huynh báo *Chiếc bình hoa của bà* đọc "Bo" thành "Bồ/Bố". Chuyển audio đã dựng (Flash v2.5) qua speech-to-text (scribe_v1, vi)
+  và so với chữ gốc: 36 chỗ lệch trong 8 trang, chủ yếu thanh điệu — "Bo" → "Bố/Bồ" ở hầu hết các lần, "dặn" → "dần", "vỡ" → "vợ",
+  "chợ" → "trở", "cắm tạm" → "cầm tấm".
+- Cùng một đoạn, cùng giọng Viên: Flash v2.5 (kể cả stability 0,85) và Turbo v2.5 đều sai "Bo/dặn/chợ/cắm tạm"; **Eleven v3** khớp
+  từng chữ (giọng Tâm cũng vậy). 8 giọng tiếng Việt đang dùng đều đọc đúng trên v3 (chỉ lệch "bà/mà", "nhé/nha" ở mức nhận dạng).
+- Vì vậy `modelForLanguage` chuyển tiếng Việt sang `eleven_v3` khi model trong Cài đặt không hỗ trợ tiếng Việt (Flash/Turbo v2.5 chọn
+  tường minh vẫn được giữ). v3 tốn gấp đôi credit/ký tự so với Flash và chậm hơn một chút (câu ngắn ~0,8 s qua `/stream`).
+- `audio_key` có model nên toàn bộ audio thư viện cũ (Flash) tự thành "cần dựng lại": chạy lại `library-prerender.ts --pack v1|v2|v3`.
+
 ## Tranh minh hoạ (vẽ một lần cho mọi gia đình)
 
 - Mỗi truyện trong gói có `art: { style, setting }` (phong cách nhà `clay` + một câu bối cảnh **tiếng Anh**: thời đại, vùng miền,
