@@ -65,8 +65,15 @@ export async function illustrateStoredPage(
   const { data: updated, error } = await update.select("id");
   if (error) throw new IllustrationError(`Không lưu được ảnh: ${error.message}`, 500);
   const stored = Boolean(updated && updated.length);
-  if (stored && page.page_number === 1 && !story.cover_image_url) {
-    await supabase.from("stories").update({ cover_image_url: url }).eq("id", story.id).is("cover_image_url", null);
+  // Page 1 is the cover: set it when there is none, and follow a redraw when the
+  // cover was still the previous page-1 picture (a custom cover is kept).
+  if (stored && page.page_number === 1) {
+    const previous = page.illustration_url ?? null;
+    if (!story.cover_image_url) {
+      await supabase.from("stories").update({ cover_image_url: url }).eq("id", story.id).is("cover_image_url", null);
+    } else if (previous && story.cover_image_url === previous) {
+      await supabase.from("stories").update({ cover_image_url: url }).eq("id", story.id).eq("cover_image_url", previous);
+    }
   }
   return { url, stored };
 }

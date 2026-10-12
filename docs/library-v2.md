@@ -64,10 +64,13 @@ KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=sta
 ```
 
 - **Staging:** đã nhập 18 truyện (audit 230–248, gồm 1 dòng trash Sọ Dừa cũ); nhập lại = không đổi gì.
-- **Audio chưa dựng** (chờ duyệt chi phí): ước tính **43.839 ký tự TTS**, 535 đoạn (~2.400 ký tự/truyện; cách tính khớp đúng 27.393 ký tự thực tế của v1).
-  Chưa dựng thì trình phát gọi TTS khi nghe như truyện thường.
+- **Audio đã dựng trên staging:** 18 truyện / 144 trang, **43.839 ký tự TTS**, 535 lượt gọi (eleven_flash_v2_5, người kể Viên), ~60,5 phút.
+  Trình phát chỉ phát file đã lưu, không gọi TTS khi trẻ nghe.
+- **Tranh đã vẽ trên staging:** 144/144 trang + ảnh bìa (phong cách `clay`, xem "Tranh minh hoạ" trong `docs/library-v1.md`).
 
 ## Chưa làm
 
 1. Người duyệt (biên tập + giáo viên mầm non) đọc 18 bản kể, đặc biệt Tấm Cám, Thạch Sanh (bản nhẹ), trước khi lên production.
-2. Dựng audio v2 sau khi duyệt chi phí; nghe thử các vai Bin/Hiền/Kim.
+2. ~~Dựng audio v2~~ — đã dựng; còn cần người nghe thử các vai Bin/Hiền/Kim.
+3. Duyệt tranh từng trang (đã sửa: Cóc kiện Trời, Thạch Sanh vẽ lại kiểu cung đình Việt; còn: Cóc kiện Trời tr.2 có người tí hon lạ,
+   Bó đũa tuổi các con chưa đều, Bịt mắt xem voi mũ người quản tượng thay đổi).
