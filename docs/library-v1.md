@@ -108,6 +108,20 @@ KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=sta
   … scripts/library-illustrate.ts --pack v1 --slug tich-chu --redraw 3,5
 ```
 
+### Kết quả trên staging
+
+- **40 truyện / 320 trang đều có tranh** + ảnh bìa = tranh trang 1; 0 trang lỗi. File dưới `illustrations/<chủ truyện>/<story>/`.
+- Sổ chi phí: **337 lượt vẽ thành công** (6 thử + 316 chính + 15 vẽ lại), custom gateway / `gpt-image-1-mini` chất lượng low, 1536×1024,
+  ~60–90 giây/truyện (8 trang, mẻ 4, chạy 2 truyện song song). Bảng giá chưa cài nên `estimated_usd` để trống; theo giá công bố
+  của OpenAI (~$0,005–0,006/ảnh low) ước ~$2 — cần đối chiếu hoá đơn thật.
+- Vẽ lại sau khi duyệt: Ăn khế trả vàng tr.1–4, Cóc kiện Trời tr.1,2,5,8 (cung điện mái vòm → mái đình chùa), Thạch Sanh tr.1–5,8
+  (bối cảnh "Vietnamese palace, no domes", chằn tinh bớt đáng sợ), Sự tích Hồ Gươm tr.5 (cờ hiện đại → thêm "no modern flags or symbols").
+  Vua đội vương miện kiểu châu Âu → Vua Hùng đội mũ lông chim Đông Sơn, vua thời sau đội mũ cánh chuồn vàng đen, áo long bào
+  (Sơn Tinh – Thủy Tinh, Sự tích dưa hấu, Bánh chưng bánh giầy, Em bé thông minh, Tấm Cám); dưa hấu thêm "no written words" vì chữ AI vẽ sai.
+  Vẽ lại trang 1 thì ảnh bìa đi theo nếu bìa đang là tranh trang 1 cũ (bìa tự chọn được giữ).
+- Còn cần người duyệt: Thánh Gióng tr.7–8 vẽ Gióng còn bé trên lưng ngựa (nên là tráng sĩ), Cóc kiện Trời tr.2 có người tí hon lạ,
+  Bó đũa tuổi các con chưa đều, Bịt mắt xem voi mũ người quản tượng thay đổi; khoảng một nửa số truyện mới được xem qua bảng ghép.
+
 ## Chưa làm / bước tiếp theo
 
 1. **Duyệt bởi người**: bản kể do AI soạn và tự kiểm tra; cần biên tập viên + giáo viên mầm non/phụ huynh đọc duyệt (cả nghe thử 3 giọng mới) trước khi lên production.

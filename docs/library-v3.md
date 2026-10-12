@@ -48,10 +48,11 @@ node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v3 --rollb
 ```
 
 - **Staging:** đã nhập 10 truyện (audit 249–258); tab Học chơi hiện 13 truyện thư viện (3 v2 + 10 v3).
-- **Audio chưa dựng:** ước tính **21.323 ký tự TTS**, 302 đoạn (~2.100 ký tự/truyện).
+- **Audio đã dựng trên staging:** 10 truyện / 80 trang, **21.323 ký tự TTS**, 302 lượt gọi, ~32,2 phút.
+- **Tranh đã vẽ trên staging:** 80/80 trang + ảnh bìa; Bo/Su/Bà/Mẹ/Bố/Cô Hoa dùng chung một mô tả `look` nên giữ được nét giữa các truyện.
 
 ## Chưa làm
 
 1. **Duyệt chuyên môn**: giáo viên mầm non / chuyên gia tâm lý trẻ em và vài phụ huynh đọc thử với trẻ thật trước production.
-2. Dựng audio sau khi duyệt chi phí; nghe thử giọng Bin (Bo) và Yuna (Su) trên cả bộ.
+2. ~~Dựng audio~~ — đã dựng; còn cần nghe thử giọng Bin (Bo) và Yuna (Su) trên cả bộ, và người duyệt tranh từng trang.
 3. Có thể bổ sung: đánh răng / rửa tay, ăn uống ngoan, đi ngủ đúng giờ, xem màn hình có giới hạn, an toàn khi đi đường.
