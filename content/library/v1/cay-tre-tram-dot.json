@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Anh nông dân hiền lành, chăm chỉ",
-      "appearance": "chàng trai áo nâu, khăn mỏ rìu, vai vác dao"
+      "appearance": "chàng trai áo nâu, khăn mỏ rìu, vai vác dao",
+      "look": "young Vietnamese farmhand, short black hair, brown shirt, brown headscarf tied with a knot, a machete in a holder on his shoulder"
     },
     {
       "name": "Phú Ông",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông nhà giàu keo kiệt, hay nuốt lời",
-      "appearance": "ông già béo, áo gấm, râu dê"
+      "appearance": "ông già béo, áo gấm, râu dê",
+      "look": "plump old rich landlord, goatee, embroidered silk brocade robe, sly smile"
     },
     {
       "name": "Ông Bụt",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông Bụt hiền từ, giúp người ngay thẳng",
-      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc"
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc",
+      "look": "kind old Buddha-like fairy grandfather (Ong But), long snow-white hair and beard, flowing white robe, bamboo walking stick, soft glow"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, rice paddies, a forest of tall green bamboo and a rich landlord's big tiled house."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một anh nông dân hiền lành tên là Khoai. Anh làm thuê cho nhà phú ông giàu nhất làng. Sáng sớm anh đã ra đồng, tối mịt mới về.[/narrator]\n[character:Phú Ông]Khoai này, con chịu khó làm cho ta ba năm. Ta sẽ gả con gái cho con.[/character]\n[character:Anh Khoai]Dạ, con xin hứa sẽ làm việc thật chăm chỉ.[/character]",

@@ -31,23 +31,30 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
-      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
     },
     {
       "name": "Bo",
       "role": "friend",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a cozy family living room with wooden blocks and a calm-down corner with soft cushions."
+  },
   "pages": [
     {
       "text": "[narrator]Su xây một toà tháp bằng khối gỗ thật cao. Khối đỏ, khối vàng, khối xanh, chồng lên nhau cao gần bằng Su. Su xếp khối cuối cùng lên đỉnh tháp.[/narrator]\n[character:Su]Xong rồi! Tháp của em cao nhất nhà luôn![/character]\n[narrator]Su đứng ngắm toà tháp, cười tít mắt. Su định gọi mẹ ra xem, rồi chụp ảnh gửi cho bà nữa.[/narrator]",

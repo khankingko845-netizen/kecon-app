@@ -25,30 +25,38 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Chú chuột nhỏ nhanh trí, hay nghĩ ra ý mới",
-      "appearance": "chú chuột nhỏ lông xám, tai tròn, mắt đen láy"
+      "appearance": "chú chuột nhỏ lông xám, tai tròn, mắt đen láy",
+      "look": "small grey mouse, round ears, shiny black eyes"
     },
     {
       "name": "Chuột Già",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Cụ chuột già, chủ trì cuộc họp",
-      "appearance": "cụ chuột râu bạc, chống gậy tre nhỏ"
+      "appearance": "cụ chuột râu bạc, chống gậy tre nhỏ",
+      "look": "old grey mouse with a white mustache, leaning on a tiny bamboo stick"
     },
     {
       "name": "Chuột Cống",
       "role": "friend",
       "voiceType": "man",
       "description": "Chú chuột to con, hay khoe khoang",
-      "appearance": "chú chuột cống to, lông nâu, vênh váo"
+      "appearance": "chú chuột cống to, lông nâu, vênh váo",
+      "look": "big brown rat, puffed chest, boastful look"
     },
     {
       "name": "Mèo Mướp",
       "role": "friend",
       "voiceType": "creature",
       "description": "Cô mèo mướp canh gian bếp",
-      "appearance": "mèo mướp vằn xám, mắt xanh, ria dài"
+      "appearance": "mèo mướp vằn xám, mắt xanh, ria dài",
+      "look": "grey tabby cat, green eyes, long whiskers, sleepy and not scary"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable inside a cozy old Vietnamese house: mouse hole, wooden cupboard, rice jars, seen at a mouse's scale."
+  },
   "pages": [
     {
       "text": "[narrator]Trong một ngôi nhà lớn, có một họ chuột đông vui sống dưới gầm bếp. Nhưng nhà ấy lại có cô Mèo Mướp rất tinh mắt.[/narrator]\n[narrator]Đêm nào Mèo Mướp cũng đi tuần quanh gian bếp, bước chân êm ru, chẳng nghe thấy tiếng gì.[/narrator]\n[character:Mèo Mướp]Meo meo! Đêm nay ta canh bếp. Chú chuột nào dám ra đây lấy trộm đồ ăn nào?[/character]",

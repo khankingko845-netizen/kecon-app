@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé ham chơi, sau biết lỗi và thương mẹ",
-      "appearance": "cậu bé tóc ngắn, áo bà ba nâu, đi chân đất"
+      "appearance": "cậu bé tóc ngắn, áo bà ba nâu, đi chân đất",
+      "look": "8-year-old Vietnamese boy, short black hair, brown ao ba ba shirt, barefoot"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người mẹ hiền, luôn chờ con về",
-      "appearance": "người phụ nữ áo bà ba xanh, khăn rằn, tóc búi"
+      "appearance": "người phụ nữ áo bà ba xanh, khăn rằn, tóc búi",
+      "look": "Vietnamese mother, hair in a bun, blue ao ba ba, checkered khan ran scarf"
     },
     {
       "name": "Cây Vú Sữa",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Cây thần do mẹ trồng, biết nói",
-      "appearance": "cây xanh tán rộng, lá mặt trên xanh bóng, mặt dưới đỏ tía, quả tròn căng"
+      "appearance": "cây xanh tán rộng, lá mặt trên xanh bóng, mặt dưới đỏ tía, quả tròn căng",
+      "look": "wide star apple tree, glossy green leaves with purple-red undersides, round shiny fruit"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese legend long ago in the southern Mekong Delta: coconut palms, canals, a simple house with a garden and a star apple (vu sua) tree with round purple-green fruit."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một cậu bé sống cùng mẹ trong ngôi nhà nhỏ có mảnh vườn xanh. Cậu bé rất ham chơi. Một hôm, mải chơi quên về, cậu bị mẹ nhắc nhở.[/narrator]\n[character:Mẹ]Con ơi, đi chơi phải nhớ giờ về, kẻo mẹ lo lắm.[/character]\n[character:Cậu Bé]Mẹ toàn nhắc con thôi! Con đi chơi thật xa, không về nữa![/character]\n[narrator]Nói rồi, cậu vùng vằng chạy ra khỏi nhà.[/narrator]",

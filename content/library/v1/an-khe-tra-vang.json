@@ -26,23 +26,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Người em hiền lành, chăm chỉ, biết đủ",
-      "appearance": "chàng nông dân trẻ, áo nâu vá vai, quần xắn gối, chân đất"
+      "appearance": "chàng nông dân trẻ, áo nâu vá vai, quần xắn gối, chân đất",
+      "look": "young Vietnamese farmer, slim, short black hair, kind smile, faded brown collarless shirt with a patched shoulder, brown trousers rolled to the knees, barefoot, conical palm-leaf hat hanging on his back"
     },
     {
       "name": "Người Anh",
       "role": "friend",
       "voiceType": "man",
       "description": "Người anh tham lam, về sau biết lỗi",
-      "appearance": "người đàn ông béo tốt, áo the đen, khăn xếp, bụng to"
+      "appearance": "người đàn ông béo tốt, áo the đen, khăn xếp, bụng to",
+      "look": "plump middle-aged Vietnamese man, round face, thin mustache, black silk tunic (ao the), black wrapped turban (khan xep), big belly"
     },
     {
       "name": "Chim Thần",
       "role": "friend",
       "voiceType": "creature",
       "description": "Con chim lạ biết nói, giữ lời hứa",
-      "appearance": "con chim lớn lông óng ánh nhiều màu như cầu vồng, đuôi dài"
+      "appearance": "con chim lớn lông óng ánh nhiều màu như cầu vồng, đuôi dài",
+      "look": "huge gentle magical bird, bigger than a man, shimmering rainbow feathers (red, gold, green, blue), long flowing tail, kind golden eyes"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, northern Vietnamese countryside village with green rice paddies, bamboo hedges, thatched-roof houses and a star fruit tree."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, ở một làng nọ có hai anh em. Khi lớn lên, hai anh em chia nhà ra ở riêng.[/narrator]\n[narrator]Người anh tham lam, nhận hết nhà to, ruộng tốt và đàn trâu béo. Người anh chỉ chia cho em một túp lều nhỏ và một cây khế ở góc vườn.[/narrator]\n[character:Người Anh]Chú cứ lấy cây khế mà sống. Thế là công bằng lắm rồi![/character]\n[narrator]Người em hiền lành, không nói gì, vui vẻ nhận phần.[/narrator]",

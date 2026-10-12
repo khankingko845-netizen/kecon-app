@@ -26,16 +26,22 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Chàng tiều phu hiền lành, tốt bụng",
-      "appearance": "chàng trai áo nâu, khăn quấn đầu, vác rìu"
+      "appearance": "chàng trai áo nâu, khăn quấn đầu, vác rìu",
+      "look": "young Vietnamese woodcutter, short black hair, brown shirt, cloth wrapped around his head, carrying an axe"
     },
     {
       "name": "Vợ Cuội",
       "role": "friend",
       "voiceType": "woman",
       "description": "Vợ của Cuội, chăm chỉ nhưng hay quên",
-      "appearance": "người phụ nữ áo tứ thân, tóc vấn khăn"
+      "appearance": "người phụ nữ áo tứ thân, tóc vấn khăn",
+      "look": "young Vietnamese woman, hair wrapped in a dark headscarf, four-panel dress (ao tu than) in brown"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese Mid-Autumn legend long ago: a village at the forest edge, a magical banyan tree, a glowing full moon and starry night sky."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một chàng tiều phu tên là Cuội. Ngày ngày, Cuội vác rìu vào rừng đốn củi. Tiếng rìu vang lên cộc cộc, chim chóc hót ríu rít trên cành.[/narrator]\n[narrator]Một hôm, Cuội đang đi thì nghe tiếng kêu khe khẽ sau bụi cây. Anh rón rén lại gần nhìn.[/narrator]\n[character:Cuội]Ồ, có một chú hổ con bị ngã. Chân chú trầy xước cả rồi.[/character]",

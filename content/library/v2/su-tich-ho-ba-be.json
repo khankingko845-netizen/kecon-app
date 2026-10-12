@@ -25,30 +25,38 @@
       "role": "hero",
       "voiceType": "woman",
       "description": "Người mẹ nghèo tốt bụng, hay giúp người",
-      "appearance": "người phụ nữ Tày áo chàm, khăn vấn đầu, vòng bạc"
+      "appearance": "người phụ nữ Tày áo chàm, khăn vấn đầu, vòng bạc",
+      "look": "Tay ethnic mother, indigo dress, indigo headscarf, silver necklace"
     },
     {
       "name": "Con Trai",
       "role": "friend",
       "voiceType": "boy",
       "description": "Cậu con trai hiền lành, thương người",
-      "appearance": "cậu bé áo chàm ngắn, quần xắn gối, đeo vòng bạc ở cổ"
+      "appearance": "cậu bé áo chàm ngắn, quần xắn gối, đeo vòng bạc ở cổ",
+      "look": "8-year-old Tay boy, short indigo shirt, rolled-up trousers, silver neck ring"
     },
     {
       "name": "Bà Lão Ăn Xin",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Bà cụ ăn xin, thật ra là thần hiện xuống thử lòng người",
-      "appearance": "bà cụ gầy gò, tóc bạc rối, áo rách nhiều mảnh vá, chống gậy"
+      "appearance": "bà cụ gầy gò, tóc bạc rối, áo rách nhiều mảnh vá, chống gậy",
+      "look": "thin old beggar woman, messy white hair, patched ragged clothes, walking stick; secretly a kind goddess"
     },
     {
       "name": "Dân Làng",
       "role": "friend",
       "voiceType": "man",
       "description": "Một người dân làng, lúc đầu xua đuổi bà lão, sau biết lỗi",
-      "appearance": "người đàn ông áo chàm, khăn quấn đầu, tay cầm quạt"
+      "appearance": "người đàn ông áo chàm, khăn quấn đầu, tay cầm quạt",
+      "look": "Tay villager, indigo shirt, head cloth, holding a fan"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a legend of the Tay people in the northern Vietnamese mountains: wooden stilt houses, terraced fields, misty green mountains and a festival; the flood is shown gently, everyone safe in boats."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, ở vùng núi Đông Bắc có một làng tên là Nam Mẫu. Năm ấy, làng mở hội lớn, cỗ bàn bày khắp sân, tiếng khèn tiếng sáo vang xa. Giữa ngày hội, có một bà lão ăn xin gầy gò, quần áo rách rưới, chống gậy đi đến.[/narrator]\n[character:Bà Lão Ăn Xin]Ai làm phúc, cho bà già này xin bát cơm với.[/character]\n[character:Dân Làng]Đi chỗ khác đi! Đừng làm bẩn ngày hội của làng![/character]",

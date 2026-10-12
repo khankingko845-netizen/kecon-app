@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Bác rùa chậm rãi, kiên trì, tốt bụng",
-      "appearance": "chú rùa mai xanh rêu, cổ quàng khăn đỏ, đôi mắt hiền"
+      "appearance": "chú rùa mai xanh rêu, cổ quàng khăn đỏ, đôi mắt hiền",
+      "look": "turtle with a moss-green shell, red scarf, kind eyes"
     },
     {
       "name": "Thỏ",
       "role": "friend",
       "voiceType": "boy",
       "description": "Chú thỏ chạy nhanh, hay khoe khoang, biết sửa lỗi",
-      "appearance": "chú thỏ trắng tai dài, mắt đỏ tinh nghịch, chân sau dài"
+      "appearance": "chú thỏ trắng tai dài, mắt đỏ tinh nghịch, chân sau dài",
+      "look": "white rabbit with long ears, playful red eyes, long hind legs"
     },
     {
       "name": "Bác Cú",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Bác cú già thông thái, làm trọng tài",
-      "appearance": "cú mèo lông nâu xám, đeo kính tròn, đậu trên cành cao"
+      "appearance": "cú mèo lông nâu xám, đeo kính tròn, đậu trên cành cao",
+      "look": "brown-grey owl with round glasses, perched on a high branch"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable in a sunny Vietnamese forest meadow by a stream, along a race path with a finish line of flowers."
+  },
   "pages": [
     {
       "text": "[narrator]Ở bìa rừng nọ, có chú Thỏ chạy nhanh nhất vùng. Thỏ hay khoe đôi chân dài của mình với mọi người.[/narrator]\n[narrator]Một buổi sáng, Thỏ gặp bác Rùa đang chậm rãi bò ra bờ suối uống nước.[/narrator]\n[character:Thỏ]Bác Rùa ơi, bác đi chậm thế thì bao giờ mới tới nơi? Cháu chạy một vòng quanh rừng rồi mà bác vẫn còn ở đây![/character]\n[character:Rùa]Chậm một chút cũng không sao cháu ạ. Bác cứ đi đều, rồi sẽ tới.[/character]",

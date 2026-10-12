@@ -26,23 +26,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé bảy, tám tuổi, nhanh trí, lễ phép",
-      "appearance": "cậu bé tóc để chỏm, áo cánh nâu, quần lửng, mắt sáng"
+      "appearance": "cậu bé tóc để chỏm, áo cánh nâu, quần lửng, mắt sáng",
+      "look": "clever 7-year-old Vietnamese boy, shaved head with a small tuft of hair, brown short-sleeved shirt, knee-length trousers, bright eyes"
     },
     {
       "name": "Viên Quan",
       "role": "friend",
       "voiceType": "man",
       "description": "Viên quan được vua sai đi tìm người tài",
-      "appearance": "ông quan áo dài xanh, mũ cánh chuồn, cưỡi ngựa"
+      "appearance": "ông quan áo dài xanh, mũ cánh chuồn, cưỡi ngựa",
+      "look": "Vietnamese mandarin official, blue long robe, black winged mandarin hat, riding a brown horse"
     },
     {
       "name": "Nhà Vua",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Nhà vua thích người tài, vui tính",
-      "appearance": "ông vua già râu bạc, mũ vàng, áo bào vàng"
+      "appearance": "ông vua già râu bạc, mũ vàng, áo bào vàng",
+      "look": "old Vietnamese king, white beard, golden crown, golden dragon robe"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago, a northern village with rice fields and water buffaloes, and an old royal court with red lacquered pillars."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một ông vua muốn tìm người tài giúp nước. Vua sai một viên quan đi khắp nơi, ra những câu đố thật khó để thử tài mọi người.[/narrator]\n[narrator]Một hôm, viên quan đi qua cánh đồng, thấy hai cha con đang cày ruộng. Ông liền hỏi người cha:[/narrator]\n[character:Viên Quan]Này ông kia! Trâu của ông cày một ngày được mấy đường?[/character]\n[narrator]Người cha ngẩn người, chưa biết trả lời ra sao.[/narrator]",

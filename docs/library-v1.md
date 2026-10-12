@@ -85,9 +85,32 @@ KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=sta
 - **Đã dựng trên staging:** 12 truyện / 96 trang, **27.393 ký tự TTS** (282 lượt gọi, ~37 phút audio). Kiểm tra trình duyệt: phát *Tích Chu*
   không có POST TTS nào, chỉ tải file đã lưu.
 
+## Tranh minh hoạ (vẽ một lần cho mọi gia đình)
+
+- Mỗi truyện trong gói có `art: { style, setting }` (phong cách nhà `clay` + một câu bối cảnh **tiếng Anh**: thời đại, vùng miền,
+  trang phục, nhà cửa) và mỗi nhân vật có `look` (ngoại hình tiếng Anh, giữ nguyên giữa các trang; nhân vật lặp lại ở v3 dùng đúng một mô tả).
+  `appearance` tiếng Việt vẫn giữ làm ghi chú biên tập. Kiểm tra gói báo lỗi nếu thiếu `look` hoặc `look`/`setting` có chữ tiếng Việt.
+- Khi nhập: `stories.illustration_style = art.style`, `story_pages.illustration_prompt = "Setting: <setting> Scene: <sceneDescription>"`
+  (hoặc `illustration` tiếng Anh nếu trang có), `story_characters.appearance = look`. Truyện đã nhập: đồng bộ bằng `--art`.
+- Vẽ qua `/api/story/illustrate-batch` (cùng nhà cung cấp/model/chất lượng trong Cài đặt → AI, chặn hạn mức, sổ chi phí, nhật ký staff);
+  file nằm dưới thư mục của chủ truyện (hồ sơ super_admin), trang 1 thành ảnh bìa. Truyện thư viện là `source='manual'` nên trình phát
+  **không** tự vẽ khi trẻ đọc — chỉ hiện tranh đã vẽ sẵn, chưa có thì dùng tranh cảnh có sẵn.
+
+```bash
+# 1. Đồng bộ chỉ dẫn tranh cho truyện đã nhập (chỉ đổi dòng khác, audit 'story.update'; không chạm chữ/audio/tranh)
+node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --art > art-v1.sql
+psql -U postgres -v ON_ERROR_STOP=1 < art-v1.sql
+
+# 2. Vẽ các trang chưa có tranh (nhân sự có stories.write + phiên MFA admin); chạy lại chỉ vẽ trang còn thiếu
+KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=staff-session.json \
+  node --import ./scripts/ts-paths.mjs scripts/library-illustrate.ts --pack v1 [--slug tich-chu] [--dry-run] [--max-images 120]
+# Vẽ lại vài trang chưa đạt sau khi duyệt:
+  … scripts/library-illustrate.ts --pack v1 --slug tich-chu --redraw 3,5
+```
+
 ## Chưa làm / bước tiếp theo
 
 1. **Duyệt bởi người**: bản kể do AI soạn và tự kiểm tra; cần biên tập viên + giáo viên mầm non/phụ huynh đọc duyệt (cả nghe thử 3 giọng mới) trước khi lên production.
 2. ~~Âm thanh dựng sẵn~~ — đã làm (xem trên).
-3. **Tranh riêng**: đang dùng tranh cảnh có sẵn (không đặc thù từng truyện). Có thể thêm route admin vẽ tranh AI cho truyện nền tảng.
+3. ~~Tranh riêng~~ — có quy trình vẽ tranh AI cho truyện nền tảng (xem "Tranh minh hoạ"); tranh AI vẫn cần người duyệt từng trang.
 4. ~~Đợt 2~~ — đã soạn 18 truyện (`docs/library-v2.md`) và bộ 10 truyện thói quen tốt (`docs/library-v3.md`).

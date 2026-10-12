@@ -31,23 +31,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Mai",
       "role": "friend",
       "voiceType": "girl",
       "description": "Bạn cùng lớp của Bo, nhanh nhẹn",
-      "appearance": "cô bé tóc tết hai bím, áo vàng"
+      "appearance": "cô bé tóc tết hai bím, áo vàng",
+      "look": "5-year-old Vietnamese girl, two black braids, yellow T-shirt, green shorts"
     },
     {
       "name": "Cô Hoa",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô giáo mầm non dịu dàng",
-      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa"
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa",
+      "look": "young Vietnamese kindergarten teacher, black ponytail, light blue ao dai, warm smile"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a bright kindergarten classroom with a play corner and toy shelves."
+  },
   "pages": [
     {
       "text": "[narrator]Sáng thứ hai, Bo mang đến lớp một chiếc xe tải đỏ mới tinh. Xe có thùng nâng lên hạ xuống được, bánh xe quay vù vù, còn bấm còi kêu bim bim nữa.[/narrator]\n[character:Bo]Xe tải của tớ đấy! Bố mới mua cho tớ hôm qua![/character]\n[narrator]Các bạn xúm lại xem, mắt tròn xoe. Ai cũng muốn được sờ thử chiếc xe một lần.[/narrator]",

@@ -24,23 +24,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Chú quạ hiếu động, hay nóng vội",
-      "appearance": "chú chim lông trắng muốt, mỏ dài, mắt tinh nghịch"
+      "appearance": "chú chim lông trắng muốt, mỏ dài, mắt tinh nghịch",
+      "look": "crow-shaped bird with snow-white feathers (until painted black at the end), long beak, playful eyes"
     },
     {
       "name": "Công",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô công điềm đạm, khéo tay",
-      "appearance": "cô chim công đuôi dài, dáng thanh mảnh"
+      "appearance": "cô chim công đuôi dài, dáng thanh mảnh",
+      "look": "slender peacock with a long tail; white at first, then painted in brilliant blue, green and gold"
     },
     {
       "name": "Chim Sẻ",
       "role": "friend",
       "voiceType": "girl",
       "description": "Cô sẻ nhỏ hay chuyền tin",
-      "appearance": "chim sẻ nhỏ lông nâu, nhảy nhót"
+      "appearance": "chim sẻ nhỏ lông nâu, nhảy nhót",
+      "look": "small brown sparrow, hopping"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable long ago in a tropical Vietnamese forest; the birds use pots of paint and leaf brushes."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xửa ngày xưa, các loài chim trong rừng đều có bộ lông trắng muốt như nhau. Quạ và Công là đôi bạn thân.[/narrator]\n[narrator]Một hôm, hai bạn ngồi trên cành cây, nhìn những bông hoa rực rỡ dưới gốc.[/narrator]\n[character:Công]Hoa nào cũng có màu đẹp. Giá mà lông chúng mình cũng có màu nhỉ?[/character]\n[character:Quạ]Hay là chúng mình tô màu cho nhau đi![/character]",

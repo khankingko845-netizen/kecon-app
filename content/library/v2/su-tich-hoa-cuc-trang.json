@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé hiếu thảo, dũng cảm, thông minh",
-      "appearance": "cậu bé gầy, áo nâu, khăn len quàng cổ, đi chân đất"
+      "appearance": "cậu bé gầy, áo nâu, khăn len quàng cổ, đi chân đất",
+      "look": "thin 8-year-old Vietnamese boy, brown shirt, knitted wool scarf, barefoot"
     },
     {
       "name": "Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người mẹ hiền bị ốm, được con chăm sóc",
-      "appearance": "người mẹ tóc búi, áo nâu, khăn len quàng vai"
+      "appearance": "người mẹ tóc búi, áo nâu, khăn len quàng vai",
+      "look": "Vietnamese mother, hair in a bun, brown blouse, wool shawl, resting in bed"
     },
     {
       "name": "Ông Lão",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông lão tốt bụng chỉ đường tìm thuốc",
-      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc"
+      "appearance": "ông cụ râu tóc bạc phơ, áo trắng, chống gậy trúc",
+      "look": "kind old Buddha-like fairy grandfather (Ong But), long snow-white hair and beard, flowing white robe, bamboo walking stick, soft glow"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a small thatched house at the forest edge in the cool season, a misty forest and white chrysanthemum flowers."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có hai mẹ con sống trong một túp lều nhỏ bên bìa rừng. Cậu bé rất thương mẹ. Một mùa đông, mẹ bị ốm nặng, nằm mãi trên giường không dậy được.[/narrator]\n[character:Cậu Bé]Mẹ ơi, con nấu cháo rồi. Mẹ ăn một chút cho khoẻ nhé.[/character]\n[character:Mẹ]Con ngoan của mẹ. Mẹ mệt lắm, nhưng có con bên cạnh, mẹ thấy ấm lòng.[/character]",

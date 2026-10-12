@@ -30,23 +30,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
-      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
     },
     {
       "name": "Bà",
       "role": "friend",
       "voiceType": "grandma",
       "description": "Bà nội hiền hậu, kể chuyện hay",
-      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão",
+      "look": "kind Vietnamese grandmother, silver hair in a neat bun, round reading glasses, light lavender ao ba ba blouse, dark trousers"
     },
     {
       "name": "Su",
       "role": "friend",
       "voiceType": "girl",
       "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
-      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: grandma's cozy house with a living room, a blue-and-white flower vase on a wooden table, and a small garden."
+  },
   "pages": [
     {
       "text": "[narrator]Chiều chủ nhật, trời mưa lâm thâm nên Bo không được ra sân. Bo ôm quả bóng, chạy quanh phòng khách. Quả bóng nảy tưng tưng trên sàn gạch.[/narrator]\n[character:Su]Anh Bo ơi, bà dặn không đá bóng trong nhà mà![/character]\n[character:Bo]Anh chỉ đá khẽ thôi. Một cái thôi mà![/character]\n[narrator]Nhưng Bo mải chơi quá, quên mất lời bà dặn. Bo lùi lại mấy bước, co chân, đá thật mạnh.[/narrator]",

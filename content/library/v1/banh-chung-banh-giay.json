@@ -26,16 +26,22 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Hoàng tử thứ mười tám, sống giản dị, chăm làm ruộng",
-      "appearance": "chàng trai trẻ áo nâu giản dị, khăn vấn đầu, tay cầm bó lá dong"
+      "appearance": "chàng trai trẻ áo nâu giản dị, khăn vấn đầu, tay cầm bó lá dong",
+      "look": "young Vietnamese prince living simply, short black hair with a cloth headband, plain brown tunic, often holding green dong leaves"
     },
     {
       "name": "Vua Hùng",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Vua Hùng thứ sáu, già và hiền minh",
-      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng"
+      "appearance": "ông vua già râu tóc bạc, mũ vàng, áo choàng đỏ hoa văn trống đồng",
+      "look": "old Hung King of ancient Vietnam, long white hair and beard, golden crown, red cloak with bronze-drum (Dong Son) patterns"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "the legendary Hung King era of ancient Vietnam: a wooden palace decorated with Dong Son bronze-drum patterns, rice fields, dong leaves and sticky rice."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, vua Hùng thứ sáu trị vì đất nước. Vua có hai mươi người con trai. Khi đã già, vua muốn chọn một người con giỏi nhất để truyền ngôi.[/narrator]\n[narrator]Một năm, nhân dịp đầu xuân, vua gọi các con đến và phán:[/narrator]\n[character:Vua Hùng]Năm nay, con nào tìm được lễ vật ý nghĩa nhất dâng lên tổ tiên, ta sẽ truyền ngôi cho người đó.[/character]",

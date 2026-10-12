@@ -26,40 +26,49 @@
       "role": "hero",
       "voiceType": "man",
       "description": "Chàng trai mang lốt sọ dừa, tài giỏi, tốt bụng",
-      "appearance": "lúc đầu tròn như quả dừa có đôi mắt sáng; sau là chàng trai khôi ngô, áo dài xanh, khăn xếp"
+      "appearance": "lúc đầu tròn như quả dừa có đôi mắt sáng; sau là chàng trai khôi ngô, áo dài xanh, khăn xếp",
+      "look": "at first a round coconut-shaped boy with bright eyes and tiny arms and legs; later a handsome young scholar in a blue ao dai and black khan xep turban"
     },
     {
       "name": "Bà Mẹ",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người mẹ nghèo hiền hậu, thương con",
-      "appearance": "bà mẹ áo nâu sờn, khăn mỏ quạ, lưng hơi còng"
+      "appearance": "bà mẹ áo nâu sờn, khăn mỏ quạ, lưng hơi còng",
+      "look": "poor old Vietnamese mother, worn brown blouse, crow-beak headscarf, slightly bent back"
     },
     {
       "name": "Phú Ông",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Phú ông giàu có, ham của",
-      "appearance": "ông phú hộ béo tròn, râu dê, áo gấm, tay cầm quạt"
+      "appearance": "ông phú hộ béo tròn, râu dê, áo gấm, tay cầm quạt",
+      "look": "plump rich landlord, goatee, silk brocade robe, holding a fan"
     },
     {
       "name": "Cô Út",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô con gái út hiền lành, tốt bụng",
-      "appearance": "cô gái xinh xắn, áo tứ thân hồng, tóc vấn khăn nhung"
+      "appearance": "cô gái xinh xắn, áo tứ thân hồng, tóc vấn khăn nhung",
+      "look": "kind pretty young woman, pink four-panel dress (ao tu than), hair wrapped in a velvet headband"
     },
     {
       "name": "Cô Cả",
       "role": "friend",
       "voiceType": "woman",
       "description": "Cô chị cả kiêu kỳ, ghen tị, cuối truyện biết lỗi",
-      "appearance": "người phụ nữ áo gấm đỏ, đeo nhiều vòng vàng, mặt kiêu kỳ"
+      "appearance": "người phụ nữ áo gấm đỏ, đeo nhiều vòng vàng, mặt kiêu kỳ",
+      "look": "haughty young woman in a red brocade dress with many gold bracelets"
     }
   ],
   "replaces": {
     "title": "Sọ Dừa",
     "reason": "Bản 5 trang cũ (truyện mẫu) được thay bằng bản thư viện 8 trang đã biên tập."
+  },
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a northern village, a rich landlord's tiled house, grassy hills with cows, later the blue sea and a small island."
   },
   "pages": [
     {

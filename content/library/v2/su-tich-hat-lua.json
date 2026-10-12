@@ -26,23 +26,30 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Cô bé chăm chỉ, hay giúp đỡ",
-      "appearance": "cô bé tóc trái đào, áo cánh vàng, quần đen"
+      "appearance": "cô bé tóc trái đào, áo cánh vàng, quần đen",
+      "look": "6-year-old Vietnamese girl, peach-shaped tuft of hair, yellow blouse, black trousers"
     },
     {
       "name": "Chị Mít",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người chị lười biếng, sau biết lỗi và chăm chỉ",
-      "appearance": "cô gái tóc dài buộc khăn, áo tứ thân nâu, hay ngáp"
+      "appearance": "cô gái tóc dài buộc khăn, áo tứ thân nâu, hay ngáp",
+      "look": "young Vietnamese woman, long hair tied with a cloth, brown four-panel dress, often yawning"
     },
     {
       "name": "Hạt Lúa",
       "role": "friend",
       "voiceType": "creature",
       "description": "Hạt lúa thần biết nói",
-      "appearance": "hạt lúa vàng óng to như quả bí, có đôi mắt tròn và nụ cười"
+      "appearance": "hạt lúa vàng óng to như quả bí, có đôi mắt tròn và nụ cười",
+      "look": "giant golden rice grain as big as a pumpkin, with round eyes and a smile"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a northern village, rice fields, a thatched house with a courtyard and golden rice."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xửa ngày xưa, hạt lúa to như quả bí ngô. Đến mùa chín, lúa tự lăn từ ngoài đồng về từng nhà. Mọi người chỉ cần quét sân thật sạch để đón lúa.[/narrator]\n[character:Bé Cốm]Chị Mít ơi, sắp đến ngày lúa về rồi. Mình quét sân đi chị![/character]\n[character:Chị Mít]Ôi dào, để mai chị quét. Bây giờ chị buồn ngủ lắm.[/character]\n[narrator]Nói rồi, chị Mít lại nằm khểnh trên võng.[/narrator]",

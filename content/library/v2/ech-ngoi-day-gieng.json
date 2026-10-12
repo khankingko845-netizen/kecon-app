@@ -25,23 +25,30 @@
       "role": "hero",
       "voiceType": "boy",
       "description": "Chú ếch nhỏ sống lâu dưới giếng, hay huênh hoang, biết sửa mình",
-      "appearance": "chú ếch xanh mắt lồi, bụng trắng, hay ưỡn ngực"
+      "appearance": "chú ếch xanh mắt lồi, bụng trắng, hay ưỡn ngực",
+      "look": "green frog with bulging eyes and a white belly, proud puffed-out chest"
     },
     {
       "name": "Chim Sáo",
       "role": "friend",
       "voiceType": "woman",
       "description": "Chị chim sáo hiểu biết, hay khuyên bảo",
-      "appearance": "chim sáo lông đen, mỏ vàng, khoang trắng ở cánh"
+      "appearance": "chim sáo lông đen, mỏ vàng, khoang trắng ở cánh",
+      "look": "black myna bird with a yellow beak and white wing patches"
     },
     {
       "name": "Bác Trâu",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Bác trâu già hiền lành, chăm chỉ cày ruộng",
-      "appearance": "con trâu đen to khoẻ, sừng cong, đôi mắt hiền"
+      "appearance": "con trâu đen to khoẻ, sừng cong, đôi mắt hiền",
+      "look": "big black water buffalo with curved horns and kind eyes"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable in the Vietnamese countryside: an old mossy stone well, rice paddies, ponds and a wide open sky."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một chú Ếch sống dưới đáy một cái giếng cũ ở góc làng. Xung quanh Ếch chỉ có vài con nhái, con cua và mấy con ốc nhỏ.[/narrator]\n[narrator]Mỗi lần Ếch kêu ộp ộp, tiếng vang lên ầm ĩ khắp giếng. Các con vật nhỏ đều giật mình.[/narrator]\n[character:Ếch]Ta kêu to thế này, chắc ta là chúa tể muôn loài rồi![/character]",

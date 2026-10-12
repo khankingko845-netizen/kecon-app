@@ -26,37 +26,46 @@
       "role": "hero",
       "voiceType": "woman",
       "description": "Cô gái hiền lành, chăm chỉ, sống cùng dì và em Cám",
-      "appearance": "cô gái tóc dài, áo tứ thân nâu, yếm trắng, khăn mỏ quạ"
+      "appearance": "cô gái tóc dài, áo tứ thân nâu, yếm trắng, khăn mỏ quạ",
+      "look": "kind young Vietnamese woman, long black hair, brown four-panel dress (ao tu than), white yem bodice, crow-beak headscarf"
     },
     {
       "name": "Cám",
       "role": "friend",
       "voiceType": "girl",
       "description": "Cô em lười biếng, hay ganh tị, cuối truyện biết lỗi",
-      "appearance": "cô bé tóc buộc nơ đỏ, áo hoa, má phính"
+      "appearance": "cô bé tóc buộc nơ đỏ, áo hoa, má phính",
+      "look": "chubby-cheeked young girl, hair tied with a red bow, floral blouse"
     },
     {
       "name": "Dì",
       "role": "friend",
       "voiceType": "woman",
       "description": "Người dì khó tính, chiều chuộng Cám",
-      "appearance": "người phụ nữ áo the tím, khăn vấn, mặt cau có"
+      "appearance": "người phụ nữ áo the tím, khăn vấn, mặt cau có",
+      "look": "stepmother, purple silk tunic, hair wrapped in a headscarf, frowning"
     },
     {
       "name": "Bụt",
       "role": "friend",
       "voiceType": "grandpa",
       "description": "Ông Bụt hiền từ hay giúp người tốt",
-      "appearance": "ông cụ râu tóc trắng như cước, áo vàng, tay cầm phất trần"
+      "appearance": "ông cụ râu tóc trắng như cước, áo vàng, tay cầm phất trần",
+      "look": "kind fairy grandfather (Ong But), snow-white hair and beard, yellow robe, holding a horsetail whisk"
     },
     {
       "name": "Nhà Vua",
       "role": "friend",
       "voiceType": "man",
       "description": "Nhà vua nhân hậu",
-      "appearance": "nhà vua trẻ, áo bào vàng thêu rồng, đội mũ miện"
+      "appearance": "nhà vua trẻ, áo bào vàng thêu rồng, đội mũ miện",
+      "look": "young king, golden robe embroidered with dragons, golden crown"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a northern village with rice paddies and a pond, and a village festival with a royal procession."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, Tấm sống cùng dì và cô em tên là Cám. Tấm hiền lành, chăm chỉ, quanh năm làm lụng vất vả. Một hôm, dì đưa cho hai chị em mỗi người một cái giỏ.[/narrator]\n[character:Dì]Đứa nào bắt được đầy giỏ tép, ta thưởng cho cái yếm đỏ.[/character]\n[narrator]Tấm chăm chỉ mò cua bắt tép, chẳng mấy chốc đã đầy giỏ. Cám mải chơi, giỏ vẫn trống trơn.[/narrator]\n[character:Cám]Chị Tấm ơi, đầu chị lấm bùn rồi. Chị lên gội đầu đi kẻo về mẹ mắng![/character]",

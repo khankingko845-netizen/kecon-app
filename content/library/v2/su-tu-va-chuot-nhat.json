@@ -26,16 +26,22 @@
       "role": "hero",
       "voiceType": "girl",
       "description": "Cô chuột nhỏ bé, lễ phép, giữ lời hứa",
-      "appearance": "chuột nhắt lông xám, tai tròn hồng, đuôi dài, mắt đen láy"
+      "appearance": "chuột nhắt lông xám, tai tròn hồng, đuôi dài, mắt đen láy",
+      "look": "little grey mouse, round pink ears, long tail, shiny black eyes"
     },
     {
       "name": "Sư Tử",
       "role": "friend",
       "voiceType": "man",
       "description": "Chúa sơn lâm oai vệ nhưng rộng lượng",
-      "appearance": "sư tử bờm vàng rực, thân to khoẻ, mắt màu hổ phách"
+      "appearance": "sư tử bờm vàng rực, thân to khoẻ, mắt màu hổ phách",
+      "look": "big lion with a bright golden mane and amber eyes, gentle expression"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable in a green jungle with big trees and vines; an old rope net, nothing scary."
+  },
   "pages": [
     {
       "text": "[narrator]Giữa trưa hè, Sư Tử nằm ngủ dưới bóng cây to. Chuột Nhắt bé nhỏ đi tìm hạt dẻ, chạy lon ton thế nào lại trèo ngay lên mũi Sư Tử.[/narrator]\n[narrator]Sư Tử hắt xì một cái, mở mắt ra, đưa bàn chân to tướng giữ chặt lấy Chuột Nhắt.[/narrator]\n[character:Sư Tử]Ai dám làm ta mất giấc ngủ trưa thế này?[/character]\n[narrator]Chuột Nhắt run cầm cập, hai tai cụp xuống.[/narrator]",

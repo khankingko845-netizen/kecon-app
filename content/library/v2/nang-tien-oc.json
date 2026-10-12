@@ -25,16 +25,22 @@
       "role": "hero",
       "voiceType": "grandma",
       "description": "Bà lão nghèo, hiền lành, sống một mình",
-      "appearance": "bà cụ tóc bạc, áo nâu, đội nón lá, tay cầm giỏ"
+      "appearance": "bà cụ tóc bạc, áo nâu, đội nón lá, tay cầm giỏ",
+      "look": "old Vietnamese woman, silver hair, brown blouse, conical palm-leaf hat, carrying a bamboo basket"
     },
     {
       "name": "Nàng Tiên",
       "role": "friend",
       "voiceType": "woman",
       "description": "Nàng tiên hiền dịu sống trong vỏ ốc",
-      "appearance": "thiếu nữ tóc dài, áo yếm xanh ngọc, váy lụa trắng"
+      "appearance": "thiếu nữ tóc dài, áo yếm xanh ngọc, váy lụa trắng",
+      "look": "young fairy girl, long black hair, jade-green yem bodice, white silk skirt; she comes out of a shiny golden snail shell"
     }
   ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: an old woman's small thatched house, a pond with lotus leaves and a big clay water jar."
+  },
   "pages": [
     {
       "text": "[narrator]Ngày xưa, có một bà lão nghèo sống một mình trong túp lều nhỏ. Hằng ngày, bà lội ruộng mò cua, bắt ốc để đổi lấy gạo.[/narrator]\n[narrator]Một hôm, bà bắt được một con ốc rất lạ. Vỏ ốc xanh biêng biếc, lấp lánh như ngọc.[/narrator]\n[character:Bà Lão]Ốc xinh quá! Bà không nỡ bán đâu. Bà mang về nuôi làm bạn nhé.[/character]\n[narrator]Về nhà, bà thả ốc vào chiếc chum nước đầy.[/narrator]",
