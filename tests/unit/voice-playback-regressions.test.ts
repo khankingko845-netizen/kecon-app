@@ -17,8 +17,10 @@ describe("Vietnamese provider contract", () => {
     "eleven_monolingual_v1",
     "eleven_flash_v2",
     "eleven_turbo_v2",
-  ])("never sends vi to incompatible %s", (model) =>
-    expect(modelForLanguage(model, "vi-VN")).toBe("eleven_flash_v2_5"),
+  ])("never sends vi to incompatible %s; falls back to Eleven v3", (model) =>
+    // Flash/Turbo v2.5 misread Vietnamese tones on staging (STT: "Bo" → "Bồ/Bố",
+    // "dặn" → "dẫn", "chợ" → "chỗ"); v3 transcribed the same lines exactly.
+    expect(modelForLanguage(model, "vi-VN")).toBe("eleven_v3"),
   );
   it.each(["eleven_v3", "eleven_flash_v2_5", "eleven_turbo_v2_5"])(
     "preserves compatible %s",
@@ -52,7 +54,7 @@ describe("Vietnamese provider contract", () => {
     ];
     expect(url).toContain("/newVi/stream");
     expect(JSON.parse(init.body as string)).toMatchObject({
-      model_id: "eleven_flash_v2_5",
+      model_id: "eleven_v3",
       language_code: "vi",
       text: "Xin chào bé. Bạn Thỏ chia sẻ quả táo.",
     });

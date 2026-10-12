@@ -22,6 +22,10 @@ describe("library pre-render plan", () => {
     expect(playerNarrator(story({ narrator_voice_id: null }), DEFAULTS.slice(2))).toBeNull();
   });
 
+  it("renders Vietnamese library audio with Eleven v3 when the configured model has no vi", async () => {
+    const plan = await planStoryAudio(story(), [], CAST, DEFAULTS, "eleven_multilingual_v2");
+    expect(plan.model).toBe("eleven_v3");
+  });
   it("plans pages in order with the player's audio key and skips empty pages", async () => {
     const pages = [
       { id: "p2", page_number: 2, content: PAGE2, audio_url: null, audio_key: null },

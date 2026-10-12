@@ -161,8 +161,8 @@ function ApiKeysPanel() {
  className="w-full px-3.5 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-semibold text-txt dark:text-white/80 outline-none"
  >
  <option value="eleven_multilingual_v2">Multilingual v2 (tốt nhất)</option>
- <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh)</option>
- <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất)</option>
+ <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh, tiếng Việt hay sai thanh điệu)</option>
+ <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất, tiếng Việt hay sai thanh điệu)</option>
  </select>
  </div>
 

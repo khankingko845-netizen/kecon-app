@@ -76,8 +76,8 @@ export default function ElevenLabsSettings({
               <option value="eleven_multilingual_v2">
                 Multilingual v2 (29 ngôn ngữ, không có tiếng Việt)
               </option>
-              <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh)</option>
-              <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất)</option>
+              <option value="eleven_turbo_v2_5">Turbo v2.5 (nhanh, tiếng Việt hay sai thanh điệu)</option>
+              <option value="eleven_flash_v2_5">Flash v2.5 (rẻ nhất, tiếng Việt hay sai thanh điệu)</option>
             </select>
             <ChevronDown
               size={16}
@@ -87,8 +87,9 @@ export default function ElevenLabsSettings({
         </div>
 
         <p className="text-sm text-txt-secondary ">
-          Tiếng Việt tự dùng Flash v2.5 nếu model đã chọn không hỗ trợ. Mẫu nghe
-          thử được tạo bằng câu tiếng Việt, không dùng preview gốc của thư viện.
+          Tiếng Việt tự dùng Eleven v3 nếu model đã chọn không hỗ trợ (Flash/Turbo
+          v2.5 hay đọc sai thanh điệu, ví dụ “Bo” thành “Bồ”). Mẫu nghe thử được tạo
+          bằng câu tiếng Việt, không dùng preview gốc của thư viện.
         </p>
         {/* Default voices per language (multi-select) */}
         <DefaultVoicesManager
