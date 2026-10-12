@@ -116,6 +116,8 @@ KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=sta
   của OpenAI (~$0,005–0,006/ảnh low) ước ~$2 — cần đối chiếu hoá đơn thật.
 - Vẽ lại sau khi duyệt: Ăn khế trả vàng tr.1–4, Cóc kiện Trời tr.1,2,5,8 (cung điện mái vòm → mái đình chùa), Thạch Sanh tr.1–5,8
   (bối cảnh "Vietnamese palace, no domes", chằn tinh bớt đáng sợ), Sự tích Hồ Gươm tr.5 (cờ hiện đại → thêm "no modern flags or symbols").
+  Vua đội vương miện kiểu châu Âu → Vua Hùng đội mũ lông chim Đông Sơn, vua thời sau đội mũ cánh chuồn vàng đen, áo long bào
+  (Sơn Tinh – Thủy Tinh, Sự tích dưa hấu, Bánh chưng bánh giầy, Em bé thông minh, Tấm Cám); dưa hấu thêm "no written words" vì chữ AI vẽ sai.
   Vẽ lại trang 1 thì ảnh bìa đi theo nếu bìa đang là tranh trang 1 cũ (bìa tự chọn được giữ).
 - Còn cần người duyệt: Thánh Gióng tr.7–8 vẽ Gióng còn bé trên lưng ngựa (nên là tráng sĩ), Cóc kiện Trời tr.2 có người tí hon lạ,
   Bó đũa tuổi các con chưa đều, Bịt mắt xem voi mũ người quản tượng thay đổi; khoảng một nửa số truyện mới được xem qua bảng ghép.
