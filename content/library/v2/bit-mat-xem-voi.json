@@ -1,0 +1,124 @@
+{
+  "slug": "bit-mat-xem-voi",
+  "title": "Bịt mắt xem voi",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Ngày hội làng, ba bạn nhỏ chơi trò bịt mắt sờ voi. Mỗi bạn sờ một chỗ rồi cãi nhau voi giống cái gì, đến khi đổi chỗ và mở mắt mới thấy cả con voi.",
+  "moral": "Mỗi người chỉ thấy một phần; muốn biết đúng phải nhìn cho hết và lắng nghe nhau.",
+  "tags": [
+    "ngu-ngon",
+    "hoc-choi",
+    "dong-vat",
+    "lam-viec-nhom"
+  ],
+  "origin": "Phỏng theo truyện ngụ ngôn dân gian Việt Nam 'Thầy bói xem voi' (cùng mô-típ với truyện cổ Ấn Độ về những người mù xem voi).",
+  "adaptation": [
+    "Thay năm ông thầy bói khiếm thị bằng các bạn nhỏ chơi trò bịt mắt, tránh trêu chọc người khuyết tật.",
+    "Bỏ cảnh các thầy đánh nhau; các bạn đổi chỗ cho nhau và cùng tìm ra con voi thật.",
+    "Thêm phần học chơi: tên và công dụng các bộ phận của con voi."
+  ],
+  "characters": [
+    {
+      "name": "Tí",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé hiếu động, tò mò",
+      "appearance": "cậu bé tóc ba chỏm, áo cộc trắng, quần đùi xanh"
+    },
+    {
+      "name": "Na",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Cô bé nhanh nhảu, thích hỏi",
+      "appearance": "cô bé tóc buộc hai bên, áo hoa đỏ"
+    },
+    {
+      "name": "Chị Mơ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Chị gái lớn của Tí, học lớp năm, thật thà nhưng hay vội kết luận",
+      "appearance": "cô bé lớn tóc buộc cao, áo nâu, đội mũ rơm"
+    },
+    {
+      "name": "Bác Quản Tượng",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Người quản tượng hiền lành, hiểu tính voi",
+      "appearance": "người đàn ông da rám nắng, khăn quấn đầu, áo chàm, cầm gậy tre"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Hôm ấy làng mở hội. Trống chèo rộn ràng, cờ hoa bay phấp phới. Bác Quản Tượng dắt một chú voi to lớn đi vào sân đình. Chú voi tên là Xám.[/narrator]\n[narrator]Ba chị em Tí, Na và chị Mơ chạy ùa tới, mắt tròn xoe.[/narrator]\n[character:Chị Mơ]Ôi, to quá! Cháu chưa thấy con voi thật bao giờ![/character]\n[character:Bác Quản Tượng]Hôm nay bác cho các cháu chơi một trò thật vui nhé![/character]",
+      "sceneDescription": "Sân đình ngày hội, bác quản tượng dắt chú voi xám, ba bạn nhỏ chạy tới",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Bác Quản Tượng lấy ba chiếc khăn, bịt mắt cho từng bạn.[/narrator]\n[character:Bác Quản Tượng]Mỗi cháu sờ thử một chỗ trên người chú Xám, rồi đoán xem con voi trông giống cái gì.[/character]\n[narrator]Tí đưa tay ra trước, chạm phải cái vòi dài đang ngọ nguậy.[/narrator]\n[character:Tí]Ồ, mềm mềm, cong cong, sun sun như con đỉa! Con voi giống con đỉa khổng lồ![/character]\n[narrator]Chú Xám khẽ cuộn vòi, làm Tí nhột cười khanh khách.[/narrator]",
+      "sceneDescription": "Tí bịt mắt sờ vòi voi, chú voi cuộn vòi trêu Tí",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến lượt Na. Na kiễng chân, sờ trúng cái tai to của chú Xám. Đúng lúc ấy, chú Xám phe phẩy tai, gió thổi mát rượi.[/narrator]\n[character:Na]Không phải đâu Tí ơi! Con voi bè bè như cái quạt thóc. Còn quạt cho Na mát nữa này![/character]\n[character:Tí]Rõ ràng nó giống con đỉa mà![/character]\n[narrator]Hai bạn vẫn bịt mắt, cứ thế cãi nhau chí choé.[/narrator]",
+      "sceneDescription": "Na bịt mắt kiễng chân sờ tai voi đang phe phẩy",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chị Mơ đi vòng ra phía dưới, ôm trọn một chân của chú Xám. Chị Mơ vỗ vỗ, thấy vừa to, vừa chắc, vừa nhám.[/narrator]\n[character:Chị Mơ]Hai em sai hết rồi! Con voi sừng sững như cái cột đình![/character]\n[character:Na]Quạt thóc chứ![/character]\n[character:Tí]Con đỉa chứ![/character]\n[narrator]Ba bạn nói to dần, to dần. Ai cũng chắc mình đúng, chẳng ai chịu nghe ai. Chú Xám ngơ ngác nhìn ba bạn nhỏ.[/narrator]",
+      "sceneDescription": "Chị Mơ ôm chân voi, ba chị em bịt mắt cãi nhau, chú voi ngơ ngác",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bác Quản Tượng mỉm cười, giơ tay ra hiệu cho ba bạn im lặng.[/narrator]\n[character:Bác Quản Tượng]Các cháu ơi, ai cũng nói thật, nhưng mỗi cháu mới chỉ sờ được một chỗ thôi. Bây giờ, các cháu thử đổi chỗ cho nhau xem nào.[/character]\n[narrator]Tí sang sờ tai, Na sờ chân, còn chị Mơ sờ vòi.[/narrator]\n[character:Na]Ơ, chỗ này đúng là giống cột đình thật![/character]\n[character:Chị Mơ]Còn chỗ này mềm và dài như Tí nói![/character]",
+      "sceneDescription": "Bác quản tượng giơ tay ra hiệu, ba bạn đổi chỗ sờ voi",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bác Quản Tượng cởi khăn cho ba bạn. Cả ba mở mắt ra, nhìn thấy chú Xám đứng sừng sững trước mặt, to như một ngọn đồi nhỏ.[/narrator]\n[character:Tí]À, hoá ra cái vòi, cái tai, cái chân đều là của chú Xám![/character]\n[character:Na]Thì ra ba đứa mình đều đúng một phần.[/character]\n[character:Chị Mơ]Ghép lại với nhau mới thành con voi thật![/character]",
+      "sceneDescription": "Ba bạn mở mắt, ngước nhìn chú voi to lớn đứng giữa sân đình",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Bác Quản Tượng dẫn ba bạn đi một vòng quanh chú Xám.[/narrator]\n[character:Bác Quản Tượng]Đây là đôi ngà, cứng và nhẵn, chần chẫn như cái đòn càn. Còn đây là cái đuôi, tun tủn như cái chổi sể.[/character]\n[narrator]Chú Xám ve vẩy đuôi, rồi dùng vòi nhặt một khúc mía, đưa lên miệng nhai rau ráu.[/narrator]\n[character:Tí]Vòi của voi vừa để ngửi, vừa để cầm đồ ăn nữa kìa![/character]",
+      "sceneDescription": "Bác quản tượng chỉ vào ngà voi, chú voi dùng vòi cầm khúc mía",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ba bạn thay nhau đưa mía cho chú Xám ăn. Chú Xám vẫy tai cảm ơn.[/narrator]\n[character:Bác Quản Tượng]Mỗi người chỉ thấy được một phần. Muốn biết cho đúng, phải nhìn cho hết và lắng nghe nhau.[/character]\n[character:Na]Lần sau chúng cháu sẽ không cãi nhau nữa, mà cùng nhau tìm hiểu ạ.[/character]\n[character:Chị Mơ]Ngày mai cháu sẽ kể cho cả lớp nghe về chú Xám![/character]",
+      "sceneDescription": "Ba bạn nhỏ cho voi ăn mía, chú voi vẫy tai vui vẻ",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

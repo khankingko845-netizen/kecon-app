@@ -1,0 +1,127 @@
+{
+  "slug": "thach-sanh",
+  "title": "Thạch Sanh",
+  "category": "adventure",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Chàng Thạch Sanh hiền lành bị Lý Thông lừa đi canh miếu chằn tinh rồi cướp công. Chàng cứu công chúa khỏi hang đại bàng, có cây đàn thần và niêu cơm ăn mãi không hết.",
+  "moral": "Hiền lành, dũng cảm thì được đền đáp; gian dối sẽ phải xấu hổ.",
+  "tags": [
+    "co-tich-viet-nam",
+    "dung-cam",
+    "phieu-luu"
+  ],
+  "origin": "Truyện cổ tích người Việt thuộc loại truyện dũng sĩ, có trong Kho tàng truyện cổ tích Việt Nam và được dựng thành truyện thơ Nôm.",
+  "adaptation": [
+    "Chằn tinh và đại bàng bị đánh bại rồi bỏ chạy; Thạch Sanh lần theo lông vũ rơi thay cho dấu vết trong bản gốc.",
+    "Bỏ đoạn Thạch Sanh bị vu oan và bị giam; Lý Thông biết xấu hổ, xin về quê (bản gốc: mẹ con Lý Thông bị sét đánh).",
+    "Rút gọn để vừa 8 trang; giữ cây đàn thần và niêu cơm ăn mãi không hết."
+  ],
+  "characters": [
+    {
+      "name": "Thạch Sanh",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Chàng trai hiền lành, thật thà, dũng cảm",
+      "appearance": "chàng trai khoẻ mạnh, áo nâu, khăn quấn đầu, tay cầm búa"
+    },
+    {
+      "name": "Lý Thông",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Kẻ gian xảo cướp công, cuối truyện biết xấu hổ",
+      "appearance": "người đàn ông mặt gầy, mắt láo liên, áo the đen, khăn xếp"
+    },
+    {
+      "name": "Công Chúa",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Công chúa hiền dịu, được Thạch Sanh cứu",
+      "appearance": "công chúa áo gấm hồng, đội mũ ngọc, tóc dài"
+    },
+    {
+      "name": "Chằn Tinh",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Con yêu tinh hung dữ trong miếu hoang",
+      "appearance": "con chằn tinh to lớn, lông xám, mắt đỏ, nanh vuốt dài"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có chàng Thạch Sanh sống một mình trong túp lều dưới gốc đa. Gia tài của chàng chỉ có một lưỡi búa. Hằng ngày, chàng vào rừng đốn củi. Chàng được thần tiên dạy cho võ nghệ.[/narrator]\n[narrator]Một hôm, có người buôn bán tên là Lý Thông đi ngang qua.[/narrator]\n[character:Lý Thông]Chú em khoẻ mạnh thế này, về ở với anh, hai ta kết làm anh em nhé![/character]\n[character:Thạch Sanh]Có người anh, em mừng lắm. Em xin nghe lời anh.[/character]",
+      "sceneDescription": "Thạch Sanh vác búa trước túp lều dưới gốc đa, Lý Thông tươi cười chào hỏi",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Trong vùng có con chằn tinh hung dữ. Mỗi năm, dân làng phải cử một người đi canh miếu. Đến lượt Lý Thông, hắn lại lừa Thạch Sanh đi thay.[/narrator]\n[character:Lý Thông]Em đi canh miếu giúp anh một đêm nhé. Anh bận việc nhà, sáng mai em về.[/character]\n[narrator]Nửa đêm, chằn tinh hiện ra, nhe nanh giơ vuốt.[/narrator]\n[character:Chằn Tinh]Kẻ nào dám vào miếu của ta?[/character]\n[narrator]Thạch Sanh vung búa đánh trả. Chằn tinh thua, bỏ chạy vào núi sâu, để lại bộ cung tên bằng vàng.[/narrator]",
+      "sceneDescription": "Thạch Sanh cầm búa đứng trước miếu hoang trong đêm, chằn tinh lông xám gầm gừ",
+      "scene": "forest-night",
+      "mood": "tense",
+      "ambient": "night",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thạch Sanh mang cung tên vàng về. Lý Thông sợ hãi, rồi nảy ra ý xấu.[/narrator]\n[character:Lý Thông]Chằn tinh là con vật nhà vua nuôi. Em làm nó bỏ đi, vua sẽ phạt đấy. Em trốn về gốc đa đi, mọi việc để anh lo.[/character]\n[character:Thạch Sanh]Vâng, em cảm ơn anh. Em về gốc đa đây.[/character]\n[narrator]Thạch Sanh thật thà trở về túp lều cũ. Còn Lý Thông vào cung, nhận là mình đã đuổi được chằn tinh, được vua phong làm quan to.[/narrator]",
+      "sceneDescription": "Lý Thông thì thầm với Thạch Sanh đang cầm bộ cung tên vàng",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Một hôm, công chúa đang dạo chơi trong vườn thì một con đại bàng khổng lồ sà xuống, quắp nàng bay đi. Ở gốc đa, Thạch Sanh nhìn thấy, liền giương cung vàng bắn trúng cánh đại bàng.[/narrator]\n[character:Thạch Sanh]Đại bàng trúng tên rồi! Mình phải theo dấu nó để cứu người![/character]\n[narrator]Những chiếc lông vũ rơi lả tả trên đường bay. Chàng lần theo từng chiếc lông, đến tận một hang sâu trong núi.[/narrator]",
+      "sceneDescription": "Đại bàng khổng lồ quắp công chúa bay trên trời, Thạch Sanh giương cung vàng",
+      "scene": "sky",
+      "mood": "tense",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vua sai Lý Thông đi tìm công chúa. Lý Thông gặp Thạch Sanh, bèn nhờ chàng xuống hang. Thạch Sanh buộc dây vào người, tụt xuống hang tối, đánh đuổi đại bàng, tìm thấy công chúa.[/narrator]\n[character:Công Chúa]Cảm ơn chàng đã cứu ta! Chàng là ai vậy?[/character]\n[character:Thạch Sanh]Thần là Thạch Sanh. Công chúa lên trước đi, thần sẽ lên sau.[/character]\n[narrator]Nhưng khi công chúa vừa lên khỏi hang, Lý Thông liền sai quân lấp kín cửa hang, rồi đưa công chúa về cung.[/narrator]",
+      "sceneDescription": "Trong hang tối, Thạch Sanh đỡ công chúa lên sợi dây",
+      "scene": "cave",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Bị nhốt dưới hang, Thạch Sanh không nản. Chàng tìm lối ra, và cứu được thái tử con vua Thủy Tề đang bị đại bàng nhốt trong cũi sắt. Vua Thủy Tề mời chàng xuống thủy cung, muốn tặng vàng bạc.[/narrator]\n[character:Thạch Sanh]Thần không cần vàng bạc, chỉ xin cây đàn này thôi.[/character]\n[narrator]Trở về gốc đa, chàng hay gảy đàn. Trong khi đó, ở cung vua, công chúa buồn bã, chẳng nói chẳng cười.[/narrator]",
+      "sceneDescription": "Thạch Sanh nhận cây đàn thần trong thủy cung lấp lánh",
+      "scene": "underwater",
+      "mood": "happy",
+      "ambient": "waves",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Một hôm, Thạch Sanh mang đàn đến kinh thành. Tiếng đàn vang lên trong trẻo, bay vào tận cung vua. Công chúa nghe thấy, bỗng bật cười, cất tiếng nói.[/narrator]\n[character:Công Chúa]Phụ vương ơi, người gảy đàn đã cứu con dưới hang sâu![/character]\n[narrator]Vua cho gọi Thạch Sanh vào, nghe chàng kể lại mọi chuyện. Lý Thông đứng bên, mặt đỏ bừng vì xấu hổ.[/narrator]\n[character:Lý Thông]Tôi biết tội rồi. Xin cho tôi về quê làm ăn lương thiện.[/character]",
+      "sceneDescription": "Thạch Sanh ôm đàn trước cung vua, công chúa tươi cười, Lý Thông cúi mặt",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Thạch Sanh xin vua tha cho Lý Thông. Vua gả công chúa cho Thạch Sanh. Nghe tin, quân mười tám nước chư hầu kéo đến đòi đánh. Thạch Sanh ôm đàn ra gảy. Tiếng đàn ngân vang, quân lính nghe thấy nhớ nhà, chẳng ai còn muốn đánh nhau.[/narrator]\n[character:Thạch Sanh]Mời các vị ăn cơm rồi hãy về.[/character]\n[narrator]Niêu cơm nhỏ xíu, mà ăn mãi không hết. Quân các nước phục lăn, kéo nhau về nước.[/narrator]\n[character:Công Chúa]Hiền lành và dũng cảm, chàng thật xứng đáng![/character]",
+      "sceneDescription": "Thạch Sanh gảy đàn, quân lính các nước ngồi quanh niêu cơm nhỏ",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    }
+  ]
+}

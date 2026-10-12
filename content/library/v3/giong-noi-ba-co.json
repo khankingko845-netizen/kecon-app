@@ -1,0 +1,116 @@
+{
+  "slug": "giong-noi-ba-co",
+  "title": "Giọng nói ba cỡ",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bo chơi rô bốt và hét thật to làm em bé Tôm thức giấc. Bà dạy hai anh em trò chơi giọng nói ba cỡ: giọng con kiến, giọng con mèo và giọng con hổ, mỗi giọng dùng một nơi.",
+  "moral": "Ở trong nhà nói vừa đủ nghe; giọng to để dành cho sân chơi hoặc khi cần gọi giúp đỡ.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "la-lon",
+    "giong-noi"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 73: điều chỉnh giọng nói phù hợp với tình huống.",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Ba mức giọng gắn với ba con vật quen thuộc (kiến, mèo, hổ) để bé dễ nhớ và tự nhắc nhau bằng cử chỉ.",
+    "Gợi ý cho cha mẹ: chơi trò 'giọng con kiến – con mèo – con hổ' cùng bé, chọn một cử chỉ nhắc nhỏ (hai tay làm tai mèo) thay vì nói to để bảo bé nói nhỏ."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+    },
+    {
+      "name": "Bà",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà nội hiền hậu, kể chuyện hay",
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+    },
+    {
+      "name": "Su",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Bo đang chơi rô bốt giữa phòng khách. Bo giơ rô bốt lên cao, hét thật to.[/narrator]\n[character:Bo]Xông lên! Rô bốt siêu nhân đến đây! Bùm! Bùm![/character]\n[character:Su]Anh Bo ơi, to quá, em đau tai![/character]\n[narrator]Nhưng Bo mải chơi quá, cứ hét to mãi, to mãi. Tiếng hét vang khắp cả nhà. Chú mèo Mướp đang nằm ngủ trên ghế cũng giật mình chạy biến.[/narrator]",
+      "sceneDescription": "Bo giơ rô bốt lên cao hét to giữa phòng khách, Su bịt tai",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Trong phòng bên, bà vừa ru em bé Tôm ngủ. Tiếng hét của Bo làm Tôm giật mình, oà khóc thật to.[/narrator]\n[narrator]Bà bế Tôm ra, vừa vỗ về em vừa nhìn Bo.[/narrator]\n[character:Bà]Bo ơi, em Tôm vừa mới ngủ đấy cháu ạ.[/character]\n[character:Bo]Cháu xin lỗi bà. Cháu chơi vui quá nên quên mất.[/character]\n[narrator]Bo cúi đầu, hai tay vân vê con rô bốt.[/narrator]",
+      "sceneDescription": "Bà bế em bé đang khóc đi ra, Bo cầm rô bốt đứng ngập ngừng",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ru Tôm ngủ lại xong, bà ngồi xuống cạnh hai anh em.[/narrator]\n[character:Bà]Bà dạy hai cháu một trò chơi nhé. Giọng nói của mình có ba cỡ. Cỡ nhỏ nhất là giọng con kiến, thì thầm thôi. Cỡ vừa là giọng con mèo, vừa đủ nghe trong nhà. Cỡ to nhất là giọng con hổ, chỉ dùng ngoài sân hoặc khi cần gọi giúp đỡ.[/character]",
+      "sceneDescription": "Bà ngồi giữa hai anh em, giơ ba ngón tay giới thiệu ba cỡ giọng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hai anh em chơi thử ngay.[/narrator]\n[character:Su]Chào bà ạ... Đây là giọng con kiến.[/character]\n[character:Bo]Bà ơi, cháu khát nước. Đây là giọng con mèo, meo meo.[/character]\n[character:Bà]Giỏi lắm! Thế còn giọng con hổ thì sao?[/character]\n[character:Bo]Giọng con hổ phải để dành ra sân mới dùng ạ![/character]\n[narrator]Cả ba bà cháu cùng cười khúc khích. Em Tôm trong nôi vẫn ngủ ngon lành.[/narrator]",
+      "sceneDescription": "Su thì thầm, Bo làm tai mèo bằng hai tay, bà cười",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo lại chơi rô bốt. Chơi một lúc, giọng Bo cứ to dần lên. Su liền giơ hai tay lên đầu, làm đôi tai mèo nhắc anh.[/narrator]\n[narrator]Bo nhìn thấy, bật cười, rồi hạ giọng xuống ngay.[/narrator]\n[character:Bo]À, giọng con mèo! Rô bốt bay lên nào... vù vù... nhẹ nhàng thôi kẻo em Tôm thức.[/character]\n[character:Su]Anh Bo giỏi quá![/character]",
+      "sceneDescription": "Su giơ hai tay làm tai mèo nhắc Bo, Bo chơi rô bốt nhẹ nhàng",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Buổi chiều, bà dẫn hai anh em ra sân chơi. Sân rộng, gió mát, các bạn nhỏ chạy nhảy khắp nơi.[/narrator]\n[character:Bà]Ở ngoài sân, các cháu dùng giọng con hổ thoải mái nhé![/character]\n[character:Bo]Hổ đây! Grừ! Su ơi, chuyền bóng cho anh đi![/character]\n[character:Su]Anh bắt lấy này! Grừ![/character]\n[narrator]Hai anh em chạy khắp sân như hai chú hổ con, chẳng ai phải bịt tai cả.[/narrator]",
+      "sceneDescription": "Bo và Su chạy chơi bóng ngoài sân rộng, giả làm hổ gầm",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Trên đường về, ba bà cháu ghé vào thư viện nhỏ đầu phố. Trong thư viện, mọi người đang lặng lẽ đọc sách.[/narrator]\n[character:Bo]Bà ơi, ở đây phải dùng giọng con kiến, đúng không ạ?[/character]\n[character:Bà]Đúng rồi. Cháu nhớ giỏi quá.[/character]\n[narrator]Hai anh em rón rén chọn sách, thì thầm với nhau thật khẽ. Bo tìm được một cuốn sách về những chú hổ.[/narrator]",
+      "sceneDescription": "Bo và Su rón rén chọn sách trong thư viện yên tĩnh, bà đứng cạnh",
+      "scene": "school",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, em Tôm ngủ một giấc thật ngon. Bà khen Bo đã nhớ dùng giọng con mèo suốt buổi tối.[/narrator]\n[character:Bo]Ở trong nhà, cháu dùng giọng con mèo. Ra ngoài sân, cháu mới dùng giọng con hổ.[/character]\n[character:Bà]Thế là cháu biết giữ yên tĩnh cho cả nhà rồi đấy.[/character]\n[narrator]Bé ơi, bé thử nói giọng con kiến, giọng con mèo, rồi giọng con hổ xem nào![/narrator]",
+      "sceneDescription": "Em bé ngủ say trong nôi, Bo thì thầm chúc bà ngủ ngon",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

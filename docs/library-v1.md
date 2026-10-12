@@ -46,11 +46,14 @@ cảnh cung vua dùng `village`/`home`. Âm nền/hiệu ứng chỉ lấy trong
 Người kể = giọng mặc định đầu bảng (Viên). Nhân vật được `castVoices` chọn từ giọng tiếng Việt đang bật (Yuna bé gái, Tâm cô, Quang chú, Thanh ông).
 PR này sửa một lỗi phân vai: trước đây vai *bà* có thể nhận giọng *bé gái*; nay tuổi giọng xét theo khoảng cách trẻ em → người lớn → cao tuổi.
 
-Giới hạn hiện tại (cần thêm giọng trong Admin → Giọng đọc, không cần sửa code):
-- **Chưa có giọng bé trai**: Tích Chu, Gióng, Em Bé do giọng chú (Quang) đọc.
-- **Chỉ một giọng nữ người lớn**: vai nữ thứ hai trong cùng truyện (Bà Tiên trong *Tích Chu*) nhận giọng bé gái Yuna.
-- **Chỉ hai giọng nam**: truyện có 3 vai nam dùng chung giọng Thanh cho hai vai (không cùng trang).
-Gợi ý bổ sung: 1 giọng bé trai, 1 giọng bà, 1 giọng nữ trẻ. Truyện đã nhập giữ giọng đã phân; đổi giọng nhân vật trong trang sửa truyện của admin.
+**Cập nhật đợt 2 (T18):** đã thêm 3 giọng trong `default_voices` (sort 6–8): **Bin — bé trai lém lỉnh**, **Hiền — bà hiền hậu**,
+**Kim — chị gái dịu dàng**. `castVoices` có thêm luật: vai `woman` có mô tả “công chúa / nàng / cô gái / tiên nữ…” ưu tiên giọng nữ trẻ
+(Kim), vai mẹ/bà tiên ưu tiên giọng ấm (Tâm); giọng trẻ em không bao giờ đọc vai người lớn. Kết quả trên 12 truyện v1:
+Tích Chu, Gióng, Em Bé → Bin; Bà → Hiền; Mị Nương, Chị Hai → Kim. Truyện đã nhập được gán lại bằng `--recast` (bên dưới).
+
+Giới hạn còn lại: chỉ **một** giọng bé trai và **một** giọng bé gái → mỗi truyện chỉ nên có tối đa một bé trai và một bé gái có lời
+(xem `docs/library-v2.md`); Thanh (ông) đôi khi đọc vai nam thứ hai trẻ hơn (Thủy Tinh, Lý Thông). Bin là giọng thư viện gốc tiếng Hindi
+(“heavy kid cartoon”), Hiền là giọng thiết kế bằng AI — đều đã thử tiếng Việt bằng STT nhưng **cần người nghe duyệt**.
 
 ## Nhập / gỡ
 
@@ -68,10 +71,23 @@ psql -U postgres -v ON_ERROR_STOP=1 < rollback.sql    # chuyển 12 truyện và
 - Truyện nhập với `source='manual'`, `status='published'`, `is_published`, `is_platform_content`, `locale='vi'`, `cast_voices`, `auto_ambience`.
 - Chạy bằng quyền chủ DB nên trigger nhật ký không tự ghi; SQL gọi `audit_write('story.create' | 'story.trash', …, 'system')` cho từng truyện.
 
+```bash
+# Sau khi thêm/đổi giọng mặc định: gán lại giọng nhân vật cho truyện đã nhập (chỉ đổi vai có giọng khác, audit 'story.update')
+node --import ./scripts/ts-paths.mjs scripts/library-import.ts --pack v1 --recast --voices voices.json > recast.sql
+
+# Dựng sẵn audio (nhân sự có stories.write + phiên MFA admin; TTS qua /api/voice/tts như trình phát; cần ffmpeg)
+KC_SITE_URL=… KC_SUPABASE_URL=… KC_SUPABASE_ANON_KEY=… KC_SESSION_FILE=staff-session.json \
+  node --import ./scripts/ts-paths.mjs scripts/library-prerender.ts --pack v1 [--slug tich-chu] [--dry-run] [--max-chars 30000]
+```
+
+- `src/lib/library-audio.ts` tính đúng các đoạn đọc và `audio_key` như `StoryPlayer` (người kể mặc định, giọng nhân vật, tốc độ, model),
+  nên trang đã có file khớp khoá sẽ được phát lại thay vì gọi TTS. Đổi giọng nhân vật → khoá đổi → trang được dựng lại ở lần chạy sau.
+- **Đã dựng trên staging:** 12 truyện / 96 trang, **27.393 ký tự TTS** (282 lượt gọi, ~37 phút audio). Kiểm tra trình duyệt: phát *Tích Chu*
+  không có POST TTS nào, chỉ tải file đã lưu.
+
 ## Chưa làm / bước tiếp theo
 
-1. **Duyệt bởi người**: bản kể do AI soạn và tự kiểm tra; cần biên tập viên + giáo viên mầm non/phụ huynh đọc duyệt trước khi lên production.
-2. **Âm thanh dựng sẵn**: hiện mỗi lần nghe gọi TTS (tốn hạn mức). Nên dựng sẵn audio cho 12 truyện (~96 trang, ~6.200 chữ) bằng tài khoản nhân sự.
+1. **Duyệt bởi người**: bản kể do AI soạn và tự kiểm tra; cần biên tập viên + giáo viên mầm non/phụ huynh đọc duyệt (cả nghe thử 3 giọng mới) trước khi lên production.
+2. ~~Âm thanh dựng sẵn~~ — đã làm (xem trên).
 3. **Tranh riêng**: đang dùng tranh cảnh có sẵn (không đặc thù từng truyện). Có thể thêm route admin vẽ tranh AI cho truyện nền tảng.
-4. **Đợt 2** (ứng viên): Con Rồng cháu Tiên, Tấm Cám (bản nhẹ nhàng), Thạch Sanh (bản nhẹ), Sọ Dừa (nâng cấp bản 5 trang), Cóc kiện trời,
-   Đeo nhạc cho mèo, Quạ và Công, Ếch ngồi đáy giếng, Sự tích cây vú sữa… — xem trang nghiên cứu trên Notion.
+4. ~~Đợt 2~~ — đã soạn 18 truyện (`docs/library-v2.md`) và bộ 10 truyện thói quen tốt (`docs/library-v3.md`).

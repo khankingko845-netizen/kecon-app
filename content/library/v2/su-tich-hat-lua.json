@@ -1,0 +1,118 @@
+{
+  "slug": "su-tich-hat-lua",
+  "title": "Sự tích hạt lúa",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Ngày xưa hạt lúa to như quả bí, chín thì tự lăn về nhà. Chị Mít lười biếng phẩy chổi làm hạt lúa vỡ thành hạt nhỏ, từ đó Bé Cốm và chị phải học trồng lúa.",
+  "moral": "Hạt gạo là công sức của người nông dân; hãy chăm chỉ và quý trọng từng hạt cơm.",
+  "tags": [
+    "co-tich-viet-nam",
+    "hoc-choi",
+    "cham-chi",
+    "lua-gao"
+  ],
+  "origin": "Truyện cổ tích dân gian người Việt giải thích vì sao hạt lúa nhỏ (Sự tích hạt lúa); nhiều dân tộc Đông Nam Á có truyện tương tự.",
+  "adaptation": [
+    "Thêm nhân vật Bé Cốm và phần học về các bước trồng lúa: cày, bừa, gieo mạ, cấy, gặt, phơi, xay giã.",
+    "Chị Mít chỉ phẩy chổi đuổi hạt lúa; chị biết lỗi và trở nên chăm chỉ, không có hình phạt."
+  ],
+  "characters": [
+    {
+      "name": "Bé Cốm",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Cô bé chăm chỉ, hay giúp đỡ",
+      "appearance": "cô bé tóc trái đào, áo cánh vàng, quần đen"
+    },
+    {
+      "name": "Chị Mít",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người chị lười biếng, sau biết lỗi và chăm chỉ",
+      "appearance": "cô gái tóc dài buộc khăn, áo tứ thân nâu, hay ngáp"
+    },
+    {
+      "name": "Hạt Lúa",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Hạt lúa thần biết nói",
+      "appearance": "hạt lúa vàng óng to như quả bí, có đôi mắt tròn và nụ cười"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xửa ngày xưa, hạt lúa to như quả bí ngô. Đến mùa chín, lúa tự lăn từ ngoài đồng về từng nhà. Mọi người chỉ cần quét sân thật sạch để đón lúa.[/narrator]\n[character:Bé Cốm]Chị Mít ơi, sắp đến ngày lúa về rồi. Mình quét sân đi chị![/character]\n[character:Chị Mít]Ôi dào, để mai chị quét. Bây giờ chị buồn ngủ lắm.[/character]\n[narrator]Nói rồi, chị Mít lại nằm khểnh trên võng.[/narrator]",
+      "sceneDescription": "Những hạt lúa to như quả bí lăn trên đường làng, Bé Cốm gọi chị Mít đang nằm võng",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, Bé Cốm dậy sớm. Bé quét được một góc sân thì chổi to quá, bé quét mãi không xong. Chị Mít vẫn ngủ say, sân còn đầy lá khô.[/narrator]\n[narrator]Bỗng có tiếng lộc cộc, lộc cộc ngoài ngõ. Một hạt lúa vàng óng, to tròn, đang lăn vào sân.[/narrator]\n[character:Hạt Lúa]Chào cả nhà! Lúa về đây![/character]\n[character:Bé Cốm]A, lúa về rồi! Chị Mít ơi, dậy đi chị![/character]",
+      "sceneDescription": "Hạt lúa vàng to tròn lăn vào sân đầy lá, Bé Cốm cầm chổi reo lên",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Chị Mít giật mình tỉnh giấc, bực bội vì bị đánh thức.[/narrator]\n[character:Chị Mít]Sao lúa về sớm thế! Sân chưa quét, người ta còn đang ngủ![/character]\n[narrator]Chị vớ lấy cái chổi, phẩy mạnh vào hạt lúa cho nó lăn ra chỗ khác.[/narrator]\n[character:Hạt Lúa]Ối! Nhẹ tay thôi chị ơi![/character]\n[narrator]Nhưng đã muộn rồi. Cốp một cái, hạt lúa to vỡ tan thành muôn nghìn hạt nhỏ li ti, văng khắp sân.[/narrator]",
+      "sceneDescription": "Chị Mít vung chổi, hạt lúa to vỡ thành muôn hạt nhỏ văng khắp sân",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "creak"
+      ]
+    },
+    {
+      "text": "[narrator]Từ những hạt nhỏ li ti, có tiếng nói khe khẽ cất lên.[/narrator]\n[character:Hạt Lúa]Chị Mít ơi, chị không quý lúa, nên lúa không tự lăn về nữa đâu. Từ nay, ai muốn có cơm ăn thì phải ra đồng trồng lúa, chăm lúa, gặt lúa.[/character]\n[narrator]Chị Mít ngồi thụp xuống, nhìn những hạt lúa bé xíu.[/narrator]\n[character:Chị Mít]Tại chị lười biếng quá. Chị biết lỗi rồi.[/character]",
+      "sceneDescription": "Chị Mít ngồi thụp xuống nhìn những hạt lúa nhỏ li ti trên sân",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cả làng biết chuyện, ai cũng lo lắng. Bé Cốm nắm tay chị, nói thật dịu dàng.[/narrator]\n[character:Bé Cốm]Chị đừng buồn nữa. Mình cùng học trồng lúa nhé. Em sẽ làm cùng chị![/character]\n[narrator]Hai chị em nhặt từng hạt lúa nhỏ cho vào thúng. Các bác nông dân dạy hai chị em cày đất, bừa cho đất tơi xốp, rồi gieo hạt thành những cây mạ non.[/narrator]\n[character:Chị Mít]Mạ xanh mướt, đẹp quá em ơi![/character]",
+      "sceneDescription": "Hai chị em gieo hạt trên thửa ruộng, những cây mạ non xanh mướt",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mạ lớn lên, hai chị em nhổ mạ, mang ra ruộng cấy thành từng hàng thẳng tắp. Trời nắng, chị em đội nón. Trời mưa, chị em khoác áo tơi. Ngày ngày, hai chị em ra thăm đồng, nhổ cỏ, tháo nước.[/narrator]\n[character:Bé Cốm]Lúa ơi, lớn nhanh lên nhé![/character]\n[character:Hạt Lúa]Cảm ơn hai chị em. Được chăm chỉ như thế, lúa sẽ trổ bông thật nhiều.[/character]",
+      "sceneDescription": "Hai chị em đội nón cấy lúa thành hàng thẳng tắp trên cánh đồng",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Rồi đồng lúa chín vàng như một tấm thảm lớn. Cả làng ra đồng gặt lúa, ôm từng bó lúa về sân. Hai chị em phơi thóc cho khô, rồi xay, rồi giã thành những hạt gạo trắng tinh.[/narrator]\n[character:Chị Mít]Trồng lúa vất vả thật, nhưng vui quá![/character]\n[character:Bé Cốm]Hạt gạo nhỏ thế này mà phải làm bao nhiêu việc mới có được![/character]",
+      "sceneDescription": "Cánh đồng lúa chín vàng, cả làng gặt lúa, hai chị em phơi thóc",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, nồi cơm mới thơm phức cả gian nhà. Hai chị em xới cơm ra bát, ăn thật ngon.[/narrator]\n[character:Chị Mít]Từ nay chị sẽ chăm chỉ, không lười biếng nữa.[/character]\n[character:Bé Cốm]Em sẽ ăn hết bát cơm, không để rơi hạt nào.[/character]\n[narrator]Người ta bảo, vì thế mà hạt lúa bây giờ bé xíu. Mỗi hạt cơm là công sức của người nông dân đấy.[/narrator]",
+      "sceneDescription": "Hai chị em ngồi bên mâm cơm trắng thơm trong gian nhà ấm",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

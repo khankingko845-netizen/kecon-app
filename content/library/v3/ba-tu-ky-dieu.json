@@ -1,0 +1,125 @@
+{
+  "slug": "ba-tu-ky-dieu",
+  "title": "Ba từ kỳ diệu",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bà dẫn Bo và Su đi chợ và bày cho hai anh em trò chơi ba từ kỳ diệu: chào, cảm ơn và xin lỗi. Mỗi lần nói ra, Bo thấy mọi người mỉm cười như có phép màu.",
+  "moral": "Lời chào, lời cảm ơn và lời xin lỗi là ba từ kỳ diệu làm ai cũng vui.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "le-phep",
+    "loi-noi-dep"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 54 (chào hỏi, cảm ơn, xin lỗi, lễ phép) và 77 (dùng từ lễ phép).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Dùng cách chào lễ phép quen thuộc ở Việt Nam ('Cháu chào bác ạ', 'Cháu cảm ơn bác ạ'); bà làm mẫu trước, khen ngay khi bé nói.",
+    "Gợi ý cho cha mẹ: làm mẫu bằng chính lời chào, cảm ơn, xin lỗi của cha mẹ hằng ngày; nhắc nhẹ trước khi gặp người lớn và khen cụ thể khi bé nói."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+    },
+    {
+      "name": "Bà",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà nội hiền hậu, kể chuyện hay",
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+    },
+    {
+      "name": "Su",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+    },
+    {
+      "name": "Bác Tư",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Bác bán hoa quả vui tính ở chợ",
+      "appearance": "người đàn ông trung niên đội nón lá, áo sơ mi nâu, đứng bên sạp hoa quả"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Sáng chủ nhật, bà dẫn Bo và Su đi chợ. Chợ đông vui lắm, có hàng rau xanh, hàng cá tươi, hàng hoa quả thơm phức.[/narrator]\n[character:Bà]Hôm nay bà bày cho hai cháu một trò chơi. Có ba từ kỳ diệu: chào, cảm ơn và xin lỗi. Mỗi lần nói ra, các cháu nhìn xem có phép màu gì xảy ra nhé.[/character]\n[character:Su]Phép màu ạ? Thích quá![/character]",
+      "sceneDescription": "Bà dắt Bo và Su đi vào khu chợ đông vui, sạp rau và hoa quả hai bên",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến sạp hoa quả, bác Tư đang xếp những quả cam vàng ruộm. Bà khẽ nhắc Bo.[/narrator]\n[character:Bà]Từ kỳ diệu thứ nhất là gì nào?[/character]\n[character:Bo]Cháu chào bác Tư ạ![/character]\n[character:Bác Tư]Ôi, chào cháu! Cháu ngoan quá! Hôm nay bác có xoài chín thơm lắm đấy.[/character]\n[narrator]Bác Tư cười tươi rói. Bo ngạc nhiên: phép màu thứ nhất là một nụ cười.[/narrator]",
+      "sceneDescription": "Bo khoanh tay chào bác Tư bên sạp cam vàng, bác Tư cười tươi",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà mua một túi xoài. Bác Tư còn tặng mỗi bạn nhỏ một quả quýt.[/narrator]\n[character:Bác Tư]Quýt ngọt lắm, bác cho hai cháu này.[/character]\n[character:Su]Cháu cảm ơn bác ạ![/character]\n[character:Bo]Cháu cảm ơn bác Tư ạ![/character]\n[character:Bác Tư]Ngoan quá! Lần sau lại đến chơi với bác nhé.[/character]\n[narrator]Su nháy mắt với anh. Từ kỳ diệu thứ hai làm bác Tư vui ơi là vui.[/narrator]",
+      "sceneDescription": "Bác Tư đưa quả quýt cho Bo và Su, hai anh em khoanh tay cảm ơn",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "coins"
+      ]
+    },
+    {
+      "text": "[narrator]Trên đường đi tiếp, Bo mải nhìn hàng cá, vô ý va vào một cô đang xách giỏ rau. Mấy bó rau rơi xuống đất.[/narrator]\n[narrator]Bo đứng sững lại. Bo nhớ đến từ kỳ diệu thứ ba.[/narrator]\n[character:Bo]Cháu xin lỗi cô ạ! Để cháu nhặt rau giúp cô.[/character]\n[narrator]Bo cúi xuống nhặt từng bó rau, bỏ lại vào giỏ.[/narrator]",
+      "sceneDescription": "Bo cúi nhặt mấy bó rau rơi trên lối đi trong chợ, bà và Su đứng phía sau",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cô xách giỏ rau mỉm cười, xoa đầu Bo rồi đi tiếp. Cô còn khen Bo là cậu bé lễ phép.[/narrator]\n[character:Bà]Cháu thấy không? Lỡ va vào người khác, mình nói xin lỗi và giúp người ta. Thế là ai cũng hết bực.[/character]\n[character:Bo]Từ kỳ diệu thứ ba làm cô ấy mỉm cười bà ạ![/character]\n[character:Su]Ba từ kỳ diệu có phép màu thật![/character]",
+      "sceneDescription": "Bà nắm tay Bo và Su đi giữa chợ, ba bà cháu cùng cười",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Về đến nhà, bố đang tưới cây ở hiên. Bo chạy tới khoanh tay.[/narrator]\n[character:Bo]Con chào bố ạ! Bố ơi, hôm nay con được bác Tư tặng quýt đấy.[/character]\n[narrator]Su bóc quả quýt, chia cho bà một nửa.[/narrator]\n[character:Su]Bà ơi, bà ăn quýt đi ạ. Cháu cảm ơn bà đã dẫn cháu đi chợ![/character]\n[character:Bà]Bà cảm ơn cháu. Cháu bà biết chia sẻ nữa cơ đấy![/character]",
+      "sceneDescription": "Bo khoanh tay chào bố ở hiên nhà, Su chia quả quýt cho bà",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Buổi trưa, Su lỡ tay làm rơi chiếc bút chì của Bo xuống gầm bàn.[/narrator]\n[character:Su]Anh Bo ơi, em xin lỗi. Em nhặt lên cho anh ngay đây.[/character]\n[character:Bo]Không sao đâu. Cảm ơn em đã nhặt giúp anh![/character]\n[narrator]Hai anh em nhìn nhau cười. Ở nhà, ba từ kỳ diệu cũng có phép màu. Bo lại tiếp tục vẽ bức tranh khu chợ.[/narrator]",
+      "sceneDescription": "Su cúi nhặt chiếc bút chì dưới gầm bàn đưa cho Bo, hai anh em cười",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, bà kể chuyện cho hai anh em trước khi ngủ.[/narrator]\n[character:Bo]Bà ơi, mai con sẽ chào cô Hoa thật to và cảm ơn các bạn ở lớp ạ.[/character]\n[character:Bà]Giỏi lắm. Ba từ kỳ diệu dùng mãi cũng không bao giờ hết đâu.[/character]\n[narrator]Bé ơi, ba từ kỳ diệu là những từ nào nhỉ? Hôm nay bé đã nói từ kỳ diệu nào rồi?[/narrator]",
+      "sceneDescription": "Bà ngồi bên giường kể chuyện, Bo và Su nằm đắp chăn",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "slug": "chiec-binh-hoa-cua-ba",
+  "title": "Chiếc bình hoa của bà",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bo đá bóng trong nhà làm vỡ chiếc bình hoa của bà rồi giấu các mảnh vỡ đi. Bụng Bo cứ thấy khó chịu, cho đến khi Bo dũng cảm nói thật và được bà cảm ơn.",
+  "moral": "Nói thật có khi làm mình hồi hộp, nhưng nói thật giúp lòng nhẹ nhõm và được mọi người tin.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "trung-thuc",
+    "nhan-loi"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 53 (nhận ra việc làm của mình ảnh hưởng đến người khác).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Theo nghiên cứu, truyện nhấn vào điều tốt khi nói thật hiệu quả hơn truyện đe doạ hậu quả xấu khi nói dối, nên bà khen và cảm ơn Bo vì đã nói thật.",
+    "Gợi ý cho cha mẹ: khi bé nhận lỗi, hãy cảm ơn bé đã nói thật trước rồi mới cùng bé sửa sai; tránh quát mắng để bé không học cách giấu."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+    },
+    {
+      "name": "Bà",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà nội hiền hậu, kể chuyện hay",
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão"
+    },
+    {
+      "name": "Su",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Chiều chủ nhật, trời mưa lâm thâm nên Bo không được ra sân. Bo ôm quả bóng, chạy quanh phòng khách. Quả bóng nảy tưng tưng trên sàn gạch.[/narrator]\n[character:Su]Anh Bo ơi, bà dặn không đá bóng trong nhà mà![/character]\n[character:Bo]Anh chỉ đá khẽ thôi. Một cái thôi mà![/character]\n[narrator]Nhưng Bo mải chơi quá, quên mất lời bà dặn. Bo lùi lại mấy bước, co chân, đá thật mạnh.[/narrator]",
+      "sceneDescription": "Bo cầm quả bóng trong phòng khách, Su đứng nhắc, ngoài cửa sổ mưa lâm thâm",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Quả bóng bay vèo, đập vào chiếc bình hoa trên bàn. Choang! Chiếc bình hoa men xanh của bà rơi xuống đất, vỡ thành mấy mảnh. Mấy bông hoa cúc nằm lăn lóc trên sàn.[/narrator]\n[character:Su]Ôi! Bình hoa của bà vỡ rồi! Bà quý chiếc bình ấy lắm đấy![/character]\n[character:Bo]Suỵt! Em đừng nói to. Để anh giấu đi.[/character]\n[narrator]Tim Bo đập thình thịch, tay chân run run.[/narrator]",
+      "sceneDescription": "Chiếc bình hoa men xanh vỡ trên sàn nhà, hoa cúc rơi lăn lóc, Bo hốt hoảng",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo vội vàng nhặt các mảnh vỡ, giấu vào trong một chiếc hộp giấy, rồi đẩy hộp vào gầm tủ. Bo nhặt hoa cúc, cắm tạm vào cái cốc. Nhưng bụng Bo cứ thấy nặng nặng, khó chịu lạ lùng.[/narrator]\n[character:Bo]Sao bụng mình cứ thấy khó chịu thế nhỉ?[/character]\n[character:Su]Anh ơi, hay là mình nói với bà đi.[/character]",
+      "sceneDescription": "Bo đẩy chiếc hộp giấy vào gầm tủ, Su đứng bên cạnh lo lắng",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà đi chợ về, nhìn quanh phòng khách.[/narrator]\n[character:Bà]Ơ, chiếc bình hoa của bà đâu rồi nhỉ? Sao hoa cúc lại nằm trong cái cốc thế này?[/character]\n[narrator]Bo nhìn bà, rồi nhìn xuống chân mình. Bo rất sợ bà buồn. Bo muốn nói là không biết. Nhưng Bo nhớ cảm giác nặng nặng trong bụng.[/narrator]",
+      "sceneDescription": "Bà xách giỏ đi chợ về đứng nhìn chiếc cốc cắm hoa cúc, Bo cúi đầu",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo hít một hơi thật sâu, rồi bước tới cạnh bà.[/narrator]\n[character:Bo]Bà ơi, con xin lỗi bà. Con đá bóng trong nhà, làm vỡ bình hoa của bà. Con còn giấu các mảnh vỡ vào gầm tủ nữa ạ.[/character]\n[narrator]Nói xong, Bo thấy bụng mình nhẹ hẳn đi, như vừa đặt xuống một hòn đá to.[/narrator]",
+      "sceneDescription": "Bo đứng trước mặt bà, hai tay nắm lại, dũng cảm nhận lỗi",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà ngồi xuống, ôm Bo vào lòng.[/narrator]\n[character:Bà]Bà cảm ơn con đã nói thật với bà. Nói thật cần rất nhiều dũng cảm đấy. Bình vỡ thì bà tiếc, nhưng bà vui vì cháu bà là người trung thực.[/character]\n[character:Bo]Con hứa từ giờ không đá bóng trong nhà nữa ạ.[/character]\n[character:Bà]Mảnh vỡ sắc lắm, để bà gói lại cẩn thận. Con đừng chạm vào nhé.[/character]",
+      "sceneDescription": "Bà ngồi xuống ôm Bo vào lòng, mỉm cười hiền hậu",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà tìm ra một chiếc lọ thủy tinh cũ. Bo và Su rửa lọ thật sạch, rồi dán quanh lọ những bông hoa giấy tự cắt. Bà cắm lại những bông cúc vào lọ mới.[/narrator]\n[character:Su]Lọ hoa mới đẹp quá bà ơi![/character]\n[character:Bà]Đẹp hơn cả bình cũ, vì có công của hai cháu bà đấy.[/character]\n[character:Bo]Mai trời tạnh, con ra vườn đá bóng ạ![/character]",
+      "sceneDescription": "Bo và Su dán hoa giấy quanh lọ thủy tinh, bà cắm hoa cúc vào lọ",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hôm sau trời nắng đẹp. Bo ra vườn đá bóng thỏa thích, còn chiếc lọ hoa mới nằm yên trên bàn trong nhà. Bà ngồi ở hiên, vỗ tay mỗi khi Bo sút trúng khung thành bằng hai chiếc dép.[/narrator]\n[character:Bo]Bà ơi, ngoài vườn đá bóng vui hơn nhiều![/character]\n[narrator]Bé ơi, nếu bé lỡ làm vỡ một món đồ, bé sẽ nói gì với người lớn nhỉ?[/narrator]",
+      "sceneDescription": "Bo đá bóng trong vườn đầy nắng, bà ngồi ở hiên vỗ tay",
+      "scene": "garden",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

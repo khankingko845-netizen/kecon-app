@@ -1,0 +1,135 @@
+{
+  "slug": "so-dua",
+  "title": "Sọ Dừa",
+  "category": "fairy_tale",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Bà mẹ nghèo sinh ra cậu bé tròn như quả dừa. Sọ Dừa chăn bò giỏi, cưới được cô Út hiền lành rồi hiện thành chàng trai khôi ngô, đỗ trạng nguyên và cứu vợ khỏi đảo hoang.",
+  "moral": "Đừng đánh giá người khác qua vẻ bề ngoài; hiền lành, tốt bụng sẽ gặp điều lành.",
+  "tags": [
+    "co-tich-viet-nam",
+    "hien-lanh",
+    "tha-thu"
+  ],
+  "origin": "Truyện cổ tích người Việt (kiểu truyện người mang lốt vật), có trong Kho tàng truyện cổ tích Việt Nam và sách giáo khoa Ngữ văn 6.",
+  "adaptation": [
+    "Thay bản 'Sọ Dừa' 5 trang cũ trong thư viện bằng bản biên tập mới, đủ lời thoại cho từng nhân vật.",
+    "Hai cô chị bỏ em trên chiếc thuyền trôi dạt thay vì đẩy em xuống biển; không có cảnh cá kình nuốt người.",
+    "Kết thúc bằng sự tha thứ (bản gốc: hai cô chị xấu hổ bỏ đi biệt xứ)."
+  ],
+  "characters": [
+    {
+      "name": "Sọ Dừa",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Chàng trai mang lốt sọ dừa, tài giỏi, tốt bụng",
+      "appearance": "lúc đầu tròn như quả dừa có đôi mắt sáng; sau là chàng trai khôi ngô, áo dài xanh, khăn xếp"
+    },
+    {
+      "name": "Bà Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người mẹ nghèo hiền hậu, thương con",
+      "appearance": "bà mẹ áo nâu sờn, khăn mỏ quạ, lưng hơi còng"
+    },
+    {
+      "name": "Phú Ông",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Phú ông giàu có, ham của",
+      "appearance": "ông phú hộ béo tròn, râu dê, áo gấm, tay cầm quạt"
+    },
+    {
+      "name": "Cô Út",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô con gái út hiền lành, tốt bụng",
+      "appearance": "cô gái xinh xắn, áo tứ thân hồng, tóc vấn khăn nhung"
+    },
+    {
+      "name": "Cô Cả",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô chị cả kiêu kỳ, ghen tị, cuối truyện biết lỗi",
+      "appearance": "người phụ nữ áo gấm đỏ, đeo nhiều vòng vàng, mặt kiêu kỳ"
+    }
+  ],
+  "replaces": {
+    "title": "Sọ Dừa",
+    "reason": "Bản 5 trang cũ (truyện mẫu) được thay bằng bản thư viện 8 trang đã biên tập."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một bà mẹ nghèo đi ở cho nhà phú ông. Một hôm vào rừng hái củi, khát quá, bà uống nước đọng trong một cái sọ dừa. Rồi bà sinh ra một đứa bé tròn lông lốc như quả dừa, không có chân tay.[/narrator]\n[character:Bà Mẹ]Con ơi, con thế này thì mẹ biết nuôi con ra sao?[/character]\n[character:Sọ Dừa]Mẹ ơi, con cũng là người đấy. Mẹ cứ nuôi con, lớn lên con sẽ đỡ đần mẹ![/character]\n[narrator]Bà thương con, đặt tên là Sọ Dừa.[/narrator]",
+      "sceneDescription": "Bà mẹ nghèo ôm cậu bé tròn như quả dừa có đôi mắt sáng trong túp lều",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Lớn lên, Sọ Dừa vẫn lăn lông lốc khắp nhà. Một hôm, cậu xin mẹ cho đi chăn bò thuê cho phú ông.[/narrator]\n[character:Phú Ông]Mày không chân không tay, lăn lóc thế kia thì chăn bò làm sao?[/character]\n[character:Sọ Dừa]Ông cứ cho con chăn thử. Con sẽ chăn bò thật giỏi.[/character]\n[narrator]Phú ông đành nhận. Lạ thay, ngày nào Sọ Dừa cũng lùa bò ra đồng, tối lại lùa về chuồng. Đàn bò con nào con nấy no căng bụng, béo tròn.[/narrator]",
+      "sceneDescription": "Sọ Dừa lăn trên đồng cỏ giữa đàn bò béo tròn, phú ông đứng nhìn ngạc nhiên",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ngày mùa, phú ông sai ba cô con gái thay nhau mang cơm cho Sọ Dừa. Hai cô chị kiêu kỳ, hắt hủi Sọ Dừa. Chỉ có cô Út hiền lành, đối đãi tử tế.[/narrator]\n[character:Cô Cả]Ai lại đi mang cơm cho cái sọ dừa lăn lóc chứ![/character]\n[narrator]Một trưa, cô Út mang cơm ra sớm, thấy một chàng trai khôi ngô ngồi thổi sáo trên võng. Nghe tiếng động, chàng biến mất, chỉ còn Sọ Dừa nằm lăn lóc.[/narrator]\n[character:Cô Út]Sọ Dừa không phải người thường đâu![/character]",
+      "sceneDescription": "Cô Út mang giỏ cơm, nấp sau gốc cây nhìn chàng trai thổi sáo trên võng",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cuối mùa, Sọ Dừa về nhà, giục mẹ đến hỏi con gái phú ông làm vợ.[/narrator]\n[character:Bà Mẹ]Nhà mình nghèo thế này, phú ông nào chịu gả con cho con?[/character]\n[narrator]Bà đành đến hỏi. Phú ông cười, bèn thách cưới thật nặng.[/narrator]\n[character:Phú Ông]Muốn cưới thì mang đủ một chĩnh vàng cốm, mười tấm lụa đào, mười con lợn béo đến đây![/character]\n[narrator]Đúng ngày hẹn, nhà Sọ Dừa mang đến đủ sính lễ. Phú ông hỏi ba cô con gái, chỉ cô Út cúi đầu e thẹn nhận lời.[/narrator]",
+      "sceneDescription": "Sính lễ vàng cốm, lụa đào bày trước sân nhà phú ông, cô Út e thẹn cúi đầu",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "coins"
+      ]
+    },
+    {
+      "text": "[narrator]Ngày cưới, cỗ bàn linh đình. Đến giờ rước dâu, chẳng ai thấy Sọ Dừa đâu. Bỗng một chàng trai khôi ngô tuấn tú bước ra, cưỡi ngựa đến đón cô Út. Hoá ra Sọ Dừa đã cởi bỏ lốt dừa.[/narrator]\n[character:Sọ Dừa]Nàng đã thương ta từ khi ta còn là Sọ Dừa. Ta sẽ thương nàng suốt đời.[/character]\n[character:Cô Út]Thiếp cũng nguyện cùng chàng sống hiền lành, chăm chỉ.[/character]\n[narrator]Hai cô chị đứng nhìn, vừa tiếc vừa ghen tị.[/narrator]\n[character:Cô Cả]Biết thế này, ta đã nhận lời rồi![/character]",
+      "sceneDescription": "Chàng trai khôi ngô áo xanh đón cô Út, hai cô chị đứng nhìn ghen tị",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle",
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Sọ Dừa chăm học, đỗ trạng nguyên, rồi được vua cử đi sứ. Trước khi đi, chàng đưa vợ một con dao, hòn đá lửa và hai quả trứng gà.[/narrator]\n[character:Sọ Dừa]Nàng nhớ luôn giữ những thứ này bên mình, có ngày sẽ cần đến.[/character]\n[narrator]Ở nhà, hai cô chị ghen tị, rủ em đi chơi thuyền. Hai chị lên bờ trước rồi đẩy chiếc thuyền nhỏ ra xa, bỏ cô Út một mình. Thuyền trôi mãi, trôi ra biển lớn.[/narrator]\n[character:Cô Út]Chị ơi! Chị ơi! Đợi em với![/character]",
+      "sceneDescription": "Chiếc thuyền nhỏ chở cô Út trôi ra xa, hai cô chị đứng trên bờ",
+      "scene": "stream",
+      "mood": "tense",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thuyền dạt vào một hòn đảo hoang. Cô Út nhớ lời chồng dặn: cô dùng dao hái quả rừng, lấy đá lửa nhóm bếp sưởi ấm, ấp hai quả trứng nở thành một đôi gà con.[/narrator]\n[character:Cô Út]Gà ơi, lớn nhanh lên làm bạn với chị nhé.[/character]\n[narrator]Một hôm, có chiếc thuyền lớn đi ngang qua. Chú gà trống vỗ cánh gáy vang: Ò ó o, phải thuyền quan trạng rước cô tôi về![/narrator]\n[character:Sọ Dừa]Gà nhà ai mà gáy lạ thế? Mau ghé thuyền vào xem![/character]",
+      "sceneDescription": "Cô Út bên đống lửa trên đảo hoang, chú gà trống gáy về phía chiếc thuyền lớn",
+      "scene": "beach",
+      "mood": "curious",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Quan trạng nhận ra vợ, mừng rỡ đón nàng về. Chàng mở tiệc mừng, nhưng giấu vợ trong buồng. Hai cô chị đến, tranh nhau kể chuyện.[/narrator]\n[character:Cô Cả]Em Út chẳng may lạc mất rồi, thương em quá![/character]\n[narrator]Cô Út bước ra. Hai chị đỏ mặt, cúi đầu xấu hổ.[/narrator]\n[character:Cô Cả]Chị em ta sai rồi. Em tha lỗi cho các chị nhé.[/character]\n[character:Cô Út]Các chị biết lỗi là em vui rồi. Chị em mình thương nhau như xưa nhé.[/character]",
+      "sceneDescription": "Cô Út nắm tay hai cô chị đang cúi đầu xấu hổ, Sọ Dừa đứng bên mỉm cười",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

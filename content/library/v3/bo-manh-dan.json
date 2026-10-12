@@ -1,0 +1,126 @@
+{
+  "slug": "bo-manh-dan",
+  "title": "Bo mạnh dạn từng bước nhỏ",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Ngày đầu đến lớp mới, Bo sợ hãi nấp sau lưng mẹ. Mẹ dạy Bo hít thở và thử từng bước nhỏ: vẫy tay chào cô, rủ bạn chơi, rồi giơ tay kể chuyện trước cả lớp.",
+  "moral": "Dũng cảm là vẫn thấy sợ nhưng vẫn thử, từng bước nhỏ một.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "nhat-gan",
+    "dung-cam",
+    "ban-be"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 34 (mạnh dạn nói ý kiến) và 43 (chủ động giao tiếp).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Mẹ công nhận nỗi sợ ('sợ cũng không sao') thay vì chê bé nhát; chia việc khó thành ba bước nhỏ.",
+    "Gợi ý cho cha mẹ: đừng gọi bé là 'nhát gan'; gọi tên cảm xúc, tập trước ở nhà một câu chào ngắn và khen từng bước nhỏ bé làm được."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem"
+    },
+    {
+      "name": "Cô Hoa",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô giáo mầm non dịu dàng",
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa"
+    },
+    {
+      "name": "Mai",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Bạn cùng lớp của Bo, nhanh nhẹn",
+      "appearance": "cô bé tóc tết hai bím, áo vàng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Hôm nay là ngày đầu tiên Bo đến lớp mới. Lớp học rộng, đồ chơi nhiều, các bạn cười nói rộn ràng. Nhưng Bo chẳng quen ai cả. Bo nấp sau lưng mẹ, tay nắm chặt vạt áo mẹ.[/narrator]\n[character:Bo]Mẹ ơi, con sợ lắm. Con muốn về nhà.[/character]\n[narrator]Tim Bo đập thình thịch, thình thịch.[/narrator]",
+      "sceneDescription": "Bo nấp sau lưng mẹ ở cửa lớp học, nắm chặt vạt áo mẹ",
+      "scene": "school",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ ngồi xuống, ôm Bo vào lòng.[/narrator]\n[character:Mẹ]Sợ cũng không sao đâu con. Ai đến chỗ mới cũng thấy hồi hộp. Mình thử từng bước nhỏ nhé. Trước tiên, con hít vào như ngửi hoa, thở ra như thổi nến.[/character]\n[narrator]Bo hít vào thật sâu, thở ra thật chậm. Một lần, hai lần, ba lần.[/narrator]\n[character:Bo]Con thấy đỡ run hơn rồi ạ.[/character]",
+      "sceneDescription": "Mẹ ngồi xuống ôm Bo, hai mẹ con cùng hít thở",
+      "scene": "school",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[character:Mẹ]Bước nhỏ thứ nhất: con vẫy tay chào cô giáo nhé.[/character]\n[narrator]Bo ngập ngừng một chút, rồi giơ bàn tay nhỏ lên vẫy vẫy.[/narrator]\n[character:Cô Hoa]Chào Bo! Cô rất vui được gặp con. Lớp mình có góc xếp hình đấy, con có thích xếp hình không?[/character]\n[narrator]Bo gật đầu thật khẽ. Mẹ hôn lên má Bo, hẹn chiều sẽ đến đón.[/narrator]",
+      "sceneDescription": "Bo vẫy tay chào cô Hoa, cô giáo cúi xuống mỉm cười dịu dàng",
+      "scene": "school",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ở góc xếp hình, một bạn gái tết tóc hai bím đang xây tháp. Bo muốn chơi cùng lắm, nhưng lại ngại. Bo nhớ lời mẹ dặn: bước nhỏ thứ hai, nói một câu với bạn.[/narrator]\n[narrator]Bo hít vào, thở ra, rồi bước tới.[/narrator]\n[character:Bo]Chào bạn, tớ là Bo. Tớ chơi cùng được không?[/character]\n[character:Mai]Được chứ! Tớ là Mai. Cậu đưa tớ khối màu đỏ nhé![/character]",
+      "sceneDescription": "Bo rụt rè bước tới góc xếp hình, Mai đang xây tháp quay lại cười",
+      "scene": "school",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hai bạn cùng xây một toà tháp thật cao, có cửa sổ, có cả cột cờ. Tháp cao đến ngang vai Bo.[/narrator]\n[character:Mai]Tháp của chúng mình cao nhất lớp luôn! Cậu xếp khéo tay thật đấy![/character]\n[character:Bo]Mình xây thêm một cây cầu nữa đi![/character]\n[narrator]Bo cười tươi, vỗ tay reo lên. Bo quên mất là lúc sáng mình còn sợ đến run cả tay.[/narrator]",
+      "sceneDescription": "Bo và Mai xây toà tháp khối gỗ cao ngang vai, cười vui",
+      "scene": "school",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến giờ trò chuyện, cô Hoa hỏi cả lớp.[/narrator]\n[character:Cô Hoa]Bạn nào kể cho cả lớp nghe về con vật mình thích nào?[/character]\n[narrator]Tim Bo lại đập thình thịch. Bước nhỏ thứ ba đây rồi. Bo hít thật sâu, rồi giơ tay lên.[/narrator]\n[character:Bo]Con thích con rùa, vì rùa đi chậm mà chắc ạ![/character]\n[narrator]Cả lớp vỗ tay rào rào.[/narrator]",
+      "sceneDescription": "Bo giơ tay phát biểu trong vòng tròn trò chuyện, các bạn vỗ tay",
+      "scene": "school",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Chiều, mẹ đến đón. Vừa thấy mẹ ở cổng, Bo chạy ùa ra, ôm chầm lấy mẹ.[/narrator]\n[character:Bo]Mẹ ơi, con có bạn mới tên là Mai! Con còn giơ tay kể chuyện con rùa nữa! Cả lớp vỗ tay cho con đấy![/character]\n[character:Mẹ]Con dũng cảm lắm. Dũng cảm là vẫn thấy sợ, nhưng con vẫn thử.[/character]\n[character:Mai]Ngày mai cậu lại chơi xếp hình với tớ nhé, Bo![/character]",
+      "sceneDescription": "Bo chạy ùa vào lòng mẹ ở cổng trường, Mai vẫy tay chào",
+      "scene": "school",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối đi ngủ, Bo ôm gối, nghĩ về một ngày thật vui.[/narrator]\n[character:Bo]Mẹ ơi, mai con sẽ thử chơi cầu trượt cao nữa. Từng bước nhỏ một thôi ạ.[/character]\n[character:Mẹ]Ừ, từng bước nhỏ một. Mẹ luôn ở bên con.[/character]\n[narrator]Bé ơi, khi thấy sợ, bé sẽ thử bước nhỏ nào trước nhỉ? Mình cùng hít vào như ngửi hoa, thở ra như thổi nến nhé.[/narrator]",
+      "sceneDescription": "Bo ôm gối nằm trên giường, mẹ ngồi bên cạnh dưới ánh đèn ngủ",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

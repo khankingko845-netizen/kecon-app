@@ -1,0 +1,114 @@
+{
+  "slug": "nang-tien-oc",
+  "title": "Nàng tiên Ốc",
+  "category": "fairy_tale",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bà lão nghèo nhặt được con ốc xinh nhưng không nỡ bán. Từ vỏ ốc, một nàng tiên bước ra giúp bà việc nhà, rồi ở lại làm con gái của bà.",
+  "moral": "Sống hiền lành, thương yêu muôn loài thì sẽ gặp điều tốt đẹp.",
+  "tags": [
+    "co-tich-viet-nam",
+    "nhan-hau",
+    "gia-dinh"
+  ],
+  "origin": "Truyện cổ tích người Việt (dân tộc Kinh), lưu truyền dân gian; nhiều vùng có dị bản.",
+  "adaptation": [
+    "Bà lão cất vỏ ốc vào hộp làm kỷ niệm thay vì đập vỡ vỏ ốc.",
+    "Viết lại bằng lời kể mới, không dùng bài thơ Nàng tiên Ốc có tác giả."
+  ],
+  "characters": [
+    {
+      "name": "Bà Lão",
+      "role": "hero",
+      "voiceType": "grandma",
+      "description": "Bà lão nghèo, hiền lành, sống một mình",
+      "appearance": "bà cụ tóc bạc, áo nâu, đội nón lá, tay cầm giỏ"
+    },
+    {
+      "name": "Nàng Tiên",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Nàng tiên hiền dịu sống trong vỏ ốc",
+      "appearance": "thiếu nữ tóc dài, áo yếm xanh ngọc, váy lụa trắng"
+    }
+  ],
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một bà lão nghèo sống một mình trong túp lều nhỏ. Hằng ngày, bà lội ruộng mò cua, bắt ốc để đổi lấy gạo.[/narrator]\n[narrator]Một hôm, bà bắt được một con ốc rất lạ. Vỏ ốc xanh biêng biếc, lấp lánh như ngọc.[/narrator]\n[character:Bà Lão]Ốc xinh quá! Bà không nỡ bán đâu. Bà mang về nuôi làm bạn nhé.[/character]\n[narrator]Về nhà, bà thả ốc vào chiếc chum nước đầy.[/narrator]",
+      "sceneDescription": "Bà lão nghèo mò ốc dưới ruộng, nâng con ốc xanh lấp lánh",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, bà ra đồng làm việc như mọi ngày. Đến trưa trở về, bà sững sờ đứng ở cửa.[/narrator]\n[narrator]Nhà cửa sạch sẽ gọn gàng. Đàn gà đã được cho ăn. Vườn rau tươi tốt vừa được tưới. Trên bàn còn có mâm cơm nóng hổi, thơm phức.[/narrator]\n[character:Bà Lão]Ơ kìa, ai đã giúp bà thế này nhỉ? Người tốt bụng ở đâu ra vậy?[/character]",
+      "sceneDescription": "Bà lão ngạc nhiên trước mâm cơm nóng và căn nhà gọn gàng",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "door-open"
+      ]
+    },
+    {
+      "text": "[narrator]Mấy ngày liền, chuyện lạ cứ xảy ra như thế. Bà hỏi hàng xóm, nhưng chẳng ai biết gì cả.[/narrator]\n[narrator]Bà bèn nghĩ ra một cách. Sáng sớm, bà vác cuốc đi như thường lệ, đi được một đoạn thì lặng lẽ quay về. Bà nấp sau cánh cửa, nhìn qua khe nhỏ.[/narrator]\n[character:Bà Lão]Hôm nay bà phải xem cho rõ, ai là người đã giúp bà.[/character]",
+      "sceneDescription": "Bà lão nấp sau cánh cửa, lén nhìn vào trong nhà",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Một lúc sau, nắp chum khẽ động. Từ trong vỏ ốc, một nàng tiên xinh đẹp bước ra. Nàng quét nhà, cho gà ăn, rồi nhóm bếp nấu cơm. Vừa làm, nàng vừa hát khe khẽ.[/narrator]\n[character:Nàng Tiên]Bà hiền lành, lại chăm chỉ quá. Mình giúp bà một tay cho bà đỡ vất vả.[/character]\n[narrator]Bà lão đứng sau cửa, thương nàng tiên vô cùng.[/narrator]",
+      "sceneDescription": "Nàng tiên bước ra từ vỏ ốc, quét nhà và nấu cơm",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Bà rón rén đi tới bên chum, nhẹ nhàng nhặt chiếc vỏ ốc lên và giấu đi. Nàng tiên quay lại, không thấy vỏ ốc đâu, bối rối nhìn quanh.[/narrator]\n[character:Nàng Tiên]Vỏ ốc của con đâu rồi? Không có vỏ, con biết ở đâu bây giờ?[/character]\n[character:Bà Lão]Con ơi, đừng sợ. Bà cất vỏ ốc đi rồi. Con ở lại đây với bà nhé, bà thương con lắm.[/character]",
+      "sceneDescription": "Bà lão cầm chiếc vỏ ốc, nàng tiên bối rối bên chum nước",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "creak"
+      ]
+    },
+    {
+      "text": "[narrator]Nàng tiên nhìn bà lão thật lâu. Đôi mắt bà hiền từ, giọng bà ấm áp như giọng mẹ.[/narrator]\n[character:Nàng Tiên]Bà thương con thật lòng. Con xin ở lại làm con gái của bà.[/character]\n[narrator]Bà lão mừng quá, ôm nàng vào lòng. Từ hôm ấy, túp lều nhỏ lúc nào cũng rộn tiếng cười. Bà không còn phải sống một mình nữa.[/narrator]",
+      "sceneDescription": "Bà lão ôm nàng tiên vào lòng trong căn nhà nhỏ",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hai mẹ con cùng nhau trồng rau, nuôi gà, tưới cây. Có miếng ngon, hai mẹ con chia nhau. Tối đến, cả hai ngồi ngoài hiên ngắm trăng, kể chuyện.[/narrator]\n[character:Bà Lão]Có con, bà thấy mình như trẻ lại.[/character]\n[character:Nàng Tiên]Có bà, con có một mái nhà và một người mẹ.[/character]\n[narrator]Hàng xóm ai cũng quý hai mẹ con.[/narrator]",
+      "sceneDescription": "Bà lão và nàng tiên cùng tưới rau trong vườn",
+      "scene": "garden",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà lão cất chiếc vỏ ốc xanh vào một chiếc hộp gỗ nhỏ, đặt trên đầu giường. Đó là món quà kỷ niệm ngày hai mẹ con gặp nhau.[/narrator]\n[character:Nàng Tiên]Mẹ ngủ ngon nhé. Sáng mai con dậy sớm nấu cơm cho mẹ.[/character]\n[character:Bà Lão]Ngủ ngon con nhé. Người hiền lành thì luôn có người thương.[/character]\n[narrator]Ngoài kia, ánh trăng dịu dàng chiếu vào túp lều nhỏ.[/narrator]",
+      "sceneDescription": "Chiếc hộp gỗ đựng vỏ ốc bên giường, hai mẹ con đi ngủ dưới ánh trăng",
+      "scene": "home",
+      "mood": "sleepy",
+      "ambient": "night",
+      "sfx": []
+    }
+  ]
+}

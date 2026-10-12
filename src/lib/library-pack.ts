@@ -64,6 +64,17 @@ export const LibraryStorySchema = z.object({
   adaptation: z.array(z.string().min(5).max(300)).min(1),
   characters: z.array(Character).min(1).max(6),
   pages: z.array(Page).min(4).max(14),
+  /**
+   * An older platform story (exact title, without a `kc-lib:` tag — e.g. a
+   * seeded template) that this edited library version supersedes. The import
+   * moves it to the trash once the new story exists; rollback restores it.
+   */
+  replaces: z
+    .object({
+      title: z.string().min(2).max(80),
+      reason: z.string().min(5).max(300),
+    })
+    .optional(),
 });
 export type LibraryStory = z.infer<typeof LibraryStorySchema>;
 
@@ -209,12 +220,35 @@ WITH s AS (
   RETURNING story_id
 )
 SELECT ${lit(s.slug)} AS slug, public.audit_write('story.create', 'story', s.id::text, NULL, ${after}, ${lit(opts.reason)}, NULL, NULL, 'system') AS audit_id FROM s;`);
+    if (s.replaces) parts.push(replaceSql(s.slug, s.replaces));
   }
   parts.push("COMMIT;");
   return parts.join("\n\n") + "\n";
 }
 
-/** Rollback for a pack: soft-deletes (trash) the imported rows; audited like the import. */
+/**
+ * Trash the older, untagged platform story with the exact `replaces.title`,
+ * only once the tagged library version is live. Idempotent (already-trashed
+ * rows are skipped); the audit row records `replaced_by` so rollback can
+ * restore exactly that row.
+ */
+function replaceSql(slug: string, replaces: { title: string; reason: string }): string {
+  const tag = `${LIBRARY_TAG_PREFIX}${slug}`;
+  return `-- ${slug} replaces ${replaces.title.replace(/\s+/g, " ")}
+WITH t AS (
+  UPDATE public.stories o SET deleted_at = now(), is_published = false
+  WHERE o.title = ${lit(replaces.title)} AND o.is_platform_content AND o.deleted_at IS NULL
+    AND NOT EXISTS (SELECT 1 FROM unnest(o.tags) x WHERE x LIKE '${LIBRARY_TAG_PREFIX}%')
+    AND EXISTS (SELECT 1 FROM public.stories n WHERE ${lit(tag)} = ANY (n.tags) AND n.is_platform_content AND n.deleted_at IS NULL)
+  RETURNING o.id, o.title, o.status
+)
+SELECT ${lit(slug)} AS replaced_by, public.audit_write('story.trash', 'story', t.id::text, jsonb_build_object('title', t.title, 'status', t.status, 'is_published', true), jsonb_build_object('title', t.title, 'replaced_by', ${lit(slug)}), ${lit(replaces.reason)}, NULL, NULL, 'system') AS audit_id FROM t;`;
+}
+
+/**
+ * Rollback for a pack: soft-deletes (trash) the imported rows and restores any
+ * older story an imported one replaced; audited like the import.
+ */
 export function buildLibraryRollbackSql(slugs: string[], reason: string): string {
   const tags = slugs.map((s) => `${LIBRARY_TAG_PREFIX}${s}`);
   return `BEGIN;
@@ -224,6 +258,55 @@ WITH t AS (
   RETURNING id, title
 )
 SELECT public.audit_write('story.trash', 'story', t.id::text, NULL, jsonb_build_object('title', t.title), ${lit(reason)}, NULL, NULL, 'system') FROM t;
+WITH r AS (
+  UPDATE public.stories o SET deleted_at = NULL, is_published = true
+  WHERE o.deleted_at IS NOT NULL AND o.is_platform_content AND o.id::text IN (
+    SELECT a.target_id FROM public.admin_audit_log a
+    WHERE a.action = 'story.trash' AND a.target_type = 'story' AND a.after ->> 'replaced_by' = ANY (${arr(slugs)})
+  )
+  RETURNING o.id, o.title
+)
+SELECT public.audit_write('story.restore', 'story', r.id::text, NULL, jsonb_build_object('title', r.title), ${lit(reason)}, NULL, NULL, 'system') FROM r;
 COMMIT;
 `;
+}
+
+/**
+ * Re-cast an imported pack after the default voices change (e.g. a boy or a
+ * grandma voice is added). Only characters whose voice differs are updated;
+ * each touched story gets one `story.update` audit row with before/after voices.
+ * Saved page audio keyed on the old voices simply stops matching (audio_key).
+ */
+export function buildLibraryRecastSql(stories: LibraryStory[], voices: CastableVoice[], reason: string): string {
+  const parts: string[] = ["BEGIN;"];
+  for (const s of stories) {
+    const tag = `${LIBRARY_TAG_PREFIX}${s.slug}`;
+    const { cast } = libraryCasting(s, voices);
+    const rows = s.characters
+      .map((c) => {
+        const v = cast.get(c.name);
+        return `(${lit(c.name)}, ${lit(v?.voice_id ?? null)}::text, ${lit(v?.voice_name ?? null)}::text)`;
+      })
+      .join(", ");
+    parts.push(`-- ${s.slug}
+WITH s AS (
+  SELECT id FROM public.stories WHERE ${lit(tag)} = ANY (tags) AND is_platform_content AND deleted_at IS NULL
+), v(name, voice_id, voice_name) AS (VALUES ${rows}
+), old AS (
+  SELECT c.id, c.story_id, c.name, c.voice_name FROM public.story_characters c JOIN s ON s.id = c.story_id JOIN v ON v.name = c.name
+  WHERE c.voice_id IS DISTINCT FROM v.voice_id OR c.voice_name IS DISTINCT FROM v.voice_name
+), u AS (
+  UPDATE public.story_characters c SET voice_id = v.voice_id, voice_name = v.voice_name
+  FROM old JOIN v ON v.name = old.name WHERE c.id = old.id
+  RETURNING c.story_id, c.name, c.voice_name
+)
+SELECT ${lit(s.slug)} AS slug, (SELECT count(*) FROM u) AS changed,
+  public.audit_write('story.update', 'story', s.id::text,
+    jsonb_build_object('voices', (SELECT jsonb_object_agg(name, voice_name) FROM old)),
+    jsonb_build_object('voices', (SELECT jsonb_object_agg(name, voice_name) FROM u)),
+    ${lit(reason)}, NULL, NULL, 'system') AS audit_id
+FROM s WHERE EXISTS (SELECT 1 FROM old);`);
+  }
+  parts.push("COMMIT;");
+  return parts.join("\n\n") + "\n";
 }
