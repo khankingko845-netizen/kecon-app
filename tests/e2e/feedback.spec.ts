@@ -77,7 +77,7 @@ test.describe("UI-11 · âm thanh, rung, Đóm nói", () => {
     const bubble = page.getByTestId("dom-speech");
     // Lời chào một lần mỗi phiên (sáng, hoặc khen chuỗi ≥ 3 đêm)
     await expect(bubble).toBeVisible();
-    await expect(bubble).toContainText(/Chào buổi sáng|đêm liền/);
+    await expect(bubble).toContainText(/Chào buổi sáng|nhiều tối/);
     await expect.poll(async () => (await probe(page)).spoken.length).toBe(1);
 
     await resetProbe(page);

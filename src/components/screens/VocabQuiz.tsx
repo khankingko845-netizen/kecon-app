@@ -96,7 +96,7 @@ export default function VocabQuiz({ storyId, storyTitle, onBack }: VocabQuizProp
 
  const getMessage = () => {
  const stars = getStars();
- if (stars === 3) return "🎉 Xuất sắc! Bé giỏi lắm!";
+ if (stars === 3) return "🎉 Bé đã đọc kỹ và nhớ truyện rất rõ!";
  if (stars === 2) return "👏 Tốt lắm! Bé rất chăm chỉ!";
  if (stars === 1) return "💪 Cố gắng thêm nhé!";
  return "📚 Đọc lại truyện và thử lại nhé!";

@@ -54,6 +54,7 @@ const Collections = dynamic(() => import("@/components/screens/Collections"), { 
 const ScanBook = dynamic(() => import("@/components/screens/ScanBook"), { loading: ScreenFallback });
 const DrawStory = dynamic(() => import("@/components/screens/DrawStory"), { loading: ScreenFallback });
 const VocabQuiz = dynamic(() => import("@/components/screens/VocabQuiz"), { loading: ScreenFallback });
+const Sky = dynamic(() => import("@/components/screens/Sky"), { loading: ScreenFallback });
 
 /** Kid tabs + the player first — warms the chunk cache while the browser is idle. */
 function prefetchScreens() {
@@ -309,6 +310,7 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  onNavigate={navigate}
  />
  )}
+ {current.screen === "sky" && <Sky onBack={goBack} onNavigate={navigate} />}
  </>
  )}
  </main>

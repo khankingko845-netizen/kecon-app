@@ -7,7 +7,7 @@ import {
   canOpenFeatureScreen,
 } from "@/lib/feature-flags";
 it("defaults keep optional features off, authoring on only for authorized staff", () => {
-  expect(FEATURES).toHaveLength(11);
+  expect(FEATURES).toHaveLength(12);
   expect(Object.values(DEFAULT_FEATURE_FLAGS).filter(Boolean)).toHaveLength(1);
   expect(canOpenFeatureScreen("editor", DEFAULT_FEATURE_FLAGS, false)).toBe(
     false,
@@ -36,6 +36,7 @@ it("optional screens are closed without flags; core flows remain available", () 
     "vocab-quiz",
     "upload",
     "editor",
+    "sky",
   ] as const)
     expect(canOpenFeatureScreen(s, CLOSED_FEATURE_FLAGS, true)).toBe(false);
   for (const s of [

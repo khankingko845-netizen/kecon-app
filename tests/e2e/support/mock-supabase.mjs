@@ -419,7 +419,20 @@ function permissionsOf(sub) {
 }
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
-const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience'].map(k=>[k,true]));
+const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience', 'missions'].map(k=>[k,true]));
+// G-03 missions (migration 034) — the real timing/eligibility rules are covered by tests/db/missions.test.ts;
+// this stand-in records every completed session so UI flows can be exercised quickly.
+const missionState=new Map();
+const MISSIONS_ASSIGNED=["nghe-het-truyen","co-tich"];
+const vnDate=(t=Date.now())=>new Date(t+7*3600e3).toISOString().slice(0,10);
+function missionsOf(sub){if(!missionState.has(sub))missionState.set(sub,{sessions:new Map(),done:new Map(),stars:new Map(),nights:new Set(),stickers:[],milestones:[],counted:0});return missionState.get(sub);}
+function missionsSummary(sub){
+  const m=missionsOf(sub),day=vnDate(),d=new Date(day+"T00:00:00Z"),start=new Date(d.getTime()-((d.getUTCDay()+6)%7)*864e5);
+  const days=[...Array(7)].map((_,i)=>new Date(start.getTime()+i*864e5).toISOString().slice(0,10));
+  return {date:day,missions:MISSIONS_ASSIGNED.map(id=>({id,done:!!m.done.get(day)?.has(id)})),
+    week:{start:days[0],goal:4,nights:days.filter(x=>m.nights.has(x)).length,days:days.map(x=>({date:x,stars:m.stars.get(x)??0,listened:m.nights.has(x)}))},
+    totals:{stories:m.counted,stars:[...m.stars.values()].reduce((a,b)=>a+b,0),stickers:m.stickers.length}};
+}
 const platformLinks=new Map();
 const publicLinkStory="00000000-0000-4000-8000-000000009a01";
 function rpc(name, sub, body, claims={}) {
@@ -435,6 +448,21 @@ function rpc(name, sub, body, claims={}) {
     case "list_platform_story_links":return [...platformLinks.values()].filter(l=>l.owner===sub&&l.story_id===body.p_story).map(l=>({id:l.id,expires_at:l.expires_at,is_active:l.is_active,view_count:l.view_count}));
     case "revoke_platform_story_link": {const l=[...platformLinks.values()].find(l=>l.id===body.p_id&&l.owner===sub);if(!l)return false;l.is_active=false;return true;}
     case "resolve_platform_story_link": {const l=platformLinks.get(body.p_token);if(!l||!l.is_active||Date.parse(l.expires_at)<=Date.now())return null;l.view_count++;return {story:{id:l.story_id,title:"Truyện công khai QA",description:null},pages:[{page_number:1,content:"Chú sóc cùng thỏ đọc truyện."}]};}
+    case "missions_today": case "missions_album": case "missions_start_listen": case "missions_complete_listen": {
+      if(!FEATURE_FLAGS.missions)return rpcError(400,"42501","Action unavailable");
+      const m=missionsOf(sub);
+      if(name==="missions_today")return missionsSummary(sub);
+      if(name==="missions_album")return {stickers:[...m.stickers].reverse(),milestones:[...m.milestones]};
+      if(name==="missions_start_listen"){const st=(TABLES.stories??[]).find(x=>x.id===body.p_story);if(!st)return rpcError(400,"22023","Story unavailable");const id=randomUUID();m.sessions.set(id,{story:st,completed:false});return {session_id:id,min_seconds:15};}
+      const ses=m.sessions.get(body.p_session);if(!ses)return rpcError(400,"22023","Session unavailable");
+      if(ses.completed)return {counted:false,reason:"already_completed"};
+      ses.completed=true;m.counted++;const day=vnDate();m.nights.add(day);
+      const done=m.done.get(day)??new Set();m.done.set(day,done);const completed=MISSIONS_ASSIGNED.filter(id=>!done.has(id));completed.forEach(id=>done.add(id));
+      m.stars.set(day,(m.stars.get(day)??0)+completed.length);
+      let sticker=null;if(ses.story.is_platform_content&&!m.stickers.some(x=>x.story_id===ses.story.id)){sticker={story_id:ses.story.id,title:ses.story.title,cover_image_url:ses.story.cover_image_url??null};m.stickers.push({...sticker,earned_on:day});}
+      let milestone=null;for(const n of [1,5,10,25,50,100])if(m.counted>=n&&!m.milestones.includes(n)){m.milestones.push(n);milestone=n;}
+      return {counted:true,completed,sticker,milestone,today:missionsSummary(sub)};
+    }
     case "unsubscribe_push": return null;
     case "public_feature_flags": return {...FEATURE_FLAGS};
     case "set_feature_flag": {

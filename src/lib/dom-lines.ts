@@ -3,7 +3,9 @@
  *
  * One short line per moment in the child's flow. Personality rules from
  * docs/design/ui-v2/README.md §3: curious, warm, praises specifically, a bit
- * clumsy; speaks as "tớ" to "bé"; ≤ 12 words. Đóm never scares the child,
+ * clumsy; speaks as "tớ" to "bé"; ≤ 12 words. Praise names what the child
+ * did (listened to the end), never "giỏi/thông minh" or a consecutive-day
+ * count (G-01, docs/missions-mvp.md). Đóm never scares the child,
  * makes them feel at fault, uses sadness to keep them in the app, or pushes
  * purchases (enforced by tests/unit/feedback.test.ts).
  *
@@ -47,8 +49,8 @@ export const DOM_LINES: Record<DomMoment, DomLine> = {
   "hello-afternoon": line("hello-afternoon", "happy", "Chào bé! Chiều nay mình cùng phiêu lưu nhé?"),
   "hello-evening": line("hello-evening", "story", "Tối rồi! Bé chọn truyện, tớ thắp đèn kể nhé."),
   poke: line("poke", "happy", "Hi hi, nhột quá! Tớ là Đóm, bạn của bé đây."),
-  streak: line("streak", "celebrate", "Bé nghe truyện mấy đêm liền rồi, tuyệt vời quá!"),
-  "story-end": line("story-end", "celebrate", "Bé nghe hết cả truyện rồi, giỏi ghê!"),
+  streak: line("streak", "celebrate", "Mình đã cùng nghe truyện nhiều tối rồi đó!"),
+  "story-end": line("story-end", "celebrate", "Bé đã chăm chú nghe đến tận trang cuối!"),
   favorite: line("favorite", "happy", "Tớ cũng thích truyện này! Đã cất vào Yêu thích."),
   thinking: line("thinking", "thinking", "Tớ đang nghĩ truyện cho bé, chờ tớ chút nhé!"),
   created: line("created", "celebrate", "Xong rồi! Truyện của bé đã sẵn sàng."),

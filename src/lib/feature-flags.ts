@@ -63,6 +63,13 @@ export const FEATURES = [
     description: "Push ngoài phạm vi v1; không ảnh hưởng thông báo trong app",
     enabled: false,
   },
+  {
+    key: "missions",
+    label: "Nhiệm vụ & Bầu trời của Đóm",
+    description:
+      "Nhiệm vụ nghe truyện, sao trong tuần và album nhân vật; máy chủ ghi nhận phần thưởng, không mua/không mất",
+    enabled: false,
+  },
 ] as const;
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export type FeatureFlags = Record<FeatureKey, boolean>;
@@ -82,6 +89,7 @@ export const SCREEN_FEATURE: Partial<Record<Screen, FeatureKey>> = {
   "vocab-quiz": "vocabulary_quiz",
   upload: "advanced_authoring",
   editor: "advanced_authoring",
+  sky: "missions",
 };
 export const API_FEATURE: Record<string, FeatureKey> = {
   "voice.ambient": "ai_ambience",

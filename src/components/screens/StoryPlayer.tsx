@@ -21,6 +21,9 @@ import Mascot from "@/components/ui/Mascot";
 import { saveLastPlayed } from "@/lib/last-played";
 import { useTheme } from "@/lib/theme-context";
 import { useFeedback } from "@/lib/feedback-context";
+import { useMissionSession } from "@/lib/use-mission-session";
+import type { Celebration } from "@/lib/missions";
+import MissionCelebration from "@/components/ui/MissionCelebration";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
@@ -141,6 +144,22 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const { voiceProfiles } = useData();
  const globalPlayer = useAudioPlayer();
  const isGenerated = storyId === "__generated__";
+ // G-03: server-timed listening session → missions/stars/sticker (flag `missions`).
+ const { finish: finishMission } = useMissionSession(storyId, features.enabled("missions") && !!storyId && !isGenerated);
+ const [celebration, setCelebration] = useState<Celebration | null>(null);
+ const closeCelebration = useCallback(() => setCelebration(null), []);
+ // UI-11 + G-01: Đóm names what the child did after the last page — silent in Chế độ ngủ.
+ const finishStory = useCallback(() => {
+ if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
+ const night = isNightRef.current;
+ if (!night) cue("celebrate");
+ void finishMission().then((c) => {
+ if (c) {
+ setCelebration(c);
+ if (!isNightRef.current) say(c.line);
+ } else if (!night) say("story-end");
+ });
+ }, [storyId, isGenerated, cue, say, finishMission]);
 
  const [generatedStory] = useState<GeneratedStory | null>(() => {
  if (storyId === "__generated__" && typeof window !== "undefined") {
@@ -714,18 +733,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  setIsPlaying(false);
  setProgress(100);
  setMergeStatus("ready");
- if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
- if (!isNightRef.current) {
- cue("celebrate");
- say("story-end");
- }
+ finishStory();
  };
 
  audio.onerror=()=>{setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");};
  audio.play().catch(e=>{setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Không phát được audio.");});
  setIsPlaying(true);
  setMergeStatus("playing");
- }, [currentPage, storyId, isGenerated, cue, say]);
+ }, [currentPage, finishStory]);
 
  const playWithTTS = useCallback(async () => {
  if(!narrationEnabledRef.current)return;
@@ -778,12 +793,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  } else {
  setIsPlaying(false);
  setProgress(100);
- if (storyId && !isGenerated) logBehavior("complete", storyId).catch(() => {});
- // UI-11: Đóm khen khi nghe hết truyện — im lặng khi đang ở Chế độ ngủ.
- if (!isNightRef.current) {
- cue("celebrate");
- say("story-end");
- }
+ finishStory();
  }
  };
 
@@ -812,7 +822,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  } finally {
  if(epoch===narrationEpochRef.current)setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, storyId, isGenerated, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, cue, say,elevenVoiceId,preview.stop]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, finishStory, elevenVoiceId, preview.stop]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
@@ -1537,6 +1547,17 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Night mode: screen off, audio keeps playing */}
  {screenOff && <ScreenOff onWake={() => setScreenOff(false)} remaining={sleep.remaining} />}
+ {celebration && !screenOff && (
+ <MissionCelebration
+ celebration={celebration}
+ night={isNight}
+ onClose={closeCelebration}
+ onOpenSky={() => {
+ setCelebration(null);
+ onNavigate("sky");
+ }}
+ />
+ )}
 
  {/* Share Modal */}
  {showShare && storyId && !isGenerated && (

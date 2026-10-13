@@ -34,7 +34,8 @@ export type Screen =
   | "collections"
   | "scan-book"
   | "draw-story"
-  | "vocab-quiz";
+  | "vocab-quiz"
+  | "sky";
 
 export type TabId = "home" | "library" | "create" | "voice" | "settings";
 
