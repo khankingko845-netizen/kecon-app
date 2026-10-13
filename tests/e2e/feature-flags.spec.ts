@@ -15,10 +15,12 @@ test.afterAll(async()=>{if(admin){for(const key of FEATURE_KEYS)await set(key,tr
 test("v1 core stays available; optional links, direct URL/query and paid API are closed",async({page,context,baseURL})=>{
  await signInAsMockFamily(context,baseURL!);await page.goto("/");await expect(page.getByTestId("home-explore")).toBeVisible();
  await expect(page.getByRole("button",{name:"Vẽ truyện",exact:true})).toHaveCount(0);
- for(const url of ["/draw-story","/scan-book","/achievements","/editor","/upload","/?screen=vocab-quiz","/unknown-feature"]){expect((await page.goto(url))?.status(),url).toBe(404);}
+ for(const url of ["/draw-story","/scan-book","/achievements","/sky","/editor","/upload","/?screen=vocab-quiz","/unknown-feature"]){expect((await page.goto(url))?.status(),url).toBe(404);}
  for(const path of ["story/from-drawing","story/scan","story/expert-review","story/vocabulary","story/translate","story/illustrate","story/illustrate-batch","voice/ambient"]){expect((await context.request.post("/api/"+path,{data:{apiKey:"test-byo-never-provider"}})).status(),path).toBe(404);}
  expect((await context.request.post("/api/voice/tts",{data:{language:"en"}})).status()).toBe(404);
  expect((await context.request.post("/api/push/subscribe",{data:{}})).status()).toBe(404);
+ expect((await context.request.get("/api/missions")).status()).toBe(404);
+ expect((await context.request.post("/api/missions/listen",{data:{action:"start",storyId:"00000000-0000-4000-8000-0000000051a2"}})).status()).toBe(404);
  // No quota/provider despite malformed core request; validation remains active.
  expect((await context.request.post("/api/story/generate",{data:{}})).status()).toBe(400);
 });

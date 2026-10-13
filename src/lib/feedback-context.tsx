@@ -64,7 +64,8 @@ interface FeedbackContextValue {
   /** Device has a Vietnamese text-to-speech voice. */
   hasVoice: boolean;
   cue: (cue: FeedbackCue) => void;
-  say: (moment: DomMoment, opts?: SayOptions) => DomLine;
+  /** A moment from DOM_LINES, or a ready line (mission praise, docs/missions-mvp.md). */
+  say: (moment: DomMoment | DomLine, opts?: SayOptions) => DomLine;
 }
 
 const noop = () => {};
@@ -76,7 +77,7 @@ const FeedbackContext = createContext<FeedbackContextValue>({
   supportsHaptics: false,
   hasVoice: false,
   cue: noop,
-  say: (moment) => DOM_LINES[moment],
+  say: (moment) => (typeof moment === "string" ? DOM_LINES[moment] : moment),
 });
 
 export function useFeedback() {
@@ -237,8 +238,8 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const say = useCallback(
-    (moment: DomMoment, opts: SayOptions = {}) => {
-      const line = DOM_LINES[moment];
+    (moment: DomMoment | DomLine, opts: SayOptions = {}) => {
+      const line = typeof moment === "string" ? DOM_LINES[moment] : moment;
       if (opts.bubble !== false) setSpeech({ line, id: Date.now() });
       if (line.speak && !opts.quiet && channelsRef.current.voice && !hidden()) speak(line.text);
       return line;

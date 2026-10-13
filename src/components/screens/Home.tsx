@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 import { heroFor } from "@/lib/home-hero";
 import { greetingMoment } from "@/lib/dom-lines";
+import { weekChipAria, weekChipParts } from "@/lib/missions";
 import { useFeedback } from "@/lib/feedback-context";
 import { useAgeUi } from "@/lib/age-ui-context";
 import { exploreFor } from "@/lib/age-ui";
@@ -50,7 +51,9 @@ export default function Home({ onNavigate }: HomeProps) {
  const { stories, loading, contentRules } = useKidStories();
   const { settings } = useSettings();
   const [forYou, setForYou] = useState<ScoredStory[]>([]);
-  const [streak, setStreak] = useState(0);
+  // G-02: "Tuần này N tối" (nights this week, resets quietly each Monday) — never "đêm liền".
+  const [nights, setNights] = useState(0);
+  const missionsOn = features.enabled("missions");
   const [last, setLast] = useState<LastPlayed | null>(null);
   const { say } = useFeedback();
   const ageUi = useAgeUi();
@@ -77,13 +80,25 @@ export default function Home({ onNavigate }: HomeProps) {
       say(greetingMoment(new Date().getHours(), nights));
     };
     getReadingStreak()
-      .then((s) => {
-        setStreak(s?.current_streak ?? 0);
-        greet(s?.current_streak ?? 0);
-      })
+      .then((s) => greet(s?.current_streak ?? 0))
       .catch(() => greet(0));
     setLast(getLastPlayed());
   }, [say]);
+
+  useEffect(() => {
+    if (!missionsOn || !user) return;
+    let alive = true;
+    fetch("/api/missions", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { week?: { nights?: unknown } } | null) => {
+        const n = d?.week?.nights;
+        if (alive && typeof n === "number") setNights(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [missionsOn, user]);
 
   // "Nghe tiếp": last story on this device, else the newest story in the library.
   const resume = useMemo(() => {
@@ -126,7 +141,7 @@ export default function Home({ onNavigate }: HomeProps) {
 
   return (
     <div className="min-h-screen bg-cream px-5 pb-32 pt-12">
-      {/* Header: avatar · greeting · streak (board `.hrow`) */}
+      {/* Header: avatar · greeting · week sky chip (board `.hrow`, G-02) */}
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -144,12 +159,17 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
         <button
           type="button"
-          hidden={!features.enabled("gamification")}
-          onClick={() => onNavigate("achievements")}
-          aria-label={`${streak} đêm liền nghe truyện`}
-          className="ml-auto flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-2xl bg-glow-soft px-3 text-[15px] font-black text-[#7A4A00]"
+          hidden={!missionsOn}
+          onClick={() => onNavigate("sky")}
+          aria-label={weekChipAria(nights)}
+          data-testid="week-sky-chip"
+          className="ml-auto flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-2xl bg-glow-soft px-2.5 text-[#7A4A00] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          <Star size={20} weight="fill" className="text-[#F2A900]" /> {streak} đêm
+          <Star size={20} weight="fill" className="text-[#F2A900]" aria-hidden />
+          <span className="flex flex-col items-start leading-none" aria-hidden>
+            <span className="text-[12px] font-extrabold">{weekChipParts(nights)[0]}</span>
+            <span className="mt-0.5 text-[15px] font-black">{weekChipParts(nights)[1]}</span>
+          </span>
         </button>
       </div>
 

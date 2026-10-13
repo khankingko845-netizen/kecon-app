@@ -44,6 +44,11 @@ describe("câu thoại của Đóm", () => {
     for (const l of lines) expect(l.text).not.toMatch(banned);
   });
 
+  it("G-01: khen quá trình, không khen \"giỏi/thông minh\", không đếm chuỗi \"liền/liên tục\"", () => {
+    const personPraise = /(giỏi|thông minh|xuất sắc|thiên tài|liền|liên tục|liên tiếp)/iu;
+    for (const l of lines) expect(l.text).not.toMatch(personPraise);
+  });
+
   it("mỗi câu dùng một tư thế Đóm có thật; câu lúc mở mic không đọc to", () => {
     for (const l of lines) expect(MASCOT_STATES).toContain(l.mascot);
     expect(DOM_LINES.listen.speak).toBe(false);
