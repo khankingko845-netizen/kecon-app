@@ -80,7 +80,7 @@ describe("resolveChildBand / ageUiFor", () => {
 
 describe("exploreFor", () => {
   const items: { screen: Screen }[] = (
-    ["favorites", "daily-challenges", "scan-book", "draw-story", "collections", "upload"] as Screen[]
+    ["favorites", "scan-book", "draw-story", "collections", "upload", "sky"] as Screen[]
   ).map((screen) => ({ screen }));
 
   it("3–5: a few big shortcuts, order kept", () => {

@@ -3,7 +3,7 @@ import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState } from "react";
 import {
- ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, Trophy, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer, Mail, Star,
+ ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer, Mail, Star,
 } from "@/components/ui/icons";
 import { CARD_SHADOW } from "@/components/ui/kit";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
@@ -564,7 +564,6 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SectionHeader title="Gia đình & bé" />
  <SettingsCard>
  <SettingsRow icon={Mail} label="Thông báo" onClick={() => onNavigate("notifications")} />
- {features.enabled("gamification") && <SettingsRow icon={Trophy} label="Thành tích & huy hiệu" tone="glow" onClick={() => onNavigate("achievements")} />}
  <SettingsRow icon={Shield} label="Kiểm soát phụ huynh" tone="success" onClick={() => onNavigate("parental-controls")} />
  <SettingsRow icon={User} avatar={<FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={40} label={null} />} label="Hồ sơ gia đình" value={`${ageUi.short} · ${ageUi.label}`} onClick={() => onNavigate("profile-edit")} />
  {features.enabled("missions") && <SettingsRow icon={Star} label="Tuần của bé" tone="glow" onClick={() => onNavigate("parent-week")} />}

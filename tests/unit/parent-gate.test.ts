@@ -41,7 +41,7 @@ describe("parent-gate · vùng phụ huynh", () => {
   });
 
   it("màn của bé không bị chặn", () => {
-    for (const s of ["home", "library", "create", "profiles", "player", "lullaby", "achievements", "favorites"] as Screen[]) {
+    for (const s of ["home", "library", "create", "profiles", "player", "lullaby", "sky", "favorites"] as Screen[]) {
       expect(isParentArea(s)).toBe(false);
     }
     expect(new Set(PARENT_SCREENS).size).toBe(PARENT_SCREENS.length);

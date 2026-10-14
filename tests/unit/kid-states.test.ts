@@ -8,7 +8,7 @@ import { GlowDots, KidError, KidLoading, KidSuccess } from "@/components/ui/stat
 /** Screens a child uses — UI-06 acceptance: no bare spinner left in them. */
 const KID_SCREENS = [
   "Home", "Library", "StoryPlayer", "CreateStory", "Lullaby", "Adventure", "Favorites",
-  "Collections", "DrawStory", "VocabQuiz", "DailyChallenges", "Achievements", "Downloads", "ScanBook",
+  "Collections", "DrawStory", "VocabQuiz", "Downloads", "ScanBook",
 ];
 
 describe("kid states (UI-06)", () => {

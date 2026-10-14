@@ -126,7 +126,8 @@ test.describe("UI-13 · Lớn cùng bé", () => {
 
     await tabBar(page).getByRole("button", { name: "Trang chủ" }).click();
     await expect(topics).toHaveAttribute("data-cols", "3");
-    await expect(page.getByTestId("home-explore").getByRole("button")).toHaveCount(5); // Upload is staff-only even when its flag is enabled.
+    // Upload is staff-only even when its flag is enabled; "Thử thách" left with the old gamification (G-09).
+    await expect(page.getByTestId("home-explore").getByRole("button")).toHaveText(["Yêu thích", "Chụp sách", "Vẽ truyện", "Bộ sưu tập"]);
     await expect(page.locator("[data-kid-detail]").first()).toBeVisible();
     await expect.poll(() => domWidth(page)).toBeLessThan(bigDom * 0.85);
 
