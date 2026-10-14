@@ -599,8 +599,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  {c.voiceType && <span>{VOICE_TYPE_LABEL[c.voiceType]}</span>}
  </span>
  </span>
- <button type="button" onClick={() => setCast((prev) => prev.filter((x) => x.key !== c.key))} aria-label={`Bỏ nhân vật ${i + 1}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-2">
- <X size={16} />
+ <button type="button" onClick={() => setCast((prev) => prev.filter((x) => x.key !== c.key))} aria-label={`Bỏ nhân vật ${i + 1}`} className="-my-1 -mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
+ <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink-2"><X size={16} /></span>
  </button>
  </li>
  ))}

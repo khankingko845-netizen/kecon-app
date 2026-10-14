@@ -167,10 +167,10 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  <div className="px-5 pt-14">
  {/* Header */}
  <div className="flex items-center gap-3 mb-6">
- <button onClick={onBack} className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
+ <button onClick={onBack} type="button" aria-label="Quay lại" className="w-11 h-11 shrink-0 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm">
  <ChevronLeft size={18} />
  </button>
- <h2 className="text-[24px] font-black tracking-tight">Tải Về</h2>
+ <h1 className="min-w-0 truncate text-[24px] font-black tracking-tight">Tải về</h1>
  <Download size={22} className="text-accent ml-1" />
  </div>
 
@@ -182,13 +182,13 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  </div>
  <div>
  <p className="text-[13px] font-bold">{isOnline ? "Đang kết nối" : "Ngoại tuyến"}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50">
+ <p className="text-[12px] text-txt-secondary dark:text-white/50">
  {downloadedStories.length} truyện đã tải
  </p>
  </div>
  </div>
  <div className="text-right">
- <div className="flex items-center gap-1 text-[11px] text-txt-secondary dark:text-white/50">
+ <div className="flex items-center gap-1 text-[12px] text-txt-secondary dark:text-white/50">
  <HardDrive size={12} />
  {formatSize(totalSize)}
  </div>
@@ -217,15 +217,17 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  </button>
  <div className="flex-1 min-w-0">
  <p className="text-[13px] font-bold truncate">{story.title}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50">
+ <p className="text-[12px] text-txt-secondary dark:text-white/50">
  {formatSize(story.sizeBytes)} • {story.category}
  </p>
  </div>
  <button
+ type="button"
  onClick={() => handleRemove(story.id)}
- className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center"
+ aria-label={`Xoá bản tải về: ${story.title}`}
+ className="-my-1.5 -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
  >
- <Trash2 size={14} className="text-red-400" />
+ <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50"><Trash2 size={14} className="text-red-400" /></span>
  </button>
  </div>
  ))}
@@ -248,18 +250,22 @@ export default function Downloads({ onBack, onNavigate }: DownloadsProps) {
  </div>
  <div className="flex-1 min-w-0">
  <p className="text-[13px] font-bold truncate">{story.title}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50">{story.category}</p>
+ <p className="text-[12px] text-txt-secondary dark:text-white/50">{story.category}</p>
  </div>
  <button
+ type="button"
  onClick={() => handleDownload(story.id)}
  disabled={story.downloading || !isOnline}
- className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center disabled:opacity-40"
+ aria-label={story.downloading ? `Đang tải: ${story.title}` : `Tải về: ${story.title}`}
+ className="-my-1.5 -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl disabled:opacity-40"
  >
+ <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
  {story.downloading ? (
  <GlowDots size={4} className="text-accent" />
  ) : (
  <Download size={14} className="text-accent" />
  )}
+ </span>
  </button>
  </div>
  ))}

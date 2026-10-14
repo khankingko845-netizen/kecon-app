@@ -69,7 +69,7 @@ export function SectionHeader({ title, action, onAction, className }: { title: R
     <div className={cx("mx-0.5 mb-2 mt-4 flex items-baseline justify-between", className)}>
       <h2 className="font-display text-[21px] font-bold leading-tight text-ink">{title}</h2>
       {action && (
-        <button type="button" onClick={onAction} className="min-h-[36px] px-1 text-[15px] font-extrabold text-brand-ink">
+        <button type="button" onClick={onAction} className="-my-1 min-h-11 px-1.5 text-[15px] font-extrabold text-brand-ink">
           {action}
         </button>
       )}

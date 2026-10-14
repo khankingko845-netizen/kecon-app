@@ -174,13 +174,14 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
  <Baby size={14} /> Tuổi của bé
  </label>
- <div className="flex gap-2 flex-wrap">
+ <div className="grid grid-cols-4 gap-2">
  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map((age) => (
  <button
  key={age}
+ type="button"
  onClick={() => setChildAge(age)}
  aria-pressed={childAge === age}
- className={`w-10 h-10 rounded-xl text-[13px] font-bold flex items-center justify-center transition-all ${
+ className={`h-11 w-full rounded-xl text-[15px] font-bold flex items-center justify-center transition-all ${
  childAge === age
  ? "bg-brand text-white"
  : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"

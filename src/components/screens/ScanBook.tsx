@@ -234,19 +234,19 @@ export default function ScanBook({ onBack, onNavigate }: ScanBookProps) {
  <div className="flex items-center gap-3 mb-5">
  <button
  onClick={step === "review" ? () => setStep("capture") : onBack}
- className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
+ type="button" aria-label="Quay lại" className="w-11 h-11 shrink-0 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
  >
  <ChevronLeft size={18} />
  </button>
- <h2 className="text-[22px] font-black tracking-tight">
+ <h1 className="min-w-0 text-[22px] font-black leading-tight tracking-tight">
  {step === "capture"
- ? "Chụp Truyện Từ Sách"
+ ? "Chụp truyện từ sách"
  : step === "processing"
- ? "Đang Nhận Dạng..."
+ ? "Đang nhận dạng…"
  : step === "saving"
- ? "Đang Lưu..."
- : "Xem Lại Nội Dung"}
- </h2>
+ ? "Đang lưu…"
+ : "Xem lại nội dung"}
+ </h1>
  </div>
 
  {/* Error */}

@@ -1207,7 +1207,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onClick={() => setSleepOverride(!isNight)}
  aria-pressed={isNight}
  data-testid="sleep-mode-pill"
- className={`flex h-10 items-center gap-1.5 rounded-[14px] border px-3 text-[14px] font-extrabold transition-colors ${
+ className={`flex h-11 items-center gap-1.5 rounded-[14px] border px-3 text-[14px] font-extrabold transition-colors ${
  isNight ? "border-amber/35 bg-amber/[0.16] text-amber" : "border-moon/15 bg-night/30 text-moon-2"
  }`}
  >
@@ -1220,27 +1220,29 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  <div className="relative z-10 flex min-h-0 flex-1 flex-col px-[22px] pb-[max(env(safe-area-inset-bottom),14px)]">
  {/* Title + meta (board `.ptitle`) */}
- <h2 className="line-clamp-2 shrink-0 font-display text-[22px] font-bold leading-[1.15] text-moon">{title}</h2>
- <div className="relative mt-0.5 flex shrink-0 flex-wrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
- <button type="button" onClick={handleLike} aria-pressed={liked} aria-label={liked ? "Bỏ thích" : "Thích truyện"} className="-ml-1 flex h-9 w-8 items-center justify-center">
- <Heart size={16} weight="fill" className={liked ? "text-[#FF8FA3]" : "text-moon-2"} />
+ <h1 className="line-clamp-2 shrink-0 font-display text-[22px] font-bold leading-[1.15] text-moon">{title}</h1>
+ {/* One line at 360px: the voice name truncates instead of pushing the category onto a second row.
+ Tap targets are 44px tall; negative margins keep the row at its original 36px height. */}
+ <div data-testid="player-meta" className="relative mt-0.5 flex h-9 shrink-0 flex-nowrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
+ <button type="button" onClick={handleLike} aria-pressed={liked} aria-label={liked ? "Bỏ thích" : "Thích truyện"} className="-my-1 -ml-2.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl active:bg-moon/10">
+ <Heart size={18} weight="fill" className={liked ? "text-[#FF8FA3]" : "text-moon-2"} />
  </button>
  {isGenerated ? (
- <span>Đóm sáng tác</span>
+ <span className="min-w-0 truncate">Đóm sáng tác</span>
  ) : (
  <button
  type="button"
  onClick={() => setShowVoicePicker(!showVoicePicker)}
  aria-expanded={showVoicePicker}
- className="flex min-h-[36px] items-center gap-1"
+ className="-my-1 flex min-h-11 min-w-0 items-center gap-1 rounded-xl"
  >
- Giọng: {voiceLabel}
+ <span className="truncate">Giọng: {voiceLabel}</span>
  {(defaultVoices.length > 0 || voiceProfiles.length > 0) && (
- <ChevronDown size={12} className={`transition-transform ${showVoicePicker ? "rotate-180" : ""}`} />
+ <ChevronDown size={12} aria-hidden className={`shrink-0 transition-transform ${showVoicePicker ? "rotate-180" : ""}`} />
  )}
  </button>
  )}
- {categoryLabel && <span>· {categoryLabel}</span>}
+ {categoryLabel && <span className="shrink-0 whitespace-nowrap">· {categoryLabel}</span>}
  {showVoicePicker && (
  <div className="absolute top-full left-0 right-0 mt-1 bg-night-card/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
  <label className="flex min-h-11 items-center gap-2 px-3 text-[13px] text-moon"><input type="checkbox" checked={multiVoice} onChange={e=>{stopNarration();setMultiVoice(e.target.checked);}} /> Dùng giọng riêng từng nhân vật</label>
@@ -1456,13 +1458,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10 max-h-[80vh] overflow-y-auto no-scrollbar">
  <div className="flex items-center justify-between mb-5">
  <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
- <Star size={18} className="text-amber-400" /> Đánh Giá & Nhận Xét
+ <Star size={18} className="text-amber-400" /> Đánh giá & nhận xét
  </h3>
  <button
+ type="button"
  onClick={() => setShowRating(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
+ aria-label="Đóng"
+ className="-my-1.5 -mr-1.5 flex h-11 w-11 items-center justify-center rounded-full"
  >
- <X size={16} />
+ <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-moon/70"><X size={16} /></span>
  </button>
  </div>
 
@@ -1717,13 +1721,15 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div className="w-full max-w-[430px] bg-[#160C33] rounded-t-3xl p-6 pb-9 animate-[slideUp_0.3s_ease] border-t border-white/10">
  <div className="flex items-center justify-between mb-5">
  <h3 className="text-[17px] font-black tracking-tight flex items-center gap-2">
- <Sparkles size={18} className="text-violet-400" /> Tính Năng AI
+ <Sparkles size={18} className="text-violet-400" /> Tính năng AI
  </h3>
  <button
+ type="button"
  onClick={() => setShowAIMenu(false)}
- className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-moon/70"
+ aria-label="Đóng"
+ className="-my-1.5 -mr-1.5 flex h-11 w-11 items-center justify-center rounded-full"
  >
- <X size={16} />
+ <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-moon/70"><X size={16} /></span>
  </button>
  </div>
 

@@ -161,8 +161,9 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  <div className="flex items-center gap-1.5 mb-0.5">
  <h3 className="font-display text-[19px] font-bold leading-tight text-ink truncate">{v.name}</h3>
  <button
+ type="button"
  onClick={() => startEdit(v.id, v.name)}
- className="w-8 h-8 rounded-[10px] flex items-center justify-center text-ink-2 shrink-0"
+ className="-my-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-ink-2"
  aria-label="Sửa tên"
  >
  <Pencil size={16} />
