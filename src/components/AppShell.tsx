@@ -20,6 +20,7 @@ import ParentGate from "@/components/parent/ParentGate";
 import ScreenTimeLock from "@/components/parent/ScreenTimeLock";
 import { isParentArea } from "@/lib/parent-gate";
 import { useParentUnlock } from "@/lib/use-parent-unlock";
+import { useScrollMemory } from "@/lib/use-scroll-memory";
 import { useScreenTime } from "@/lib/use-screen-time";
 import AppProviders from "@/components/AppProviders";
 import { adminPath, isAdminScreen } from "@/lib/admin-routes";
@@ -117,6 +118,8 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  const gateActive = !loading && !!user && inParentArea && !parentUnlocked;
  const screenTime = useScreenTime({ userId: user?.id, paused: inParentArea });
  const kidLocked = !loading && !!user && !inParentArea && screenTime.verdict.blocked;
+ // New screen → top of the page; Back (or the gate / time lock closing) → where the kid was.
+ useScrollMemory(gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : rawCurrent, current.screen);
  const lockReason = screenTime.verdict.blocked ? screenTime.verdict.reason : "limit";
  const { pause, isPlaying } = useAudioPlayer();
  useEffect(() => {
@@ -221,7 +224,7 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  }
 
  return (
- <div className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream shadow-2xl shadow-black/10">
+ <div className="relative w-full max-w-[430px] mx-auto min-h-screen overflow-x-clip bg-cream shadow-2xl shadow-black/10">
  <main id="main-content" className={animateScreens ? "screen-enter" : undefined} key={gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : current.screen}>
  {gateActive ? (
  <ParentGate onUnlock={unlockParent} onCancel={leaveGate} onPinReset={afterPinReset} />

@@ -111,14 +111,14 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
 
  return (
  <div
- className="relative flex min-h-screen flex-col overflow-hidden bg-cream px-[26px] pb-10 pt-12 text-ink"
+ className="relative flex min-h-screen flex-col overflow-hidden bg-cream px-[26px] pb-10 pt-12 text-ink short:pb-3 short:pt-2"
  onTouchStart={onTouchStart}
  onTouchEnd={onTouchEnd}
  >
  {/* Decorations (board `.deco`) */}
  <Star aria-hidden size={26} weight="fill" className="absolute left-[30px] top-[130px] text-brand-ink opacity-[0.16]" />
- <MoonStars aria-hidden size={34} weight="fill" className="absolute left-[60px] top-[280px] text-brand-ink opacity-[0.16]" />
- <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand-ink opacity-[0.16]" />
+ <MoonStars aria-hidden size={34} weight="fill" className="absolute left-[60px] top-[280px] text-brand-ink opacity-[0.16] short:top-[200px]" />
+ <Sparkles aria-hidden size={28} weight="fill" className="absolute right-[40px] top-[340px] text-brand-ink opacity-[0.16] short:top-[180px]" />
 
  <div className="relative z-20 flex justify-end">
  <button type="button" onClick={onGetStarted} data-early-click="skip" className="min-h-tap-min px-1 text-[16px] font-extrabold text-ink-2 active:scale-95">
@@ -132,28 +132,29 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  animating ? (direction === "next" ? "translate-x-8 opacity-0" : "-translate-x-8 opacity-0") : "translate-x-0 opacity-100"
  }`}
  >
- {/* Đóm in the firefly halo (board `.halo`) */}
- <div className="relative mt-3 flex h-[270px] w-[270px] items-center justify-center rounded-full bg-[radial-gradient(circle,#FFE7A6_0%,#FFF1CF_45%,rgba(255,248,238,0)_72%)]">
+ {/* Đóm in the firefly halo (board `.halo`). `short:` ≤ 840 px / `shorter:` ≤ 680 px tall (globals.css)
+     shrink it so the button and “Đăng nhập” stay on screen; the bubble moves above Đóm’s head. */}
+ <div className="relative mt-3 flex h-[270px] w-[270px] items-center justify-center rounded-full short:mt-6 short:h-[220px] short:w-[220px] short:[--dom-scale:0.8] shorter:mt-7 shorter:h-[180px] shorter:w-[180px] shorter:[--dom-scale:0.68] bg-[radial-gradient(circle,#FFE7A6_0%,#FFF1CF_45%,rgba(255,248,238,0)_72%)]">
  <Mascot key={current.mascot} state={current.mascot} size={210} priority />
  {current.bubble && (
- <Bubble tail="bottom" className="absolute -right-6 top-6 rotate-3 whitespace-nowrap text-[18px]">
+ <Bubble tail="bottom" className="absolute -right-6 top-6 rotate-3 whitespace-nowrap text-[18px] short:-top-[15px] short:left-[76px] short:right-auto short:px-3.5 short:py-2.5 short:text-[16px] shorter:-top-[25px] shorter:left-14">
  {current.bubble} <b className="text-brand-ink">Đóm</b>
  </Bubble>
  )}
  </div>
 
- <h1 className="mt-4 text-center font-display text-[31px] font-extrabold leading-[1.15] text-ink">
+ <h1 className="mt-4 text-center font-display text-[31px] font-extrabold leading-[1.15] text-ink short:mt-2 short:text-[28px] shorter:text-[26px]">
  {current.lead}
  <em className="not-italic text-brand-ink">{current.em}</em>
  {current.tail}
  </h1>
- <p className="mt-3 max-w-[330px] text-center text-[17px] font-bold leading-normal text-ink-2">{current.description}</p>
+ <p className="mt-3 max-w-[330px] text-center text-[17px] font-bold leading-normal text-ink-2 short:mt-1.5 short:text-[16px] short:leading-snug">{current.description}</p>
  </div>
 
  <div className="relative z-10">
  {/* Dots (board `.dots`) */}
  {/* UI-12: 44px hit areas (WCAG 2.5.8), same visual spacing as the board. */}
- <div className="mb-3 mt-3.5 flex justify-center">
+ <div className="mb-3 mt-3.5 flex justify-center short:mb-1 short:mt-1">
  {steps.map((st, i) => (
  <button
  key={i}
@@ -172,13 +173,13 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  <Button3D block onClick={handleNext} data-early-click="next">
  {step === 0 ? "Bắt đầu nào!" : isLast ? "Tạo tài khoản cho bé" : "Tiếp tục"} <ArrowRight size={22} />
  </Button3D>
- <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2">
+ <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2 short:mt-1">
  Bố mẹ đã có tài khoản?{" "}
  <button type="button" onClick={onLogin} data-early-click="login" className="inline-flex min-h-11 items-center px-1.5 font-extrabold text-brand-ink">
  Đăng nhập
  </button>
  </p>
- <TrustChips className="mt-4" />
+ <TrustChips className="mt-4 short:mt-2" />
  </div>
  </div>
  );
