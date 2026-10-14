@@ -363,12 +363,12 @@ export default function ParentWeek({ onBack, onNavigate, onRelock }: ParentWeekP
             </button>
           </div>
           <label className="mt-3 flex items-center gap-3 text-[14.5px] font-semibold text-ink">
-            <span className="flex-1">Giờ nhắc</span>
+            <span className="flex-1 whitespace-nowrap">Giờ nhắc</span>
             <select
               value={notify.hour}
               disabled={locked || busy !== null}
               onChange={(e) => saveNotify(notify.enabled, Number(e.target.value))}
-              className="h-11 rounded-xl bg-parent-bg px-3 text-[15px] font-semibold text-ink outline-none ring-brand focus:ring-2 disabled:opacity-50"
+              className="h-11 w-28 shrink-0 rounded-xl bg-parent-bg px-3 text-[15px] font-semibold text-ink outline-none ring-brand focus:ring-2 disabled:opacity-50"
             >
               {REMINDER_HOURS.map((h) => (
                 <option key={h} value={h}>
