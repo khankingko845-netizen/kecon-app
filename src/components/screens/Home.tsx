@@ -2,7 +2,7 @@
 import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useKidStories } from "@/lib/parental-controls-context";
@@ -19,7 +19,7 @@ import { Card, ProgressBar, SectionHeader, CARD_SHADOW } from "@/components/ui/k
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
 import { heroFor } from "@/lib/home-hero";
-import { greetingMoment } from "@/lib/dom-lines";
+import { greetingMoment, type DomMoment } from "@/lib/dom-lines";
 import { weekChipAria, weekChipParts } from "@/lib/missions";
 import { useFeedback } from "@/lib/feedback-context";
 import { useAgeUi } from "@/lib/age-ui-context";
@@ -59,8 +59,17 @@ export default function Home({ onNavigate }: HomeProps) {
   const [nights, setNights] = useState<number | null>(() => (lastNights && lastNights.uid === user?.id ? lastNights.n : null));
   const missionsOn = features.enabled("missions");
   const [last, setLast] = useState<LastPlayed | null>(null);
-  const { say } = useFeedback();
+  const { say, dismiss } = useFeedback();
   const ageUi = useAgeUi();
+  // Đóm's bubble is fixed over every screen: what Home said (greeting, poke)
+  // closes with Home so it never covers the next screen's Quay lại.
+  const homeLine = useRef<{ moment: DomMoment | null }>({ moment: null });
+  useEffect(() => {
+    const box = homeLine.current;
+    return () => {
+      if (box.moment) dismiss(box.moment);
+    };
+  }, [dismiss]);
 
   const now = useMemo(() => new Date(), []);
   const hero = heroFor(now.getHours());
@@ -85,7 +94,8 @@ export default function Home({ onNavigate }: HomeProps) {
       } catch {
         return;
       }
-      say(greetingMoment(new Date().getHours(), nights));
+      homeLine.current.moment = greetingMoment(new Date().getHours(), nights);
+      say(homeLine.current.moment);
     };
     getReadingStreak()
       .then((s) => greet(s?.current_streak ?? 0))
@@ -130,6 +140,7 @@ export default function Home({ onNavigate }: HomeProps) {
     } catch {
       /* private mode: greeting may still follow */
     }
+    homeLine.current.moment = "poke";
     say("poke");
   };
 

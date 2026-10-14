@@ -157,7 +157,7 @@ export default function Login({ onNavigate }: LoginProps) {
  <button
  type="button"
  onClick={() => onNavigate("signup")}
- className="text-brand-ink font-bold"
+ className="inline-flex min-h-11 items-center px-1.5 text-brand-ink font-bold"
  >
  Đăng ký
  </button>

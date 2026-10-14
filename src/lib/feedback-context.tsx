@@ -68,6 +68,11 @@ interface FeedbackContextValue {
   say: (moment: DomMoment | DomLine, opts?: SayOptions) => DomLine;
   /** Close Đóm's bubble and stop his voice (a full-screen story takes over). */
   hush: () => void;
+  /**
+   * The screen that said `moment` is gone: close the bubble if it still shows
+   * that moment and stop reading it — other lines (and tapped labels) stay.
+   */
+  dismiss: (moment: DomMoment) => void;
 }
 
 const noop = () => {};
@@ -81,6 +86,7 @@ const FeedbackContext = createContext<FeedbackContextValue>({
   cue: noop,
   say: (moment) => (typeof moment === "string" ? DOM_LINES[moment] : moment),
   hush: noop,
+  dismiss: noop,
 });
 
 export function useFeedback() {
@@ -217,13 +223,17 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     [playSound],
   );
 
-  const speak = useCallback((text: string) => {
+  /** Moment being read aloud (null: a tapped label or nothing) — lets `dismiss` stop only its own line. */
+  const spokenRef = useRef<DomMoment | null>(null);
+
+  const speak = useCallback((text: string, moment: DomMoment | null = null) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const synth = window.speechSynthesis;
     const voice = pickVietnameseVoice(synth.getVoices());
     if (!voice) return; // never read Vietnamese with a foreign voice
     try {
       synth.cancel();
+      spokenRef.current = moment;
       const u = new SpeechSynthesisUtterance(text);
       u.lang = voice.lang;
       try {
@@ -244,7 +254,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     (moment: DomMoment | DomLine, opts: SayOptions = {}) => {
       const line = typeof moment === "string" ? DOM_LINES[moment] : moment;
       if (opts.bubble !== false) setSpeech({ line, id: Date.now() });
-      if (line.speak && !opts.quiet && channelsRef.current.voice && !hidden()) speak(line.text);
+      if (line.speak && !opts.quiet && channelsRef.current.voice && !hidden()) speak(line.text, line.moment);
       return line;
     },
     [speak],
@@ -252,6 +262,20 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
 
   const hush = useCallback(() => {
     setSpeech(null);
+    spokenRef.current = null;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  const dismiss = useCallback((moment: DomMoment) => {
+    setSpeech((s) => (s && s.line.moment === moment ? null : s));
+    if (spokenRef.current !== moment) return;
+    spokenRef.current = null;
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
@@ -307,8 +331,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       cue,
       say,
       hush,
+      dismiss,
     }),
-    [prefs, setPrefs, channels, isBedtime, supportsHaptics, hasVoice, cue, say, hush],
+    [prefs, setPrefs, channels, isBedtime, supportsHaptics, hasVoice, cue, say, hush, dismiss],
   );
 
   return (

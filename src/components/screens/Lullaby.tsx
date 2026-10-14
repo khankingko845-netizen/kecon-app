@@ -167,7 +167,7 @@ export default function Lullaby({ onBack }: LullabyProps) {
  aria-pressed={active}
  aria-busy={pending.has(s.id)}
  onClick={() => toggleSound(s.id)}
- className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+ className={`flex min-h-11 items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
  active
  ? "bg-amber/[0.16] border border-amber/35 text-amber"
  : "bg-night-card/70 border border-moon/10 text-moon-2"

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { passParentGate, signInAsMockFamily, MOCK_PIN, MOCK_PIN_USER_ID } from "./support/fixtures";
+import { sideOverflow } from "./support/layout";
 
 // Mobile UI guard at the smallest common phone (360×640): on every main kid and
 // parent screen there is no sideways scrolling, every control has a name a
@@ -7,7 +8,7 @@ import { passParentGate, signInAsMockFamily, MOCK_PIN, MOCK_PIN_USER_ID } from "
 // at least 12 px. Offenders are listed in the failure message.
 test.use({ viewport: { width: 360, height: 640 } });
 
-type Audit = { overflowX: number; unnamed: string[]; small: string[]; tiny: string[] };
+type Audit = { unnamed: string[]; small: string[]; tiny: string[] };
 
 async function audit(page: Page): Promise<Audit> {
   await page.waitForTimeout(400); // let entrance transitions settle
@@ -16,6 +17,9 @@ async function audit(page: Page): Promise<Audit> {
       const b = el.getBoundingClientRect();
       if (b.width <= 1 || b.height <= 1) return false; // sr-only file inputs, collapsed nodes
       if (el.closest("[aria-hidden=true], [inert]")) return false;
+      // Content of a closed <details> is not shown, but Chromium still measures it.
+      const details = el.closest("details");
+      if (details && !details.open && !el.closest("summary")) return false;
       const s = getComputedStyle(el);
       return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) > 0;
     };
@@ -58,17 +62,18 @@ async function audit(page: Page): Promise<Audit> {
       const size = parseFloat(getComputedStyle(el).fontSize);
       if (size < 12) tiny.push(`${size}px "${text(el).slice(0, 40)}"`);
     }
-    const doc = document.scrollingElement!;
-    return { overflowX: doc.scrollWidth - window.innerWidth, unnamed, small, tiny: Array.from(new Set(tiny)) };
+    return { unnamed, small, tiny: Array.from(new Set(tiny)) };
   });
 }
 
 async function expectMobileFriendly(page: Page, screen: string) {
   const r = await audit(page);
-  expect(r.overflowX, `${screen}: cuộn ngang`).toBeLessThanOrEqual(1);
-  expect(r.unnamed, `${screen}: nút không có tên`).toEqual([]);
-  expect(r.small, `${screen}: vùng bấm nhỏ hơn 44×44`).toEqual([]);
-  expect(r.tiny, `${screen}: chữ nhỏ hơn 12px`).toEqual([]);
+  const side = await sideOverflow(page); // layout viewport, not innerWidth (see support/layout.ts)
+  // Soft: one run lists every offender on every screen instead of stopping at the first.
+  expect.soft(side.overflow, `${screen}: cuộn ngang ${side.offenders.join(" | ")}`).toBeLessThanOrEqual(1);
+  expect.soft(r.unnamed, `${screen}: nút không có tên`).toEqual([]);
+  expect.soft(r.small, `${screen}: vùng bấm nhỏ hơn 44×44`).toEqual([]);
+  expect.soft(r.tiny, `${screen}: chữ nhỏ hơn 12px`).toEqual([]);
 }
 
 const tabBar = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
@@ -125,4 +130,88 @@ test("player: tên truyện là tiêu đề, giọng và chủ đề nằm trên
   const last = meta.locator(":scope > span").last();
   if (await last.count()) await expect(last).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole("button", { name: /Thích truyện|Bỏ thích/ })).toHaveCSS("width", "44px");
+});
+
+test("đo cuộn ngang theo layout viewport: một khối quá rộng bị bắt và chỉ đích danh", async ({ page, context, baseURL }) => {
+  await signInAsMockFamily(context, baseURL!);
+  await page.goto("/");
+  await page.getByTestId("home-topics").waitFor();
+  expect((await sideOverflow(page)).overflow).toBeLessThanOrEqual(1);
+  // Regression guard for the measurement itself: with mobile emulation the old
+  // `scrollWidth <= innerWidth` check passed even when content overflowed.
+  await page.evaluate(() => {
+    const probe = document.createElement("div");
+    probe.dataset.testid = "wide-probe";
+    probe.style.cssText = "width:420px;height:8px";
+    document.body.appendChild(probe);
+  });
+  const side = await sideOverflow(page);
+  expect(side.overflow).toBeGreaterThan(1);
+  expect(side.offenders.join(" ")).toContain("wide-probe");
+});
+
+test("màn phụ của bé dùng tốt ở 360×640: Khám phá thêm, ghi giọng, tuỳ chọn truyện, Ru ngủ", async ({ page, context, baseURL }) => {
+  test.setTimeout(120_000);
+  await signInAsMockFamily(context, baseURL!);
+  const openExplore = async (label: string) => {
+    await page.goto("/");
+    const explore = page.getByTestId("home-explore");
+    // Flag-gated items appear once feature flags load; wait for the one we need.
+    await explore.getByRole("button", { name: label }).click();
+    await expect(explore).toHaveCount(0);
+    await page.waitForTimeout(600);
+    await expectMobileFriendly(page, label);
+    if (process.env.MOBILE_QA) await page.screenshot({ path: `/data/g58/${label.replace(/\s+/g, "-")}-360.png` });
+  };
+  // The mock child is 4 (band 3–5): Khám phá thêm shows only these three.
+  for (const label of ["Yêu thích", "Vẽ truyện", "Chụp sách"]) await openExplore(label);
+  // Band 6–8 shows every item: serve the same profile with child_age 7.
+  await page.route("**/rest/v1/profiles*", async (route) => {
+    const res = await route.fetch();
+    const body: unknown = await res.json().catch(() => null);
+    const older = (p: unknown) => (p && typeof p === "object" ? { ...p, child_age: 7 } : p);
+    await route.fulfill({ response: res, json: Array.isArray(body) ? body.map(older) : older(body) });
+  });
+  await openExplore("Bộ sưu tập");
+  await page.unroute("**/rest/v1/profiles*");
+
+  await page.goto("/");
+  await page.getByTestId("home-topics").waitFor();
+  await tabBar(page).getByRole("button", { name: "Giọng đọc", exact: true }).click();
+  await page.getByRole("button", { name: /Ghi giọng bố mẹ/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Ghi giọng bố mẹ" })).toBeVisible();
+  await expectMobileFriendly(page, "Ghi giọng bố mẹ");
+
+  await page.goto("/");
+  await page.getByText("Sóc Nhỏ tìm hạt dẻ").first().click();
+  await expect(page.getByTestId("story-book")).toBeVisible();
+  await page.getByRole("button", { name: "Thêm tuỳ chọn", exact: true }).click();
+  const sheet = page.getByRole("dialog", { name: "Tuỳ chọn truyện" });
+  await expect(sheet).toBeVisible();
+  await expectMobileFriendly(page, "Tuỳ chọn truyện");
+  await sheet.getByRole("button", { name: /Ru ngủ/ }).click();
+  await expect(page.getByRole("heading", { name: "Ru ngủ cùng Đóm" })).toBeVisible();
+  await expectMobileFriendly(page, "Ru ngủ");
+});
+
+test("màn chưa đăng nhập dùng tốt ở 360×640: giới thiệu, đăng nhập, tạo tài khoản", async ({ page }) => {
+  await page.goto("/");
+  const start = page.getByRole("button", { name: /Bắt đầu nào!/ });
+  await start.waitFor();
+  await expectMobileFriendly(page, "Giới thiệu 1");
+  await start.click();
+  await expect(page.getByRole("heading", { level: 1, name: /Nghe truyện bằng giọng bố mẹ/ })).toBeVisible();
+  await expectMobileFriendly(page, "Giới thiệu 2");
+  await page.getByRole("button", { name: /Tiếp tục/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /An toàn, không quảng cáo/ })).toBeVisible();
+  await expectMobileFriendly(page, "Giới thiệu 3");
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page.getByPlaceholder("name@email.com")).toBeVisible();
+  await expectMobileFriendly(page, "Đăng nhập");
+  if (process.env.MOBILE_QA) await page.screenshot({ path: "/data/g58/Dang-nhap-360.png" });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Bỏ qua" }).click();
+  await expect(page.getByRole("heading", { name: "Tạo tài khoản" })).toBeVisible();
+  await expectMobileFriendly(page, "Tạo tài khoản");
 });

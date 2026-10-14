@@ -1,15 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { signInAsMockFamily, MOCK_A15_ADMIN_ID } from "./support/fixtures";
+import { noSideScroll } from "./support/layout";
 
 // G-08 (docs/g08-missions-admin.md): staff edit mission copy / pause character
 // cards with a reason; the client blocks result praise before any request.
 // One worker shares the mock's state, so the specs run in order.
 test.describe.configure({ mode: "serial" });
 
-// clientWidth is the layout viewport; with mobile emulation innerWidth grows
-// to fit overflowing content, so comparing against it would hide a blow-out.
-const noSideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 const axe = async (page: Page, include: string) =>
   (await new AxeBuilder({ page }).include(include).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations.map((v) => v.id);
 
