@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Phones shorter than the 390×844 board (URL bar showing, 360×640–800 Androids):
+   intro screens tighten so the main button and “Đăng nhập” stay on screen. */
+@custom-variant short (@media (max-height: 840px));
+@custom-variant shorter (@media (max-height: 680px));
 
 /*
  * UI v2 design tokens (docs/design/ui-v2, ticket UI-02).

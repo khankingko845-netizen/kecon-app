@@ -161,7 +161,7 @@ test("màn phụ của bé dùng tốt ở 360×640: Khám phá thêm, ghi giọ
     await expect(explore).toHaveCount(0);
     await page.waitForTimeout(600);
     await expectMobileFriendly(page, label);
-    if (process.env.MOBILE_QA) await page.screenshot({ path: `/data/g58/${label.replace(/\s+/g, "-")}-360.png` });
+    if (process.env.MOBILE_QA) await page.screenshot({ path: `/data/g59/${label.replace(/\s+/g, "-")}-360.png` });
   };
   // The mock child is 4 (band 3–5): Khám phá thêm shows only these three.
   for (const label of ["Yêu thích", "Vẽ truyện", "Chụp sách"]) await openExplore(label);
@@ -195,23 +195,86 @@ test("màn phụ của bé dùng tốt ở 360×640: Khám phá thêm, ghi giọ
 });
 
 test("màn chưa đăng nhập dùng tốt ở 360×640: giới thiệu, đăng nhập, tạo tài khoản", async ({ page }) => {
+  // Short phones: the main button, “Đăng nhập” and “Bỏ qua” are on screen without scrolling.
+  const allOnScreen = async (label: string, main: RegExp) => {
+    expect.soft(await page.evaluate(() => window.scrollY), `${label}: trang đã bị cuộn`).toBe(0);
+    for (const button of [page.getByRole("button", { name: main }), page.getByRole("button", { name: "Đăng nhập", exact: true }), page.getByRole("button", { name: "Bỏ qua" })])
+      await expect.soft(button, `${label}: phải cuộn mới thấy nút`).toBeInViewport({ ratio: 1 });
+    if (process.env.MOBILE_QA) await page.screenshot({ path: `/data/g59/${label.replace(/\s+/g, "-")}-360.png` });
+  };
   await page.goto("/");
   const start = page.getByRole("button", { name: /Bắt đầu nào!/ });
   await start.waitFor();
   await expectMobileFriendly(page, "Giới thiệu 1");
+  await allOnScreen("Giới thiệu 1", /Bắt đầu nào!/);
   await start.click();
   await expect(page.getByRole("heading", { level: 1, name: /Nghe truyện bằng giọng bố mẹ/ })).toBeVisible();
   await expectMobileFriendly(page, "Giới thiệu 2");
+  await allOnScreen("Giới thiệu 2", /Tiếp tục/);
   await page.getByRole("button", { name: /Tiếp tục/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: /An toàn, không quảng cáo/ })).toBeVisible();
   await expectMobileFriendly(page, "Giới thiệu 3");
+  await allOnScreen("Giới thiệu 3", /Tạo tài khoản cho bé/);
+  // Before this fix the intro needed ~850 px: only 390×844 and taller showed “Đăng nhập”.
+  for (const size of [{ width: 360, height: 740 }, { width: 390, height: 664 }, { width: 390, height: 750 }]) {
+    await page.setViewportSize(size);
+    await page.goto("/");
+    const at = `${size.width}×${size.height}`;
+    await allOnScreen(`Giới thiệu 1 ${at}`, /Bắt đầu nào!/);
+    await page.getByRole("button", { name: /Bắt đầu nào!/ }).click();
+    await allOnScreen(`Giới thiệu 2 ${at}`, /Tiếp tục/);
+    await page.getByRole("button", { name: /Tiếp tục/ }).click();
+    await allOnScreen(`Giới thiệu 3 ${at}`, /Tạo tài khoản cho bé/);
+  }
+  await page.setViewportSize({ width: 360, height: 640 });
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page.getByPlaceholder("name@email.com")).toBeVisible();
   await expectMobileFriendly(page, "Đăng nhập");
-  if (process.env.MOBILE_QA) await page.screenshot({ path: "/data/g58/Dang-nhap-360.png" });
+  if (process.env.MOBILE_QA) await page.screenshot({ path: "/data/g59/Dang-nhap-360.png" });
 
   await page.goto("/");
   await page.getByRole("button", { name: "Bỏ qua" }).click();
   await expect(page.getByRole("heading", { name: "Tạo tài khoản" })).toBeVisible();
   await expectMobileFriendly(page, "Tạo tài khoản");
+});
+
+test("màn mới mở từ đầu trang, Quay lại về đúng chỗ đang xem, không lệch ngang khi chuyển màn", async ({ page, context, baseURL }) => {
+  await signInAsMockFamily(context, baseURL!);
+  await page.goto("/");
+  await page.getByTestId("home-topics").waitFor();
+  // A long library/settings page in real families: make every screen tall so an
+  // inherited offset cannot hide behind a short mock screen.
+  await page.addStyleTag({ content: "#main-content { min-height: 2400px; }" });
+  const explore = page.getByTestId("home-explore");
+  await explore.scrollIntoViewIfNeeded();
+  const y = await page.evaluate(() => window.scrollY);
+  expect(y).toBeGreaterThan(200);
+
+  // Sample sideways overflow every frame while the next screen slides in.
+  const during = page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        let worst = 0;
+        const t0 = performance.now();
+        const tick = () => {
+          worst = Math.max(worst, document.documentElement.scrollWidth - document.documentElement.clientWidth);
+          if (performance.now() - t0 < 450) requestAnimationFrame(tick);
+          else resolve(worst);
+        };
+        tick();
+      }),
+  );
+  await explore.getByRole("button", { name: "Vẽ truyện" }).click();
+  await expect(page.getByRole("group", { name: "Màu bút" })).toBeVisible();
+  expect(await during, "cuộn ngang trong lúc màn trượt vào").toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => window.scrollY), "Vẽ truyện mở giữa trang").toBe(0);
+
+  await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+  await expect(page.getByTestId("home-explore")).toBeInViewport();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(y - 3);
+  expect(await page.evaluate(() => window.scrollY)).toBeLessThan(y + 3);
+
+  await tabBar(page).getByRole("button", { name: "Thư viện", exact: true }).click();
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.scrollY), "Thư viện mở giữa trang").toBe(0);
 });
