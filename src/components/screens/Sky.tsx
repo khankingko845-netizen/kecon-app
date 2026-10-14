@@ -7,7 +7,7 @@
  * bought, lost or expire. Flag `missions` (route guarded on the server).
  */
 import { useEffect, useState } from "react";
-import { BookOpen, Castle, CheckCircle, Leaf, PawPrint, Sparkles, Star, type IconComponent } from "@/components/ui/icons";
+import { BookOpen, Castle, CheckCircle, Heart, Leaf, PawPrint, Sparkles, Star, Users, type IconComponent } from "@/components/ui/icons";
 import { Button3D, Card, KidHeader, SectionHeader } from "@/components/ui/kit";
 import { KidError, KidLoading } from "@/components/ui/states";
 import Mascot from "@/components/ui/Mascot";
@@ -15,6 +15,7 @@ import {
   ALL_DONE_LINE,
   WEEKDAY_LABELS,
   WEEKDAY_NAMES,
+  familySkyLine,
   missionCopy,
   weekGoalLine,
   type MissionIcon,
@@ -76,6 +77,7 @@ export default function Sky({ onBack, onNavigate }: SkyProps) {
     );
 
   const { week } = today;
+  const fam = today.family;
   const allDone = today.missions.length > 0 && today.missions.every((m) => m.done);
 
   return (
@@ -164,6 +166,52 @@ export default function Sky({ onBack, onNavigate }: SkyProps) {
         <p role="status" className="mt-3 rounded-2xl bg-glow-soft px-4 py-3 text-[15px] font-extrabold text-[#7A4A00]">
           {ALL_DONE_LINE}
         </p>
+      )}
+
+      {/* G-06: what a parent saw today — a habit adds a star, a good deed gets a thank-you only. */}
+      {today.habits.length > 0 && (
+        <>
+          <SectionHeader title="Bố mẹ đã thấy hôm nay" />
+          <ul className="space-y-2.5" data-testid="sky-habits">
+            {today.habits.map((h) => (
+              <li key={h.id}>
+                <Card className="flex items-center gap-3 p-3.5">
+                  <span
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${h.kind === "kindness" ? "bg-[#FDE8E3] text-cta-ink" : "bg-glow-soft text-[#B07A00]"}`}
+                    aria-hidden
+                  >
+                    {h.kind === "kindness" ? <Heart size={26} weight="fill" /> : <Star size={26} weight="fill" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[16px] font-extrabold text-ink">{h.title}</p>
+                    <p className="text-[14px] font-bold text-ink-2">{h.line}</p>
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {/* G-07: the family constellation — stories a parent marked as read together. */}
+      {fam && (
+        <section aria-labelledby="sky-family-title" className="mt-5 rounded-[24px] bg-[#2B2350] p-4 text-white" data-testid="sky-family">
+          <div className="flex items-center gap-2">
+            <Users size={22} weight="fill" className="text-[#FFE7A6]" aria-hidden />
+            <h2 id="sky-family-title" className="font-display text-[18px] font-bold">
+              Chòm sao của nhà mình
+            </h2>
+          </div>
+          <p className="mt-1 text-[14px] font-bold text-[#E6DEFF]">{familySkyLine(fam.progress, fam.target)}</p>
+          <div className="mt-2 flex gap-2" aria-hidden>
+            {Array.from({ length: fam.target }, (_, i) => (
+              <Star key={i} size={30} weight={i < fam.progress ? "fill" : "regular"} className={i < fam.progress ? "text-[#FFC94D]" : "text-white/35"} />
+            ))}
+          </div>
+          {album.constellations.length > 0 && (
+            <p className="mt-2 text-[13px] font-bold text-[#E6DEFF]">Nhà mình đã thắp {album.constellations.length} chòm sao.</p>
+          )}
+        </section>
       )}
 
       {/* G-05: characters met in finished library stories (earned only — no locked slots). */}

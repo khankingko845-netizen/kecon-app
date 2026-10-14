@@ -2,7 +2,9 @@
 
 Research: Notion "Research Duolingo → Module Nhiệm vụ & khen thưởng cho bé". This MVP ships the
 "demo sớm" slice behind the feature flag **`missions`** (default **off**). Habit missions with parent
-confirmation (G-06), per-child profiles (T10/T11), friend/league features and paid boosts are out of scope.
+confirmation, good deeds, the family constellation and "Tuần của bé" (G-06/G-07) are in
+`docs/missions-parent.md` (migration 036). Per-child profiles (T10/T11), friend/league features and paid
+boosts are out of scope.
 
 ## What ships
 | ID | Piece | Where |

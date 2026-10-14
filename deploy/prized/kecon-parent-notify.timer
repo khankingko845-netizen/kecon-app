@@ -1,0 +1,11 @@
+[Unit]
+Description=KểCon parent reminders every 15 minutes (the database picks who is due)
+
+[Timer]
+OnCalendar=*:0/15
+AccuracySec=30s
+Persistent=false
+Unit=kecon-parent-notify.service
+
+[Install]
+WantedBy=timers.target

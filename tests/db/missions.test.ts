@@ -61,7 +61,7 @@ describe("missions flag gate", () => {
     await setFlag(true);
     const flags = (await asAnon(db, (tx) => tx.query<{ f: J }>("SELECT public.public_feature_flags() f"))).rows[0].f;
     expect(flags.missions).toBe(true);
-    expect((await asUser(db, a, (tx) => tx.query("SELECT id FROM public.mission_templates"))).rows.length).toBe(5);
+    expect((await asUser(db, a, (tx) => tx.query("SELECT id FROM public.mission_templates WHERE kind IN ('base','themed')"))).rows.length).toBe(5);
   });
 });
 

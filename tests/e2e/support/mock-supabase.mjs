@@ -427,13 +427,49 @@ const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book
 const missionState=new Map();
 const MISSIONS_ASSIGNED=["nghe-het-truyen","co-tich"];
 const vnDate=(t=Date.now())=>new Date(t+7*3600e3).toISOString().slice(0,10);
-function missionsOf(sub){if(!missionState.has(sub))missionState.set(sub,{sessions:new Map(),done:new Map(),stars:new Map(),nights:new Set(),stickers:[],milestones:[],counted:0});return missionState.get(sub);}
+function missionsOf(sub){if(!missionState.has(sub))missionState.set(sub,{sessions:new Map(),done:new Map(),stars:new Map(),nights:new Set(),stickers:[],milestones:[],counted:0,habits:new Map(),together:new Set(),constellations:new Set(),notify:{enabled:false,hour:19},devices:new Set()});return missionState.get(sub);}
+const weekDays=()=>{const day=vnDate(),d=new Date(day+"T00:00:00Z"),start=new Date(d.getTime()-((d.getUTCDay()+6)%7)*864e5);return [...Array(7)].map((_,i)=>new Date(start.getTime()+i*864e5).toISOString().slice(0,10));};
+// G-06/G-07 (migration 036) stand-in: the real proof/unlock/ledger rules are covered by tests/db/missions-parent.test.ts.
+const MOCK_HABITS=[
+  {id:"lam-dung-gio",kind:"habit",title:"Làm xong đúng giờ",label:"Hôm nay bé tự làm xong một việc đúng giờ (đánh răng, đi ngủ…)",praise:"Bé đã tự làm xong việc của mình đúng giờ, giống Su với chiếc đồng hồ cát!",prompt:"Hỏi bé: “Hôm nay việc gì con tự làm xong mà không cần nhắc?”",afterListen:true},
+  {id:"giup-do",kind:"kindness",title:"Giúp đỡ người khác",label:"Hôm nay bé giúp đỡ một người trong nhà",praise:"Cảm ơn bé đã giúp đỡ mọi người.",prompt:"Hỏi bé: “Hôm nay con đã giúp ai? Người đó thấy sao?”",afterListen:false},
+];
+const MOCK_FAMILY={id:"ca-nha-doc-cung",title:"Cả nhà đọc cùng nhau",label:"Tuần này cả nhà đọc 3 truyện cùng nhau",target:3,praise:"Cả nhà mình đã cùng đọc đủ 3 truyện. Chòm sao của nhà mình sáng lên rồi!"};
+const gateTokens=new Map();
+const proofOk=(sub,token)=>{const g=gateTokens.get(token);return Boolean(g&&g.sub===sub&&g.exp>Date.now());};
+function familyOf(sub){const m=missionsOf(sub),days=weekDays();const keys=new Set([...m.sessions].filter(([id,x])=>m.together.has(id)&&days.includes(x.date)).map(([,x])=>x.story.id+":"+x.date));const progress=Math.min(MOCK_FAMILY.target,keys.size);return {id:MOCK_FAMILY.id,title:MOCK_FAMILY.title,target:MOCK_FAMILY.target,progress,done:m.constellations.has(days[0])};}
 function missionsSummary(sub){
-  const m=missionsOf(sub),day=vnDate(),d=new Date(day+"T00:00:00Z"),start=new Date(d.getTime()-((d.getUTCDay()+6)%7)*864e5);
-  const days=[...Array(7)].map((_,i)=>new Date(start.getTime()+i*864e5).toISOString().slice(0,10));
+  const m=missionsOf(sub),day=vnDate(),days=weekDays();
   return {date:day,missions:MISSIONS_ASSIGNED.map(id=>({id,done:!!m.done.get(day)?.has(id)})),
+    habits:[...(m.habits.get(day)??new Set())].map(id=>MOCK_HABITS.find(h=>h.id===id)).map(h=>({id:h.id,kind:h.kind,title:h.title,line:h.praise})),
+    family:familyOf(sub),
     week:{start:days[0],goal:4,nights:days.filter(x=>m.nights.has(x)).length,days:days.map(x=>({date:x,stars:m.stars.get(x)??0,listened:m.nights.has(x)}))},
     totals:{stories:m.counted,stars:[...m.stars.values()].reduce((a,b)=>a+b,0),stickers:m.stickers.length}};
+}
+function parentRpc(name,sub,body){
+  const m=missionsOf(sub),day=vnDate(),days=weekDays();
+  if(name==="missions_parent_week")return {summary:missionsSummary(sub),
+    stories:[...m.sessions].filter(([,x])=>x.completed&&days.includes(x.date)).reverse().map(([id,x])=>({session_id:id,story_id:x.story.id,title:x.story.title,category:x.story.category??null,date:x.date,together:m.together.has(id),prompt:null})),
+    habits:MOCK_HABITS.filter(h=>!h.afterListen||m.counted>0).map(h=>({id:h.id,kind:h.kind,title:h.title,label:h.label,prompt:h.prompt,today:!!m.habits.get(day)?.has(h.id),week:days.filter(x=>m.habits.get(x)?.has(h.id)).length})),
+    family:{...familyOf(sub),label:MOCK_FAMILY.label},notify:{...m.notify,devices:m.devices.size}};
+  if(name==="parent_device_remove"){m.devices.delete(body.p_endpoint);return {devices:m.devices.size};}
+  if(!proofOk(sub,body.p_proof))return rpcError(403,"28000","Parent proof required");
+  if(name==="missions_confirm"){
+    const h=MOCK_HABITS.find(x=>x.id===body.p_template);if(!h)return rpcError(400,"22023","Mission unavailable");
+    if(h.afterListen&&m.counted===0)return rpcError(400,"22023","Mission not unlocked");
+    const set=m.habits.get(day)??new Set();m.habits.set(day,set);if(set.has(h.id))return {confirmed:false,reason:"already_confirmed",kind:h.kind};
+    set.add(h.id);if(h.kind==="habit")m.stars.set(day,(m.stars.get(day)??0)+1);
+    return {confirmed:true,kind:h.kind,star:h.kind==="habit",line:h.praise};
+  }
+  if(name==="missions_mark_together"){
+    const ses=m.sessions.get(body.p_session);if(!ses?.completed||!days.includes(ses.date))return rpcError(400,"22023","Session unavailable");
+    m.together.add(body.p_session);const f=familyOf(sub);let fresh=false;
+    if(f.progress>=MOCK_FAMILY.target&&!m.constellations.has(days[0])){m.constellations.add(days[0]);fresh=true;}
+    return {marked:true,progress:f.progress,target:MOCK_FAMILY.target,done:f.progress>=MOCK_FAMILY.target,constellation:fresh,line:fresh?MOCK_FAMILY.praise:null};
+  }
+  if(name==="parent_notify_set"){if(typeof body.p_enabled!=="boolean"||!(body.p_hour>=6&&body.p_hour<=21))return rpcError(400,"22023","Invalid reminder");m.notify={enabled:body.p_enabled,hour:body.p_hour};return {...m.notify,devices:m.devices.size};}
+  if(name==="parent_device_register"){m.devices.add(body.p_endpoint);return {devices:m.devices.size};}
+  return null;
 }
 const platformLinks=new Map();
 const publicLinkStory="00000000-0000-4000-8000-000000009a01";
@@ -454,17 +490,20 @@ function rpc(name, sub, body, claims={}) {
       if(!FEATURE_FLAGS.missions)return rpcError(400,"42501","Action unavailable");
       const m=missionsOf(sub);
       if(name==="missions_today")return missionsSummary(sub);
-      if(name==="missions_album")return {stickers:[...m.stickers].reverse(),milestones:[...m.milestones]};
+      if(name==="missions_album")return {stickers:[...m.stickers].reverse(),milestones:[...m.milestones],constellations:[...m.constellations].map(w=>({week_start:w,earned_on:w}))};
       if(name==="missions_start_listen"){const st=(TABLES.stories??[]).find(x=>x.id===body.p_story);if(!st)return rpcError(400,"22023","Story unavailable");const id=randomUUID();m.sessions.set(id,{story:st,completed:false});return {session_id:id,min_seconds:15};}
       const ses=m.sessions.get(body.p_session);if(!ses)return rpcError(400,"22023","Session unavailable");
       if(ses.completed)return {counted:false,reason:"already_completed"};
-      ses.completed=true;m.counted++;const day=vnDate();m.nights.add(day);
+      const day=vnDate();ses.completed=true;ses.date=day;m.counted++;m.nights.add(day);
       const done=m.done.get(day)??new Set();m.done.set(day,done);const completed=MISSIONS_ASSIGNED.filter(id=>!done.has(id));completed.forEach(id=>done.add(id));
       m.stars.set(day,(m.stars.get(day)??0)+completed.length);
       let sticker=null;if(ses.story.is_platform_content&&!m.stickers.some(x=>x.story_id===ses.story.id)){sticker={story_id:ses.story.id,title:ses.story.title,cover_image_url:ses.story.cover_image_url??null};m.stickers.push({...sticker,earned_on:day});}
       let milestone=null;for(const n of [1,5,10,25,50,100])if(m.counted>=n&&!m.milestones.includes(n)){m.milestones.push(n);milestone=n;}
       return {counted:true,completed,sticker,milestone,today:missionsSummary(sub)};
     }
+    case "missions_parent_week": case "missions_confirm": case "missions_mark_together": case "parent_notify_set": case "parent_device_register": case "parent_device_remove":
+      if(!FEATURE_FLAGS.missions)return rpcError(400,"42501","Action unavailable");
+      return parentRpc(name,sub,body);
     case "unsubscribe_push": return null;
     case "public_feature_flags": return {...FEATURE_FLAGS};
     case "set_feature_flag": {
@@ -527,6 +566,17 @@ function rpc(name, sub, body, claims={}) {
     case "verify_parent_pin":
       if (!hasPin) return { ok: false, reason: "no_pin" };
       return body?.p_pin === MOCK_PIN ? { ok: true } : { ok: false, reason: "invalid", attempts_left: 4 };
+    case "open_parent_gate": {
+      if (!hasPin) return { ok: false, reason: "no_pin" };
+      if (body?.p_pin !== MOCK_PIN) return { ok: false, reason: "invalid", attempts_left: 4 };
+      const token = randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "");
+      const exp = Date.now() + 15 * 60_000;
+      gateTokens.set(token, { sub, exp });
+      return { ok: true, gate_token: token, gate_expires_at: new Date(exp).toISOString() };
+    }
+    case "close_parent_gate":
+      gateTokens.delete(body?.p_token);
+      return null;
     case "reset_parent_pin":
       // Mock tokens carry no fresh `amr` → the app must ask for the password.
       return { ok: false, reason: "reauth_required" };
@@ -660,6 +710,13 @@ createServer((req, res) => {
   if (req.method === "OPTIONS") return send(res, 204);
   if (path === "/health") return send(res, 200, { ok: true });
   if (path.startsWith("/__provider/")) return providerMock(req, res, path);
+  if (path === "/__e2e/missions-reset" && req.method === "POST") {
+    readJson(req).then((body) => {
+      missionState.delete(String(body?.sub ?? ""));
+      send(res, 200, { ok: true });
+    });
+    return;
+  }
   if (path === "/__e2e/secrets-scan" && req.method === "POST") {
     readJson(req).then((body) => {
       secretsScan = Boolean(body?.on);

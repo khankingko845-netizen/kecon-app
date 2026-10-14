@@ -41,6 +41,11 @@ sudo install -m 644 "$REL/deploy/prized/kecon-measurement-retention.timer" /etc/
 sudo systemctl daemon-reload
 sudo systemctl enable --now kecon-measurement-retention.timer
 sudo systemctl start kecon-measurement-retention.service
+# G-07 parent reminders (migration 036). Without VAPID keys the job exits without claiming.
+sudo install -m 644 "$REL/deploy/prized/kecon-parent-notify.service" /etc/systemd/system/
+sudo install -m 644 "$REL/deploy/prized/kecon-parent-notify.timer" /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now kecon-parent-notify.timer
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web

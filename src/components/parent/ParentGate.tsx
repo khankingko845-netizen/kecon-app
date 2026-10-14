@@ -16,7 +16,7 @@ import {
   PIN_PATTERN,
   resetParentPin,
   unlockErrorMessage,
-  verifyParentPin,
+  openParentGate,
 } from "@/lib/parent-pin";
 import {
   appendDigit,
@@ -165,7 +165,7 @@ function PinStep({
       return;
     }
     setBusy(true);
-    const result = await verifyParentPin(createClient(), pin);
+    const result = await openParentGate(createClient(), pin);
     setBusy(false);
     setPin("");
     if (result.ok) {

@@ -122,21 +122,23 @@ self.addEventListener("push", (event) => {
     }
   }
 
+  // G-07: the parent's evening reminder (scripts/parent-notify.mjs) opens "Tuần của bé".
+  const parent = data.kind === "parent";
   const options = {
     body: data.body,
     icon: "/icons/icon-192.png",
     badge: "/icons/badge-72.png",
-    vibrate: [100, 50, 100],
+    vibrate: parent ? [] : [100, 50, 100],
     data: {
-      url: data.url || "/",
-      storyId: data.storyId || null,
+      url: parent ? "/?screen=parent-week" : data.url || "/",
+      storyId: parent ? null : data.storyId || null,
     },
     actions: [
-      { action: "open", title: "Mở truyện" },
+      { action: "open", title: parent ? "Mở Tuần của bé" : "Mở truyện" },
       { action: "dismiss", title: "Để sau" },
     ],
-    tag: data.tag || "kecon-notification",
-    renotify: true,
+    tag: parent ? "kecon-parent-week" : data.tag || "kecon-notification",
+    renotify: !parent,
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
@@ -169,17 +171,32 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Handle subscription change (browser may revoke and re-issue)
+// Handle subscription change (browser may revoke and re-issue).
+// A parent device (G-07, marked by parent-push.ts) is never re-registered as a
+// child-push device: re-registering it needs the parent PIN in "Tuần của bé".
+const PARENT_MARK = "/__kecon/parent-endpoint";
+async function isParentDevice(endpoint) {
+  try {
+    const res = await (await caches.open("kecon-meta")).match(PARENT_MARK);
+    return Boolean(res) && (!endpoint || (await res.text()) === endpoint);
+  } catch {
+    return false;
+  }
+}
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(
-    self.registration.pushManager
-      .subscribe(event.oldSubscription?.options ?? { userVisibleOnly: true })
-      .then((subscription) => {
-        return fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(subscription),
-        });
-      })
+    isParentDevice(event.oldSubscription?.endpoint).then((parent) =>
+      parent
+        ? caches.open("kecon-meta").then((c) => c.delete(PARENT_MARK))
+        : self.registration.pushManager
+            .subscribe(event.oldSubscription?.options ?? { userVisibleOnly: true })
+            .then((subscription) => {
+              return fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(subscription),
+              });
+            })
+    )
   );
 });

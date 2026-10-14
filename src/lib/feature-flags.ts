@@ -90,6 +90,7 @@ export const SCREEN_FEATURE: Partial<Record<Screen, FeatureKey>> = {
   upload: "advanced_authoring",
   editor: "advanced_authoring",
   sky: "missions",
+  "parent-week": "missions",
 };
 export const API_FEATURE: Record<string, FeatureKey> = {
   "voice.ambient": "ai_ambience",

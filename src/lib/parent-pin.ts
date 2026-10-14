@@ -3,6 +3,7 @@
  * SECURITY DEFINER RPCs (migration 017); the client never sees the hash.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { setParentProof } from "@/lib/parent-proof";
 
 export type PinFailureReason =
   | "no_pin"
@@ -30,6 +31,7 @@ export const PIN_PATTERN = /^\d{4,6}$/;
 
 interface RawPinResult {
   ok?: boolean;
+  gate_token?: string;
   reason?: PinFailureReason;
   attempts_left?: number;
   locked_until?: string | null;
@@ -78,6 +80,21 @@ export async function setParentPin(
 export async function verifyParentPin(supabase: SupabaseClient, pin: string): Promise<PinResult> {
   const { data, error } = await supabase.rpc("verify_parent_pin", { p_pin: pin });
   return toResult(data as RawPinResult | null, error);
+}
+
+/**
+ * Parent gate with a server proof (G-06, migration 036): same check, attempt
+ * counter and lockout as {@link verifyParentPin}, and on success a short-lived
+ * proof for parent actions, kept in page memory only (parent-proof.ts).
+ * Databases without migration 036 fall back to the plain PIN check.
+ */
+export async function openParentGate(supabase: SupabaseClient, pin: string): Promise<PinResult> {
+  const { data, error } = await supabase.rpc("open_parent_gate", { p_pin: pin });
+  if (error && (error.code === "PGRST202" || error.code === "42883")) return verifyParentPin(supabase, pin);
+  const raw = data as RawPinResult | null;
+  const result = toResult(raw, error);
+  if (result.ok && typeof raw?.gate_token === "string") setParentProof(raw.gate_token);
+  return result;
 }
 
 /**

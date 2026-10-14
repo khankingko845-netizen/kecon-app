@@ -33,6 +33,8 @@ interface HomeProps {
 }
 
 const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+/** Last "nights this week" seen in this tab, so coming back to Home shows it at once. */
+let lastNights: { uid: string; n: number } | null = null;
 
 /** Concept board screen 2 — the hero copy follows the child's day. */
 const TOPICS: { id: string; label: string; icon: Icon3DName }[] = [
@@ -53,7 +55,8 @@ export default function Home({ onNavigate }: HomeProps) {
   const { settings } = useSettings();
   const [forYou, setForYou] = useState<ScoredStory[]>([]);
   // G-02: "Tuần này N tối" (nights this week, resets quietly each Monday) — never "đêm liền".
-  const [nights, setNights] = useState(0);
+  // null = still loading: the chip shows a placeholder instead of flashing the fallback text.
+  const [nights, setNights] = useState<number | null>(() => (lastNights && lastNights.uid === user?.id ? lastNights.n : null));
   const missionsOn = features.enabled("missions");
   const [last, setLast] = useState<LastPlayed | null>(null);
   const { say } = useFeedback();
@@ -92,10 +95,13 @@ export default function Home({ onNavigate }: HomeProps) {
     fetch("/api/missions", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { week?: { nights?: unknown } } | null) => {
-        const n = d?.week?.nights;
-        if (alive && typeof n === "number") setNights(n);
+        const n = typeof d?.week?.nights === "number" ? d.week.nights : 0;
+        lastNights = { uid: user.id, n };
+        if (alive) setNights(n);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (alive) setNights((v) => v ?? 0);
+      });
     return () => {
       alive = false;
     };
@@ -163,15 +169,24 @@ export default function Home({ onNavigate }: HomeProps) {
           type="button"
           hidden={!missionsOn}
           onClick={() => onNavigate("sky")}
-          aria-label={weekChipAria(nights)}
+          aria-label={weekChipAria(nights ?? 0)}
+          aria-busy={nights === null || undefined}
           data-testid="week-sky-chip"
+          data-loading={nights === null || undefined}
           className="ml-auto flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-2xl bg-glow-soft px-2.5 text-[#7A4A00] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <Star size={20} weight="fill" className="text-[#F2A900]" aria-hidden />
-          <span className="flex flex-col items-start leading-none" aria-hidden>
-            <span className="text-[12px] font-extrabold">{weekChipParts(nights)[0]}</span>
-            <span className="mt-0.5 text-[15px] font-black">{weekChipParts(nights)[1]}</span>
-          </span>
+          {nights === null ? (
+            <span className="flex w-[58px] flex-col items-start gap-1" aria-hidden data-testid="week-sky-chip-skeleton">
+              <span className="h-[10px] w-[44px] animate-pulse rounded-full bg-[#F2D48A]" />
+              <span className="h-[13px] w-[56px] animate-pulse rounded-full bg-[#F2D48A]" />
+            </span>
+          ) : (
+            <span className="flex flex-col items-start leading-none" aria-hidden>
+              <span className="text-[12px] font-extrabold">{weekChipParts(nights)[0]}</span>
+              <span className="mt-0.5 text-[15px] font-black">{weekChipParts(nights)[1]}</span>
+            </span>
+          )}
         </button>
       </div>
 
