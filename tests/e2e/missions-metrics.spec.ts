@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { signInAsMockFamily, MOCK_A15_ADMIN_ID } from "./support/fixtures";
+import { noSideScroll } from "./support/layout";
 
 // G-10 (docs/g10-missions-metrics.md): staff see weekly aggregates of the
 // missions loop and its guardrails; small samples hide the nights histogram.
@@ -22,7 +23,7 @@ test("G-10 số liệu tuần: tuần đủ làm tiêu đề, bảng vòng lặp
   await expect(guard.getByRole("row", { name: /28\/09/ })).toContainText("chưa đo");
   await expect(guard.getByRole("row", { name: /05\/10/ })).toContainText("9 / 1 / 2");
   await expect(panel).toContainText("phiên chưa xong đã bị dọn sau 7 ngày");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await noSideScroll(page)).toBe(true);
   const a = await new AxeBuilder({ page }).include('section[aria-label="Số liệu Bầu trời của Đóm"]').withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(a.violations).toEqual([]);
   if (process.env.G10_QA === "1") await panel.screenshot({ path: "/data/g10/admin-metrics-mobile.png" });

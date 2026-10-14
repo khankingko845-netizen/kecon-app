@@ -6,6 +6,7 @@ import {
   MOCK_A15_TARGET_ID,
   MOCK_ADMIN_USER_ID,
 } from "./support/fixtures";
+import { noSideScroll } from "./support/layout";
 test.describe("A-15 admin kit", () => {
   test.describe.configure({ mode: "serial" });
   test.use({
@@ -120,11 +121,7 @@ test.describe("A-15 admin kit", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/admin/users");
     await expect(page.getByRole("table")).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    expect(await noSideScroll(page)).toBe(true);
     await page
       .getByRole("button", { name: "Chi tiết Gia đình Xác nhận" })
       .click();
@@ -141,11 +138,7 @@ test.describe("A-15 admin kit", () => {
     await expect(
       page.getByRole("button", { name: "Lưu Cài Đặt" }),
     ).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    expect(await noSideScroll(page)).toBe(true);
     const axe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();

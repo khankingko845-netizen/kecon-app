@@ -12,13 +12,17 @@ import { useData } from "@/lib/data-context";
 import type { Screen } from "@/lib/types";
 import { normalizeAgeBand } from "@/lib/age-bands";
 
+// Named so a screen reader can announce each swatch (the colour alone has no name).
 const COLORS = [
- "#1a1a1a", "#EF4444", "#F59E0B", "#10B981", "#3B82F6",
- "#8B5CF6", "#EC4899", "#F97316", "#14B8A6", "#6366F1",
- "#D946EF", "#84CC16", "#06B6D4", "#A855F7", "#ffffff",
+ { value: "#1a1a1a", name: "đen" }, { value: "#EF4444", name: "đỏ" }, { value: "#F59E0B", name: "vàng" },
+ { value: "#10B981", name: "xanh lá" }, { value: "#3B82F6", name: "xanh dương" }, { value: "#8B5CF6", name: "tím" },
+ { value: "#EC4899", name: "hồng" }, { value: "#F97316", name: "cam" }, { value: "#14B8A6", name: "xanh ngọc" },
+ { value: "#6366F1", name: "chàm" }, { value: "#D946EF", name: "tím hồng" }, { value: "#84CC16", name: "xanh chanh" },
+ { value: "#06B6D4", name: "xanh da trời" }, { value: "#A855F7", name: "tím nhạt" }, { value: "#ffffff", name: "trắng" },
 ];
 
 const BRUSH_SIZES = [3, 6, 10, 16, 24];
+const BRUSH_NAMES = ["rất mảnh", "mảnh", "vừa", "to", "rất to"];
 
 interface DrawStoryProps {
  onBack: () => void;
@@ -188,7 +192,8 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  value={childName}
  onChange={(e) => setChildName(e.target.value)}
  placeholder="Tên bé (tuỳ chọn)"
- className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-medium text-txt dark:text-white outline-none focus:border-accent"
+ aria-label="Tên bé (tuỳ chọn)"
+ className="w-full min-h-11 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-medium text-txt dark:text-white outline-none focus:border-accent"
  />
  </div>
 
@@ -219,29 +224,39 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
 
  {/* Toolbar */}
  <div className="bg-gray-50 dark:bg-white/[0.04] rounded-2xl p-3 mb-3">
- {/* Colors */}
- <div className="flex gap-1.5 mb-2.5 overflow-x-auto no-scrollbar">
- {COLORS.map((c) => (
+ {/* Colors — 44 px targets; the row scrolls sideways inside the card */}
+ <div role="group" aria-label="Màu bút" className="-mx-1 mb-2 flex gap-0.5 overflow-x-auto px-1 no-scrollbar">
+ {COLORS.map((c) => {
+ const on = color === c.value && !isEraser;
+ return (
  <button
- key={c}
- onClick={() => { setColor(c); setIsEraser(false); }}
- className={`w-7 h-7 rounded-full shrink-0 border-2 transition-all ${
- color === c && !isEraser ? "border-accent scale-110" : "border-gray-200 dark:border-white/10"
- }`}
- style={{ backgroundColor: c }}
+ key={c.value}
+ type="button"
+ aria-label={`Màu ${c.name}`}
+ aria-pressed={on}
+ onClick={() => { setColor(c.value); setIsEraser(false); }}
+ className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+ >
+ <span
+ className={`h-8 w-8 rounded-full border-2 transition-all ${on ? "border-accent scale-110 ring-2 ring-accent/30" : "border-gray-200 dark:border-white/10"}`}
+ style={{ backgroundColor: c.value }}
  />
- ))}
+ </button>
+ );
+ })}
  </div>
 
- {/* Tools */}
- <div className="flex items-center gap-2">
- {/* Brush sizes */}
- <div className="flex gap-1 items-center">
- {BRUSH_SIZES.map((size) => (
+ {/* Tools: brush sizes, then eraser / undo / clear (wrap on narrow phones) */}
+ <div className="flex flex-wrap items-center gap-2">
+ <div role="group" aria-label="Cỡ nét" className="flex gap-1 items-center">
+ {BRUSH_SIZES.map((size, i) => (
  <button
  key={size}
+ type="button"
+ aria-label={`Nét ${BRUSH_NAMES[i]}`}
+ aria-pressed={brushSize === size}
  onClick={() => setBrushSize(size)}
- className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+ className={`h-11 w-11 rounded-lg flex items-center justify-center ${
  brushSize === size ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40"
  }`}
  >
@@ -253,33 +268,35 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  ))}
  </div>
 
- <div className="flex-1" />
-
- {/* Eraser */}
+ <div className="ml-auto flex gap-2">
  <button
+ type="button"
+ aria-label="Tẩy"
+ aria-pressed={isEraser}
  onClick={() => setIsEraser(!isEraser)}
- className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+ className={`h-11 w-11 rounded-xl flex items-center justify-center ${
  isEraser ? "bg-accent text-white" : "bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40"
  }`}
  >
- <Eraser size={18} />
+ <Eraser size={18} aria-hidden />
  </button>
-
- {/* Undo */}
  <button
+ type="button"
+ aria-label="Hoàn tác nét vừa vẽ"
  onClick={undo}
- className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
+ className="h-11 w-11 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
  >
- <Undo2 size={18} />
+ <Undo2 size={18} aria-hidden />
  </button>
-
- {/* Clear */}
  <button
+ type="button"
+ aria-label="Xoá hết tranh"
  onClick={clearCanvas}
- className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
+ className="h-11 w-11 rounded-xl bg-white dark:bg-white/[0.04] text-gray-500 dark:text-white/40 flex items-center justify-center"
  >
- <RotateCcw size={18} />
+ <RotateCcw size={18} aria-hidden />
  </button>
+ </div>
  </div>
  </div>
 

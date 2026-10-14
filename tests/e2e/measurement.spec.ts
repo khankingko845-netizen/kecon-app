@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { signInAsMockFamily, MOCK_A15_ADMIN_ID } from "./support/fixtures";
+import { noSideScroll } from "./support/layout";
 test("T07 admin cost/funnel explain unknown coverage; period and failure remain visible", async ({
   page,
   context,
@@ -14,11 +15,7 @@ test("T07 admin cost/funnel explain unknown coverage; period and failure remain 
   await expect(panel).toContainText("Funnel tài khoản mới");
   await panel.getByLabel("Khoảng ngày UTC").selectOption("7");
   await expect(panel).toContainText("Chưa xác định");
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+  expect(await noSideScroll(page)).toBe(true);
   const a = await new AxeBuilder({ page })
     .include('section[aria-label="Đo lường first-party"]')
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])

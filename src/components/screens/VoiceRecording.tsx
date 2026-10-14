@@ -296,7 +296,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  aria-selected={selectedScript === x.id}
  onClick={() => setSelectedScript(x.id)}
  disabled={isRecording}
- className={`min-h-[40px] whitespace-nowrap rounded-xl border px-3 text-[13px] font-semibold transition-colors ${
+ className={`min-h-11 whitespace-nowrap rounded-xl border px-3 text-[13px] font-semibold transition-colors ${
  selectedScript === x.id ? "border-brand bg-brand-soft text-brand-ink" : "border-[#E7E3F2] bg-white text-ink-2"
  }`}
  >

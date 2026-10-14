@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { signInAsMockFamily, MOCK_A15_ADMIN_ID } from "./support/fixtures";
 import { mkdir } from "node:fs/promises";
+import { sideOverflow } from "./support/layout";
 test.describe("A-15 visual and accessibility coverage", () => {
   test("all admin routes at desktop/mobile; dialogs and night theme", async ({
     page,
@@ -49,7 +50,7 @@ test.describe("A-15 visual and accessibility coverage", () => {
     );
     const dir = process.env.A15_SCREENSHOTS;
     if (dir) await mkdir(dir, { recursive: true });
-    for (const width of [1280, 390]) {
+    for (const width of [1280, 390, 360]) {
       await page.setViewportSize({ width, height: 850 });
       for (const section of [
         "",
@@ -65,11 +66,8 @@ test.describe("A-15 visual and accessibility coverage", () => {
         await page.goto(`/admin/${section}`);
         await expect(page.locator("main h1")).toBeVisible();
         await page.waitForTimeout(400);
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= window.innerWidth,
-          ),
-        ).toBe(true);
+        const side = await sideOverflow(page);
+        expect(side.overflow, `${section || "dashboard"} ${width}: cuộn ngang ${side.offenders.join(" | ")}`).toBeLessThanOrEqual(1);
         const report = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
           .analyze();

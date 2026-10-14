@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { MOCK_AVATAR_USER_ID, mockAccessToken, passParentGate, signInAsMockFamily } from "./support/fixtures";
+import { noSideScroll } from "./support/layout";
 
 const profileUrl = `http://127.0.0.1:54321/rest/v1/profiles?id=eq.${MOCK_AVATAR_USER_ID}`;
 const headers = { Authorization: `Bearer ${mockAccessToken(MOCK_AVATAR_USER_ID, "e2e-avatar@kecon.test")}` };
@@ -54,12 +55,12 @@ test("Avatar Đóm: legacy → chọn/lưu → Trang chủ/Bố mẹ → tải l
     await familyRow.click();
     await expect(picker.getByRole("button", { name: "Đóm kể chuyện", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.setViewportSize({ width: 320, height: 850 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await noSideScroll(page)).toBe(true);
     const nightA11y = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
     expect(nightA11y.violations).toEqual([]);
     if (process.env.AVATAR_VISUAL_QA === "1") await page.screenshot({ path: "/data/avatar-profile-night-320.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await noSideScroll(page)).toBe(true);
     if (process.env.AVATAR_VISUAL_QA === "1") await page.screenshot({ path: "/data/avatar-profile-desktop.png", fullPage: true });
   } finally {
     await request.patch(profileUrl, { headers, data: { avatar_url: null, avatar_emoji: null } });

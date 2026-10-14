@@ -174,7 +174,7 @@ export default function Onboarding({ onGetStarted, onLogin }: OnboardingProps) {
  </Button3D>
  <p className="mt-[18px] text-center text-[16px] font-bold text-ink-2">
  Bố mẹ đã có tài khoản?{" "}
- <button type="button" onClick={onLogin} data-early-click="login" className="min-h-[40px] font-extrabold text-brand-ink">
+ <button type="button" onClick={onLogin} data-early-click="login" className="inline-flex min-h-11 items-center px-1.5 font-extrabold text-brand-ink">
  Đăng nhập
  </button>
  </p>
