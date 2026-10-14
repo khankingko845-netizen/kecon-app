@@ -66,6 +66,8 @@ interface FeedbackContextValue {
   cue: (cue: FeedbackCue) => void;
   /** A moment from DOM_LINES, or a ready line (mission praise, docs/missions-mvp.md). */
   say: (moment: DomMoment | DomLine, opts?: SayOptions) => DomLine;
+  /** Close Đóm's bubble and stop his voice (a full-screen story takes over). */
+  hush: () => void;
 }
 
 const noop = () => {};
@@ -78,6 +80,7 @@ const FeedbackContext = createContext<FeedbackContextValue>({
   hasVoice: false,
   cue: noop,
   say: (moment) => (typeof moment === "string" ? DOM_LINES[moment] : moment),
+  hush: noop,
 });
 
 export function useFeedback() {
@@ -247,6 +250,17 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     [speak],
   );
 
+  const hush = useCallback(() => {
+    setSpeech(null);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
   /* Stop talking as soon as voice is no longer allowed (bedtime, toggle off, story starts). */
   useEffect(() => {
     if (!channels.voice && typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -292,8 +306,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       hasVoice,
       cue,
       say,
+      hush,
     }),
-    [prefs, setPrefs, channels, isBedtime, supportsHaptics, hasVoice, cue, say],
+    [prefs, setPrefs, channels, isBedtime, supportsHaptics, hasVoice, cue, say, hush],
   );
 
   return (

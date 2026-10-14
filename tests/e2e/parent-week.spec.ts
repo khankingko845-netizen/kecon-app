@@ -11,6 +11,11 @@ const CUOI = "00000000-0000-4000-8000-0000000051a2";
 const MOCK = "http://127.0.0.1:54321";
 const nav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
 
+// Every test here resets and writes the same mock family's missions ledger, so they
+// must not overlap across workers (fullyParallel would let one test's reset/listen
+// land in the middle of another). Run in order on one worker; retries stay per-test.
+test.describe.configure({ mode: "default" });
+
 async function reset(request: APIRequestContext, sub: string) {
   await request.post(`${MOCK}/__e2e/missions-reset`, { data: { sub } });
 }
@@ -187,4 +192,12 @@ test("mở lời nhắc khi app đang tắt → cổng PIN → Tuần của bé;
   await expect(page.getByRole("heading", { level: 1, name: "Tuần của bé" })).toBeVisible();
   await page.getByRole("button", { name: "Quay lại", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true })).toBeVisible();
+});
+
+test("máy đã đăng xuất: mở lời nhắc → màn chào như thường (không 404, không mở màn bố mẹ); màn lạ vẫn 404", async ({ page }) => {
+  expect((await page.goto("/?screen=parent-week"))?.status()).toBe(200);
+  await expect(page.getByRole("button", { name: /Bắt đầu nào!/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Tuần của bé" })).toHaveCount(0);
+  await expect(page.locator("[data-parent-gate]")).toHaveCount(0);
+  expect((await page.goto("/?screen=khong-co"))?.status()).toBe(404);
 });

@@ -47,7 +47,7 @@ function Paper({
 }) {
   return (
     <div className={`kc-paper flex h-full flex-col overflow-hidden rounded-[22px] ${isNight ? "kc-paper-night" : ""}`}>
-      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden">
+      <div className="relative aspect-[16/9] min-h-[96px] w-full shrink overflow-hidden">
         {art && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -62,7 +62,7 @@ function Paper({
       </div>
       <div
         ref={textRef}
-        className={`kc-page-text min-h-[120px] max-h-[34vh] flex-1 overflow-y-auto whitespace-pre-line px-[18px] pb-2 pt-3.5 font-bold no-scrollbar ${dense ? "text-[16.5px] leading-[1.6]" : "text-[18px] leading-[1.65]"}`}
+        className={`kc-page-text min-h-[112px] flex-1 overflow-y-auto whitespace-pre-line px-[18px] pb-4 pt-3.5 [mask-image:linear-gradient(to_bottom,#000_calc(100%-16px),transparent)] font-bold no-scrollbar ${dense ? "text-[16.5px] leading-[1.6]" : "text-[18px] leading-[1.65]"}`}
       >
         {body}
       </div>

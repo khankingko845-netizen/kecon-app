@@ -98,6 +98,41 @@ test.describe("UI-11 · âm thanh, rung, Đóm nói", () => {
     await expect(bubble).toHaveCount(0);
   });
 
+  test("mở truyện: bong bóng của Đóm tắt, không che nút Quay lại / Chế độ ngủ", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    await page.goto("/");
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toBeVisible();
+    await page.getByText("Sóc Nhỏ tìm hạt dẻ").first().click();
+    await expect(page.getByTestId("story-book")).toBeVisible();
+    // Gone right away — not only after the bubble's own 3.5–5 s timeout.
+    await expect(bubble).toHaveCount(0, { timeout: 1000 });
+    await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Chạm để nghe Đóm nói" })).toBeVisible();
+  });
+
+  test("lời chào đến muộn không nói đè lên truyện; chào ở lần về Trang chủ sau", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    await page.route("**/rest/v1/reading_streaks*", async (r) => {
+      await held;
+      await r.continue();
+    });
+    await page.goto("/");
+    await page.getByText("Sóc Nhỏ tìm hạt dẻ").first().click();
+    await expect(page.getByTestId("story-book")).toBeVisible();
+    await resetProbe(page);
+    release();
+    await page.waitForTimeout(800);
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toHaveCount(0);
+    expect((await probe(page)).spoken).toEqual([]);
+    await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+    await expect(bubble).toBeVisible();
+    await expect(bubble).toContainText(/Chào buổi sáng|nhiều tối/);
+  });
+
   test("tắt trong tab Bố mẹ → im lặng hẳn, vẫn hiện chữ", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
     await page.goto("/");
