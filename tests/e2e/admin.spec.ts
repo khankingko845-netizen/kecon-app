@@ -23,10 +23,12 @@ const ALL_SECTIONS = [
   "Thống kê",
   "Danh mục",
   "Mẫu truyện",
+  "Nhiệm vụ",
   "Cài đặt hệ thống",
   "Nhật ký",
 ];
-const EDITOR_SECTIONS = ["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"];
+// G-08: mission copy is content, so editors (templates.manage) see "Nhiệm vụ".
+const EDITOR_SECTIONS = ["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện", "Nhiệm vụ"];
 const kidNav = (page: Page) =>
   page.getByRole("navigation", { name: "Điều hướng chính" });
 const adminNav = (page: Page) =>

@@ -110,15 +110,15 @@ describe("resolveAdminViewer (A-01 guard + A-02 quyền hạn)", () => {
 });
 
 describe("quyền theo mục (A-02)", () => {
-  it("biên tập chỉ thấy Tổng quan, Truyện, Danh mục, Mẫu truyện", () => {
-    expect(sectionsFor(EDITOR).map((s) => s.label)).toEqual(["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện"]);
+  it("biên tập chỉ thấy Tổng quan, Truyện, Danh mục, Mẫu truyện, Nhiệm vụ", () => {
+    expect(sectionsFor(EDITOR).map((s) => s.label)).toEqual(["Tổng quan", "Truyện", "Danh mục", "Mẫu truyện", "Nhiệm vụ"]);
     expect(canOpenSection("admin-settings", EDITOR)).toBe(false);
     expect(canOpenSection("admin-users", EDITOR)).toBe(false);
     expect(canOpenSection("admin-templates", EDITOR)).toBe(true);
   });
 
-  it("admin cũ + super admin thấy đủ 8 mục (kể cả Nhật ký); phân tích chỉ Tổng quan + Thống kê", () => {
-    expect(ADMIN_SECTIONS).toHaveLength(8);
+  it("admin cũ + super admin thấy đủ 9 mục (kể cả Nhật ký); phân tích chỉ Tổng quan + Thống kê", () => {
+    expect(ADMIN_SECTIONS).toHaveLength(9);
     expect(sectionsFor(ADMIN)).toHaveLength(ADMIN_SECTIONS.length);
     expect(adminPath("admin-audit")).toBe("/admin/audit");
     expect(sectionsFor(ROLE_PERMISSIONS.super_admin)).toHaveLength(ADMIN_SECTIONS.length);
