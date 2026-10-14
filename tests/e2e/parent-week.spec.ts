@@ -151,3 +151,40 @@ test("chip Bầu trời không nháy chữ dự phòng khi đang tải", async (
   await expect(chip).not.toHaveAttribute("aria-busy", "true");
   expect(seen.some((t) => t.includes("của Đóm"))).toBe(false);
 });
+
+// G-07: the reminder opens "Tuần của bé" — the service worker posts the URL to
+// an open window (public/sw.js notificationclick) or opens it cold.
+const swClick = (page: Page, url: string) =>
+  page.evaluate((u) => navigator.serviceWorker.dispatchEvent(new MessageEvent("message", { data: { type: "NOTIFICATION_CLICK", url: u } })), url);
+
+test("bấm lời nhắc khi app đang mở → cổng PIN → Tuần của bé; link lạ bị bỏ qua", async ({ page, context, baseURL, request }) => {
+  await reset(request, MOCK_PIN_USER_ID);
+  await signInAsMockFamily(context, baseURL!, { userId: MOCK_PIN_USER_ID });
+  await page.goto("/");
+  await expect(page.getByTestId("home-explore")).toBeVisible();
+  const gate = page.locator("[data-parent-gate]");
+  await swClick(page, "https://evil.example/?screen=parent-week");
+  await swClick(page, "/?screen=settings");
+  await page.waitForTimeout(400);
+  await expect(gate).toHaveCount(0);
+  await expect(page.getByTestId("home-explore")).toBeVisible();
+  await expect(async () => {
+    await swClick(page, "/?screen=parent-week");
+    await expect(gate).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await passParentGate(page, MOCK_PIN);
+  await expect(page.getByRole("heading", { level: 1, name: "Tuần của bé" })).toBeVisible();
+  await swClick(page, "/?screen=parent-week");
+  await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+  await expect(page.getByTestId("home-explore")).toBeVisible();
+});
+
+test("mở lời nhắc khi app đang tắt → cổng PIN → Tuần của bé; Quay lại về Bố mẹ", async ({ page, context, baseURL, request }) => {
+  await reset(request, MOCK_PIN_USER_ID);
+  await signInAsMockFamily(context, baseURL!, { userId: MOCK_PIN_USER_ID });
+  await page.goto("/?screen=parent-week");
+  await passParentGate(page, MOCK_PIN);
+  await expect(page.getByRole("heading", { level: 1, name: "Tuần của bé" })).toBeVisible();
+  await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true })).toBeVisible();
+});
