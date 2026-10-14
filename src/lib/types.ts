@@ -27,6 +27,7 @@ export type Screen =
   | "achievements"
   | "parental-controls"
   | "parent-analytics"
+  | "parent-week"
   | "downloads"
   | "notifications"
   | "profile-edit"

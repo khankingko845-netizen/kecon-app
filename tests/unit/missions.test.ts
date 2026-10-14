@@ -45,6 +45,8 @@ const day = (date: string, stars = 0, listened = false) => ({ date, stars, liste
 const today = (missions: { id: string; done: boolean }[], nights = 1): MissionsToday => ({
   date: "2026-03-05",
   missions,
+  habits: [],
+  family: null,
   week: {
     start: "2026-03-02",
     goal: 4,
@@ -162,7 +164,8 @@ describe("API /api/missions", () => {
     const { GET } = await import("@/app/api/missions/album/route");
     const album = { stickers: [{ story_id: STORY, title: "Tấm Cám", cover_image_url: null, earned_on: "2026-03-05" }], milestones: [1] };
     rpc.mockResolvedValueOnce({ data: album, error: null });
-    expect(await (await GET()).json()).toEqual(album);
+    // Before migration 036 there are no family constellations yet.
+    expect(await (await GET()).json()).toEqual({ ...album, constellations: [] });
     rpc.mockResolvedValueOnce({ data: { stickers: "x" }, error: null });
     expect((await GET()).status).toBe(503);
   });

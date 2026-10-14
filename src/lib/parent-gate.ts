@@ -15,6 +15,7 @@ export const PARENT_SCREENS: readonly Screen[] = [
   "settings",
   "parental-controls",
   "parent-analytics",
+  "parent-week",
   "subscription",
   "profile-edit",
   "notifications",

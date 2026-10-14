@@ -114,9 +114,27 @@ export interface WeekDay {
   stars: number;
   listened: boolean;
 }
+/** G-06: what a parent confirmed today — a habit (one star) or a good deed (thanks only). */
+export type HabitKind = "habit" | "kindness";
+export interface HabitToday {
+  id: string;
+  kind: HabitKind;
+  title: string;
+  line: string;
+}
+/** G-07: "cả nhà đọc cùng nhau" — stories a parent marked as read together this week. */
+export interface FamilyProgress {
+  id: string;
+  title: string;
+  target: number;
+  progress: number;
+  done: boolean;
+}
 export interface MissionsToday {
   date: string;
   missions: MissionStatus[];
+  habits: HabitToday[];
+  family: FamilyProgress | null;
   week: { start: string; goal: number; nights: number; days: WeekDay[] };
   totals: { stories: number; stars: number; stickers: number };
 }
@@ -129,6 +147,7 @@ export interface MissionSticker {
 export interface MissionsAlbum {
   stickers: MissionSticker[];
   milestones: number[];
+  constellations: { week_start: string; earned_on: string }[];
 }
 export type CompleteReason = "too_fast" | "expired" | "already_completed";
 export interface CompleteResult {
@@ -183,4 +202,94 @@ export function buildCelebration(r: CompleteResult): Celebration | null {
     allDone,
     nights: r.today?.week.nights ?? null,
   };
+}
+
+// ── G-06 / G-07: the parent's week (behind the parent gate) ────────────────
+export interface ParentWeekStory {
+  session_id: string;
+  story_id: string | null;
+  title: string | null;
+  category: string | null;
+  date: string;
+  together: boolean;
+  prompt: string | null;
+}
+export interface ParentHabit {
+  id: string;
+  kind: HabitKind;
+  title: string;
+  label: string;
+  prompt: string | null;
+  today: boolean;
+  week: number;
+}
+export interface ParentNotify {
+  enabled: boolean;
+  hour: number;
+  devices: number;
+}
+export interface ParentWeek {
+  summary: MissionsToday;
+  stories: ParentWeekStory[];
+  habits: ParentHabit[];
+  family: (FamilyProgress & { label: string }) | null;
+  notify: ParentNotify;
+}
+/** GET /api/missions/parent adds whether this server can send reminders. */
+export interface ParentWeekResponse extends ParentWeek {
+  push: { publicKey: string | null };
+}
+export interface ConfirmResult {
+  confirmed: boolean;
+  kind: HabitKind;
+  star: boolean;
+  line: string | null;
+  reason?: "already_confirmed";
+}
+export interface TogetherResult {
+  marked: boolean;
+  progress: number;
+  target: number;
+  done: boolean;
+  constellation: boolean;
+  line: string | null;
+}
+
+/** Copy for good deeds (rule 9): thanked in words, never traded for a star or sticker. */
+export const KINDNESS_NOTE = "Việc tốt cho người khác chỉ được cảm ơn bằng lời, không đổi lấy sao.";
+export const HABIT_NOTE = "Bố mẹ thấy bé làm thật thì mới bấm. Mỗi thói quen được một ngôi sao mỗi ngày.";
+export const REMINDER_NOTE = "Tối đa 1 lần mỗi ngày, chỉ gửi đến máy bố mẹ đăng ký ở đây — không gửi khi bé đang dùng chế độ của bé.";
+
+/** Conversation starters when a story has no prompt of its own (no right answers, no quiz). */
+const GENERIC_PROMPTS: Record<string, string> = {
+  fairy_tale: "Hỏi bé: “Nếu con ở trong truyện, con sẽ làm gì?”",
+  folk: "Hỏi bé: “Nhân vật nào làm con nhớ nhất? Vì sao?”",
+  animal: "Hỏi bé: “Bạn thú trong truyện đã cảm thấy thế nào?”",
+  bedtime: "Hỏi bé: “Đoạn nào trong truyện làm con thấy dễ chịu nhất?”",
+  adventure: "Hỏi bé: “Nếu được đi cùng, con sẽ mang theo gì?”",
+  educational: "Hỏi bé: “Bạn nhỏ trong truyện đã thử cách nào? Con muốn thử không?”",
+};
+export const DEFAULT_PROMPT = "Hỏi bé: “Con thích nhân vật nào nhất? Vì sao?”";
+
+export function conversationPrompt(story: Pick<ParentWeekStory, "prompt" | "category">): string {
+  return story.prompt ?? (story.category ? GENERIC_PROMPTS[story.category] : undefined) ?? DEFAULT_PROMPT;
+}
+
+/** Family progress, counting stories read together — never what was missed. */
+export function familyLine(progress: number, target: number): string {
+  if (progress >= target) return "Chòm sao của nhà mình đã sáng tuần này!";
+  if (progress === 0) return `Đọc cùng bé ${target} truyện trong tuần để thắp chòm sao của nhà mình.`;
+  return `Đã đọc cùng ${progress}/${target} truyện tuần này.`;
+}
+
+/** Child-facing line on Bầu trời for the family constellation. */
+export function familySkyLine(progress: number, target: number): string {
+  if (progress >= target) return "Cả nhà đã đọc cùng nhau đủ truyện. Chòm sao sáng rồi!";
+  if (progress === 0) return `Đọc cùng bố mẹ ${target} truyện để thắp chòm sao của nhà mình.`;
+  return `Cả nhà đã đọc cùng nhau ${progress}/${target} truyện.`;
+}
+
+export const REMINDER_HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21] as const;
+export function hourLabel(h: number): string {
+  return `${String(h).padStart(2, "0")}:00`;
 }

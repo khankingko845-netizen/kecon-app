@@ -1,0 +1,11 @@
+[Unit]
+Description=KểCon parent reminders (G-07: opt-in, ≤ 1 a day, parent devices only)
+After=docker.service kecon-supabase.service
+Wants=kecon-supabase.service
+
+[Service]
+Type=oneshot
+User=doppel
+Environment=NODE_ENV=production SUPABASE_INTERNAL_URL=http://127.0.0.1:54321
+ExecStart=/bin/bash -c 'set -a; source /srv/kecon/shared/app.env; source /srv/kecon/shared/runtime.env; set +a; exec /opt/node/bin/node /srv/kecon/current/scripts/parent-notify.mjs'
+TimeoutStartSec=300
