@@ -14,6 +14,7 @@ import { getLastPlayed, lastPlayedProgress, type LastPlayed } from "@/lib/last-p
 import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import Mascot from "@/components/ui/Mascot";
 import { CategoryIcon, Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
+import StoryThumb from "@/components/ui/StoryThumb";
 import { Card, ProgressBar, SectionHeader, CARD_SHADOW } from "@/components/ui/kit";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Screen } from "@/lib/types";
@@ -106,6 +107,7 @@ export default function Home({ onNavigate }: HomeProps) {
     const s = stories[0];
     return s ? { storyId: s.id, title: s.title, page: 0, totalPages: Math.max(1, s.page_count || 1), category: s.category, voice: undefined, updatedAt: 0 } : null;
   }, [last, stories]);
+  const resumeStory = resume ? stories.find((s) => s.id === resume.storyId) : undefined;
 
   // A poke before the (async) greeting arrives wins — the greeting must not
   // talk over the kid's own tap, so it is skipped for this session.
@@ -209,12 +211,19 @@ export default function Home({ onNavigate }: HomeProps) {
           <SectionHeader title="Nghe tiếp" />
           <Card className="flex items-center gap-3 p-2.5">
             <button type="button" onClick={() => onNavigate("player", { storyId: resume.storyId })} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-              <span
-                className="flex h-[70px] w-[70px] shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#2A2160] bg-cover bg-[center_70%]"
-                style={{ backgroundImage: "url(/images/night-bg.webp)" }}
-              >
-                <CategoryIcon category={resume.category} size={44} className="drop-shadow" />
-              </span>
+              <StoryThumb
+                story={resumeStory ?? { id: resume.storyId }}
+                eager
+                className="h-[70px] w-[70px] rounded-[18px]"
+                fallback={
+                  <span
+                    className="flex h-[70px] w-[70px] shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#2A2160] bg-cover bg-[center_70%]"
+                    style={{ backgroundImage: "url(/images/night-bg.webp)" }}
+                  >
+                    <CategoryIcon category={resume.category} size={44} className="drop-shadow" />
+                  </span>
+                }
+              />
               <span className="min-w-0 flex-1">
                 <b className="block truncate text-[17px] font-black text-ink">{resume.title}</b>
                 <small data-kid-detail className="block truncate text-[13.5px] font-bold text-ink-2">
@@ -269,9 +278,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 onClick={() => onNavigate("player", { storyId: story.id })}
                 className={`w-[148px] shrink-0 rounded-[22px] bg-white p-2 text-left active:scale-[0.98] ${CARD_SHADOW}`}
               >
-                <span className="flex h-[88px] items-center justify-center rounded-[16px] bg-brand-soft">
-                  <CategoryIcon category={story.category} size={64} />
-                </span>
+                <StoryThumb story={story} category={story.category} iconSize={64} className="h-[88px] w-full rounded-[16px]" />
                 <b className="mt-1.5 block truncate px-1 text-[14px] font-black text-ink">{story.title}</b>
                 <small data-kid-detail className="block truncate px-1 text-[12px] font-bold text-brand-ink">{reason}</small>
                 {story.description && (

@@ -8,6 +8,7 @@ import ElevenLabsSettings from "@/components/admin/settings/ElevenLabsSettings";
 import FishAudioSettings from "@/components/admin/settings/FishAudioSettings";
 import StoryAiSettings from "@/components/admin/settings/StoryAiSettings";
 import IllustrationSettings from "@/components/admin/settings/IllustrationSettings";
+import ThumbnailSettings from "@/components/admin/settings/ThumbnailSettings";
 export default function AdminSettings({
   onBack,
   canManageSecrets = true,
@@ -32,6 +33,7 @@ export default function AdminSettings({
             ["fishaudio", "Fish Audio"],
             ["story-ai", "AI tạo truyện"],
             ["illustration", "Minh hoạ"],
+            ["thumbnails", "Ảnh bìa"],
           ].map(([id, label]) => (
             <a href={"#" + id} key={id} className="admin-button">
               {label}
@@ -71,6 +73,7 @@ export default function AdminSettings({
               controller={controller}
               canManageSecrets={canManageSecrets}
             />
+            <ThumbnailSettings controller={controller} />
             <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
               <span className="text-sm text-ink-2">
                 {hasChanges ? "Có thay đổi chưa lưu" : "Cài đặt đã đồng bộ"}

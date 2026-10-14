@@ -5,6 +5,7 @@ import { guardUsage } from "@/lib/usage-guard";
 import { resolveLlmTarget } from "@/lib/llm-config";
 import { callLlmJson } from "@/lib/llm-metered";
 import { z } from "zod";
+import { initialThumbnailFields } from "@/lib/story-thumbnails";
 import { imageData as imageDataSchema, languageCode, optionalText, parseJsonBody } from "@/lib/api-validation";
 
 /**
@@ -107,7 +108,11 @@ Hãy viết truyện thiếu nhi dựa trên bản vẽ này!`;
       throw new Error("Story format invalid");
     }
 
-    // Step 3: Save to database
+    // Step 3: Save to database (PR #49: page-1 scene as the first card thumbnail)
+    const thumbnail = await initialThumbnailFields(
+      { scene_description: story.pages[0]?.sceneDescription, content: story.pages[0]?.text },
+      "tuviet",
+    );
     const { data: storyRow, error: insertErr } = await supabase
       .from("stories")
       .insert({
@@ -124,6 +129,7 @@ Hãy viết truyện thiếu nhi dựa trên bản vẽ này!`;
         status: "draft",
         tags: ["from-drawing"],
         metadata: { drawing_analysis: analysis, from_drawing: true },
+        ...thumbnail,
       })
       .select("id")
       .single();

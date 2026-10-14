@@ -11,6 +11,7 @@ import { languageCode, llmSelectionFields, optionalText, parseJsonBody, required
 import { BriefCharactersSchema, NARRATION_PACES, STORY_LENGTHS, defaultPace } from "@/lib/story-brief";
 import { castVoices, castingNarrator, type CastableVoice } from "@/lib/voice-casting";
 import { sceneForPage } from "@/lib/scene-library";
+import { initialThumbnailFields } from "@/lib/story-thumbnails";
 import { DEFAULT_ART_STYLE } from "@/lib/illustration-prompt";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -87,6 +88,16 @@ async function persistStory(
   const locale = language || "vi";
   const pace = input.pace ?? defaultPace(age, theme);
   const ageNums = String(age).match(/\d+/g)?.map(Number) ?? [0, 12];
+  const first = story.pages[0];
+  // PR #49: the card starts with page 1's scene thumbnail until a cover exists.
+  const thumbnail = first
+    ? await initialThumbnailFields(
+        {
+          scene_id: sceneForPage({ sceneId: first.scene, sceneDescription: first.sceneDescription, illustration: first.illustration, text: first.text, theme }),
+        },
+        theme,
+      )
+    : {};
   const { data: storyRow, error: storyErr } = await supabase
     .from("stories")
     .insert({
@@ -110,6 +121,7 @@ async function persistStory(
       cast_voices: Boolean(input.castVoices),
       auto_ambience: input.ambience !== false,
       illustration_style: input.illustrate ? DEFAULT_ART_STYLE : null,
+      ...thumbnail,
     })
     .select("id")
     .single();

@@ -16,7 +16,10 @@ import {
   Eye,
   Bookmark,
   FileText,
+  Image as ImageIcon,
 } from "@/components/ui/icons";
+import StoryThumb from "@/components/ui/StoryThumb";
+import StoryCoverDrawer from "@/components/admin/StoryCoverDrawer";
 import { AdminHeader as TopBar } from "@/components/admin/AdminUi";
 import { useData } from "@/lib/data-context";
 import {
@@ -76,6 +79,7 @@ export default function AdminStories({
   const [showDeleted, setShowDeleted] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [working, setWorking] = useState(false);
+  const [coverStory, setCoverStory] = useState<StoryRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -306,8 +310,10 @@ export default function AdminStories({
                         <Square size={20} className="text-gray-300" />
                       )}
                     </button>
-                    <div
-                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} shrink-0`}
+                    <StoryThumb
+                      story={story}
+                      className="w-11 h-11 rounded-xl"
+                      fallback={<div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} shrink-0`} />}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -360,6 +366,16 @@ export default function AdminStories({
                         >
                           <Eye size={13} />
                         </button>
+                        {story.is_platform_content && (
+                          <button
+                            onClick={() => setCoverStory(story)}
+                            aria-label={`Ảnh bìa ${story.title}`}
+                            title="Ảnh bìa & thumbnail"
+                            className="py-1.5 px-2.5 rounded-lg bg-sky-50 text-sky-800 text-sm font-bold flex items-center justify-center"
+                          >
+                            <ImageIcon size={13} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleRowAction(story, "template")}
                           disabled={working}
@@ -434,6 +450,15 @@ export default function AdminStories({
           </button>
         </div>
       )}
+      <StoryCoverDrawer
+        story={coverStory}
+        onClose={() => setCoverStory(null)}
+        onSaved={(patch) => {
+          setStories((prev) => prev.map((s) => (s.id === patch.id ? { ...s, ...patch } : s)));
+          setCoverStory((cur) => (cur && cur.id === patch.id ? { ...cur, ...patch } : cur));
+          void refreshStories();
+        }}
+      />
     </div>
   );
 }

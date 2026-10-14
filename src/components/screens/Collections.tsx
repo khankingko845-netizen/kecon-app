@@ -8,6 +8,7 @@ import { KidLoading } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { gradientFor, iconForCategory } from "@/lib/db";
+import StoryThumb from "@/components/ui/StoryThumb";
 import { useParentalControls } from "@/lib/parental-controls-context";
 import { filterAllowed } from "@/lib/content-filter";
 import type { Screen } from "@/lib/types";
@@ -172,9 +173,15 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  onClick={() => onNavigate("player", { storyId: story.id })}
  className="w-full bg-white dark:bg-white/[0.04] rounded-xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.98] transition-transform"
  >
+ <StoryThumb
+ story={story}
+ className="w-12 h-12 rounded-xl"
+ fallback={
  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} flex items-center justify-center text-white flex-shrink-0`}>
  <StoryIcon icon={iconForCategory(story.category, story.id)} />
  </div>
+ }
+ />
  <div className="flex-1 min-w-0 text-left">
  <p className="text-[14px] font-bold truncate">{story.title}</p>
  <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-2">

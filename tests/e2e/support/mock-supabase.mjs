@@ -126,9 +126,11 @@ const story = (id, title, category, theme) => ({
   updated_at: now,
 });
 
+// PR #49: the second story already has a scene thumbnail; the first one is
+// thumbnailed by the Library warm-up (POST /api/story/thumbnails).
 const stories = [
   story("00000000-0000-4000-8000-0000000051a1", "Sóc Nhỏ tìm hạt dẻ", "animal", "dongvat"),
-  story("00000000-0000-4000-8000-0000000051a2", "Chú Cuội và cây đa", "fairy_tale", "cotich"),
+  { ...story("00000000-0000-4000-8000-0000000051a2", "Chú Cuội và cây đa", "fairy_tale", "cotich"), thumbnail_source: "scene", thumbnail_scene: "village" },
 ];
 const pages = stories.flatMap((s) =>
   [1, 2].map((n) => ({
@@ -494,6 +496,7 @@ function rpc(name, sub, body, claims={}) {
       return owned.length||defs.length?"disabled":"unavailable";
     }
     case "my_household_context":return {household_id:sub,role:"owner"};
+    case "admin_thumbnail_stats":{if(!permissions.includes("stories.read"))return rpcError(400,"42501","Forbidden");const st=TABLES.stories??[];const plat=st.filter(x=>x.is_platform_content&&!x.deleted_at),fam=st.filter(x=>!x.is_platform_content&&!x.deleted_at);const by=k=>plat.filter(x=>x.thumbnail_source===k).length;return {platform:{total:plat.length,with_cover:plat.filter(x=>x.cover_image_url).length,missing:plat.filter(x=>!x.thumbnail_source).length,cover:by("cover"),page:by("page"),upload:by("upload"),scene:by("scene"),icon:by("icon")},family:{total:fam.length,missing:fam.filter(x=>!x.thumbnail_source).length}};}
     case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
     case "set_ai_price_v2":case "set_ai_price": {
       if(!permissions.includes("settings.write"))return rpcError(400,"42501","Forbidden");
@@ -723,6 +726,20 @@ createServer((req, res) => {
       if(req.method==="PATCH")return readJson(req).then(body=>{const id=url.searchParams.get("id")?.replace(/^eq\./,"");const r=TABLES[table].find(r=>r.id===id);if(r)Object.assign(r,body);send(res,200,null)});
     }
 
+    if (req.method === "PATCH" && table === "stories" && authed) {
+      // PR #49: owners may set the thumbnail columns of their own family stories (RLS mirror).
+      readJson(req).then((body) => {
+        const keys = ["thumbnail_source", "thumbnail_path", "thumbnail_scene", "thumbnail_updated_at"];
+        const patch = Object.fromEntries(Object.entries(body ?? {}).filter(([k]) => keys.includes(k)));
+        // Any other story edit keeps the previous generic mock answer.
+        if (!Object.keys(patch).length || Object.keys(patch).length !== Object.keys(body ?? {}).length) return send(res, 201, []);
+        const rows = filterRows(TABLES.stories, url.searchParams).filter((r) => r.user_id === sub && !r.is_platform_content);
+        for (const r of rows) Object.assign(r, patch);
+        if ((req.headers.prefer ?? "").includes("return=representation")) return send(res, 200, rows);
+        send(res, 204);
+      });
+      return;
+    }
     if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID,MOCK_PHOTO_USER_ID].includes(sub)) {
       // Only the isolated age/avatar families may edit their own rows.
       readJson(req).then((body) => {

@@ -17,6 +17,9 @@ import {
   type StoryRow,
   type FamilyMemberRow,
 } from "@/lib/db";
+import { needsThumbnail, requestStoryThumbnails } from "@/lib/story-thumb";
+
+const thumbnailAttempted = new Set<string>();
 
 interface DataContextValue {
   voiceProfiles: VoiceProfileRow[];
@@ -87,6 +90,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshVoices, refreshStories, refreshFamily]);
 
   const userId = user?.id;
+  // PR #49: own stories without a card thumbnail yet are thumbnailed by the
+  // server in small batches, once per story per session (no retry loops).
+  useEffect(() => {
+    if (!userId) return;
+    const ids = stories
+      .filter((s) => needsThumbnail(s, userId) && !thumbnailAttempted.has(s.id))
+      .slice(0, 12)
+      .map((s) => s.id);
+    if (!ids.length) return;
+    ids.forEach((id) => thumbnailAttempted.add(id));
+    void requestStoryThumbnails(ids).then((items) => {
+      if (!items.length) return;
+      const byId = new Map(items.map((i) => [i.id, i]));
+      setStories((prev) =>
+        prev.map((s) => {
+          const patch = byId.get(s.id);
+          return patch ? { ...s, ...patch, thumbnail_source: patch.thumbnail_source } : s;
+        }),
+      );
+    });
+  }, [stories, userId]);
+
   useEffect(() => {
     if (userId) {
       refreshAll().then(() => setLoadedFor(userId));

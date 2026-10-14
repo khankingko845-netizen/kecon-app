@@ -12,6 +12,7 @@ import {
   uploadIllustration,
   type IllustrationTarget,
 } from "@/lib/illustration";
+import { removeObjects, thumbColumns, thumbnailForNewCover } from "@/lib/story-thumbnails";
 
 export interface StoredPage {
   id: string;
@@ -29,6 +30,7 @@ export interface StoryForIllustration {
   user_id: string | null;
   illustration_style?: string | null;
   cover_image_url?: string | null;
+  thumbnail_path?: string | null;
 }
 
 export async function loadBible(supabase: SupabaseClient, storyId: string) {
@@ -67,12 +69,22 @@ export async function illustrateStoredPage(
   const stored = Boolean(updated && updated.length);
   // Page 1 is the cover: set it when there is none, and follow a redraw when the
   // cover was still the previous page-1 picture (a custom cover is kept).
+  // PR #49: the card thumbnail is rendered from the same bytes and saved in the
+  // same statement (a cover change without one marks the thumbnail "to redo").
   if (stored && page.page_number === 1) {
     const previous = page.illustration_url ?? null;
-    if (!story.cover_image_url) {
-      await supabase.from("stories").update({ cover_image_url: url }).eq("id", story.id).is("cover_image_url", null);
-    } else if (previous && story.cover_image_url === previous) {
-      await supabase.from("stories").update({ cover_image_url: url }).eq("id", story.id).eq("cover_image_url", previous);
+    if (!story.cover_image_url || (previous && story.cover_image_url === previous)) {
+      const thumb = await thumbnailForNewCover(supabase, uploaderId, story.id, image.bytes);
+      let cover = supabase
+        .from("stories")
+        .update({ cover_image_url: url, ...(thumb ? thumbColumns(thumb) : {}) })
+        .eq("id", story.id);
+      cover = story.cover_image_url ? cover.eq("cover_image_url", story.cover_image_url) : cover.is("cover_image_url", null);
+      const { data: moved } = await cover.select("id");
+      if (thumb) {
+        const old = story.thumbnail_path && story.thumbnail_path !== thumb.thumbnail_path ? story.thumbnail_path : null;
+        await removeObjects(moved?.length ? [old] : [thumb.uploaded]);
+      }
     }
   }
   return { url, stored };
