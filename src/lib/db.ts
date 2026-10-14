@@ -65,6 +65,11 @@ export interface StoryRow {
   cast_voices?: boolean | null;
   auto_ambience?: boolean | null;
   illustration_style?: string | null;
+  /** PR #49 (migration 035): card thumbnail; NULL source = not generated yet. */
+  thumbnail_path?: string | null;
+  thumbnail_scene?: string | null;
+  thumbnail_source?: "cover" | "page" | "upload" | "scene" | "icon" | null;
+  thumbnail_updated_at?: string | null;
   created_at: string;
   updated_at: string;
 }

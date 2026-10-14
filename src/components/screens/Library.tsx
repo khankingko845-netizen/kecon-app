@@ -13,6 +13,7 @@ import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import EmptyState from "@/components/ui/EmptyState";
 import { CategoryIcon } from "@/components/ui/Icon3D";
+import StoryThumb from "@/components/ui/StoryThumb";
 import { CARD_SHADOW } from "@/components/ui/kit";
 import LongPressMenu from "@/components/ui/LongPressMenu";
 import type { Screen } from "@/lib/types";
@@ -259,9 +260,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  onClick={() => onNavigate("player", { storyId: story.id })}
  className="block w-full text-left active:scale-[0.98] transition-transform"
  >
- <span className={`flex h-[104px] items-center justify-center rounded-[18px] ${COVER_TINT[story.category] ?? "bg-brand-soft"}`}>
- <CategoryIcon category={story.category} size={80} />
- </span>
+ <StoryThumb story={story} category={story.category} iconSize={80} tint={COVER_TINT[story.category] ?? "bg-brand-soft"} className="h-[104px] w-full rounded-[18px]" />
  <b className="mt-2 block truncate px-1 text-[15px] font-black leading-tight text-ink">{story.title}</b>
  <small data-kid-detail className="block truncate px-1 pb-1 text-[12.5px] font-bold text-ink-2">
  {story.page_count} trang · {categoryLabels[story.category] || (story.source === "ai" ? "Đóm sáng tác" : "Truyện")}

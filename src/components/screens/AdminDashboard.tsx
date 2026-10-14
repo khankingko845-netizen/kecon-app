@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/icons";
 import { AdminHeader as TopBar } from "@/components/admin/AdminUi";
 import { useData } from "@/lib/data-context";
+import StoryThumb from "@/components/ui/StoryThumb";
 import {
   getAdminStats,
   getModerationQueue,
@@ -369,8 +370,10 @@ export default function AdminDashboard({
                   key={story.id}
                   className="bg-white  rounded-2xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
                 >
-                  <div
-                    className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} shrink-0`}
+                  <StoryThumb
+                    story={story}
+                    className="w-11 h-11 rounded-xl"
+                    fallback={<div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(story.id)} shrink-0`} />}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate">{story.title}</p>

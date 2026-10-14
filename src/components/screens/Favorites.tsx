@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Heart, Play, Star, Trash2 } from "@/components/ui/icons";
 import { GlowDots, KidLoading } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
+import StoryThumb from "@/components/ui/StoryThumb";
 import { getUserFavorites, toggleFavorite, gradientFor, type StoryRow } from "@/lib/db";
 import { useParentalControls } from "@/lib/parental-controls-context";
 import { filterAllowed } from "@/lib/content-filter";
@@ -75,15 +76,11 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
  key={story.id}
  className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3"
  >
- {/* Cover / gradient */}
- {story.cover_image_url ? (
- // eslint-disable-next-line @next/next/no-img-element
- <img
- src={story.cover_image_url}
- alt={story.title}
- className="w-16 h-16 rounded-xl object-cover shrink-0"
- />
- ) : (
+ {/* Cover thumbnail / gradient */}
+ <StoryThumb
+ story={story}
+ className="w-16 h-16 rounded-xl"
+ fallback={
  <div
  className={`w-16 h-16 rounded-xl bg-gradient-to-br ${gradientFor(
  story.id
@@ -93,7 +90,8 @@ export default function Favorites({ onBack, onNavigate }: FavoritesProps) {
  {(story.title || "T")[0].toUpperCase()}
  </span>
  </div>
- )}
+ }
+ />
 
  {/* Info */}
  <div className="flex-1 min-w-0">

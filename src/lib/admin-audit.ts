@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const AUDIT_ACTIONS = {
   "flag.create": "Tạo cờ tính năng", "flag.update": "Đổi cờ tính năng", "flag.delete": "Xoá cờ tính năng",
   "measurement.view": "Xem đo lường tổng hợp",
+  "thumbnail.view": "Xem độ phủ thumbnail truyện",
   "pricing.update": "Đổi đơn giá AI",
   "admin_session.open": "Mở phiên quản trị",
   "admin_session.close": "Khoá phiên quản trị",
