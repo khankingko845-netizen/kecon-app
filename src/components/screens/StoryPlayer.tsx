@@ -131,7 +131,12 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const narrationEpochRef=useRef(0);
  // UI-08 night mode: bedtime palette, sleep timer, screen-off.
  const { isBedtime } = useTheme();
- const { cue, say, prefs: feedbackPrefs } = useFeedback();
+ const { cue, say, hush, prefs: feedbackPrefs } = useFeedback();
+ // A bubble left over from Home (greeting/poke) would sit on the top bar and
+ // swallow the first tap on Quay lại / Chế độ ngủ — the story takes over.
+ useEffect(() => {
+ hush();
+ }, [hush]);
  // Sleep mode follows the 19:30–06:00 window (or the parent's choice); the pill overrides it for this story.
  const [sleepOverride, setSleepOverride] = useState<boolean | null>(null);
  const isNight = sleepOverride ?? isBedtime;
@@ -1177,7 +1182,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const categoryLabel = story?.category ? CATEGORY_LABEL[story.category] : undefined;
 
  return (
- <div className="relative flex min-h-screen flex-col overflow-hidden bg-night text-moon" data-sfx={isNight ? "off" : undefined}>
+ <div className="relative flex h-dvh flex-col overflow-hidden bg-night text-moon" data-sfx={isNight ? "off" : undefined} data-testid="story-player">
  {/* Backdrop: the current page picture, softly blurred behind the book */}
  <div aria-hidden className="absolute inset-0">
  {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1193,7 +1198,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <SceneEffects effect={activeEffect} active={isPlaying && !isNight} />
 
  {/* Top bar (board `.ptop`) */}
- <div className="relative z-10 flex items-center justify-between px-4 pt-12">
+ <div className="relative z-10 flex shrink-0 items-center justify-between px-4 pt-[max(env(safe-area-inset-top),10px)]">
  <button type="button" onClick={handleBack} aria-label="Quay lại" className="flex h-11 w-11 items-center justify-center rounded-2xl text-moon/85 active:bg-moon/10">
  <ChevronDown size={26} />
  </button>
@@ -1213,10 +1218,10 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </button>
  </div>
 
- <div className="relative z-10 px-[22px] pb-9">
+ <div className="relative z-10 flex min-h-0 flex-1 flex-col px-[22px] pb-[max(env(safe-area-inset-bottom),14px)]">
  {/* Title + meta (board `.ptitle`) */}
- <h2 className="font-display text-[25px] font-bold leading-[1.15] text-moon">{title}</h2>
- <div className="relative mt-1 flex flex-wrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
+ <h2 className="line-clamp-2 shrink-0 font-display text-[22px] font-bold leading-[1.15] text-moon">{title}</h2>
+ <div className="relative mt-0.5 flex shrink-0 flex-wrap items-center gap-x-1.5 text-[15px] font-bold text-moon-2">
  <button type="button" onClick={handleLike} aria-pressed={liked} aria-label={liked ? "Bỏ thích" : "Thích truyện"} className="-ml-1 flex h-9 w-8 items-center justify-center">
  <Heart size={16} weight="fill" className={liked ? "text-[#FF8FA3]" : "text-moon-2"} />
  </button>
@@ -1236,7 +1241,6 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </button>
  )}
  {categoryLabel && <span>· {categoryLabel}</span>}
- <span>· Trang {currentPage + 1}/{totalPages}</span>
  {showVoicePicker && (
  <div className="absolute top-full left-0 right-0 mt-1 bg-night-card/95 backdrop-blur-sm border border-white/10 rounded-xl z-20 max-h-48 overflow-y-auto">
  <label className="flex min-h-11 items-center gap-2 px-3 text-[13px] text-moon"><input type="checkbox" checked={multiVoice} onChange={e=>{stopNarration();setMultiVoice(e.target.checked);}} /> Dùng giọng riêng từng nhân vật</label>
@@ -1273,7 +1277,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </div>
 
  {/* The book (board `.sleepy` + `.kar` → picture-book page); swipe to turn pages */}
- <div className="relative mt-3">
+ <div className="relative mt-2 min-h-0 flex-1">
  <StoryBook
  pages={bookPages}
  index={currentPage}
@@ -1305,11 +1309,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  />
  </div>
 
- <div className="mt-3"><NarrationToggle /></div>
- {(audioError||preview.error)&&<p role="alert" className="mt-2 text-[14px] text-red-200">{audioError||preview.error}</p>}
+ <div className="mt-2.5 shrink-0"><NarrationToggle compact /></div>
+ {(audioError||preview.error)&&<p role="alert" className="mt-2 shrink-0 text-[14px] text-red-200">{audioError||preview.error}</p>}
  {/* Status chips: continuous playback, scene effect, speaker */}
  {(mergeStatus !== "idle" || activeEffect || currentSpeaker) && (
- <div className="mt-2 flex flex-wrap items-center gap-1.5">
+ <div className="mt-2 flex shrink-0 flex-wrap items-center gap-1.5">
  {mergeStatus === "ready" && (
  <button type="button" onClick={switchToMerged} className="flex min-h-[32px] items-center gap-1.5 rounded-full bg-amber/15 px-3 text-[12px] font-bold text-amber active:scale-95">
  <Headphones size={14} /> Bật phát liên tục
@@ -1351,7 +1355,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  {/* Progress (board `.prog` + `.times`) */}
  <div
- className="relative mt-[18px] h-1.5 cursor-pointer touch-none rounded-full bg-moon/15"
+ className="relative mt-3.5 h-1.5 shrink-0 cursor-pointer touch-none rounded-full bg-moon/15 before:absolute before:-inset-y-3 before:inset-x-0 before:content-['']"
  role="slider"
  aria-label="Tiến độ"
  aria-valuemin={0}
@@ -1372,13 +1376,13 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <i className="block h-full rounded-full bg-amber transition-[width] duration-150" style={{ width: `${progress}%` }} />
  <i className="absolute -top-[5px] block h-4 w-4 -translate-x-1/2 rounded-full bg-amber" style={{ left: `${Math.max(0, Math.min(progress, 100))}%` }} />
  </div>
- <div className="mt-2 flex justify-between text-[13px] font-bold text-[#9F95C2]">
+ <div className="mt-1.5 flex shrink-0 justify-between text-[13px] font-bold text-[#9F95C2]">
  <span>{audioClock ? formatClock(audioClock.currentTime) : `Trang ${currentPage + 1}`}</span>
  <span>{audioClock ? `-${formatClock(Math.max(0, audioClock.duration - audioClock.currentTime))}` : `${totalPages} trang`}</span>
  </div>
 
  {/* Controls (board `.ctl`) */}
- <div className="mt-2.5 flex items-center justify-center gap-10">
+ <div className="mt-1 flex shrink-0 items-center justify-center gap-10">
  <button type="button" data-sfx="page" onClick={() => skip(-1)} aria-label={audioClock ? "Lùi 15 giây" : "Trang trước"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
  <RotateCcw size={36} weight="bold" />
  </button>
@@ -1387,14 +1391,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  onClick={togglePlay}
  disabled={isTTSLoading||!settings.narrationEnabled}
  aria-label={isPlaying ? "Tạm dừng" : "Phát"}
- className="flex h-[86px] w-[86px] items-center justify-center rounded-full bg-amber shadow-[0_0_40px_rgba(255,181,71,0.35)] transition-transform active:scale-95 disabled:opacity-70"
+ className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-amber shadow-[0_0_36px_rgba(255,181,71,0.35)] transition-transform active:scale-95 disabled:opacity-70"
  >
  {isTTSLoading ? (
  <GlowDots size={8} className="text-night" label="Đang chuẩn bị giọng đọc" />
  ) : isPlaying ? (
- <Pause size={40} weight="fill" className="text-night" />
+ <Pause size={34} weight="fill" className="text-night" />
  ) : (
- <Play size={40} weight="fill" className="ml-1 text-night" />
+ <Play size={34} weight="fill" className="ml-1 text-night" />
  )}
  </button>
  <button type="button" data-sfx="page" onClick={() => skip(1)} aria-label={audioClock ? "Tới 15 giây" : "Trang sau"} className="flex h-12 w-12 items-center justify-center text-moon/85 active:scale-90">
@@ -1403,7 +1407,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  </div>
 
  {/* Bedtime chips (board `.chips`) */}
- <div className="mt-[22px] flex justify-center gap-1.5">
+ <div className="mt-3 flex shrink-0 justify-center gap-1.5">
  <SleepTimerButton variant="chip" remaining={sleep.remaining} onStart={sleep.start} onCancel={sleep.cancel} />
  <button type="button" onClick={() => setShowMixer(true)} className={CHIP}>
  <Waveform size={18} weight="fill" className="text-amber" /> {activeAmbient ? activeAmbient.label : "Âm nền"}

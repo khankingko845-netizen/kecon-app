@@ -33,12 +33,26 @@ export async function canOpenServerFeatureScreen(
   db: SupabaseClient,
   screen: Screen,
 ) {
+  return (await serverFeatureScreenAccess(db, screen)) === "open";
+}
+/**
+ * `anonymous`: nobody is signed in — the screen is not rendered, but the
+ * visitor still gets the normal entry (e.g. a parent reminder tapped on a
+ * signed-out phone lands on sign-in instead of a 404).
+ */
+export async function serverFeatureScreenAccess(
+  db: SupabaseClient,
+  screen: Screen,
+): Promise<"open" | "closed" | "anonymous"> {
   const key = SCREEN_FEATURE[screen];
-  if (!key) return false;
+  if (!key) return "closed";
   const {
     data: { user },
   } = await db.auth.getUser();
-  if (!user) return false;
+  if (!user) return "anonymous";
+  return (await featureScreenOpen(db, key)) ? "open" : "closed";
+}
+async function featureScreenOpen(db: SupabaseClient, key: NonNullable<(typeof SCREEN_FEATURE)[Screen]>) {
   try {
     const flags = await readFeatureFlags(db);
     return (

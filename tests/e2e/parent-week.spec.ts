@@ -188,3 +188,11 @@ test("mở lời nhắc khi app đang tắt → cổng PIN → Tuần của bé;
   await page.getByRole("button", { name: "Quay lại", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true })).toBeVisible();
 });
+
+test("máy đã đăng xuất: mở lời nhắc → màn chào như thường (không 404, không mở màn bố mẹ); màn lạ vẫn 404", async ({ page }) => {
+  expect((await page.goto("/?screen=parent-week"))?.status()).toBe(200);
+  await expect(page.getByRole("button", { name: /Bắt đầu nào!/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Tuần của bé" })).toHaveCount(0);
+  await expect(page.locator("[data-parent-gate]")).toHaveCount(0);
+  expect((await page.goto("/?screen=khong-co"))?.status()).toBe(404);
+});

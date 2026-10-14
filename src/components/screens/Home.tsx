@@ -74,7 +74,11 @@ export default function Home({ onNavigate }: HomeProps) {
   }, [settings.childAge, stories.length, contentRules]);
 
   useEffect(() => {
+    // The streak query is async: if the kid already left Home (opened a story),
+    // Đóm does not greet over the next screen — he greets on the next visit.
+    let here = true;
     const greet = (nights: number) => {
+      if (!here) return;
       try {
         if (sessionStorage.getItem(GREETED_KEY)) return;
         sessionStorage.setItem(GREETED_KEY, "1");
@@ -87,6 +91,9 @@ export default function Home({ onNavigate }: HomeProps) {
       .then((s) => greet(s?.current_streak ?? 0))
       .catch(() => greet(0));
     setLast(getLastPlayed());
+    return () => {
+      here = false;
+    };
   }, [say]);
 
   useEffect(() => {
