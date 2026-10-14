@@ -471,6 +471,19 @@ function parentRpc(name,sub,body){
   if(name==="parent_device_register"){m.devices.add(body.p_endpoint);return {devices:m.devices.size};}
   return null;
 }
+const MISSION_TPL=(id,kind,copy={})=>({id,kind,title:null,parent_label:null,praise:null,prompt:null,story_tag:null,story_title:null,target:null,active:true,version:1,updated_at:"2026-10-13T00:00:00Z",done_28d:0,...copy});
+const MISSION_STICKER=(n,title,over={})=>({story_id:`00000000-0000-4000-8000-00000000c80${n}`,title,cover_image_url:null,thumbnail_path:null,thumbnail_scene:null,thumbnail_source:null,published:true,enabled:true,updated_at:null,awarded:0,...over});
+const MISSIONS_ADMIN={audits:[],templates:[
+  MISSION_TPL("nghe-het-truyen","base",{done_28d:12}),
+  MISSION_TPL("con-vat","themed",{done_28d:3}),
+  MISSION_TPL("tu-cat-do-choi","habit",{title:"Tự cất đồ chơi",parent_label:"Hôm nay bé tự cất đồ chơi về chỗ",praise:"Bé đã tự đưa đồ chơi về đúng chỗ. Đóm thấy bé cố gắng lắm!",prompt:"Hỏi bé: “Món đồ chơi nào thích ở đâu nhất?”",story_tag:"kc-lib:do-choi-muon-ve-nha",story_title:"Đồ chơi muốn về nhà",done_28d:5}),
+  MISSION_TPL("chia-se","kindness",{title:"Chia sẻ, chờ đến lượt",parent_label:"Hôm nay bé chia sẻ hoặc chờ đến lượt với bạn",praise:"Cảm ơn bé đã chia sẻ với bạn.",story_tag:"kc-lib:chiec-xe-tai-do",story_title:"Chiếc xe tải đỏ",done_28d:2}),
+  MISSION_TPL("ca-nha-doc-cung","family",{title:"Cả nhà đọc cùng nhau",parent_label:"Tuần này cả nhà đọc 3 truyện cùng nhau",praise:"Cả nhà mình đã cùng đọc đủ 3 truyện. Chòm sao của nhà mình sáng lên rồi!",target:3,done_28d:1}),
+],stickers:[
+  MISSION_STICKER(1,"Chiếc xe tải đỏ",{awarded:4}),
+  MISSION_STICKER(2,"Đồ chơi muốn về nhà",{awarded:2}),
+  MISSION_STICKER(3,"Sự tích dưa hấu",{published:false}),
+]};
 const platformLinks=new Map();
 const publicLinkStory="00000000-0000-4000-8000-000000009a01";
 function rpc(name, sub, body, claims={}) {
@@ -536,6 +549,31 @@ function rpc(name, sub, body, claims={}) {
     }
     case "my_household_context":return {household_id:sub,role:"owner"};
     case "admin_thumbnail_stats":{if(!permissions.includes("stories.read"))return rpcError(400,"42501","Forbidden");const st=TABLES.stories??[];const plat=st.filter(x=>x.is_platform_content&&!x.deleted_at),fam=st.filter(x=>!x.is_platform_content&&!x.deleted_at);const by=k=>plat.filter(x=>x.thumbnail_source===k).length;return {platform:{total:plat.length,with_cover:plat.filter(x=>x.cover_image_url).length,missing:plat.filter(x=>!x.thumbnail_source).length,cover:by("cover"),page:by("page"),upload:by("upload"),scene:by("scene"),icon:by("icon")},family:{total:fam.length,missing:fam.filter(x=>!x.thumbnail_source).length}};}
+    // G-08 · admin mission templates + character cards (migration 039 semantics).
+    case "admin_missions_catalog":{if(!permissions.includes("templates.manage"))return rpcError(400,"42501","Permission denied");return {templates:MISSIONS_ADMIN.templates.map(t=>({...t})),stickers:MISSIONS_ADMIN.stickers.map(x=>({...x})),since:"2026-09-17"};}
+    case "admin_update_mission_template":{
+      if(!permissions.includes("templates.manage"))return rpcError(400,"42501","Permission denied");
+      const reason=String(body.p_reason??"").trim();if(reason.length<10||reason.length>500)return rpcError(400,"22023","Lý do cần 10–500 ký tự");
+      const patch=body.p_patch&&typeof body.p_patch==="object"?body.p_patch:{};if(!Object.keys(patch).length)return rpcError(400,"22023","Nothing to change");
+      const t=MISSIONS_ADMIN.templates.find(x=>x.id===body.p_id);if(!t)return rpcError(400,"P0002","Unknown template");
+      if(t.version!==body.p_expected_version)return rpcError(409,"40001","Template changed; reload");
+      const allowed={base:[],themed:["active"],family:["title","parent_label","praise","target"]}[t.kind]??["title","parent_label","praise","prompt","active"];
+      if(Object.keys(patch).some(k=>!allowed.includes(k)))return rpcError(400,"22023","Field not editable");
+      const n={...t,...patch};
+      if(/(giỏi|thông minh|xuất sắc|thiên tài|liền|liên tục|liên tiếp|thua|phạt)/iu.test([n.title,n.parent_label,n.praise,n.prompt].filter(Boolean).join(" ")))return rpcError(400,"23514",'new row for relation "mission_templates" violates check constraint "mission_templates_process_praise"');
+      if(t.kind==="kindness"&&!String(n.praise??"").startsWith("Cảm ơn"))return rpcError(400,"22023","Kindness praise must thank");
+      Object.assign(t,patch,{version:t.version+1,updated_at:new Date().toISOString()});MISSIONS_ADMIN.audits.push({action:"mission_template.update",target_id:t.id,reason});
+      return {changed:true,version:t.version};
+    }
+    case "admin_set_mission_sticker":{
+      if(!permissions.includes("templates.manage"))return rpcError(400,"42501","Permission denied");
+      const reason=String(body.p_reason??"").trim();if(reason.length<10||reason.length>500)return rpcError(400,"22023","Lý do cần 10–500 ký tự");
+      const x=MISSIONS_ADMIN.stickers.find(v=>v.story_id===body.p_story);if(!x)return rpcError(400,"P0002","Unknown story");
+      if(x.enabled!==body.p_expected)return rpcError(409,"40001","Card changed; reload");
+      if(x.enabled===body.p_enabled)return false;
+      x.enabled=body.p_enabled;x.updated_at=new Date().toISOString();MISSIONS_ADMIN.audits.push({action:"mission_sticker.update",target_id:x.story_id,reason});
+      return true;
+    }
     case "missions_weekly_summary":{if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");const n=Number(body.p_weeks);if(!(n>=1&&n<=12))return rpcError(400,"22023","Invalid period");const all=[{week_start:"2026-10-12",week_end:"2026-10-18",partial:true,families_listening:3,small_sample:true,avg_nights:1.3,nights_histogram:null,listening:{started:7,finished:4,expired:0,too_fast:1,finish_rate:57,exact:true},missions_done:4,habits:{confirmed:2,families:1},kindness:{thanked:1,families:1},family_reads:{reads:1,families:1,reached_target:0},guardrails:{bedtime_sessions:0,nights_3plus:0,family_nights:4,avg_minutes_per_night:9.5},reminders:{sent:2,failed:0,skipped:1,turned_off:0}},{week_start:"2026-10-05",week_end:"2026-10-11",partial:false,families_listening:6,small_sample:false,avg_nights:2.5,nights_histogram:{"1":2,"2":1,"3":1,"4":1,"5":0,"6":1,"7":0},listening:{started:20,finished:15,expired:1,too_fast:2,finish_rate:75,exact:true},missions_done:15,habits:{confirmed:6,families:3},kindness:{thanked:2,families:2},family_reads:{reads:4,families:2,reached_target:1},guardrails:{bedtime_sessions:1,nights_3plus:1,family_nights:15,avg_minutes_per_night:11.2},reminders:{sent:9,failed:1,skipped:2,turned_off:1}},{week_start:"2026-09-28",week_end:"2026-10-04",partial:false,families_listening:4,small_sample:true,avg_nights:2,nights_histogram:null,listening:{started:9,finished:8,expired:0,too_fast:null,finish_rate:89,exact:false},missions_done:8,habits:{confirmed:0,families:0},kindness:{thanked:0,families:0},family_reads:{reads:0,families:0,reached_target:0},guardrails:{bedtime_sessions:0,nights_3plus:0,family_nights:8,avg_minutes_per_night:10},reminders:{sent:0,failed:0,skipped:0,turned_off:0}}];return {weeks:all.slice(0,Math.min(n,3)),week_count:n,timezone:"Asia/Ho_Chi_Minh",week_starts:"monday",generated_at:"2026-10-14T08:00:00Z",min_families:5,families_total:9,reminders_on:3,funnel_since:"2026-10-05"};}
     case "measurement_summary":if(!permissions.includes("analytics.view"))return rpcError(400,"42501","Forbidden");return {days:body.p_days,since:"2026-10-01T00:00:00Z",timezone:"UTC",costs:[{day:"2026-10-07",provider:"openai",feature:"story.generate",attempts:3,succeeded:1,failed:1,pending:1,estimated_usd:0.00014,unknown_cost:2,byo_attempts:0,input_tokens:100,output_tokens:20}],totals:{attempts:3,estimated_usd:0.00014,unknown_cost:2,pending:1,byo_attempts:0},funnel:{signup:10,home_view:6,first_listen:3,story_created:2}};
     case "set_ai_price_v2":case "set_ai_price": {

@@ -58,6 +58,7 @@ test.describe("A-15 visual and accessibility coverage", () => {
         "analytics",
         "categories",
         "templates",
+        "missions",
         "settings",
         "audit",
       ]) {

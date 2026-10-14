@@ -22,6 +22,7 @@ import {
   LayoutList,
   Settings,
   ShieldCheck,
+  Star,
   Users,
 } from "@/components/ui/icons";
 import {
@@ -70,6 +71,10 @@ const AdminTemplates = dynamic(
   () => import("@/components/screens/AdminTemplates"),
   { loading: Fallback },
 );
+const AdminMissions = dynamic(
+  () => import("@/components/screens/AdminMissions"),
+  { loading: Fallback },
+);
 const AdminSettings = dynamic(
   () => import("@/components/screens/AdminSettings"),
   { loading: Fallback },
@@ -97,6 +102,7 @@ const SECTION_ICONS: Record<AdminScreen, typeof Users> = {
   "admin-analytics": BarChart3,
   "admin-categories": FolderOpen,
   "admin-templates": BookOpen,
+  "admin-missions": Star,
   "admin-settings": Settings,
   "admin-audit": History,
 };
@@ -206,6 +212,8 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
       return <AdminCategories onBack={toDashboard} />;
     case "admin-templates":
       return <AdminTemplates onBack={toDashboard} onNavigate={navigate} />;
+    case "admin-missions":
+      return <AdminMissions onBack={toDashboard} />;
     case "admin-settings":
       return (
         <AdminSettings
