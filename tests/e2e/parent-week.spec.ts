@@ -11,6 +11,11 @@ const CUOI = "00000000-0000-4000-8000-0000000051a2";
 const MOCK = "http://127.0.0.1:54321";
 const nav = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
 
+// Every test here resets and writes the same mock family's missions ledger, so they
+// must not overlap across workers (fullyParallel would let one test's reset/listen
+// land in the middle of another). Run in order on one worker; retries stay per-test.
+test.describe.configure({ mode: "default" });
+
 async function reset(request: APIRequestContext, sub: string) {
   await request.post(`${MOCK}/__e2e/missions-reset`, { data: { sub } });
 }
