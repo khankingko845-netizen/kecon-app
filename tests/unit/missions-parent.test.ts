@@ -1,3 +1,7 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -14,7 +18,7 @@ import {
 import { MissionsTodaySchema, ParentBodySchema, ParentWeekSchema, missionsError } from "@/lib/missions-server";
 import { PROOF_MAX_MS, clearParentProof, getParentProof, setParentProof } from "@/lib/parent-proof";
 import { openParentGate } from "@/lib/parent-pin";
-import { runOnce } from "../../scripts/parent-notify.mjs";
+import { isMainModule, runOnce } from "../../scripts/parent-notify.mjs";
 
 const getUser = vi.fn();
 const rpc = vi.fn();
@@ -188,6 +192,24 @@ describe("parent proof (memory only)", () => {
 });
 
 describe("scripts/parent-notify.mjs", () => {
+  it("starts when run directly or through a symlinked release dir (systemd uses /srv/kecon/current)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "kecon-notify-"));
+    try {
+      const link = join(dir, "current");
+      symlinkSync(resolve("scripts"), link, "dir");
+      for (const script of [resolve("scripts/parent-notify.mjs"), join(link, "parent-notify.mjs")]) {
+        // No VAPID keys in this env → main() must run and say so (before any network or DB access).
+        const run = spawnSync(process.execPath, [script], { env: { PATH: process.env.PATH ?? "", NODE_ENV: "test" }, encoding: "utf8", timeout: 20_000 });
+        expect(run.status).toBe(0);
+        expect(run.stdout).toContain('"skipped":"vapid_missing"');
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    expect(isMainModule(undefined)).toBe(false);
+    expect(isMainModule("/definitely/not/here.mjs")).toBe(false);
+  });
+
   it("sends the claimed reminders, reports gone endpoints and logs counts only", async () => {
     const calls: [string, Record<string, unknown>][] = [];
     const fakeRpc = vi.fn(async (fn: string, args: Record<string, unknown>) => {

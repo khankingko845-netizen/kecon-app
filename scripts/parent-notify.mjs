@@ -9,7 +9,8 @@
  * VAPID key pair nothing is claimed, so no day is used up unsent.
  * Logs carry counts only — no user ids, endpoints or message text.
  */
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 /** Pure run, injectable for tests. */
 export async function runOnce({ rpc, send, now = new Date(), log = console.log }) {
@@ -63,7 +64,21 @@ async function main() {
   });
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+/**
+ * True when started as `node …/parent-notify.mjs`. systemd starts it through the
+ * /srv/kecon/current symlink while Node reports the module's real path, so compare
+ * real paths (a plain URL comparison never matched on the server: nothing ran).
+ */
+export function isMainModule(argv1 = process.argv[1], moduleUrl = import.meta.url) {
+  if (!argv1) return false;
+  try {
+    return realpathSync(argv1) === realpathSync(fileURLToPath(moduleUrl));
+  } catch {
+    return false;
+  }
+}
+
+if (isMainModule()) {
   main().catch((e) => {
     console.error(JSON.stringify({ job: "parent-notify", error: String(e?.message ?? e).slice(0, 200) }));
     process.exit(1);

@@ -28,7 +28,7 @@ is additive (expand only). Research: Notion "Research Duolingo → Module Nhiệ
 
 ## Ops
 - Reminders need a VAPID key pair in `/srv/kecon/shared/app.env`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (generate with `npx web-push generate-vapid-keys`), then `sudo systemctl restart kecon-web`. Without them the job logs `vapid_missing` and claims nothing, and the screen says the server has not enabled notifications yet (choices are still saved).
-- `kecon-parent-notify.timer` runs every 15 minutes (`Persistent=false`: no catch-up after downtime); installed by `deploy/prized/deploy.sh`. Logs: `journalctl -u kecon-parent-notify` (counts only).
+- `kecon-parent-notify.timer` runs every 15 minutes (`Persistent=false`: no catch-up after downtime); installed by `deploy/prized/deploy.sh`. Logs: `journalctl -u kecon-parent-notify` (counts only): every run prints exactly one JSON line (`{"job":"parent-notify","claimed":…}` or `"skipped":"vapid_missing"`); a run without that line did not start. The entry check compares real paths because systemd starts the job through the `/srv/kecon/current` symlink.
 - Tests: `tests/db/missions-parent.test.ts` (proof, unlock, once-a-day, thanks-only, constellation, reminders, grants), `tests/unit/missions-parent.test.ts` (copy, schemas, route, proof store, sender), `tests/unit/parent-push-worker.test.ts` (service worker), `tests/e2e/parent-week.spec.ts` (PIN → confirm → thanks → read together → reminders → Sky; expired proof; no PIN; chip without flash).
 
 ## Known limits (honest)
