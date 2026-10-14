@@ -58,7 +58,7 @@ export default function MiniPlayer() {
  {/* Player bar */}
  <div className="bg-white/95 dark:bg-[#0F0628]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/[0.06] px-4 py-2.5 flex items-center gap-3">
  {/* Story icon */}
- <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center text-white shrink-0 shadow-md">
+ <div aria-hidden className="hidden min-[380px]:flex w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] items-center justify-center text-white shrink-0 shadow-md">
  <span className="text-[14px] font-black">📖</span>
  </div>
 
@@ -67,34 +67,42 @@ export default function MiniPlayer() {
  <p className="text-[13px] font-bold text-txt dark:text-white truncate">
  {currentTrack.storyTitle}
  </p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50 font-medium">
+ <p className="text-[12px] text-txt-secondary dark:text-white/50 font-medium">
  Trang {currentTrack.pageNumber}/{currentTrack.totalPages}
  </p>
  </div>
 
  {/* Controls */}
- <div className="flex items-center gap-1 shrink-0">
+ <div className="-my-1 -mr-2 flex items-center shrink-0">
  <button
+ type="button"
  onClick={prevPage}
- className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
+ aria-label="Trang trước"
+ className="w-11 h-11 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
  >
  <SkipBack size={14} />
  </button>
  <button
+ type="button"
  onClick={() => (isPlaying ? pause() : resume())}
- className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
+ aria-label={isPlaying ? "Tạm dừng" : "Nghe tiếp"}
+ className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
  >
  {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
  </button>
  <button
+ type="button"
  onClick={nextPage}
- className="w-8 h-8 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:bg-white/[0.06] transition-colors"
+ aria-label="Trang sau"
+ className="w-11 h-11 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
  >
  <SkipForward size={14} />
  </button>
  <button
+ type="button"
  onClick={stop}
- className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 hover:bg-red-50 transition-colors ml-1"
+ aria-label="Tắt trình phát"
+ className="w-11 h-11 rounded-full flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 hover:bg-red-50 transition-colors"
  >
  <X size={14} />
  </button>

@@ -204,7 +204,7 @@ export default function Home({ onNavigate }: HomeProps) {
         <button
           type="button"
           onClick={suggest}
-          className="relative z-10 mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-glow px-3.5 text-[15px] font-black text-on-glow active:scale-95"
+          className="relative z-10 mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-glow px-4 text-[15px] font-black text-on-glow active:scale-95"
         >
           <Wand2 size={16} weight="fill" /> {hero.cta}
         </button>

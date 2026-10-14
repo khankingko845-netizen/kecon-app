@@ -357,9 +357,11 @@ export default function ParentWeek({ onBack, onNavigate, onRelock }: ParentWeekP
               aria-label="Nhắc bố mẹ mỗi tối"
               disabled={locked || busy !== null}
               onClick={() => saveNotify(!notify.enabled, notify.hour)}
-              className={`h-8 w-14 shrink-0 rounded-full p-1 transition-colors disabled:opacity-50 ${notify.enabled ? "bg-success" : "bg-ink/15"}`}
+              className="-my-1.5 -mr-1 flex h-11 w-16 shrink-0 items-center justify-center disabled:opacity-50"
             >
-              <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${notify.enabled ? "translate-x-6" : "translate-x-0"}`} />
+              <span aria-hidden className={`block h-8 w-14 rounded-full p-1 transition-colors ${notify.enabled ? "bg-success" : "bg-ink/15"}`}>
+                <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${notify.enabled ? "translate-x-6" : "translate-x-0"}`} />
+              </span>
             </button>
           </div>
           <label className="mt-3 flex items-center gap-3 text-[14.5px] font-semibold text-ink">

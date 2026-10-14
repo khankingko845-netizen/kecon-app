@@ -188,7 +188,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  className={`h-12 w-full rounded-2xl bg-white pl-11 pr-11 text-[15px] font-bold text-ink outline-none placeholder:text-ink-2/70 focus:ring-2 focus:ring-brand ${CARD_SHADOW}`}
  />
  {searchQuery && (
- <button type="button" aria-label="Xoá tìm kiếm" onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-ink-2">
+ <button type="button" aria-label="Xoá tìm kiếm" onClick={() => setSearchQuery("")} className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-ink-2">
  <X size={18} />
  </button>
  )}
@@ -273,7 +273,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  type="button"
  onClick={(e) => togglePreview(story.id, e)}
  aria-label={playingStoryId === story.id ? "Dừng nghe thử" : `Nghe thử ${story.title}`}
- className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-ink shadow-sm active:scale-90"
+ className="absolute right-2.5 top-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-brand-ink shadow-sm active:scale-90"
  >
  {loadingAudio === story.id ? <GlowDots size={3} /> : playingStoryId === story.id ? <Square size={14} weight="fill" /> : <Volume2 size={18} />}
  </button>

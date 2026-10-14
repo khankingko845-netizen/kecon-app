@@ -45,7 +45,7 @@ const configs: Record<EmptyType, {
  mascot: "thinking",
  title: "Chưa có bộ sưu tập",
  subtitle: "Tạo bộ sưu tập để sắp xếp truyện theo chủ đề",
- actionLabel: "Tạo Bộ Sưu Tập",
+ actionLabel: "Tạo bộ sưu tập",
  },
  generic: {
  mascot: "hello",

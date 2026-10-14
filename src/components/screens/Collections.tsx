@@ -150,13 +150,13 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  <div className="flex items-center gap-3 mb-5">
  <button
  onClick={() => selectedCollection ? setSelectedCollection(null) : onBack()}
- className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
+ type="button" aria-label="Quay lại" className="w-11 h-11 shrink-0 rounded-xl bg-white dark:bg-white/[0.04] flex items-center justify-center shadow-sm"
  >
  <ChevronLeft size={18} />
  </button>
- <h2 className="text-[22px] font-black tracking-tight">
- {selected ? selected.name : "Bộ Sưu Tập"}
- </h2>
+ <h1 className="min-w-0 truncate text-[22px] font-black tracking-tight">
+ {selected ? selected.name : "Bộ sưu tập"}
+ </h1>
  </div>
 
  {loading ? (
@@ -184,7 +184,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  />
  <div className="flex-1 min-w-0 text-left">
  <p className="text-[14px] font-bold truncate">{story.title}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-2">
+ <p className="text-[12px] text-txt-secondary dark:text-white/50 flex items-center gap-2">
  <span className="flex items-center gap-0.5"><Play size={10} /> {story.play_count || 0}</span>
  <span className="flex items-center gap-0.5"><Heart size={10} /> {story.like_count || 0}</span>
  </p>
@@ -219,7 +219,7 @@ export default function Collections({ onBack, onNavigate }: CollectionsProps) {
  </div>
  <div className="p-3">
  <p className="text-[13px] font-bold truncate">{col.name}</p>
- <p className="text-[11px] text-txt-secondary dark:text-white/50 flex items-center gap-1">
+ <p className="text-[12px] text-txt-secondary dark:text-white/50 flex items-center gap-1">
  <Star size={10} /> {col.description}
  </p>
  </div>

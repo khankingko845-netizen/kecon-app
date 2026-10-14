@@ -101,7 +101,7 @@ export default function FeedbackSettings({ nightPref }: { nightPref: NightPref }
             cue("success");
             say("poke");
           }}
-          className="flex min-h-[40px] shrink-0 items-center gap-1 rounded-2xl bg-brand-soft px-3 font-parent text-[13px] font-bold text-brand-ink active:scale-95"
+          className="flex min-h-11 shrink-0 items-center gap-1 rounded-2xl bg-brand-soft px-3.5 font-parent text-[14px] font-bold text-brand-ink active:scale-95"
         >
           <Play size={14} weight="fill" /> Nghe thử
         </button>

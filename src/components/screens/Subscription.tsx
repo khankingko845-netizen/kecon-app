@@ -170,7 +170,7 @@ export default function Subscription({
 
  return (
  <div className="min-h-screen bg-bg pb-8">
- <TopBar title="Gói Cước" onBack={() => onNavigate("settings")} />
+ <TopBar title="Gói cước" onBack={() => onNavigate("settings")} />
 
  {/* Header */}
  <div className="px-5 pt-4 pb-2 text-center">
@@ -192,8 +192,10 @@ export default function Subscription({
  <div className="flex justify-center px-5 py-3">
  <div className="flex bg-white dark:bg-white/[0.04] rounded-xl p-1 shadow-sm">
  <button
+ type="button"
+ aria-pressed={billing === "monthly"}
  onClick={() => setBilling("monthly")}
- className={`px-4 py-2 rounded-lg text-[13px] font-bold transition-all ${
+ className={`min-h-11 min-w-[72px] px-4 rounded-lg text-[14px] font-bold transition-all ${
  billing === "monthly"
  ? "bg-accent text-white"
  : "text-txt-secondary dark:text-white/50"
@@ -202,15 +204,17 @@ export default function Subscription({
  Tháng
  </button>
  <button
+ type="button"
+ aria-pressed={billing === "yearly"}
  onClick={() => setBilling("yearly")}
- className={`px-4 py-2 rounded-lg text-[13px] font-bold transition-all relative ${
+ className={`min-h-11 min-w-[72px] px-4 rounded-lg text-[14px] font-bold transition-all relative ${
  billing === "yearly"
  ? "bg-accent text-white"
  : "text-txt-secondary dark:text-white/50"
  }`}
  >
  Năm
- <span className="absolute -top-2 -right-2 text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+ <span className="absolute -top-2 -right-2 text-[12px] leading-none bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-bold">
  -17%
  </span>
  </button>
@@ -238,7 +242,7 @@ export default function Subscription({
  >
  {/* Most popular badge */}
  {plan.id === "plus" && (
- <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">
+ <div className="absolute top-0 right-0 bg-accent text-white text-[12px] font-bold px-3 py-1 rounded-bl-xl z-10">
  <Zap size={10} className="inline mr-0.5" />
  PHỔ BIẾN NHẤT
  </div>
@@ -346,7 +350,7 @@ export default function Subscription({
 
  {/* Trust badges */}
  <div className="px-5 mt-5">
- <div className="flex items-center justify-center gap-4 text-[11px] text-txt-secondary dark:text-white/50">
+ <div className="flex items-center justify-center gap-4 text-[12px] flex-wrap gap-y-1 text-txt-secondary dark:text-white/50">
  <span className="flex items-center gap-1">
  <Shield size={12} /> Thanh toán an toàn
  </span>

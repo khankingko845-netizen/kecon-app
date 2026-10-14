@@ -201,9 +201,11 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  aria-checked={enabled}
  aria-label="Bật giới hạn cho bé"
  onClick={() => setEnabled(!enabled)}
- className={`h-8 w-14 shrink-0 rounded-full p-1 transition-colors ${enabled ? "bg-success" : "bg-ink/15"}`}
+ className="-my-1.5 -mr-1 flex h-11 w-16 shrink-0 items-center justify-center"
  >
+ <span aria-hidden className={`block h-8 w-14 rounded-full p-1 transition-colors ${enabled ? "bg-success" : "bg-ink/15"}`}>
  <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-6" : "translate-x-0"}`} />
+ </span>
  </button>
  </Card>
 
@@ -288,7 +290,7 @@ export default function ParentalControls({ onBack }: ParentalControlsProps) {
  >
  <CategoryIcon category={cat.id} size={28} className="rounded-lg" />
  {cat.label}
- {blocked && <span className="text-[11px]">Đã chặn</span>}
+ {blocked && <span className="text-[12px]">Đã chặn</span>}
  </button>
  );
  })}
