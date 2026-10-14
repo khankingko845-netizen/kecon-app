@@ -2,12 +2,6 @@ import type { Screen } from "@/lib/types";
 /** M0 T06: boolean kill switches only; percentages/household targeting remain A-11/T08. */
 export const FEATURES = [
   {
-    key: "gamification",
-    label: "Thử thách & huy hiệu",
-    description: "Gamification ngoài vòng lõi v1",
-    enabled: false,
-  },
-  {
     key: "story_drawing",
     label: "Truyện từ hình vẽ",
     description: "Gửi hình vẽ cho AI tạo truyện",
@@ -81,8 +75,6 @@ export const CLOSED_FEATURE_FLAGS = Object.fromEntries(
   FEATURES.map((f) => [f.key, false]),
 ) as FeatureFlags;
 export const SCREEN_FEATURE: Partial<Record<Screen, FeatureKey>> = {
-  achievements: "gamification",
-  "daily-challenges": "gamification",
   "draw-story": "story_drawing",
   "scan-book": "book_scan",
   adventure: "branching_stories",

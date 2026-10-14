@@ -3,7 +3,7 @@ import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Flame, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
+import { Camera, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useKidStories } from "@/lib/parental-controls-context";
 import { filterAllowed, isCategoryAllowed } from "@/lib/content-filter";
@@ -147,7 +147,6 @@ export default function Home({ onNavigate }: HomeProps) {
 
   const more: { label: string; screen: Screen; icon: typeof Upload }[] = [
     { label: "Yêu thích", screen: "favorites", icon: Heart },
-    { label: "Thử thách", screen: "daily-challenges", icon: Flame },
     { label: "Chụp sách", screen: "scan-book", icon: Camera },
     { label: "Vẽ truyện", screen: "draw-story", icon: Palette },
     { label: "Bộ sưu tập", screen: "collections", icon: FolderOpen },

@@ -421,7 +421,7 @@ function permissionsOf(sub) {
 }
 
 /** Parent-PIN RPCs (017/018) + RBAC RPCs (019), stateless so parallel specs can't interfere. */
-const FEATURE_FLAGS = Object.fromEntries(['gamification', 'story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience', 'missions'].map(k=>[k,true]));
+const FEATURE_FLAGS = Object.fromEntries(['story_drawing', 'book_scan', 'expert_review', 'branching_stories', 'vocabulary_quiz', 'multilingual', 'advanced_authoring', 'ai_illustrations', 'child_push', 'ai_ambience', 'missions'].map(k=>[k,true]));
 // G-03 missions (migration 034) — the real timing/eligibility rules are covered by tests/db/missions.test.ts;
 // this stand-in records every completed session so UI flows can be exercised quickly.
 const missionState=new Map();

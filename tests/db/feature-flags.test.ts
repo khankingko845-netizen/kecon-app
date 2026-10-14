@@ -51,7 +51,7 @@ it("family/editor and AAL1 staff cannot mutate flags", async () => {
   for (const u of [family, editor])
     await expect(
       asUser(db, u, (tx) =>
-        tx.query(set, ["gamification", true, false, reason]),
+        tx.query(set, ["story_drawing", true, false, reason]),
       ),
     ).rejects.toThrow(/Permission denied/);
   await expect(
@@ -59,12 +59,12 @@ it("family/editor and AAL1 staff cannot mutate flags", async () => {
       db,
       "authenticated",
       admin,
-      (tx) => tx.query(set, ["gamification", true, false, reason]),
+      (tx) => tx.query(set, ["story_drawing", true, false, reason]),
       { aal: "aal1" },
     ),
   ).rejects.toThrow(/Permission denied/);
   await expect(
-    asAnon(db, (tx) => tx.query(set, ["gamification", true, false, reason])),
+    asAnon(db, (tx) => tx.query(set, ["story_drawing", true, false, reason])),
   ).rejects.toThrow(/permission denied/);
 });
 it("authenticated manager changes one boolean with one audit, stale expected value conflicts", async () => {
@@ -74,7 +74,7 @@ it("authenticated manager changes one boolean with one audit, stale expected val
     )
   ).rows[0].n;
   const r = await asUser(db, admin, (tx) =>
-    tx.query<{ changed: boolean }>(set, ["gamification", true, false, reason]),
+    tx.query<{ changed: boolean }>(set, ["story_drawing", true, false, reason]),
   );
   expect(r.rows[0].changed).toBe(true);
   const audit = (
@@ -96,11 +96,11 @@ it("authenticated manager changes one boolean with one audit, stale expected val
   ).toBe(before + 1);
   await expect(
     asUser(db, admin, (tx) =>
-      tx.query(set, ["gamification", false, false, reason]),
+      tx.query(set, ["story_drawing", false, false, reason]),
     ),
   ).rejects.toThrow(/reload/);
   const noop = await asUser(db, admin, (tx) =>
-    tx.query<{ changed: boolean }>(set, ["gamification", true, true, reason]),
+    tx.query<{ changed: boolean }>(set, ["story_drawing", true, true, reason]),
   );
   expect(noop.rows[0].changed).toBe(false);
   expect(
@@ -115,7 +115,7 @@ it("missing/short reasons, null or unknown names fail even direct RPC", async ()
   for (const why of [null, "short"])
     await expect(
       asUser(db, admin, (tx) =>
-        tx.query(set, ["gamification", false, true, why]),
+        tx.query(set, ["story_drawing", false, true, why]),
       ),
     ).rejects.toThrow();
   for (const key of [null, "evil"])
@@ -127,37 +127,28 @@ it("direct updates cannot bypass reason or rename flag outside its namespace", a
   await expect(
     asUser(db, admin, (tx) =>
       tx.query(
-        "UPDATE public.app_settings SET value='false' WHERE key='feature.gamification'",
+        "UPDATE public.app_settings SET value='false' WHERE key='feature.story_drawing'",
       ),
     ),
   ).rejects.toThrow();
   await expect(
     db.query(
-      "UPDATE public.app_settings SET key='not_a_flag' WHERE key='feature.gamification'",
+      "UPDATE public.app_settings SET key='not_a_flag' WHERE key='feature.story_drawing'",
     ),
   ).rejects.toThrow(/immutable/);
   await expect(
     db.query(
-      "UPDATE public.app_settings SET category=NULL WHERE key='feature.gamification'",
+      "UPDATE public.app_settings SET category=NULL WHERE key='feature.story_drawing'",
     ),
   ).rejects.toThrow();
   await expect(
     db.query(
-      "UPDATE public.app_settings SET value='yes' WHERE key='feature.gamification'",
+      "UPDATE public.app_settings SET value='yes' WHERE key='feature.story_drawing'",
     ),
   ).rejects.toThrow();
 });
-it("raw REST tables are closed when optional gamification and push flags are off", async () => {
-  await asUser(db, admin, (tx) =>
-    tx.query(set, ["gamification", false, true, reason]),
-  );
-  for (const table of [
-    "badge_definitions",
-    "user_badges",
-    "daily_challenges",
-    "user_challenge_progress",
-    "push_subscriptions",
-  ]) {
+it("raw REST tables are closed when the optional push flag is off", async () => {
+  for (const table of ["push_subscriptions"]) {
     const r = await asUser(db, family, (tx) =>
       tx.query("SELECT * FROM public." + table),
     );
@@ -216,4 +207,31 @@ it("disabled push still permits owner-only unsubscribe through narrow cleanup RP
  await asUser(db,family,tx=>tx.query("SELECT public.unsubscribe_push($1)",[endpoint]));
  expect((await db.query<{n:number}>("SELECT count(*)::int n FROM public.push_subscriptions WHERE endpoint=$1",[endpoint])).rows[0].n).toBe(0);
  await expect(asAnon(db,tx=>tx.query("SELECT public.unsubscribe_push($1)",[endpoint]))).rejects.toThrow();
+});
+it("G-09: the old client-awarded gamification is gone (tables, award_xp, XP/level, flag)", async () => {
+  const left = await db.query<{ n: string }>(
+    "SELECT n FROM unnest(ARRAY['badge_definitions','user_badges','daily_challenges','user_challenge_progress']) n WHERE to_regclass('public.'||n) IS NOT NULL",
+  );
+  expect(left.rows).toEqual([]);
+  expect((await db.query("SELECT 1 FROM pg_proc WHERE proname='award_xp'")).rows).toEqual([]);
+  expect(
+    (await db.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name IN ('xp','level')")).rows,
+  ).toEqual([]);
+  expect((await db.query("SELECT 1 FROM public.app_settings WHERE key='feature.gamification'")).rows).toEqual([]);
+  const flags = (
+    await asAnon(db, (tx) => tx.query<{ flags: Record<string, boolean> }>("SELECT public.public_feature_flags() flags"))
+  ).rows[0].flags;
+  expect(Object.keys(flags)).not.toContain("gamification");
+  await expect(
+    asUser(db, admin, (tx) => tx.query(set, ["gamification", true, false, reason])),
+  ).rejects.toThrow(/Unknown feature/);
+  await expect(
+    asUser(db, family, (tx) => tx.query("SELECT public.award_xp($1,10)", [family])),
+  ).rejects.toThrow(/does not exist/);
+  // The removal itself is in the audit trail (system actor, with its reason).
+  const audit = await db.query<{ reason: string | null }>(
+    "SELECT reason FROM public.admin_audit_log WHERE action='flag.delete' AND target_id='feature.gamification'",
+  );
+  expect(audit.rows).toHaveLength(1);
+  expect(audit.rows[0].reason).toMatch(/G-09/);
 });

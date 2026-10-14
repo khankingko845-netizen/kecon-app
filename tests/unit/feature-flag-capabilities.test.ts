@@ -15,6 +15,8 @@ it("public capability read returns allowlisted booleans only, no provider/config
   rpc.mockResolvedValue({
     data: {
       ...CLOSED_FEATURE_FLAGS,
+      story_drawing: true,
+      // G-09: a retired key from an old database is not a capability any more.
       gamification: true,
       apiKey: "not-public",
       childName: "not-public",
@@ -25,7 +27,7 @@ it("public capability read returns allowlisted booleans only, no provider/config
   expect(r.status).toBe(200);
   expect(r.headers.get("cache-control")).toContain("no-store");
   expect(await r.json()).toEqual({
-    flags: { ...CLOSED_FEATURE_FLAGS, gamification: true },
+    flags: { ...CLOSED_FEATURE_FLAGS, story_drawing: true },
     canAuthor: false,
     canManage: false,
   });

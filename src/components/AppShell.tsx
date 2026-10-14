@@ -44,13 +44,11 @@ const StoryEditor = dynamic(() => import("@/components/screens/StoryEditor"), { 
 const UploadStory = dynamic(() => import("@/components/screens/UploadStory"), { loading: ScreenFallback });
 const Favorites = dynamic(() => import("@/components/screens/Favorites"), { loading: ScreenFallback });
 const Subscription = dynamic(() => import("@/components/screens/Subscription"), { loading: ScreenFallback });
-const Achievements = dynamic(() => import("@/components/screens/Achievements"), { loading: ScreenFallback });
 const ParentalControls = dynamic(() => import("@/components/screens/ParentalControls"), { loading: ScreenFallback });
 const ParentAnalytics = dynamic(() => import("@/components/screens/ParentAnalytics"), { loading: ScreenFallback });
 const Downloads = dynamic(() => import("@/components/screens/Downloads"), { loading: ScreenFallback });
 const Notifications = dynamic(() => import("@/components/screens/Notifications"), { loading: ScreenFallback });
 const ProfileEdit = dynamic(() => import("@/components/screens/ProfileEdit"), { loading: ScreenFallback });
-const DailyChallenges = dynamic(() => import("@/components/screens/DailyChallenges"), { loading: ScreenFallback });
 const Collections = dynamic(() => import("@/components/screens/Collections"), { loading: ScreenFallback });
 const ScanBook = dynamic(() => import("@/components/screens/ScanBook"), { loading: ScreenFallback });
 const DrawStory = dynamic(() => import("@/components/screens/DrawStory"), { loading: ScreenFallback });
@@ -287,9 +285,6 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  {current.screen === "subscription" && (
  <Subscription onNavigate={navigate} />
  )}
- {current.screen === "achievements" && (
- <Achievements onBack={goBack} onNavigate={navigate} />
- )}
  {current.screen === "parental-controls" && (
  <ParentalControls onBack={goBack} onNavigate={navigate} />
  )}
@@ -307,9 +302,6 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  )}
  {current.screen === "profile-edit" && (
  <ProfileEdit onBack={goBack} onNavigate={navigate} />
- )}
- {current.screen === "daily-challenges" && (
- <DailyChallenges onBack={goBack} onNavigate={navigate} />
  )}
  {current.screen === "collections" && (
  <Collections onBack={goBack} onNavigate={navigate} />
