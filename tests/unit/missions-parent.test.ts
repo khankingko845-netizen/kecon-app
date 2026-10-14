@@ -14,7 +14,6 @@ import {
 import { MissionsTodaySchema, ParentBodySchema, ParentWeekSchema, missionsError } from "@/lib/missions-server";
 import { PROOF_MAX_MS, clearParentProof, getParentProof, setParentProof } from "@/lib/parent-proof";
 import { openParentGate } from "@/lib/parent-pin";
-// @ts-expect-error — plain ESM script without types
 import { runOnce } from "../../scripts/parent-notify.mjs";
 
 const getUser = vi.fn();
