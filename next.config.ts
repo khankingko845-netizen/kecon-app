@@ -62,7 +62,11 @@ const nextConfig: NextConfig = {
     inlineCss: true,
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Self-hosted fonts carry a content hash in the file name (docs/self-hosted-fonts.md).
+      { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    ];
   },
 };
 
