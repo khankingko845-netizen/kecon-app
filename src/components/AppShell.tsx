@@ -4,7 +4,8 @@ import { useFeatureFlags } from "@/lib/feature-flags-context";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { Screen, TabId } from "@/lib/types";
-import { backScreenHistory, tabScreenHistory, type ScreenState } from "@/lib/screen-navigation";
+import { backScreenHistory, notificationScreen, tabScreenHistory, type ScreenState } from "@/lib/screen-navigation";
+import { onNotificationClick } from "@/lib/push-notifications";
 import { useAuth } from "@/lib/auth-context";
 import TabBar from "@/components/ui/TabBar";
 import { KidLoading } from "@/components/ui/states";
@@ -153,6 +154,19 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  },
  [setHistory, features.canOpen]
  );
+
+ // G-07: a reminder tapped while the app is already open arrives as a service
+ // worker message (a cold start uses `/?screen=parent-week`, see app/page.tsx).
+ const canOpenScreen = features.canOpen;
+ useEffect(() => {
+ if (!signedInId) return;
+ return onNotificationClick(({ url }) => {
+ const screen = notificationScreen(url, window.location.origin);
+ if (!screen || !canOpenScreen(screen)) return;
+ // Already on it (tapped twice): no duplicate history entry.
+ setHistory((prev) => (prev[prev.length - 1]?.screen === screen ? prev : [...prev, { screen }]));
+ });
+ }, [signedInId, canOpenScreen, setHistory]);
 
  const goBack = useCallback(() => {
  setHistory(backScreenHistory);
