@@ -72,8 +72,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for immutable Next build assets.
-  if (url.pathname.startsWith("/_next/static/")) {
+  // Cache-first for immutable assets: Next build output and the self-hosted
+  // fonts (content-hashed file names, docs/self-hosted-fonts.md).
+  if (url.pathname.startsWith("/_next/static/") || /^\/fonts\/[\w.-]+\.woff2$/.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
