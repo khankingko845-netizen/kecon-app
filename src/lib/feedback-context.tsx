@@ -26,7 +26,7 @@ import {
 } from "react";
 import Mascot from "@/components/ui/Mascot";
 import { useTheme } from "@/lib/theme-context";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioPlaying } from "@/lib/audio-player-context";
 import { DOM_LINES, wordCount, type DomLine, type DomMoment } from "@/lib/dom-lines";
 import {
   DEFAULT_FEEDBACK_PREFS,
@@ -168,7 +168,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   const prefs = useSyncExternalStore(subscribePrefs, getPrefs, getServerPrefs);
   const { isBedtime, isNight } = useTheme();
   const sleepy = isBedtime || isNight;
-  const { isPlaying } = useAudioPlayer();
+  const isPlaying = useAudioPlaying();
   const channels = useMemo(
     () => feedbackChannels(prefs, { bedtime: isBedtime, mediaPlaying: isPlaying }),
     [prefs, isBedtime, isPlaying],

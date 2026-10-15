@@ -10,7 +10,7 @@ import { filterAllowed, isCategoryAllowed } from "@/lib/content-filter";
 import { useSettings } from "@/lib/settings-context";
 import { getReadingStreak } from "@/lib/db";
 import { getRecommendations, type ScoredStory } from "@/lib/recommendations";
-import { getLastPlayed, lastPlayedProgress, type LastPlayed } from "@/lib/last-played";
+import { getLastPlayed, lastPlayedProgress, LAST_PLAYED_EVENT, resumePage, type LastPlayed } from "@/lib/last-played";
 import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import Mascot from "@/components/ui/Mascot";
 import { CategoryIcon, Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
@@ -124,6 +124,13 @@ export default function Home({ onNavigate }: HomeProps) {
     };
   }, [missionsOn, user]);
 
+  // The mini player keeps turning pages while Home is open: follow it.
+  useEffect(() => {
+    const sync = () => setLast(getLastPlayed());
+    window.addEventListener(LAST_PLAYED_EVENT, sync);
+    return () => window.removeEventListener(LAST_PLAYED_EVENT, sync);
+  }, []);
+
   // "Nghe tiếp": last story on this device, else the newest story in the library.
   const resume = useMemo(() => {
     if (last && stories.some((s) => s.id === last.storyId)) return last;
@@ -131,6 +138,11 @@ export default function Home({ onNavigate }: HomeProps) {
     return s ? { storyId: s.id, title: s.title, page: 0, totalPages: Math.max(1, s.page_count || 1), category: s.category, voice: undefined, updatedAt: 0 } : null;
   }, [last, stories]);
   const resumeStory = resume ? stories.find((s) => s.id === resume.storyId) : undefined;
+  // "Trang 3/8" on the card → the player opens on page 3, not page 1.
+  const openResume = () => {
+    if (!resume) return;
+    onNavigate("player", resume.page > 1 ? { storyId: resume.storyId, page: String(resumePage(resume)) } : { storyId: resume.storyId });
+  };
 
   // A poke before the (async) greeting arrives wins — the greeting must not
   // talk over the kid's own tap, so it is skipped for this session.
@@ -242,7 +254,7 @@ export default function Home({ onNavigate }: HomeProps) {
         <>
           <SectionHeader title="Nghe tiếp" />
           <Card className="flex items-center gap-3 p-2.5">
-            <button type="button" onClick={() => onNavigate("player", { storyId: resume.storyId })} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+            <button type="button" onClick={openResume} className="flex min-w-0 flex-1 items-center gap-3 text-left">
               <StoryThumb
                 story={resumeStory ?? { id: resume.storyId }}
                 eager
@@ -268,7 +280,7 @@ export default function Home({ onNavigate }: HomeProps) {
             </button>
             <button
               type="button"
-              onClick={() => onNavigate("player", { storyId: resume.storyId })}
+              onClick={openResume}
               aria-label={`Nghe tiếp ${resume.title}`}
               className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-cta text-white shadow-[0_4px_0_var(--color-cta-press)] active:translate-y-0.5"
             >

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParentalControls, PARENTAL_CONTROLS_EVENT } from "@/lib/parental-controls-context";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioPlaying } from "@/lib/audio-player-context";
 import {
   addUsage,
   evaluateScreenTime,
@@ -41,7 +41,7 @@ const same = (a: ScreenTimeVerdict, b: ScreenTimeVerdict) =>
  * area is open, so the parent's own time is not counted.
  */
 export function useScreenTime({ userId, paused }: { userId?: string; paused: boolean }) {
-  const { isPlaying } = useAudioPlayer();
+  const isPlaying = useAudioPlaying();
   const playing = useRef(isPlaying);
   const { screenRules: rules } = useParentalControls();
   const [verdict, setVerdict] = useState<ScreenTimeVerdict>({ blocked: false });

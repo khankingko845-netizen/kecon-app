@@ -15,7 +15,7 @@ import Signup from "@/components/screens/Signup";
 import Home from "@/components/screens/Home";
 import ComplianceLayer from "@/components/ComplianceLayer";
 import MiniPlayer from "@/components/ui/MiniPlayer";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioControls, useAudioPlaying, useAudioStoryId } from "@/lib/audio-player-context";
 import ParentGate from "@/components/parent/ParentGate";
 import ScreenTimeLock from "@/components/parent/ScreenTimeLock";
 import { isParentArea } from "@/lib/parent-gate";
@@ -121,10 +121,15 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  // New screen → top of the page; Back (or the gate / time lock closing) → where the kid was.
  useScrollMemory(gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : rawCurrent, current.screen);
  const lockReason = screenTime.verdict.blocked ? screenTime.verdict.reason : "limit";
- const { pause, isPlaying } = useAudioPlayer();
+ const audio = useAudioControls();
+ const isPlaying = useAudioPlaying();
+ const miniStoryId = useAudioStoryId();
  useEffect(() => {
- if (kidLocked && isPlaying) pause();
- }, [kidLocked, isPlaying, pause]);
+ if (kidLocked && isPlaying) audio.pause();
+ }, [kidLocked, isPlaying, audio]);
+ // Another family signs in on this device: their story must not keep playing.
+ const sessionUserId = user?.id ?? null;
+ useEffect(() => () => audio.stop(), [sessionUserId, audio]);
 
  // UI-12: once signed in, warm the chunks of the kid tabs in the background
  // (after first paint, when the browser is idle) so tab switches stay instant.
@@ -212,6 +217,19 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  current.screen !== "legacy" &&
  current.screen !== "draw-story" &&
  current.screen !== "vocab-quiz";
+ // MiniPlayer ("chế độ thu gọn") docks above the tab bar. Screens without the
+ // tab bar are full-screen tasks with their own bottom buttons (and often
+ // their own sound or the microphone): the story pauses there instead of
+ // playing unseen. The full player takes the story back itself.
+ const miniDocked = showTabBar && !kidLocked;
+ useEffect(() => {
+ if (!miniDocked && current.screen !== "player" && isPlaying) audio.pause();
+ }, [miniDocked, current.screen, isPlaying, audio]);
+ const openFromMini = useCallback(
+ (storyId: string, page: number) => navigate("player", { storyId, page: String(page) }),
+ [navigate],
+ );
+ const openSky = useCallback(() => navigate("sky"), [navigate]);
 
  // Visitors (no auth cookie, see app/page.tsx) see onboarding while auth
  // resolves; families get the splash so onboarding never flashes for them.
@@ -252,6 +270,7 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  {current.screen === "player" && (
  <StoryPlayer
  storyId={current.data?.storyId}
+ initialPage={Number(current.data?.page) || undefined}
  onBack={goBack}
  onNavigate={navigate}
  />
@@ -327,12 +346,14 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  </>
  )}
  </main>
+ {/* Room to scroll the last row above the docked MiniPlayer (60 px card + 26 px over the raised Tạo button). */}
+ {miniDocked && miniStoryId && <div aria-hidden data-testid="mini-player-spacer" className="h-[86px]" />}
 
- {showTabBar && !kidLocked && (
- <TabBar active={activeTab} onTabChange={handleTabChange} />
- )}
+ <div data-testid="bottom-dock" className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-[430px] flex-col">
+ {miniDocked && <MiniPlayer onOpen={openFromMini} onOpenSky={openSky} />}
+ {miniDocked && <TabBar active={activeTab} onTabChange={handleTabChange} />}
+ </div>
  {user && <ComplianceLayer />}
- {!kidLocked && <MiniPlayer />}
  </div>
  );
 }

@@ -1,287 +1,146 @@
 "use client";
 
+/**
+ * App-wide narration that outlives the full player — the MiniPlayer
+ * ("chế độ thu gọn"). All page logic lives in BackgroundPlayer
+ * (src/lib/background-player.ts); this provider wires it to React, the lock
+ * screen (MediaSession) and "Nghe tiếp" on Home.
+ *
+ * Re-render cost: `useAudioPlayer()` follows every progress tick (MiniPlayer
+ * only). Screens that just need "is a story playing?" use `useAudioPlaying()`
+ * and `useAudioControls()`, which do not re-render 4×/s while a story plays.
+ */
 import { useSettings } from "@/lib/settings-context";
-import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
+import { updateLastPlayedPage } from "@/lib/last-played";
+import { BackgroundPlayer, IDLE, type AudioTrack, type PlayerDeps, type PlayerSnapshot, type Released } from "@/lib/background-player";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
-export interface AudioTrack {
-  storyId: string;
-  storyTitle: string;
-  pageNumber: number;
-  totalPages: number;
-  audioUrl: string;
-  /** All page audio URLs for auto-advance */
-  allPages?: { pageNumber: number; audioUrl: string }[];
-}
+export type { AudioTrack, PlayerSnapshot, Released } from "@/lib/background-player";
 
-interface AudioPlayerState {
-  currentTrack: AudioTrack | null;
-  isPlaying: boolean;
-  progress: number; // 0-100
-  currentTime: number;
-  duration: number;
-}
+const OFF: PlayerDeps = {
+  createAudio: () => {
+    throw new Error("no audio outside AudioPlayerProvider");
+  },
+  revoke: () => {},
+  now: () => Date.now(),
+  setTimer: (fn, ms) => setTimeout(fn, ms),
+  clearTimer: (t) => clearTimeout(t),
+};
+/** Used when a component renders outside the provider (tests, admin): every action is a no-op. */
+const FALLBACK = new BackgroundPlayer(OFF, false);
 
-interface AudioPlayerContextType extends AudioPlayerState {
-  play: (track: AudioTrack) => void;
-  pause: () => void;
-  resume: () => void;
-  stop: () => void;
-  seekTo: (pct: number) => void;
-  nextPage: () => void;
-  prevPage: () => void;
-  /** Take over an existing Audio element (e.g. from StoryPlayer leaving) */
-  adoptAudio: (audio: HTMLAudioElement, track: AudioTrack) => void;
-}
+const AudioPlayerContext = createContext<BackgroundPlayer>(FALLBACK);
 
-const AudioPlayerContext = createContext<AudioPlayerContextType>({
-  currentTrack: null,
-  isPlaying: false,
-  progress: 0,
-  currentTime: 0,
-  duration: 0,
-  play: () => {},
-  pause: () => {},
-  resume: () => {},
-  stop: () => {},
-  seekTo: () => {},
-  nextPage: () => {},
-  prevPage: () => {},
-  adoptAudio: () => {},
-});
-
-/** Update MediaSession metadata + action handlers for lock screen / background control */
-function updateMediaSession(track: AudioTrack | null, handlers: {
-  onPlay?: () => void;
-  onPause?: () => void;
-  onNext?: () => void;
-  onPrev?: () => void;
-  onStop?: () => void;
-}) {
+/** Lock screen / background controls follow the mini player. */
+function updateMediaSession(track: AudioTrack | null, player: BackgroundPlayer, playing: boolean) {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  const ms = navigator.mediaSession;
   if (!track) {
-    navigator.mediaSession.metadata = null;
-    navigator.mediaSession.playbackState = "none";
+    ms.metadata = null;
+    ms.playbackState = "none";
     return;
   }
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: track.storyTitle,
-    artist: `Trang ${track.pageNumber}/${track.totalPages}`,
-    album: "KểCon",
-  });
-  navigator.mediaSession.setActionHandler("play", handlers.onPlay || null);
-  navigator.mediaSession.setActionHandler("pause", handlers.onPause || null);
-  navigator.mediaSession.setActionHandler("nexttrack", handlers.onNext || null);
-  navigator.mediaSession.setActionHandler("previoustrack", handlers.onPrev || null);
-  navigator.mediaSession.setActionHandler("stop", handlers.onStop || null);
-}
-
-type AudioRef = React.RefObject<HTMLAudioElement | null>;
-type SetPlayerState = React.Dispatch<React.SetStateAction<AudioPlayerState>>;
-
-/** Attach progress / auto-advance listeners to an Audio element */
-function wireAudioEvents(audio: HTMLAudioElement, audioRef: AudioRef, setState: SetPlayerState, enabled: React.RefObject<boolean>) {
-  audio.onloadedmetadata = () => {
-    setState((s) => ({ ...s, duration: audio.duration }));
-  };
-
-  audio.ontimeupdate = () => {
-    if (audio.duration) {
-      setState((s) => ({
-        ...s,
-        currentTime: audio.currentTime,
-        progress: (audio.currentTime / audio.duration) * 100,
-      }));
-    }
-  };
-
-  audio.onended = () => {
-    if (!enabled.current || audioRef.current !== audio) return;
-    setState((prev) => {
-      const t = prev.currentTrack;
-      if (!t?.allPages) {
-        return { ...prev, isPlaying: false, progress: 100 };
-      }
-      const nextIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber) + 1;
-      if (nextIdx < t.allPages.length) {
-        const nextPage = t.allPages[nextIdx];
-        setTimeout(() => {
-          if (!enabled.current || audioRef.current !== audio) return;
-          startTrack({
-            ...t,
-            pageNumber: nextPage.pageNumber,
-            audioUrl: nextPage.audioUrl,
-          }, audioRef, setState, enabled);
-        }, 0);
-        return prev;
-      }
-      return { ...prev, isPlaying: false, progress: 100 };
+  try {
+    ms.metadata = new MediaMetadata({
+      title: track.storyTitle,
+      artist: `Trang ${track.pageNumber}/${track.totalPages}`,
+      album: "KểCon",
+      ...(track.coverUrl ? { artwork: [{ src: track.coverUrl }] } : {}),
     });
-  };
-}
-
-/** Stop the current Audio element (if any) and start playing `track` */
-function startTrack(track: AudioTrack, audioRef: AudioRef, setState: SetPlayerState, enabled: React.RefObject<boolean>) {
-  if (!enabled.current) return;
-  if (audioRef.current) {
-    audioRef.current.pause();
-    audioRef.current = null;
+    ms.setActionHandler("play", () => player.resume());
+    ms.setActionHandler("pause", () => player.pause());
+    ms.setActionHandler("nexttrack", () => player.nextPage());
+    ms.setActionHandler("previoustrack", () => player.prevPage());
+    ms.setActionHandler("stop", () => player.stop());
+  } catch {
+    /* older browsers: metadata/actions unsupported — playback still works */
   }
-
-  const audio = new Audio(track.audioUrl);
-  audioRef.current = audio;
-  wireAudioEvents(audio, audioRef, setState, enabled);
-
-  audio.play().catch(() => {});
-  setState({
-    currentTrack: track,
-    isPlaying: true,
-    progress: 0,
-    currentTime: 0,
-    duration: 0,
-  });
+  ms.playbackState = playing ? "playing" : "paused";
 }
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
-  const {settings}=useSettings();
-  const enabledRef=useRef(settings.narrationEnabled);
-  useEffect(()=>{enabledRef.current=settings.narrationEnabled;},[settings.narrationEnabled]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [state, setState] = useState<AudioPlayerState>({
-    currentTrack: null,
-    isPlaying: false,
-    progress: 0,
-    currentTime: 0,
-    duration: 0,
-  });
+  const { settings } = useSettings();
+  const [player] = useState(
+    () =>
+      new BackgroundPlayer(
+        {
+          createAudio: (url) => new Audio(url),
+          revoke: (url) => {
+            if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+          },
+          now: () => Date.now(),
+          setTimer: (fn, ms) => setTimeout(fn, ms),
+          clearTimer: (t) => clearTimeout(t),
+        },
+        settings.narrationEnabled,
+      ),
+  );
 
-  // Clean up audio on unmount
+  useEffect(() => () => player.stop(), [player]);
+  // "Giọng đọc truyện" off → the mini player stops and nothing starts.
   useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
+    player.setEnabled(settings.narrationEnabled);
+  }, [settings.narrationEnabled, player]);
 
-  const play = useCallback((track: AudioTrack) => {
-    startTrack(track, audioRef, setState, enabledRef);
-  }, []);
+  const track = useSyncExternalStore(player.subscribe, () => player.getSnapshot().track, () => null);
+  const playing = useSyncExternalStore(player.subscribe, () => player.getSnapshot().isPlaying, () => false);
+  const storyId = track?.storyId;
+  const page = track?.pageNumber;
 
-  /** Adopt an already-playing Audio element from StoryPlayer so it keeps playing in MiniPlayer */
-  const adoptAudio = useCallback((audio: HTMLAudioElement, track: AudioTrack) => {
-    if (!enabledRef.current) {audio.pause();return;}
-    if (audioRef.current && audioRef.current !== audio) {
-      audioRef.current.pause();
-    }
-    audioRef.current = audio;
-    wireAudioEvents(audio, audioRef, setState, enabledRef);
-
-    const isCurrentlyPlaying = !audio.paused && !audio.ended;
-    setState({
-      currentTrack: track,
-      isPlaying: isCurrentlyPlaying,
-      progress: audio.duration ? (audio.currentTime / audio.duration) * 100 : 0,
-      currentTime: audio.currentTime,
-      duration: audio.duration || 0,
-    });
-  }, []);
-
-  const pause = useCallback(() => {
-    audioRef.current?.pause();
-    setState((s) => ({ ...s, isPlaying: false }));
-  }, []);
-
-  const resume = useCallback(() => {
-    if (!enabledRef.current) return;
-    audioRef.current?.play().catch(() => {});
-    setState((s) => ({ ...s, isPlaying: true }));
-  }, []);
-
-  const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setState({
-      currentTrack: null,
-      isPlaying: false,
-      progress: 0,
-      currentTime: 0,
-      duration: 0,
-    });
-    updateMediaSession(null, {});
-  }, []);
-
-  useEffect(()=>{if(!settings.narrationEnabled) stop();},[settings.narrationEnabled,stop]);
-
-  const seekTo = useCallback((pct: number) => {
-    if (audioRef.current && audioRef.current.duration) {
-      audioRef.current.currentTime = (pct / 100) * audioRef.current.duration;
-    }
-  }, []);
-
-  const nextPage = useCallback(() => {
-    setState((prev) => {
-      const t = prev.currentTrack;
-      if (!t?.allPages) return prev;
-      const curIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber);
-      const nextIdx = curIdx + 1;
-      if (nextIdx < t.allPages.length) {
-        const np = t.allPages[nextIdx];
-        setTimeout(() => play({ ...t, pageNumber: np.pageNumber, audioUrl: np.audioUrl }), 0);
-      }
-      return prev;
-    });
-  }, [play]);
-
-  const prevPage = useCallback(() => {
-    setState((prev) => {
-      const t = prev.currentTrack;
-      if (!t?.allPages) return prev;
-      const curIdx = t.allPages.findIndex((p) => p.pageNumber === t.pageNumber);
-      const prevIdx = curIdx - 1;
-      if (prevIdx >= 0) {
-        const pp = t.allPages[prevIdx];
-        setTimeout(() => play({ ...t, pageNumber: pp.pageNumber, audioUrl: pp.audioUrl }), 0);
-      }
-      return prev;
-    });
-  }, [play]);
-
-  // Update MediaSession whenever track or playing state changes
   useEffect(() => {
-    updateMediaSession(state.currentTrack, {
-      onPlay: resume,
-      onPause: pause,
-      onNext: nextPage,
-      onPrev: prevPage,
-      onStop: stop,
-    });
-    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
-      navigator.mediaSession.playbackState = state.isPlaying ? "playing" : "paused";
-    }
-  }, [state.currentTrack, state.isPlaying, resume, pause, nextPage, prevPage, stop]);
+    updateMediaSession(player.getSnapshot().track, player, playing);
+  }, [player, storyId, page, playing]);
 
-  return (
-    <AudioPlayerContext.Provider
-      value={{
-        ...state,
-        play,
-        pause,
-        resume,
-        stop,
-        seekTo,
-        nextPage,
-        prevPage,
-        adoptAudio,
-      }}
-    >
-      {children}
-    </AudioPlayerContext.Provider>
+  // "Nghe tiếp" on Home follows the pages heard in the mini player.
+  useEffect(() => {
+    const t = player.getSnapshot().track;
+    if (t) updateLastPlayedPage({ storyId: t.storyId, title: t.storyTitle, page: t.pageNumber, totalPages: t.totalPages });
+  }, [player, storyId, page]);
+
+  return <AudioPlayerContext.Provider value={player}>{children}</AudioPlayerContext.Provider>;
+}
+
+/** Stable actions (never re-render on progress). */
+export function useAudioControls() {
+  const player = useContext(AudioPlayerContext);
+  return useMemo(
+    () => ({
+      play: (track: AudioTrack) => player.play(track),
+      pause: () => player.pause(),
+      resume: () => player.resume(),
+      stop: () => player.stop(),
+      replay: () => player.replay(),
+      seekTo: (pct: number) => player.seekTo(pct),
+      nextPage: () => player.nextPage(),
+      prevPage: () => player.prevPage(),
+      dismissCelebration: () => player.dismissCelebration(),
+      /** The full player was left while narrating: keep this element playing in the MiniPlayer. */
+      adoptAudio: (audio: HTMLAudioElement, track: AudioTrack) => player.adopt(audio, track),
+      /** The full player of this story opens: take the audio back without a restart. */
+      release: (storyId: string): Released | null => player.release(storyId),
+      /** Current state without subscribing. */
+      peek: (): PlayerSnapshot => player.getSnapshot(),
+    }),
+    [player]
   );
 }
 
+/** True while a story plays (or turns its page) in the mini player. */
+export function useAudioPlaying(): boolean {
+  const player = useContext(AudioPlayerContext);
+  return useSyncExternalStore(player.subscribe, () => player.getSnapshot().isPlaying, () => false);
+}
+
+/** Story id in the mini player (null = closed). */
+export function useAudioStoryId(): string | null {
+  const player = useContext(AudioPlayerContext);
+  return useSyncExternalStore(player.subscribe, () => player.getSnapshot().track?.storyId ?? null, () => null);
+}
+
+/** Everything, re-rendering on each progress tick — for the MiniPlayer itself. */
 export function useAudioPlayer() {
-  return useContext(AudioPlayerContext);
+  const player = useContext(AudioPlayerContext);
+  const snap = useSyncExternalStore(player.subscribe, player.getSnapshot, () => IDLE);
+  const controls = useAudioControls();
+  return { ...snap, currentTrack: snap.track, ...controls };
 }

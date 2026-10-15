@@ -1,12 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioControls } from "@/lib/audio-player-context";
 import { normalizeVoiceLanguage } from "@/lib/voice-selection";
 import { VoicePreviewPlayer, type PreviewLocale } from "@/lib/voice-preview";
 
 export function useVoicePreview(language: string) {
   const [player] = useState(() => new VoicePreviewPlayer());
-  const { pause } = useAudioPlayer();
+  const { pause } = useAudioControls();
   const state = useSyncExternalStore(
     player.subscribe,
     player.getSnapshot,
