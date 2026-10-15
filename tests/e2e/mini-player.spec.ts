@@ -84,6 +84,8 @@ type Row = Record<string, unknown>;
 /** Lượt nghe (PR #62): rows the app adds/updates in play_sessions, plays counted, "play" events. */
 async function listenHistory(page: Page) {
   const h = { inserts: [] as Row[], updates: [] as { id: string; body: Row }[], plays: 0, playEvents: 0 };
+  // Stars/missions are covered in missions.spec.ts: leave the shared mock's mission state untouched.
+  await page.route("**/api/missions/listen", (r) => r.fulfill({ json: {} }));
   await page.route("**/rest/v1/play_sessions*", async (r) => {
     const req = r.request();
     if (req.method() === "POST") {
