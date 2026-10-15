@@ -9,8 +9,7 @@ mkdir -p "$KECON/releases/$SHA" "$KECON/shared"
 tar -xzf "$TARBALL" -C "$KECON/releases/$SHA"
 ln -sfn "$KECON/releases/$SHA" "$KECON/current"
 
-sudo cp "$HERE"/systemd/*.service "$HERE"/systemd/*.timer /etc/systemd/system/
-sudo systemctl daemon-reload
+bash "$HERE/install-units.sh" "$KECON/releases/$SHA"   # User= = chủ /srv/kecon
 sudo systemctl enable --now kecon-tunnel kecon-proxy
 sudo systemctl enable kecon-supabase kecon-web kecon-urlwatch.timer
 sudo systemctl start kecon-supabase   # lần đầu: kéo image Docker + chạy migrations

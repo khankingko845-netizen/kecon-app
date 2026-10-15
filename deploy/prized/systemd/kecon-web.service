@@ -4,7 +4,7 @@ After=kecon-supabase.service kecon-tunnel.service kecon-proxy.service
 Wants=kecon-supabase.service kecon-tunnel.service kecon-proxy.service
 
 [Service]
-User=doppel
+User=@KECON_USER@
 Environment=NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 ExecStart=/srv/kecon/current/deploy/prized/run-web.sh
 Restart=always

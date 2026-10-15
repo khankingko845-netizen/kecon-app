@@ -3,7 +3,7 @@ Description=KểCon staging — Caddy (app + Supabase API trên cùng origin)
 After=network.target
 
 [Service]
-User=doppel
+User=@KECON_USER@
 ExecStart=/usr/local/bin/caddy run --config /srv/kecon/current/deploy/prized/Caddyfile --adapter caddyfile
 Restart=always
 RestartSec=3
