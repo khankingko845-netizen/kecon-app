@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { signInAsMockFamily } from "./support/fixtures";
+import { MOCK_STORY_ID, MOCK_USER_ID, signInAsMockFamily } from "./support/fixtures";
 
 // PR #61 — Trình nghe thu gọn (MiniPlayer) on phones. Before this PR, at
 // 360–412 px the mini player covered the whole tab bar (no tab could be
@@ -79,6 +79,35 @@ async function listen(page: Page, title = STORY) {
 }
 
 const back = (page: Page) => page.getByRole("button", { name: "Quay lại", exact: true }).click();
+
+type Row = Record<string, unknown>;
+/** Lượt nghe (PR #62): rows the app adds/updates in play_sessions, plays counted, "play" events. */
+async function listenHistory(page: Page) {
+  const h = { inserts: [] as Row[], updates: [] as { id: string; body: Row }[], plays: 0, playEvents: 0 };
+  await page.route("**/rest/v1/play_sessions*", async (r) => {
+    const req = r.request();
+    if (req.method() === "POST") {
+      const body = req.postDataJSON();
+      h.inserts.push(Array.isArray(body) ? body[0] : body);
+      return r.fulfill({ status: 201, json: { id: `row-${h.inserts.length}` } });
+    }
+    if (req.method() === "PATCH") {
+      h.updates.push({ id: new URL(req.url()).searchParams.get("id")?.replace(/^eq\./, "") ?? "", body: req.postDataJSON() });
+      return r.fulfill({ status: 204, body: "" });
+    }
+    return r.fallback();
+  });
+  await page.route("**/rest/v1/rpc/increment_play_count*", (r) => {
+    h.plays++;
+    return r.fulfill({ json: null });
+  });
+  await page.route("**/rest/v1/user_behavior*", (r) => {
+    const body = r.request().method() === "POST" ? r.request().postDataJSON() : null;
+    if ((Array.isArray(body) ? body[0] : body)?.action_type === "play") h.playEvents++;
+    return r.fallback();
+  });
+  return h;
+}
 const slider = (page: Page) => page.getByRole("slider", { name: "Tiến độ" });
 
 for (const [w, h] of [
@@ -286,4 +315,68 @@ test("mở truyện khác hoặc vào Tạo khi trình nghe thu gọn đang đ�
   await expect(page.getByTestId("mini-player")).toHaveCount(0);
   await expect(page.getByTestId("mini-player-spacer")).toHaveCount(0);
   await expect.poll(async () => (await audible(page)).length).toBe(0);
+});
+
+test("lượt nghe: nghe tiếp ở trình thu gọn tới hết truyện → vẫn một dòng lịch sử, một lượt nghe; Nghe lại từ đầu là lượt mới", async ({ page, context, baseURL }) => {
+  await setup(page, context, baseURL!, 3);
+  const h = await listenHistory(page);
+  await page.goto("/");
+  await listen(page);
+  await page.waitForTimeout(2000);
+  await back(page);
+  // Leaving the full player writes the listen so far (as before)…
+  await expect.poll(() => h.inserts.length).toBe(1);
+  expect(h.inserts[0]).toMatchObject({ user_id: MOCK_USER_ID, story_id: MOCK_STORY_ID, voice_id: null, pages_listened: 1, completed: false });
+  const firstDuration = h.inserts[0].duration as number;
+  expect(firstDuration).toBeGreaterThanOrEqual(2);
+  // …and the minutes/pages heard in the mini player go into that same row (was: never written).
+  const mini = page.getByTestId("mini-player");
+  await expect(mini).toHaveAttribute("data-status", "ended", { timeout: 20_000 });
+  await expect.poll(() => h.updates.at(-1)?.body).toMatchObject({ pages_listened: 2, completed: true });
+  expect(h.updates.every((u) => u.id === "row-1")).toBe(true);
+  expect(h.updates.at(-1)!.body.duration as number).toBeGreaterThan(firstDuration);
+  expect(h.inserts).toHaveLength(1);
+  expect(h.plays).toBe(1);
+
+  // Listening again from page 1 is a new listen: a second row, a second play — row 1 is left alone.
+  const updatesBefore = h.updates.length;
+  await mini.getByRole("button", { name: "Nghe lại từ đầu" }).click();
+  await expect(mini).toHaveAttribute("data-status", "playing");
+  await page.waitForTimeout(2600);
+  await mini.getByRole("button", { name: "Tắt trình phát" }).click();
+  await expect.poll(() => h.inserts.length).toBe(2);
+  expect(h.inserts[1]).toMatchObject({ story_id: MOCK_STORY_ID, pages_listened: 1, completed: false });
+  expect(h.inserts[1].duration as number).toBeGreaterThanOrEqual(2);
+  expect(h.updates).toHaveLength(updatesBefore);
+  expect(h.plays).toBe(2);
+});
+
+test("lượt nghe: mở lại truyện từ trình thu gọn rồi rời đi → không thành lượt nghe thứ hai (cùng một dòng được cập nhật)", async ({ page, context, baseURL }) => {
+  await setup(page, context, baseURL!, 30);
+  const h = await listenHistory(page);
+  await page.goto("/");
+  await listen(page);
+  await page.waitForTimeout(2000);
+  await back(page);
+  await expect.poll(() => h.inserts.length).toBe(1);
+  const mini = page.getByTestId("mini-player");
+  await expect(mini).toHaveAttribute("data-status", "playing");
+  await page.waitForTimeout(1500);
+  await mini.getByRole("button", { name: `Mở trình nghe: ${STORY}, trang 1/2` }).click();
+  await expect(page.getByTestId("story-book")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tạm dừng", exact: true })).toBeVisible();
+  await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: "Tạm dừng", exact: true }).click();
+  await back(page);
+  await expect(page.getByTestId("mini-player")).toHaveCount(0);
+  // Was: a second row (and a second play) for the same listen.
+  await expect.poll(() => h.updates.length).toBe(1);
+  expect(h.updates[0].id).toBe("row-1");
+  expect(h.updates[0].body).toMatchObject({ pages_listened: 1, completed: false });
+  // The time heard in the mini player counts too.
+  expect(h.updates[0].body.duration as number).toBeGreaterThanOrEqual((h.inserts[0].duration as number) + 2);
+  await page.waitForTimeout(500);
+  expect(h.inserts).toHaveLength(1);
+  expect(h.plays).toBe(1);
+  expect(h.playEvents).toBe(1);
 });

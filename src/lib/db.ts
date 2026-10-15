@@ -5,6 +5,7 @@ import { requireHouseholdId } from "@/lib/household-query";
 
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/admin-permissions";
+import type { PlaySessionStore } from "@/lib/listen-log";
 import type { ProviderKeyCheckResult, ProviderKeyRow, VoiceProvider } from "@/lib/provider-keys";
 import { isSecretSettingKey, type SetSystemSecretResult, type SystemSecretStatus } from "@/lib/system-secrets";
 
@@ -566,29 +567,73 @@ export async function logBehavior(
   });
 }
 
+/**
+ * Lượt nghe (src/lib/listen-log.ts): adds the play_sessions row and counts one
+ * play. Resolves the row id, or null when nothing was written (signed out,
+ * another account signed in meanwhile, or the database refused it).
+ */
 export async function logPlaySession(input: {
   storyId: string;
   voiceId?: string | null;
   duration: number;
   pagesListened: number;
   completed: boolean;
-}): Promise<void> {
+  /** The account that listened. */
+  userId?: string | null;
+}): Promise<string | null> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from("play_sessions").insert({
-    user_id: user.id,
-    story_id: input.storyId,
-    voice_id: input.voiceId ?? null,
-    ended_at: new Date().toISOString(),
-    duration: input.duration,
-    pages_listened: input.pagesListened,
-    completed: input.completed,
-  });
+  if (!user || (input.userId && input.userId !== user.id)) return null;
+  const { data, error } = await supabase
+    .from("play_sessions")
+    .insert({
+      user_id: user.id,
+      story_id: input.storyId,
+      voice_id: input.voiceId ?? null,
+      ended_at: new Date().toISOString(),
+      duration: input.duration,
+      pages_listened: input.pagesListened,
+      completed: input.completed,
+    })
+    .select("id")
+    .single();
+  const id = (data as { id?: string } | null)?.id;
+  if (error || !id) return null;
   await supabase.rpc("increment_play_count", { p_story_id: input.storyId });
+  return id;
 }
+
+/** The listen went on (MiniPlayer): same row, new totals — no second play counted. */
+export async function updatePlaySession(
+  id: string,
+  input: { duration: number; pagesListened: number; completed: boolean; userId?: string | null },
+): Promise<boolean> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || (input.userId && input.userId !== user.id)) return false;
+  const { error } = await supabase
+    .from("play_sessions")
+    .update({
+      ended_at: new Date().toISOString(),
+      duration: input.duration,
+      pages_listened: input.pagesListened,
+      completed: input.completed,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  return !error;
+}
+
+/** Where ListenRecord writes (injected so src/lib/listen-log.ts is tested without Supabase). */
+export const playSessionStore: PlaySessionStore = {
+  insert: logPlaySession,
+  update: updatePlaySession,
+  addMinutes: (minutes) => updateReadingStreak(minutes),
+};
 
 export async function likeStory(storyId: string, like: boolean): Promise<void> {
   const supabase = createClient();

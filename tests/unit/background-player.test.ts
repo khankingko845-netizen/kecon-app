@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BackgroundPlayer, IDLE, markerFor, mergedPosition, visiblePage, type AudioTrack, type PlayerDeps } from "@/lib/background-player";
+import { BackgroundPlayer, IDLE, markerFor, mergedPosition, visiblePage, type AudioTrack, type ListenLog, type PlayerDeps } from "@/lib/background-player";
 import type { Celebration } from "@/lib/missions";
 
 /**
@@ -557,5 +557,178 @@ describe("BackgroundPlayer — handing back, stopping, switching", () => {
     fn.mockClear();
     h.player.stop();
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+describe("BackgroundPlayer — lượt nghe: one listen, wherever it is heard (PR #62)", () => {
+  /** Where the full player writes the listen (ListenRecord in the app). */
+  function sink() {
+    const saves: ListenLog[] = [];
+    return { saves, save: (l: ListenLog) => void saves.push(l) };
+  }
+
+  it("the listen carried from the full player goes on: written once at the end, with its time and every page", async () => {
+    const h = harness();
+    const s = sink();
+    const el = playing("https://cdn/p1.mp3", 4, 10);
+    h.player.adopt(el as unknown as HTMLAudioElement, track({ totalPages: 2, listen: { log: { ms: 5000, pages: [1] }, sink: s } }));
+    await h.tick(3000);
+    el.end();
+    await h.tick(1200); // breath between pages counts: the story is going on
+    const p2 = h.last();
+    p2.load(10);
+    await h.tick(2000);
+    expect(s.saves).toEqual([]); // nothing written while the story goes on
+    p2.end();
+    expect(h.snap().status).toBe("ended");
+    expect(s.saves).toEqual([{ ms: 5000 + 3000 + 1200 + 2000, pages: [1, 2] }]);
+    await h.tick(5000);
+    h.player.stop();
+    expect(s.saves).toHaveLength(1);
+  });
+
+  it("paused time does not count; closing the mini player writes the listen once", async () => {
+    const h = harness();
+    const s = sink();
+    h.player.adopt(playing("https://cdn/p1.mp3", 2, 10) as unknown as HTMLAudioElement, track({ listen: { log: { ms: 1000, pages: [1] }, sink: s } }));
+    await h.tick(2000);
+    h.player.pause();
+    await h.tick(60_000);
+    h.player.resume();
+    await h.tick(500);
+    h.player.stop();
+    h.player.stop();
+    expect(s.saves).toEqual([{ ms: 3500, pages: [1] }]);
+  });
+
+  it("reopening the story in the full player hands the listen back — the mini player writes nothing", async () => {
+    const h = harness();
+    const s = sink();
+    const el = playing("https://cdn/p1.mp3", 4, 10);
+    h.player.adopt(el as unknown as HTMLAudioElement, track({ listen: { log: { ms: 4000, pages: [1] }, sink: s } }));
+    await h.tick(1500);
+    const r = h.player.release("s1");
+    expect(r?.audio).toBe(el);
+    expect(r?.track.listen).toEqual({ log: { ms: 5500, pages: [1] }, sink: s });
+    h.player.stop();
+    expect(s.saves).toEqual([]);
+
+    // Between two pages too: the listen (with the breath so far) goes back with the next page.
+    const h2 = harness();
+    const s2 = sink();
+    const p1 = playing("https://cdn/p1.mp3", 9, 10);
+    h2.player.adopt(p1 as unknown as HTMLAudioElement, track({ listen: { log: { ms: 0, pages: [1] }, sink: s2 } }));
+    p1.end();
+    await h2.tick(600);
+    const r2 = h2.player.release("s1");
+    expect(r2).toMatchObject({ audio: null, playing: true, track: { pageNumber: 2, listen: { log: { ms: 600, pages: [1] }, sink: s2 } } });
+    expect(s2.saves).toEqual([]);
+  });
+
+  it("another story replaces it: the first listen is written once, the new one goes on", async () => {
+    const h = harness();
+    const a = sink();
+    const b = sink();
+    h.player.adopt(playing("https://cdn/a1.mp3", 1, 10) as unknown as HTMLAudioElement, track({ listen: { log: { ms: 0, pages: [1] }, sink: a } }));
+    await h.tick(3000);
+    h.player.adopt(
+      playing("https://cdn/b1.mp3", 0, 10) as unknown as HTMLAudioElement,
+      track({ storyId: "s2", storyTitle: "Thỏ con", audioUrl: "https://cdn/b1.mp3", listen: { log: { ms: 2000, pages: [1] }, sink: b } }),
+    );
+    expect(a.saves).toEqual([{ ms: 3000, pages: [1] }]);
+    expect(b.saves).toEqual([]);
+    await h.tick(1000);
+    h.player.stop();
+    expect(b.saves).toEqual([{ ms: 3000, pages: [1] }]);
+    expect(a.saves).toHaveLength(1);
+  });
+
+  it("after the end, “Nghe lại từ đầu” is a new listen (a new row); the first is not written again", async () => {
+    const h = harness();
+    const first = sink();
+    const again = sink();
+    const newListen = vi.fn(() => again);
+    const el = playing("https://cdn/p1.mp3", 9, 10);
+    h.player.adopt(el as unknown as HTMLAudioElement, track({ totalPages: 1, listen: { log: { ms: 2000, pages: [1] }, sink: first }, newListen }));
+    await h.tick(1000);
+    el.end();
+    expect(first.saves).toEqual([{ ms: 3000, pages: [1] }]);
+    expect(newListen).not.toHaveBeenCalled();
+    h.player.replay();
+    await flush();
+    expect(h.snap().status).toBe("playing");
+    expect(newListen).toHaveBeenCalledTimes(1);
+    await h.tick(2500);
+    h.player.stop();
+    expect(again.saves).toEqual([{ ms: 2500, pages: [1] }]);
+    expect(first.saves).toHaveLength(1);
+  });
+
+  it("continuous mode: the pages heard follow the page markers", async () => {
+    const h = harness();
+    const s = sink();
+    const el = playing("blob:merged", 1, 12);
+    h.player.adopt(
+      el as unknown as HTMLAudioElement,
+      track({ audioUrl: "blob:merged", allPages: undefined, pageMarkers: [0, 4, 8], listen: { log: { ms: 0, pages: [] }, sink: s } }),
+    );
+    el.at(5);
+    el.at(9);
+    el.end();
+    expect(s.saves).toHaveLength(1);
+    expect(s.saves[0].pages).toEqual([1, 2, 3]);
+  });
+
+  it("the app goes to the background: the listen so far is written, and it goes on", async () => {
+    const h = harness();
+    const s = sink();
+    h.player.adopt(playing("https://cdn/p1.mp3", 1, 10) as unknown as HTMLAudioElement, track({ listen: { log: { ms: 0, pages: [1] }, sink: s } }));
+    await h.tick(3000);
+    h.player.checkpoint();
+    expect(s.saves).toEqual([{ ms: 3000, pages: [1] }]);
+    await h.tick(1000);
+    h.player.stop();
+    expect(s.saves).toEqual([
+      { ms: 3000, pages: [1] },
+      { ms: 4000, pages: [1] },
+    ]);
+  });
+
+  it("listening time uses the monotonic clock when given (the wall clock may be frozen or changed)", () => {
+    let mono = 0;
+    const s = sink();
+    const p = new BackgroundPlayer(
+      {
+        createAudio: () => {
+          throw new Error("unused");
+        },
+        revoke: () => {},
+        now: () => 0,
+        clock: () => mono,
+        setTimer: (fn, ms) => setTimeout(fn, ms),
+        clearTimer: (t) => clearTimeout(t),
+      },
+      true,
+    );
+    p.adopt(playing("https://cdn/p1.mp3", 1, 10) as unknown as HTMLAudioElement, track({ listen: { log: { ms: 0, pages: [1] }, sink: s } }));
+    mono += 2500;
+    p.stop();
+    expect(s.saves).toEqual([{ ms: 2500, pages: [1] }]);
+  });
+
+  it("a history write that throws never stops the story", async () => {
+    const h = harness();
+    const el = playing("https://cdn/p1.mp3", 1, 10);
+    const bad = {
+      save: () => {
+        throw new Error("offline");
+      },
+    };
+    h.player.adopt(el as unknown as HTMLAudioElement, track({ listen: { log: { ms: 0, pages: [1] }, sink: bad } }));
+    await h.tick(1000);
+    expect(() => h.player.checkpoint()).not.toThrow();
+    expect(h.snap().status).toBe("playing");
+    expect(() => h.player.stop()).not.toThrow();
+    expect(h.snap()).toBe(IDLE);
   });
 });

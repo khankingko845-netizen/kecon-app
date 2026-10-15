@@ -69,6 +69,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
             if (url.startsWith("blob:")) URL.revokeObjectURL(url);
           },
           now: () => Date.now(),
+          // Listening time: monotonic, unaffected by clock changes on the phone.
+          clock: () => performance.now(),
           setTimer: (fn, ms) => setTimeout(fn, ms),
           clearTimer: (t) => clearTimeout(t),
         },
@@ -81,6 +83,14 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     player.setEnabled(settings.narrationEnabled);
   }, [settings.narrationEnabled, player]);
+  // Phone locked / app switched (it may be closed there): the listen heard so far is written.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") player.checkpoint();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, [player]);
 
   const track = useSyncExternalStore(player.subscribe, () => player.getSnapshot().track, () => null);
   const playing = useSyncExternalStore(player.subscribe, () => player.getSnapshot().isPlaying, () => false);

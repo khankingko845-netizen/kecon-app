@@ -18,6 +18,23 @@ thu gọn phía trên thanh tab, trang này sang trang khác, tới hết truy�
 | Màn không có thanh tab (Tạo, ghi âm, Ru ngủ, …) | Truyện tạm dừng (các màn đó có âm thanh/micro riêng); quay lại thấy mini “Nghe tiếp”. |
 | Đổi tài khoản / tắt công tắc Giọng đọc truyện | Dừng hẳn. |
 | “Nghe tiếp” ở Trang chủ | Mở đúng trang đã nghe tới; thẻ tự cập nhật khi mini sang trang. |
+| Lịch sử nghe (PR #62) | Một lượt nghe = một dòng `play_sessions`, một lần đếm `play_count`, phút nghe cộng vào chuỗi ngày đọc một lần — dù nghe ở trình đầy đủ, ở mini hay qua lại giữa hai nơi. |
+
+## Lượt nghe (PR #62)
+
+- Rời trình nghe đầy đủ → ghi dòng của lượt nghe (như trước). Truyện đọc tiếp ở mini →
+  **cùng dòng đó** được cập nhật (thời gian, số trang, `completed`) khi hết truyện,
+  khi tắt mini, khi mini chuyển sang truyện khác, hoặc khi app vào nền (khoá máy, đổi app).
+- Đồng hồ của mini chỉ chạy khi truyện đang đọc/đang sang trang — lúc tạm dừng không tính.
+  Dùng `performance.now()` (đơn điệu), không phụ thuộc giờ của máy.
+- Bấm mini mở lại truyện → vẫn là lượt nghe đó (không ghi dòng thứ hai, không đếm thêm
+  `play_count`, không ghi thêm sự kiện `play`). Hết truyện rồi “Nghe lại từ đầu” → lượt mới.
+- Dưới 2 giây không tính (như trước). `completed` = đã nghe đủ mọi trang; `voice_id` = giọng
+  gia đình đang đọc (giọng mẫu → để trống, vì DB chỉ nhận giọng của chính gia đình).
+- Đổi tài khoản giữa chừng → lượt nghe cũ không ghi vào tài khoản mới.
+- Code: `src/lib/listen-log.ts` (`ListenRecord`: lần đầu thêm dòng, sau đó cập nhật theo thứ tự),
+  `logPlaySession` / `updatePlaySession` trong `src/lib/db.ts`. Test: `tests/unit/listen-log.test.ts`,
+  `tests/unit/background-player.test.ts`, `tests/db/play-sessions.test.ts`, E2E trong `tests/e2e/mini-player.spec.ts`.
 
 ## Bố cục
 
@@ -37,5 +54,7 @@ trống 86 px (`mini-player-spacer`) để hàng cuối không bị che. Mọi n
 
 ## Giới hạn
 
-- Thời gian nghe ở mini chưa ghi vào phiên nghe (play sessions) của bố mẹ.
+- Lượt nghe được ghi khi rời trình nghe/khi app vào nền; nếu trình duyệt bị tắt đột ngột
+  (không kịp vào nền) thì phần nghe sau lần ghi cuối bị mất — giống trình nghe đầy đủ.
+- `stories.completion_rate` (thống kê admin) vẫn chưa được tính từ các dòng này.
 - Kích thước màn kiểm bằng Chromium giả lập, chưa thử iPhone/Safari thật.

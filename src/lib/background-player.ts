@@ -6,6 +6,10 @@
  * Framework-free on purpose: the page logic is unit-tested with fake audio
  * elements (tests/unit/background-player.test.ts); the React provider only
  * mirrors the snapshot (src/lib/audio-player-context.tsx).
+ *
+ * Lượt nghe: a listen that began in the full player goes on here (same row in
+ * play_sessions, see src/lib/listen-log.ts) — its clock runs only while the
+ * story plays, and it is written when the story ends, is closed or replaced.
  */
 import { getPageAtTime } from "@/lib/audio-merger";
 import type { Celebration } from "@/lib/missions";
@@ -13,6 +17,24 @@ import type { Celebration } from "@/lib/missions";
 export interface PageAudio {
   pageNumber: number;
   audioUrl: string;
+}
+
+/** One listen of a story so far — it travels between the full player and the mini player. */
+export interface ListenLog {
+  /** Listening time (ms). */
+  ms: number;
+  /** Pages heard, 1-based, each once. */
+  pages: number[];
+}
+
+/** Where a listen is written: the first save adds it, later saves update it (src/lib/listen-log.ts). */
+export interface ListenSink {
+  save(log: ListenLog): unknown;
+}
+
+export interface CarriedListen {
+  log: ListenLog;
+  sink: ListenSink;
 }
 
 export interface AudioTrack {
@@ -39,6 +61,10 @@ export interface AudioTrack {
   ownedUrls?: string[];
   /** Opaque state the full player needs to take the audio back without a restart. */
   handoff?: unknown;
+  /** The listen the full player had begun: it goes on here instead of counting a second one. */
+  listen?: CarriedListen;
+  /** Where a new listen of this story is written ("Nghe lại từ đầu" after the end). */
+  newListen?: () => ListenSink;
 }
 
 export type PlayerStatus = "idle" | "playing" | "paused" | "turning" | "ended" | "error";
@@ -61,6 +87,7 @@ export interface PlayerSnapshot {
 export interface Released {
   /** The element keeps playing — null while the player was between two pages. */
   audio: HTMLAudioElement | null;
+  /** `track.listen`: the listen in progress goes on in the full player (none after the story ended). */
   track: AudioTrack;
   /** The child was listening (playing or turning the page). */
   playing: boolean;
@@ -74,6 +101,8 @@ export interface PlayerDeps {
   now: () => number;
   setTimer: (fn: () => void, ms: number) => Timer;
   clearTimer: (t: Timer) => void;
+  /** Monotonic ms for listening time (default: `now`). */
+  clock?: () => number;
 }
 
 export const IDLE: PlayerSnapshot = Object.freeze({
@@ -123,6 +152,8 @@ export class BackgroundPlayer {
   /** Fresh narration (blob:) for the current page that the player made itself. */
   private pageBlob: string | null = null;
   private completed = false;
+  /** The listen in progress; `since` = when its clock last started (null: stopped). */
+  private listen: { log: ListenLog; sink: ListenSink; since: number | null } | null = null;
 
   /** "Giọng đọc truyện" switch: off → nothing may play. */
   private on: boolean;
@@ -150,6 +181,7 @@ export class BackgroundPlayer {
 
   private set(patch: Partial<PlayerSnapshot>) {
     this.snap = { ...this.snap, ...patch };
+    this.syncClock();
     for (const l of this.listeners) l();
   }
 
@@ -163,6 +195,7 @@ export class BackgroundPlayer {
     }
     this.gen++;
     this.clearTurn();
+    this.openListen(track);
     this.dropElement(audio);
     this.dropOwned(track);
     this.audio = audio;
@@ -171,8 +204,9 @@ export class BackgroundPlayer {
     this.resumePage = null;
     this.wire(audio);
     const playing = !audio.paused && !audio.ended;
-    this.snap = { ...IDLE, track, status: playing ? "playing" : "paused", isPlaying: playing };
+    this.snap = { ...IDLE, track: { ...track, listen: undefined }, status: playing ? "playing" : "paused", isPlaying: playing };
     this.tick(audio);
+    this.heard(this.snap.track?.pageNumber ?? track.pageNumber);
     this.armSleep(track);
     this.emit();
   }
@@ -183,6 +217,7 @@ export class BackgroundPlayer {
     if (!t || t.storyId !== storyId) return null;
     const audio = this.audio;
     const { status, isPlaying, pendingPage } = this.snap;
+    const listen = this.takeListen();
     this.gen++;
     this.clearTurn();
     this.clearSleep();
@@ -201,9 +236,9 @@ export class BackgroundPlayer {
     if (!handOver) {
       // Between two pages (or a failed one): the full player goes on from that page.
       const page = pendingPage ?? t.pageNumber;
-      return { audio: null, track: { ...t, pageNumber: Math.min(t.totalPages, Math.max(1, page)) }, playing: status === "turning" && isPlaying };
+      return { audio: null, track: { ...t, pageNumber: Math.min(t.totalPages, Math.max(1, page)), listen }, playing: status === "turning" && isPlaying };
     }
-    return { audio, track: t, playing: isPlaying && !audio!.paused };
+    return { audio, track: listen ? { ...t, listen } : t, playing: isPlaying && !audio!.paused };
   }
 
   // ── playback ─────────────────────────────────────────────────────────────
@@ -214,20 +249,22 @@ export class BackgroundPlayer {
    */
   play(track: AudioTrack) {
     if (!this.on) return;
+    this.openListen(track);
     this.dropOwned(track);
+    const t = { ...track, listen: undefined };
     if (!track.audioUrl) {
       this.gen++;
       this.clearTurn();
       this.dropElement(null);
       this.resumePage = null;
       this.completed = false;
-      this.snap = { ...IDLE, track };
+      this.snap = { ...IDLE, track: t };
       this.emit();
-      this.armSleep(track);
-      this.turnTo(track.pageNumber, 0);
+      this.armSleep(t);
+      this.turnTo(t.pageNumber, 0);
       return;
     }
-    this.startElement(track, track.audioUrl, track.pageMarkers ? markerFor(track, track.pageNumber) : 0, false);
+    this.startElement(t, t.audioUrl, t.pageMarkers ? markerFor(t, t.pageNumber) : 0, false);
   }
 
   pause() {
@@ -267,6 +304,7 @@ export class BackgroundPlayer {
   }
 
   stop() {
+    this.endListen();
     this.gen++;
     this.clearTurn();
     this.clearSleep();
@@ -311,10 +349,78 @@ export class BackgroundPlayer {
     if (this.snap.celebration) this.set({ celebration: null });
   }
 
+  /** The app goes to the background (it may not come back): write the listen so far — it goes on. */
+  checkpoint() {
+    const l = this.listen;
+    if (!l) return;
+    this.syncClock();
+    this.saveListen(l);
+  }
+
   // ── internals ────────────────────────────────────────────────────────────
 
   private emit() {
+    this.syncClock();
     for (const l of this.listeners) l();
+  }
+
+  // ── lượt nghe ────────────────────────────────────────────────────────────
+
+  private clock() {
+    return (this.deps.clock ?? this.deps.now)();
+  }
+
+  /** A track arrives from the full player: its listen goes on here (the one before ends). */
+  private openListen(track: AudioTrack) {
+    this.endListen();
+    const c = track.listen;
+    if (c) this.listen = { log: { ms: Math.max(0, c.log.ms), pages: [...c.log.pages] }, sink: c.sink, since: null };
+  }
+
+  /** A page is heard. No listen open (the story had ended → "Nghe lại từ đầu"): a new one begins. */
+  private heard(page: number) {
+    if (!this.listen) {
+      const sink = this.snap.track?.newListen?.();
+      if (!sink) return;
+      this.listen = { log: { ms: 0, pages: [] }, sink, since: null };
+    }
+    if (!this.listen.log.pages.includes(page)) this.listen.log.pages.push(page);
+    this.syncClock();
+  }
+
+  /** The clock runs while the story plays or turns to the next page on its own — not while paused. */
+  private syncClock() {
+    const l = this.listen;
+    if (!l) return;
+    const now = this.clock();
+    if (l.since !== null) l.log.ms += Math.max(0, now - l.since);
+    l.since = this.snap.isPlaying ? now : null;
+  }
+
+  private saveListen(l: { log: ListenLog; sink: ListenSink }) {
+    try {
+      l.sink.save({ ms: l.log.ms, pages: [...l.log.pages] });
+    } catch {
+      /* writing the history never stops the story */
+    }
+  }
+
+  /** The listen is over (story ended, closed, replaced): written once more, then closed. */
+  private endListen() {
+    const l = this.listen;
+    if (!l) return;
+    this.syncClock();
+    this.listen = null;
+    this.saveListen(l);
+  }
+
+  /** The full player takes the story back: the listen goes on there (not written here). */
+  private takeListen(): CarriedListen | undefined {
+    const l = this.listen;
+    if (!l) return undefined;
+    this.syncClock();
+    this.listen = null;
+    return { log: { ms: l.log.ms, pages: [...l.log.pages] }, sink: l.sink };
   }
 
   /** Jump to a page and play it (user action or auto-advance). */
@@ -333,6 +439,7 @@ export class BackgroundPlayer {
         if (gen === this.gen && a === this.audio) this.set({ isPlaying: false, status: "paused" });
       });
       this.set({ track: { ...t, pageNumber }, isPlaying: true, status: "playing", progress: 0, error: null, pendingPage: null, celebration: null });
+      this.heard(pageNumber);
       return;
     }
     this.turnTo(pageNumber, 0);
@@ -393,6 +500,7 @@ export class BackgroundPlayer {
     const t = { ...track, audioUrl: url };
     this.snap = { ...this.snap, track: t, status: "playing", isPlaying: true, progress: 0, currentTime: 0, duration: 0, error: null, pendingPage: null, celebration: null };
     this.emit();
+    this.heard(t.pageNumber);
     this.armSleep(t);
     audio.play().catch(() => {
       if (gen === this.gen && audio === this.audio) this.set({ isPlaying: false, status: "paused" });
@@ -449,6 +557,7 @@ export class BackgroundPlayer {
     if (t.pageMarkers?.length) {
       const { pageNumber, progress } = mergedPosition(t.pageMarkers, time, duration);
       this.set({ currentTime: time, duration, progress, track: pageNumber !== t.pageNumber ? { ...t, pageNumber } : t });
+      if (pageNumber !== t.pageNumber) this.heard(pageNumber);
     } else {
       this.set({ currentTime: time, duration, progress: duration ? clamp((time / duration) * 100) : 0 });
     }
@@ -465,6 +574,7 @@ export class BackgroundPlayer {
     const t = this.snap.track;
     if (!t) return;
     this.set({ isPlaying: false, status: "ended", progress: 100 });
+    this.endListen();
     if (this.completed) return;
     this.completed = true;
     const r = t.onComplete?.();
