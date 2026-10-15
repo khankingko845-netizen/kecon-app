@@ -6,8 +6,8 @@ Requires=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-User=doppel
-Environment=HOME=/home/doppel
+User=@KECON_USER@
+Environment=HOME=@KECON_HOME@
 ExecStart=/srv/kecon/current/deploy/prized/supabase-stack.sh
 ExecStop=/usr/bin/supabase stop --workdir /srv/kecon/supabase-stack
 TimeoutStartSec=900

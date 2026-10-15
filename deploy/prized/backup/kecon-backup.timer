@@ -1,0 +1,11 @@
+[Unit]
+Description=KểCon → GitHub backup mỗi ngày 03:15 giờ Việt Nam (máy tạm dừng thì chạy bù khi thức)
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Asia/Ho_Chi_Minh
+RandomizedDelaySec=300
+Persistent=true
+Unit=kecon-backup.service
+
+[Install]
+WantedBy=timers.target

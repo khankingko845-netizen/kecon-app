@@ -1,0 +1,13 @@
+[Unit]
+Description=KểCon → GitHub backup (truyện, media, DB mã hoá) — deploy/prized/backup
+After=docker.service kecon-supabase.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@KECON_USER@
+Environment=HOME=@KECON_HOME@ KECON_BACKUP_BASE=/srv/kecon/backup-github
+ExecStart=/usr/bin/python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --verify-restore
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=1800

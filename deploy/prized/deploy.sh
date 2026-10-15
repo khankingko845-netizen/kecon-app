@@ -23,6 +23,8 @@ rm -rf .next/cache && mv .next .next-template
 
 ln -sfn "$REL" "$KECON/current"
 echo "$SHA" > "$KECON/shared/release"
+# Mọi unit systemd theo release này (User= = chủ /srv/kecon; không restart dịch vụ đang chạy)
+bash "$REL/deploy/prized/install-units.sh" "$REL"
 # Migration mới (nếu có) cho Supabase staging
 rm -rf "$KECON/supabase-stack/supabase/migrations" && cp -r "$REL/supabase/migrations" "$KECON/supabase-stack/supabase/migrations"
 ( set -a; source "$KECON/shared/supabase.secrets"; PUBLIC_URL=$(cat "$KECON/shared/public-url" 2>/dev/null || echo http://127.0.0.1:3000); set +a
@@ -36,16 +38,17 @@ fi
 docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_ENROLL_ENABLED | grep -qx true
 docker exec supabase_auth_kecon-staging printenv GOTRUE_MFA_TOTP_VERIFY_ENABLED | grep -qx true
 # T07 additive measurement tables have been migrated before scheduling retention.
-sudo install -m 644 "$REL/deploy/prized/kecon-measurement-retention.service" /etc/systemd/system/
-sudo install -m 644 "$REL/deploy/prized/kecon-measurement-retention.timer" /etc/systemd/system/
-sudo systemctl daemon-reload
 sudo systemctl enable --now kecon-measurement-retention.timer
 sudo systemctl start kecon-measurement-retention.service
 # G-07 parent reminders (migration 036). Without VAPID keys the job exits without claiming.
-sudo install -m 644 "$REL/deploy/prized/kecon-parent-notify.service" /etc/systemd/system/
-sudo install -m 644 "$REL/deploy/prized/kecon-parent-notify.timer" /etc/systemd/system/
-sudo systemctl daemon-reload
 sudo systemctl enable --now kecon-parent-notify.timer
+# Sao lưu GitHub hằng ngày (deploy/prized/backup) — chỉ bật khi đã có mật khẩu + quyền đẩy.
+BK=$KECON/backup-github
+if [[ -f $BK/passphrase && ( -f $BK/github-token || -f $BK/deploy_key ) ]]; then
+  sudo systemctl enable --now kecon-backup.timer
+else
+  echo "Sao lưu GitHub chưa cấu hình ($BK/passphrase + github-token hoặc deploy_key) → kecon-backup.timer chưa bật"
+fi
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web
