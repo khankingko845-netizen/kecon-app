@@ -30,6 +30,8 @@ import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { useAudioControls, type AudioTrack } from "@/lib/audio-player-context";
 import { visiblePage } from "@/lib/background-player";
+import { ListenRecord, type ListenLog } from "@/lib/listen-log";
+import { useAuth } from "@/lib/auth-context";
 import { makePageResolver, synthesizeSegments, type NarrationSetup } from "@/lib/page-narration";
 import { mergeAudioBlobs, getPageAtTime, type MergeResult } from "@/lib/audio-merger";
 import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
@@ -56,7 +58,6 @@ import {
 import {
  getStory,
  getStoryPages,
- logPlaySession,
  logBehavior,
  likeStory,
  getStoryRating,
@@ -65,7 +66,7 @@ import {
  createReview,
  isFavorited,
  toggleFavorite,
- updateReadingStreak,
+ playSessionStore,
  uploadTtsAudio,
  savePageAudio,
  type StoryRow,
@@ -162,6 +163,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  const [showMore, setShowMore] = useState(false);
  const [screenOff, setScreenOff] = useState(false);
  const { voiceProfiles } = useData();
+ const { user } = useAuth();
  const globalPlayer = useAudioControls();
  const isGenerated = storyId === "__generated__";
  // G-03: server-timed listening session → missions/stars/sticker (flag `missions`).
@@ -202,7 +204,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  const [handoff] = useState(() => {
  const g = globalPlayer.peek();
  if (!storyId || isGenerated || g.track?.storyId !== storyId) return null;
- return { page: visiblePage(g), data: g.track.handoff as PlayerHandoff | undefined };
+ return { storyId, page: visiblePage(g), data: g.track.handoff as PlayerHandoff | undefined };
  });
  const [currentPage, setCurrentPage] = useState(() => Math.max(0, (handoff?.page ?? initialPage ?? 1) - 1));
  const [isPlaying, setIsPlaying] = useState(false);
@@ -243,8 +245,12 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
 
  const audioRef = useRef<HTMLAudioElement | null>(null);
  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
- const startRef = useRef<number>(0); // set to Date.now() by the mount effect below
+ const startRef = useRef<number>(0); // performance.now() when this visit's part of the listen began
  const pagesListenedRef = useRef<Set<number>>(new Set());
+ // Lượt nghe (src/lib/listen-log.ts): one row per listen, also when it goes on in the MiniPlayer.
+ const carriedMsRef = useRef(0); // listening time carried back from the MiniPlayer
+ const ownsListenRef = useRef(!handoff); // false while the MiniPlayer has the listen
+ const recordRef = useRef<ListenRecord | null>(null);
  // Audio prefetch cache: pageIndex → objectURL or remote URL
  const prefetchCache = useRef<Map<number, string>>(new Map());
  // Render-safe snapshot of audioRef.current's time/duration (null = no active audio)
@@ -482,34 +488,51 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  ? storyVoice.name
  : selectedDefault?.name || "Giọng mẫu";
 
- // Log play session on unmount.
- const flushSession = useCallback(() => {
- if (isGenerated || !storyId) return;
- const duration = Math.round((Date.now() - startRef.current) / 1000);
- if (duration < 2) return;
- const listened = pagesListenedRef.current.size;
- logPlaySession({
- storyId,
- voiceId: story?.voice_id ?? null,
- duration,
- pagesListened: listened,
- completed: listened >= totalPages,
- }).catch(() => {});
- // Update reading streak
- const minutes = Math.round(duration / 60);
- if (minutes > 0) {
- updateReadingStreak(minutes).catch(() => {});
- }
- }, [isGenerated, storyId, story, totalPages]);
+ // Lượt nghe: written when the child leaves (or the app goes to the background) — with the
+ // latest pages and voice. Handed to the MiniPlayer, the same row is updated there.
+ const userId = user?.id ?? null;
+ const voiceRowId = selectedClone?.id ?? null; // family voice narrating (the DB refuses any other id)
+ const listenLog = (): ListenLog => ({
+ ms: carriedMsRef.current + (performance.now() - startRef.current),
+ pages: [...pagesListenedRef.current].map((i) => i + 1),
+ });
+ const saveListen = (): { record: ListenRecord; log: ListenLog } | null => {
+ if (isGenerated || !storyId || !ownsListenRef.current) return null;
+ const who = { storyId, totalPages, voiceId: voiceRowId, userId };
+ const record = recordRef.current ?? new ListenRecord(who, playSessionStore);
+ recordRef.current = record;
+ record.who = who;
+ const log = listenLog();
+ record.save(log);
+ return { record, log };
+ };
+ const saveListenRef = useRef(saveListen);
+ useEffect(() => {
+ saveListenRef.current = saveListen;
+ });
 
  useEffect(() => {
- startRef.current = Date.now();
- if (storyId && !isGenerated) logBehavior("play", storyId).catch(() => {});
+ startRef.current = performance.now();
+ carriedMsRef.current = 0;
+ recordRef.current = null;
+ // Reopened from the MiniPlayer: that listen goes on here once taken back (takeBack) — not a new one.
+ const continued = handoff?.storyId === storyId;
+ ownsListenRef.current = !continued;
+ if (storyId && !isGenerated && !continued) logBehavior("play", storyId).catch(() => {});
  return () => {
- flushSession();
+ saveListenRef.current();
  };
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [storyId]);
+
+ // Phone locked / app switched (it may be closed there): write the listen so far.
+ useEffect(() => {
+ const onHide = () => {
+ if (document.visibilityState === "hidden") saveListenRef.current();
+ };
+ document.addEventListener("visibilitychange", onHide);
+ return () => document.removeEventListener("visibilitychange", onHide);
+ }, []);
 
  useEffect(() => {
  pagesListenedRef.current.add(currentPage);
@@ -924,7 +947,20 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  adoptedRef.current = true;
  if (!storyId) return false;
  const r = globalPlayer.release(storyId);
- if (!r) return false;
+ ownsListenRef.current = true;
+ if (!r) {
+ // The MiniPlayer was closed meanwhile: this visit is a listen of its own.
+ logBehavior("play", storyId).catch(() => {});
+ return false;
+ }
+ // The listen goes on here: the MiniPlayer's time and pages count, and the same row is updated.
+ const carried = r.track.listen;
+ if (carried) {
+ startRef.current = performance.now();
+ carriedMsRef.current = carried.log.ms;
+ for (const p of carried.log.pages) pagesListenedRef.current.add(p - 1);
+ if (carried.sink instanceof ListenRecord) recordRef.current = carried.sink;
+ } else logBehavior("play", storyId).catch(() => {}); // it had ended there: a new listen
  const h = r.track.handoff as PlayerHandoff | undefined;
  const fits = !!h && h.identity === audioIdentity;
  if (h?.session) attachSession(h.session);
@@ -1248,6 +1284,10 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  prefetchCache.current.clear();
  const night = isNightRef.current;
  const session = detachSession();
+ // The listen goes on in the MiniPlayer: written now, then updated there — one row, one play.
+ const listen = saveListen();
+ ownsListenRef.current = false;
+ const who = { storyId: story.id, totalPages, voiceId: voiceRowId, userId };
  const track: AudioTrack = {
  storyId: story.id,
  storyTitle: story.title,
@@ -1273,6 +1313,9 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  });
  },
  handoff: { identity: audioIdentity, merged, session, sleepOverride } satisfies PlayerHandoff,
+ listen: listen ? { log: listen.log, sink: listen.record } : undefined,
+ // "Nghe lại từ đầu" in the MiniPlayer after the end: a new listen, a new row.
+ newListen: () => new ListenRecord({ ...who }, playSessionStore),
  };
  if (narrating && a) {
  globalPlayer.adoptAudio(a, track);
