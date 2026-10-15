@@ -1,113 +1,137 @@
 "use client";
 
-import { Play, Pause, X, SkipBack, SkipForward } from "@/components/ui/icons";
+/**
+ * Trình nghe thu gọn — the story keeps going after the child leaves the full
+ * player. Docked above the tab bar (AppShell's bottom dock), clear of the
+ * raised "Tạo" button, so every tab stays tappable. Tap the title to open the
+ * full player on the same page, without restarting the audio.
+ */
+import { useEffect, useState } from "react";
+import { Pause, Play, RotateCcw, SkipBack, SkipForward, Timer, X } from "@/components/ui/icons";
+import MissionCelebration from "@/components/ui/MissionCelebration";
 import { useAudioPlayer } from "@/lib/audio-player-context";
+import { visiblePage } from "@/lib/background-player";
+import { useTheme } from "@/lib/theme-context";
 
-export default function MiniPlayer() {
- const {
- currentTrack,
- isPlaying,
- progress,
- pause,
- resume,
- stop,
- nextPage,
- prevPage,
- seekTo,
- } = useAudioPlayer();
+/** Card height + the gap that clears the raised "Tạo" button (see the spacer in AppShell). */
+export const MINI_PLAYER_SPACE = 86;
 
- if (!currentTrack) return null;
+function useMinutesLeft(endAt: number | null | undefined): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!endAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(id);
+  }, [endAt]);
+  return endAt ? Math.max(1, Math.ceil((endAt - Math.min(now, endAt)) / 60_000)) : null;
+}
 
- return (
- <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto">
- {/* Seekable progress bar */}
- <div
- className="w-full h-[5px] bg-black/10 cursor-pointer group relative"
- onPointerDown={(e) => {
- const bar = e.currentTarget;
- const rect = bar.getBoundingClientRect();
+const ICON_BTN =
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors active:bg-ink/5 disabled:opacity-35 dark:text-moon-2 dark:active:bg-white/10";
 
- const doSeek = (clientX: number) => {
- const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
- seekTo(pct);
- };
+export default function MiniPlayer({ onOpen, onOpenSky }: { onOpen: (storyId: string, page: number) => void; onOpenSky: () => void }) {
+  const p = useAudioPlayer();
+  const { isBedtime } = useTheme();
+  const track = p.currentTrack;
+  const minutesLeft = useMinutesLeft(track?.sleepEndAt);
+  if (!track) return null;
 
- doSeek(e.clientX);
- bar.setPointerCapture(e.pointerId);
+  const { status, progress } = p;
+  const page = visiblePage(p);
+  const ended = status === "ended";
+  const subtitle =
+    status === "turning"
+      ? `Sang trang ${page}…`
+      : status === "error"
+        ? (p.error ?? "Chưa phát được")
+        : ended
+          ? "Hết truyện rồi!"
+          : `Trang ${track.pageNumber}/${track.totalPages}`;
+  const main = ended
+    ? { label: "Nghe lại từ đầu", icon: <RotateCcw size={18} weight="bold" />, run: p.replay }
+    : p.isPlaying
+      ? { label: "Tạm dừng", icon: <Pause size={16} weight="fill" />, run: p.pause }
+      : { label: "Nghe tiếp", icon: <Play size={16} weight="fill" className="ml-0.5" />, run: p.resume };
 
- const onMove = (ev: PointerEvent) => doSeek(ev.clientX);
- const onUp = () => {
- bar.removeEventListener("pointermove", onMove);
- bar.removeEventListener("pointerup", onUp);
- };
- bar.addEventListener("pointermove", onMove);
- bar.addEventListener("pointerup", onUp);
- }}
- >
- <div
- className="h-full bg-gradient-to-r from-[#FF6B3D] to-[#FF3D77] transition-[width] duration-150"
- style={{ width: `${progress}%` }}
- />
- {/* Seek thumb — visible on hover/drag */}
- <div
- className="absolute top-[-3px] w-3 h-3 rounded-full bg-white dark:bg-white/[0.04] shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity"
- style={{ left: `${Math.max(0, Math.min(progress, 97))}%` }}
- />
- </div>
+  return (
+    <>
+      {p.celebration && (
+        <MissionCelebration
+          docked
+          celebration={p.celebration}
+          night={isBedtime}
+          onClose={p.dismissCelebration}
+          onOpenSky={() => {
+            p.dismissCelebration();
+            onOpenSky();
+          }}
+        />
+      )}
+      <section
+        aria-label="Trình nghe thu gọn"
+        data-testid="mini-player"
+        data-status={status}
+        className="pointer-events-auto relative mx-2 mb-[26px] flex h-[60px] items-center gap-1 overflow-hidden rounded-[20px] bg-white/95 pl-2 pr-1 shadow-[0_8px_24px_rgba(21,18,51,0.18)] ring-1 ring-black/5 backdrop-blur-xl dark:bg-[#0F0628]/95 dark:ring-white/10"
+      >
+        <button
+          type="button"
+          onClick={() => onOpen(track.storyId, page)}
+          aria-label={`Mở trình nghe: ${track.storyTitle}, trang ${page}/${track.totalPages}`}
+          className="flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-2xl text-left"
+        >
+          <span aria-hidden className="hidden h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] shadow-md min-[380px]:flex min-[380px]:items-center min-[380px]:justify-center">
+            {track.coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={track.coverUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-[16px]">📖</span>
+            )}
+          </span>
+          <span className="min-w-0">
+            <b className="block truncate text-[14px] font-extrabold leading-tight text-ink dark:text-moon">{track.storyTitle}</b>
+            <span className={`flex items-center gap-1 truncate text-[12.5px] font-bold leading-tight ${status === "error" ? "text-[#C2410C] dark:text-[#FDBA74]" : "text-ink-2 dark:text-moon-2"}`}>
+              <span className="truncate">{subtitle}</span>
+              {minutesLeft !== null && !ended && (
+                <span className="flex shrink-0 items-center gap-0.5" aria-label={`Hẹn giờ ngủ còn ${minutesLeft} phút`}>
+                  · <Timer size={12} weight="bold" />
+                  {minutesLeft}′
+                </span>
+              )}
+            </span>
+          </span>
+        </button>
 
- {/* Player bar */}
- <div className="bg-white/95 dark:bg-[#0F0628]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/[0.06] px-4 py-2.5 flex items-center gap-3">
- {/* Story icon */}
- <div aria-hidden className="hidden min-[380px]:flex w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] items-center justify-center text-white shrink-0 shadow-md">
- <span className="text-[14px] font-black">📖</span>
- </div>
+        <div className="flex shrink-0 items-center">
+          <button type="button" onClick={p.prevPage} disabled={page <= 1} aria-label="Trang trước" className={ICON_BTN}>
+            <SkipBack size={16} weight="fill" />
+          </button>
+          <button
+            type="button"
+            onClick={main.run}
+            aria-label={main.label}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] text-white shadow-md transition-transform active:scale-95"
+          >
+            {main.icon}
+          </button>
+          <button type="button" onClick={p.nextPage} disabled={ended || page >= track.totalPages} aria-label="Trang sau" className={ICON_BTN}>
+            <SkipForward size={16} weight="fill" />
+          </button>
+          <button type="button" onClick={p.stop} aria-label="Tắt trình phát" className={ICON_BTN}>
+            <X size={16} weight="bold" />
+          </button>
+        </div>
 
- {/* Info */}
- <div className="flex-1 min-w-0">
- <p className="text-[13px] font-bold text-txt dark:text-white truncate">
- {currentTrack.storyTitle}
- </p>
- <p className="text-[12px] text-txt-secondary dark:text-white/50 font-medium">
- Trang {currentTrack.pageNumber}/{currentTrack.totalPages}
- </p>
- </div>
-
- {/* Controls */}
- <div className="-my-1 -mr-2 flex items-center shrink-0">
- <button
- type="button"
- onClick={prevPage}
- aria-label="Trang trước"
- className="w-11 h-11 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
- >
- <SkipBack size={14} />
- </button>
- <button
- type="button"
- onClick={() => (isPlaying ? pause() : resume())}
- aria-label={isPlaying ? "Tạm dừng" : "Nghe tiếp"}
- className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B3D] to-[#FF3D77] flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
- >
- {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
- </button>
- <button
- type="button"
- onClick={nextPage}
- aria-label="Trang sau"
- className="w-11 h-11 rounded-full flex items-center justify-center text-txt-secondary dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
- >
- <SkipForward size={14} />
- </button>
- <button
- type="button"
- onClick={stop}
- aria-label="Tắt trình phát"
- className="w-11 h-11 rounded-full flex items-center justify-center text-gray-400 dark:text-white/30 hover:text-red-400 hover:bg-red-50 transition-colors"
- >
- <X size={14} />
- </button>
- </div>
- </div>
- </div>
- );
+        <div
+          role="progressbar"
+          aria-label={`Tiến độ trang ${track.pageNumber}`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+          className="absolute inset-x-0 bottom-0 h-[3px] bg-ink/[0.06] dark:bg-white/10"
+        >
+          <div className="h-full bg-gradient-to-r from-[#FF6B3D] to-[#FF3D77] transition-[width] duration-200" style={{ width: `${progress}%` }} />
+        </div>
+      </section>
+    </>
+  );
 }

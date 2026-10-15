@@ -29,12 +29,34 @@ export function getLastPlayed(): LastPlayed | null {
   return readLastPlayed(localStorage.getItem(LAST_PLAYED_KEY));
 }
 
+/** Fired on `window` after every save, so an open Home card follows the mini player. */
+export const LAST_PLAYED_EVENT = "kecon:last-played";
+
 export function saveLastPlayed(v: Omit<LastPlayed, "updatedAt">) {
   try {
     localStorage.setItem(LAST_PLAYED_KEY, JSON.stringify({ ...v, updatedAt: Date.now() }));
   } catch {
     /* storage full / private mode — not critical */
   }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(LAST_PLAYED_EVENT));
+}
+
+/**
+ * The mini player turned the page: keep "Nghe tiếp" in step. Voice/category
+ * come from the full player's save of the same story (kept as they were).
+ */
+export function updateLastPlayedPage(v: { storyId: string; title: string; page: number; totalPages: number }) {
+  const prev = getLastPlayed();
+  const same = prev?.storyId === v.storyId;
+  if (same && prev.page === v.page && prev.totalPages === v.totalPages) return;
+  saveLastPlayed({ ...v, voice: same ? prev.voice : undefined, category: same ? prev.category : null });
+}
+
+/** 1-based page to open from "Nghe tiếp" (clamped; 1 when nothing was heard yet). */
+export function resumePage(v: Pick<LastPlayed, "page" | "totalPages"> | null | undefined): number {
+  if (!v) return 1;
+  const total = Math.max(1, Math.floor(Number(v.totalPages) || 1));
+  return Math.min(total, Math.max(1, Math.floor(Number(v.page) || 1)));
 }
 
 /** Progress shown on the "Nghe tiếp" bar (0–100). Page 1 of 4 → 25. */

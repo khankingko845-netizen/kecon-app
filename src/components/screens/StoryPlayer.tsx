@@ -21,16 +21,17 @@ import Mascot from "@/components/ui/Mascot";
 import { saveLastPlayed } from "@/lib/last-played";
 import { useTheme } from "@/lib/theme-context";
 import { useFeedback } from "@/lib/feedback-context";
-import { useMissionSession } from "@/lib/use-mission-session";
+import { completeDetachedSession, useMissionSession, type MissionSession } from "@/lib/use-mission-session";
 import type { Celebration } from "@/lib/missions";
 import MissionCelebration from "@/components/ui/MissionCelebration";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioControls, type AudioTrack } from "@/lib/audio-player-context";
+import { visiblePage } from "@/lib/background-player";
+import { makePageResolver, synthesizeSegments, type NarrationSetup } from "@/lib/page-narration";
 import { mergeAudioBlobs, getPageAtTime, type MergeResult } from "@/lib/audio-merger";
-import { ttsApi } from "@/lib/api-client";
 import { getStoryCharacters, updateStory, type StoryCharacterRow } from "@/lib/db";
 import { storyAudioSegments, storyAudioKey } from "@/lib/story-audio";
 import { modelForLanguage } from "@/lib/tts-models";
@@ -44,7 +45,7 @@ import ShareModal from "@/components/ui/ShareModal";
 import StoryBook, { type BookPage } from "@/components/ui/StoryBook";
 import { sceneArtUrl, sceneForPage } from "@/lib/scene-library";
 import { playSfx, preloadSfx } from "@/lib/sfx-player";
-import { pageGap, segmentGap } from "@/lib/narration-pacing";
+import { pageGap } from "@/lib/narration-pacing";
 import type { NarrationPace } from "@/lib/story-brief";
 import {
  effectForScene,
@@ -74,6 +75,8 @@ import {
 
 interface StoryPlayerProps {
  storyId?: string;
+ /** 1-based page to open on ("Nghe tiếp" on Home, the MiniPlayer). */
+ initialPage?: number;
  onBack: () => void;
  onNavigate: (screen: Screen, data?: Record<string, string>) => void;
 }
@@ -89,6 +92,18 @@ interface DefaultVoice {
 }
 
 const AMBIENT_OPTIONS = AMBIENT_TRACKS.map(({ id, label }) => ({ type: id, label }));
+
+/** What the MiniPlayer keeps so this player can take the story back without a restart. */
+interface PlayerHandoff {
+ /** audioIdentity when the player closed: the audio only fits the same voice/pages/cast. */
+ identity: string;
+ /** Continuous (merged) audio, when it was ready. */
+ merged: MergeResult | null;
+ /** G-03 listening session — the server times the whole listen, not just this visit. */
+ session: MissionSession | null;
+ /** The Chế độ ngủ pill of this story. */
+ sleepOverride: boolean | null;
+}
 
 // Snapshot of the active audio element's clock, used for the time display.
 interface AudioClock {
@@ -123,7 +138,7 @@ const CATEGORY_LABEL: Record<string, string> = {
  folk: "Dân gian",
 };
 
-export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayerProps) {
+export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }: StoryPlayerProps) {
  const features = useFeatureFlags();
  const { settings, hasElevenLabs, systemStatus } = useSettings();
  const [audioError,setAudioError]=useState<string|null>(null);
@@ -147,10 +162,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const [showMore, setShowMore] = useState(false);
  const [screenOff, setScreenOff] = useState(false);
  const { voiceProfiles } = useData();
- const globalPlayer = useAudioPlayer();
+ const globalPlayer = useAudioControls();
  const isGenerated = storyId === "__generated__";
  // G-03: server-timed listening session → missions/stars/sticker (flag `missions`).
- const { finish: finishMission } = useMissionSession(storyId, features.enabled("missions") && !!storyId && !isGenerated);
+ const mission = useMissionSession(storyId, features.enabled("missions") && !!storyId && !isGenerated);
+ const finishMission = mission.finish;
  const [celebration, setCelebration] = useState<Celebration | null>(null);
  const closeCelebration = useCallback(() => setCelebration(null), []);
  // UI-11 + G-01: Đóm names what the child did after the last page — silent in Chế độ ngủ.
@@ -182,7 +198,13 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const { contentRules } = useParentalControls();
  const [pages, setPages] = useState<StoryPageRow[]>([]);
  const [loading, setLoading] = useState(!isGenerated);
- const [currentPage, setCurrentPage] = useState(0);
+ // Opened from the MiniPlayer (or this story is still in it): continue right there, same audio.
+ const [handoff] = useState(() => {
+ const g = globalPlayer.peek();
+ if (!storyId || isGenerated || g.track?.storyId !== storyId) return null;
+ return { page: visiblePage(g), data: g.track.handoff as PlayerHandoff | undefined };
+ });
+ const [currentPage, setCurrentPage] = useState(() => Math.max(0, (handoff?.page ?? initialPage ?? 1) - 1));
  const [isPlaying, setIsPlaying] = useState(false);
  const [progress, setProgress] = useState(0);
  const [isTTSLoading, setIsTTSLoading] = useState(false);
@@ -310,6 +332,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  if (!active) return;
  setStory(s);
  setPages(p);
+ // A saved page beyond this story ("Nghe tiếp", pages changed meanwhile) → its last page.
+ setCurrentPage((c) => Math.min(c, Math.max(0, p.length - 1)));
  // Story Studio v2: voiced characters and the scene soundscape start on as the family chose.
  setMultiVoice(Boolean(s?.cast_voices));
  setAutoAmbient(Boolean(s?.auto_ambience));
@@ -410,6 +434,8 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  const narrationPace: NarrationPace = story?.narration_pace ?? "normal";
  const effectiveModel=modelForLanguage(settings.elevenLabsApiKey ? settings.elevenLabsModelId || systemStatus.elevenLabsModel : systemStatus.elevenLabsModel || "eleven_multilingual_v2",storyLocale);
  const audioIdentity=JSON.stringify([resolvedVoiceId,storyLocale,effectiveModel,narrationPace,multiVoice,pages.map(p=>p.content),storyCharacters.map(c=>[c.name,c.voice_id])]);
+ const elevenApiKey=settings.elevenLabsApiKey||undefined;
+ const narrationSetup=useMemo<NarrationSetup>(()=>({voiceId:resolvedVoiceId,characters:storyCharacters,multiVoice,locale:storyLocale,model:effectiveModel,pace:narrationPace,apiKey:elevenApiKey}),[resolvedVoiceId,storyCharacters,multiVoice,storyLocale,effectiveModel,narrationPace,elevenApiKey]);
  const stopNarration=useCallback(()=>{
  narrationEpochRef.current++;mergeAbortRef.current=true;audioJobsRef.current.clear();
  setPendingAutoPlay(false);setIsPlaying(false);setIsTTSLoading(false);setCurrentSpeaker(null);setAudioClock(null);
@@ -609,16 +635,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
   if(pageRow?.audio_url && pageRow.audio_key===key){playbackUrlsRef.current.set(pageIdx,pageRow.audio_url);return pageRow.audio_url;}
   let job=audioJobsRef.current.get(key);
   if(!job){
-   job=(async()=>{
-    const blobs:Blob[]=[];
-    for(const seg of segments){
-     if(epoch!==narrationEpochRef.current || !narrationEnabledRef.current)throw new Error("Đã dừng giọng đọc.");
-     blobs.push(await ttsApi(seg.voiceId,seg.text,settings.elevenLabsApiKey||undefined,settings.elevenLabsApiKey ? effectiveModel : undefined,storyLocale,narrationPace));
-    }
-    if(blobs.length===1)return blobs[0];
-    const merged=await mergeAudioBlobs(blobs,undefined,{gap:segmentGap(narrationPace)});
-    try{return await (await fetch(merged.blobUrl)).blob();}finally{URL.revokeObjectURL(merged.blobUrl);}
-   })();
+   job=synthesizeSegments(segments,narrationSetup,()=>epoch===narrationEpochRef.current&&narrationEnabledRef.current);
    audioJobsRef.current.set(key,job);
    job.catch(()=>{if(audioJobsRef.current.get(key)===job)audioJobsRef.current.delete(key);});
   }
@@ -633,7 +650,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
    if(epoch===narrationEpochRef.current)setPages(prev=>prev.map(p=>p.id===pageRow.id?{...p,audio_url:remoteUrl,audio_key:key}:p));
   }).catch(()=>{audioSavesRef.current.delete(saveKey);});}
   return url;
- },[localeAllowed,storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,narrationPace,settings.elevenLabsApiKey,pages]);
+ },[localeAllowed,storyCharacters,elevenVoiceId,multiVoice,storyLocale,effectiveModel,narrationPace,narrationSetup,pages]);
  const prefetchNextPage=useCallback((from:number)=>{
   const idx=from+1;const epoch=narrationEpochRef.current;
   if(idx>=totalPages || !hasElevenLabs || !narrationEnabledRef.current || prefetchCache.current.has(idx) || !pages[idx]?.content)return;
@@ -696,31 +713,9 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
  }, [mergeStatus, isGenerated, hasElevenLabs, totalPages, pages,generatePageAudio,narrationPace]);
 
- // Switch to merged audio playback
- const switchToMerged = useCallback(() => {
- const merged = mergedRef.current;
- if (!merged || !narrationEnabledRef.current) return;
-
- // Stop current per-page audio
- if (audioRef.current) {
- audioRef.current.pause();
- if (audioRef.current.src.startsWith("blob:")) {
- URL.revokeObjectURL(audioRef.current.src);
- }
- }
-
- const audio = new Audio(merged.blobUrl);
+ // Continuous (merged) audio: progress, page from the time markers, story end.
+ const wireMergedAudio = useCallback((audio: HTMLAudioElement, merged: MergeResult) => {
  audio.onplaying=()=>recordMilestone("first_listen");
- audioRef.current = audio;
- setAudioClock(null);
-
- // Seek to current page position
- const seekTime = merged.pageMarkers[currentPage] || 0;
-
- audio.onloadedmetadata = () => {
- audio.currentTime = seekTime;
- };
-
  audio.ontimeupdate = () => {
  if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
  if (audio.duration) {
@@ -742,10 +737,66 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
 
  audio.onerror=()=>{setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");};
+ }, [finishStory]);
+
+ // Switch to merged audio playback
+ const switchToMerged = useCallback(() => {
+ const merged = mergedRef.current;
+ if (!merged || !narrationEnabledRef.current) return;
+
+ // Stop current per-page audio
+ if (audioRef.current) {
+ audioRef.current.pause();
+ if (audioRef.current.src.startsWith("blob:")) {
+ URL.revokeObjectURL(audioRef.current.src);
+ }
+ }
+
+ const audio = new Audio(merged.blobUrl);
+ audioRef.current = audio;
+ setAudioClock(null);
+
+ // Seek to current page position
+ const seekTime = merged.pageMarkers[currentPage] || 0;
+
+ audio.onloadedmetadata = () => {
+ audio.currentTime = seekTime;
+ };
+ wireMergedAudio(audio, merged);
  audio.play().catch(e=>{setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Không phát được audio.");});
  setIsPlaying(true);
  setMergeStatus("playing");
- }, [currentPage, finishStory]);
+ }, [currentPage, wireMergedAudio]);
+
+ // One page of narration: clock/progress, then the next page after a breath (or the story end).
+ const wirePageAudio = useCallback((audio: HTMLAudioElement, pageIdx: number, epoch: number) => {
+ audio.onplaying=()=>recordMilestone("first_listen");
+ audio.onloadedmetadata = () => {
+ if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
+ };
+
+ audio.onended = () => {
+ audioRef.current = null;
+ setAudioClock(null);
+ if (pageIdx < totalPages - 1) {
+ setCurrentPage((c) => c + 1);
+ setProgress(0);
+ setPendingAutoPlay(true);
+ } else {
+ setIsPlaying(false);
+ setProgress(100);
+ finishStory();
+ }
+ };
+
+ audio.ontimeupdate = () => {
+ if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
+ if (audio.duration) {
+ setProgress((audio.currentTime / audio.duration) * 100);
+ }
+ };
+ audio.onerror=()=>{if(epoch===narrationEpochRef.current){setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");}};
+ }, [totalPages, finishStory]);
 
  const playWithTTS = useCallback(async () => {
  if(!narrationEnabledRef.current)return;
@@ -780,37 +831,11 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  }
 
  const audio = new Audio(url);
- audio.onplaying=()=>recordMilestone("first_listen");
  audioRef.current = audio;
  setAudioClock(null);
-
- audio.onloadedmetadata = () => {
- if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
- };
-
- audio.onended = () => {
- audioRef.current = null;
- setAudioClock(null);
- if (currentPage < totalPages - 1) {
- setCurrentPage((c) => c + 1);
- setProgress(0);
- setPendingAutoPlay(true);
- } else {
- setIsPlaying(false);
- setProgress(100);
- finishStory();
- }
- };
-
- audio.ontimeupdate = () => {
- if (audioRef.current === audio) setAudioClock(readAudioClock(audio));
- if (audio.duration) {
- setProgress((audio.currentTime / audio.duration) * 100);
- }
- };
+ wirePageAudio(audio, currentPage, epoch);
 
  playbackUrlsRef.current.set(currentPage,url);
- audio.onerror=()=>{if(epoch===narrationEpochRef.current){setIsPlaying(false);setAudioError("Không tải được audio. Thử lại với giọng đã chọn.");}};
  await audio.play();
  if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){audio.pause();return;}
  setIsPlaying(true);
@@ -827,7 +852,7 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  } finally {
  if(epoch===narrationEpochRef.current)setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, pages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, finishStory, elevenVoiceId, preview.stop]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, wirePageAudio, elevenVoiceId, preview.stop]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
@@ -880,14 +905,114 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  saveLastPlayed({ storyId, title: story.title, page: currentPage + 1, totalPages, voice: voiceLabel, category: story.category });
  }, [isGenerated, storyId, story, currentPage, totalPages, voiceLabel]);
 
+ // Another story in the MiniPlayer pauses — never two stories at once. It stays there, paused.
+ useEffect(() => {
+ const g = globalPlayer.peek();
+ if (g.track && g.track.storyId !== storyId && g.isPlaying) globalPlayer.pause();
+ }, [globalPlayer, storyId]);
+
+ /**
+ * Take this story back from the MiniPlayer. Same voice/pages/cast → the very
+ * audio element continues (no restart, no gap); otherwise (voice changed,
+ * nothing playing) the page starts again — on its own when the child was listening.
+ * Returns true when narration goes on without another tap.
+ */
+ const adoptedRef = useRef(false);
+ const { attach: attachSession, detach: detachSession } = mission;
+ const { startUntil: resumeSleepUntil } = sleep;
+ const takeBack = useCallback((): boolean => {
+ adoptedRef.current = true;
+ if (!storyId) return false;
+ const r = globalPlayer.release(storyId);
+ if (!r) return false;
+ const h = r.track.handoff as PlayerHandoff | undefined;
+ const fits = !!h && h.identity === audioIdentity;
+ if (h?.session) attachSession(h.session);
+ if (h && h.sleepOverride !== null) setSleepOverride(h.sleepOverride);
+ if (r.track.sleepEndAt && r.track.sleepEndAt > Date.now()) resumeSleepUntil(r.track.sleepEndAt);
+ const pageIdx = Math.max(0, Math.min(totalPages - 1, r.track.pageNumber - 1));
+ setCurrentPage(pageIdx);
+ // Narration the MiniPlayer still held for later pages comes back to the prefetch cache.
+ for (const pa of r.track.allPages ?? []) {
+ if (!pa.audioUrl.startsWith("blob:")) continue;
+ if (fits && pa.pageNumber - 1 !== pageIdx && !prefetchCache.current.has(pa.pageNumber - 1)) prefetchCache.current.set(pa.pageNumber - 1, pa.audioUrl);
+ else URL.revokeObjectURL(pa.audioUrl);
+ }
+ const merged = fits ? h.merged : null;
+ if (!fits && h?.merged) URL.revokeObjectURL(h.merged.blobUrl);
+ if (merged) {
+ mergedRef.current = merged;
+ setMergedResult(merged);
+ setMergeStatus("ready");
+ }
+ const a = r.audio;
+ if (a && fits) {
+ audioRef.current = a;
+ if (r.track.pageMarkers?.length && merged) {
+ wireMergedAudio(a, merged);
+ setMergeStatus("playing");
+ setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0);
+ } else {
+ wirePageAudio(a, pageIdx, narrationEpochRef.current);
+ if (!a.src.startsWith("blob:")) playbackUrlsRef.current.set(pageIdx, a.src);
+ setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0);
+ }
+ setAudioClock(readAudioClock(a));
+ setIsPlaying(r.playing);
+ return r.playing;
+ }
+ if (a) {
+ a.pause();
+ if (a.src.startsWith("blob:") && a.src !== h?.merged?.blobUrl) URL.revokeObjectURL(a.src);
+ }
+ setProgress(0);
+ if (r.playing && settings.narrationEnabled) {
+ setIsPlaying(true);
+ setPendingAutoPlay(true);
+ return true;
+ }
+ return false;
+ }, [storyId, globalPlayer, audioIdentity, attachSession, resumeSleepUntil, totalPages, wireMergedAudio, wirePageAudio, settings.narrationEnabled]);
+ const takeBackRef = useRef(takeBack);
+ useEffect(() => {
+ takeBackRef.current = takeBack;
+ }, [takeBack]);
+
+ // Back from the MiniPlayer: adopt the audio once the story, voices and cast match it again.
+ const handoffIdentity = (handoff?.data as PlayerHandoff | undefined)?.identity;
+ useEffect(() => {
+ if (!handoff || adoptedRef.current || loading || !story) return;
+ // eslint-disable-next-line react-hooks/set-state-in-effect -- taking the audio back from the MiniPlayer (outside React) once the story has loaded
+ if (handoffIdentity === audioIdentity) takeBack();
+ }, [handoff, handoffIdentity, loading, story, audioIdentity, takeBack]);
+ // …or after a short wait (the voice changed meanwhile): restart that page with the voice of now.
+ useEffect(() => {
+ if (!handoff || loading) return;
+ const t = window.setTimeout(() => {
+ if (!adoptedRef.current) takeBackRef.current();
+ }, 2500);
+ return () => window.clearTimeout(t);
+ }, [handoff, loading]);
+
  const togglePlay = () => {
  if(!settings.narrationEnabled){setAudioError("Giọng đọc đang tắt. Bật công tắc Giọng đọc truyện để nghe.");return;}
  preview.stop();
+ // Opened from the MiniPlayer a moment ago: carry on with that audio instead of starting over.
+ if (handoff && !adoptedRef.current && takeBack()) return;
+ const g = globalPlayer.peek();
+ if (g.isPlaying && g.track?.storyId !== storyId) globalPlayer.pause();
  // At bedtime, starting playback arms the default sleep timer (parent can change/cancel it).
  if (!isPlaying && isNight && !sleep.active) sleep.start(settings.sleepTimerDefault || 15);
  if (isPlaying) {
  setIsPlaying(false);
  audioRef.current?.pause();
+ } else if (audioRef.current && audioRef.current.paused && !audioRef.current.ended && !audioRef.current.error && mergeStatus !== "playing") {
+ // Paused mid-page: carry on from there (it used to start the page over).
+ const a = audioRef.current;
+ a.play().catch(() => {
+ if (audioRef.current === a) setIsPlaying(false);
+ });
+ setIsPlaying(true);
  } else if (mergeStatus === "ready") {
  // Merged audio ready — use continuous playback
  switchToMerged();
@@ -1104,25 +1229,62 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
 
  const handleBack = () => {
  preview.stop();
- // Hand off playing audio to MiniPlayer for background playback
- if (audioRef.current && !audioRef.current.paused && story) {
- // If merged audio is playing, it's a single continuous track
- const isMerged = mergeStatus === "playing";
- const allPageAudios = isMerged
- ? undefined // merged = single track, no page switching needed
- : Array.from(playbackUrlsRef.current).filter(([,url])=>!url.startsWith("blob:")).map(([idx,url])=>({pageNumber:idx+1,audioUrl:url})).sort((a,b)=>a.pageNumber-b.pageNumber);
- globalPlayer.adoptAudio(audioRef.current, {
+ const a = audioRef.current;
+ const narrating = !!a && !a.paused && !a.ended;
+ // Between two pages (the next one is being prepared): the MiniPlayer starts it.
+ const turning = !a && isPlaying && hasElevenLabs && (pendingAutoPlay || isTTSLoading);
+ if (story && !isGenerated && settings.narrationEnabled && (narrating || turning)) {
+ // Hand off to the MiniPlayer: the story goes on, page after page, until its end.
+ const continuous = narrating && mergeStatus === "playing" && mergedRef.current ? mergedRef.current : null;
+ const merged = continuous ?? (mergeStatus === "ready" ? mergedRef.current : null);
+ const known = new Map<number, string>();
+ for (const [idx, url] of playbackUrlsRef.current) if (!url.startsWith("blob:")) known.set(idx + 1, url);
+ const owned: string[] = merged ? [merged.blobUrl] : [];
+ // Already-prepared next pages travel with the story instead of being thrown away.
+ for (const [idx, url] of prefetchCache.current) {
+ if (url.startsWith("blob:")) owned.push(url);
+ known.set(idx + 1, url);
+ }
+ prefetchCache.current.clear();
+ const night = isNightRef.current;
+ const session = detachSession();
+ const track: AudioTrack = {
  storyId: story.id,
  storyTitle: story.title,
  pageNumber: currentPage + 1,
  totalPages,
- audioUrl: audioRef.current.src,
- allPages: allPageAudios && allPageAudios.length > 0 ? allPageAudios : undefined,
+ audioUrl: narrating && a ? a.src : "",
+ coverUrl: story.cover_image_url || bookPages[0]?.art || null,
+ allPages: continuous ? undefined : [...known].map(([pageNumber, audioUrl]) => ({ pageNumber, audioUrl })),
+ resolvePage: continuous ? undefined : makePageResolver(pages, narrationSetup),
+ pageMarkers: continuous?.pageMarkers,
+ pageGapMs: Math.round(pageGap(narrationPace) * 1000),
+ sleepEndAt: sleep.endAt,
+ ownedUrls: owned,
+ // Same reward as finishing in the player (G-03): logged, timed by the server, praised by Đóm.
+ onComplete: () => {
+ if (storyId) logBehavior("complete", storyId).catch(() => {});
+ if (!night) cue("celebrate");
+ return completeDetachedSession(session).then((c) => {
+ if (c) {
+ if (!night) say(c.line);
+ } else if (!night) say("story-end");
+ return c;
  });
+ },
+ handoff: { identity: audioIdentity, merged, session, sleepOverride } satisfies PlayerHandoff,
+ };
+ if (narrating && a) {
+ globalPlayer.adoptAudio(a, track);
  audioRef.current = null; // Don't pause — MiniPlayer owns it now
  setAudioClock(null);
  } else {
- audioRef.current?.pause();
+ globalPlayer.play({ ...track, pageNumber: Math.min(totalPages, currentPage + 1) });
+ }
+ // The merged file now belongs to the MiniPlayer (revoked there when it is closed).
+ mergedRef.current = null;
+ } else {
+ a?.pause();
  }
  // Clean up merge refs but don't revoke blob (MiniPlayer may use it)
  mergeAbortRef.current = true;
@@ -1163,6 +1325,22 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  };
  bar.addEventListener("pointermove", onMove);
  bar.addEventListener("pointerup", onUp);
+ };
+
+ /** Keyboard / switch access on the progress slider: ←/→ 5 s (no audio yet: page), Home = start of the audio. */
+ const onSeekKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+ const a = audioRef.current;
+ const dir = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 0;
+ if (!dir && e.key !== "Home") return;
+ e.preventDefault();
+ if (a && a.duration && audioClock) {
+ a.currentTime = e.key === "Home" ? 0 : Math.max(0, Math.min(a.duration - 0.25, a.currentTime + dir * 5));
+ if (mergeStatus === "playing" && mergedRef.current) setCurrentPage(getPageAtTime(a.currentTime, mergedRef.current.pageMarkers));
+ setAudioClock(readAudioClock(a));
+ setProgress((a.currentTime / a.duration) * 100);
+ return;
+ }
+ if (dir) goPage(dir);
  };
 
  /** ⟲ / ⟳ — skip 15s inside the audio; before audio exists they turn the page. */
@@ -1359,11 +1537,14 @@ export default function StoryPlayer({ storyId, onBack, onNavigate }: StoryPlayer
  <div
  className="relative mt-3.5 h-1.5 shrink-0 cursor-pointer touch-none rounded-full bg-moon/15 before:absolute before:-inset-y-3 before:inset-x-0 before:content-['']"
  role="slider"
+ tabIndex={0}
  aria-label="Tiến độ"
  aria-valuemin={0}
  aria-valuemax={100}
  aria-valuenow={Math.round(progress)}
+ aria-valuetext={audioClock ? `${formatClock(audioClock.currentTime)} / ${formatClock(audioClock.duration)}, trang ${currentPage + 1}/${totalPages}` : `Trang ${currentPage + 1}/${totalPages}`}
  onPointerDown={onSeekPointerDown}
+ onKeyDown={onSeekKey}
  >
  {/* Page markers (tick marks) for merged mode */}
  {mergeStatus === "playing" && mergedResult && mergedResult.pageMarkers.length > 1 && (

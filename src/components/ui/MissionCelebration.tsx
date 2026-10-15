@@ -15,11 +15,14 @@ export default function MissionCelebration({
   night,
   onClose,
   onOpenSky,
+  docked = false,
 }: {
   celebration: Celebration;
   night: boolean;
   onClose: () => void;
   onOpenSky: () => void;
+  /** Inside the bottom dock, above the MiniPlayer (story finished in "chế độ thu gọn"). */
+  docked?: boolean;
 }) {
   useEffect(() => {
     const t = window.setTimeout(onClose, night ? 6000 : 12000);
@@ -33,7 +36,7 @@ export default function MissionCelebration({
       role="status"
       aria-live="polite"
       data-testid="mission-celebration"
-      className={`fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+24px)] z-40 mx-auto max-w-[400px] rounded-[24px] bg-white p-4 text-ink shadow-[0_10px_30px_rgba(0,0,0,0.35)] ${night ? "night-dim" : "motion-safe:animate-[scaleIn_0.25s_ease]"}`}
+      className={`${docked ? "pointer-events-auto relative mx-3 mb-2" : "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+24px)] z-40 mx-auto max-w-[400px]"} rounded-[24px] bg-white p-4 text-ink shadow-[0_10px_30px_rgba(0,0,0,0.35)] ${night ? "night-dim" : "motion-safe:animate-[scaleIn_0.25s_ease]"}`}
     >
       <button
         type="button"

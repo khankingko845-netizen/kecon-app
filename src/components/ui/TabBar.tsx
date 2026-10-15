@@ -13,6 +13,7 @@ interface TabBarProps {
  * Bottom navigation — 1:1 with the concept board (`.tab`): white bar, duotone
  * icons 28px, indigo active colour, raised coral "Tạo" button (66px, 6px base),
  * last tab is the parent area "Bố mẹ".
+ * Positioned by the bottom dock in AppShell (fixed, with the MiniPlayer above it).
  */
 const tabs: { id: TabId; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Trang chủ", icon: Home },
@@ -34,7 +35,7 @@ export default function TabBar({ active, onTabChange }: TabBarProps) {
   return (
     <nav
       aria-label="Điều hướng chính"
-      className="safe-bottom fixed bottom-0 left-0 right-0 z-50 mx-auto flex max-w-[430px] items-start justify-around border-t border-[#EFE9F7] bg-white px-1 pb-6 pt-2.5 dark:border-white/5"
+      className="safe-bottom pointer-events-auto flex w-full items-start justify-around border-t border-[#EFE9F7] bg-white px-1 pb-6 pt-2.5 dark:border-white/5"
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;

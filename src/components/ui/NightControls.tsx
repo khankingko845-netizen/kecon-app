@@ -52,8 +52,13 @@ export function useSleepTimer(onExpire: () => void) {
     setEndAt(t + Math.round(minutes * 60) * 1000);
   }, []);
   const cancel = useCallback(() => setEndAt(null), []);
+  /** Continue a countdown that ran in the MiniPlayer (epoch ms). */
+  const startUntil = useCallback((at: number) => {
+    setNow(Date.now());
+    setEndAt(at);
+  }, []);
   const remaining = endAt === null ? null : Math.max(0, Math.ceil((endAt - now) / 1000));
-  return { remaining, active: endAt !== null, start, cancel };
+  return { remaining, active: endAt !== null, endAt, start, startUntil, cancel };
 }
 
 /** Overlays render at <body> level so parent stacking contexts (z-10 bars) can't cover them. */

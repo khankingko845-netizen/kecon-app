@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { User, UserRound, Trash2, Loader2, Mic, Pencil, Check, X } from "@/components/ui/icons";
 import VoicePreviewButton from "@/components/ui/VoicePreviewButton";
 import NarrationToggle from "@/components/ui/NarrationToggle";
-import { useAudioPlayer } from "@/lib/audio-player-context";
+import { useAudioControls } from "@/lib/audio-player-context";
 import { useVoicePreview } from "@/lib/use-voice-preview";
 import Mascot from "@/components/ui/Mascot";
 import { GlowDots } from "@/components/ui/states";
@@ -43,7 +43,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  useEffect(()=>{let alive=true;getVoiceProfiles(true).then(v=>{if(alive)setAllVoices(v);}).catch(()=>{if(alive)setError("Chưa tải được giọng gia đình.");});fetch("/api/voice/defaults").then(r=>r.json()).then(d=>{if(alive)setDefaults(d.voices??[]);}).catch(()=>{if(alive)setError("Chưa tải được giọng của Đóm.");});return()=>{alive=false;};},[]);
  const { settings } = useSettings();
  const preview=useVoicePreview(settings.language);
- const {pause}=useAudioPlayer();
+ const {pause}=useAudioControls();
  async function toggleVoice(id:string,active:boolean){
  setToggling(id);setError(null);preview.stop();pause();
  try{await updateVoiceProfile(id,{is_active:active});await Promise.all([refreshVoices(),reloadAll()]);toast("success",active?"Đã bật giọng gia đình.":"Đã tắt giọng gia đình.");}catch{toast("error","Chưa đổi được trạng thái giọng.");setError("Chưa đổi được trạng thái giọng. Hãy thử lại.");}finally{setToggling(null);}
