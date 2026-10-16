@@ -26,6 +26,7 @@ export const PARENT_SCREENS: readonly Screen[] = [
   "admin-settings",
   "admin-categories",
   "admin-templates",
+  "admin-backup",
   "admin-audit",
 ];
 

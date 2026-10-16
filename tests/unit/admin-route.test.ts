@@ -117,10 +117,15 @@ describe("quyền theo mục (A-02)", () => {
     expect(canOpenSection("admin-templates", EDITOR)).toBe(true);
   });
 
-  it("admin cũ + super admin thấy đủ 9 mục (kể cả Nhật ký); phân tích chỉ Tổng quan + Thống kê", () => {
-    expect(ADMIN_SECTIONS).toHaveLength(9);
+  it("admin cũ + super admin thấy đủ 10 mục (kể cả Sao lưu, Nhật ký); phân tích chỉ Tổng quan + Thống kê", () => {
+    expect(ADMIN_SECTIONS).toHaveLength(10);
     expect(sectionsFor(ADMIN)).toHaveLength(ADMIN_SECTIONS.length);
     expect(adminPath("admin-audit")).toBe("/admin/audit");
+    expect(adminPath("admin-backup")).toBe("/admin/backup");
+    for (const role of STAFF_ROLES) {
+      const sees = sectionsFor(ROLE_PERMISSIONS[role]).some((s) => s.screen === "admin-backup");
+      expect(sees, role).toBe(role === "super_admin" || role === "admin");
+    }
     expect(sectionsFor(ROLE_PERMISSIONS.super_admin)).toHaveLength(ADMIN_SECTIONS.length);
     expect(sectionsFor(ROLE_PERMISSIONS.analyst).map((s) => s.screen)).toEqual(["admin", "admin-analytics"]);
   });

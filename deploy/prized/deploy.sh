@@ -43,13 +43,11 @@ sudo systemctl enable --now kecon-measurement-retention.timer
 sudo systemctl start kecon-measurement-retention.service
 # G-07 parent reminders (migration 036). Without VAPID keys the job exits without claiming.
 sudo systemctl enable --now kecon-parent-notify.timer
-# Sao lưu GitHub hằng ngày (deploy/prized/backup) — chỉ bật khi đã có mật khẩu + quyền đẩy.
-BK=$KECON/backup-github
-if [[ -f $BK/passphrase && ( -f $BK/github-token || -f $BK/deploy_key ) ]]; then
-  sudo systemctl enable --now kecon-backup.timer
-else
-  echo "Sao lưu GitHub chưa cấu hình ($BK/passphrase + github-token hoặc deploy_key) → kecon-backup.timer chưa bật"
-fi
+# Sao lưu GitHub (deploy/prized/backup, migration 040): timer 2 phút, giờ chạy / số bản giữ lại / token /
+# "Sao lưu ngay" ở Admin › Sao lưu. Luôn bật: thiếu mật khẩu mã hoá hoặc quyền đẩy thì worker báo đỏ trên
+# trang quản trị thay vì im lặng. restart = nạp lịch mới; lượt sao lưu đang chạy (service) không bị dừng.
+sudo systemctl enable kecon-backup.timer
+sudo systemctl restart kecon-backup.timer
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web

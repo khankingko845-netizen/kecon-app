@@ -16,6 +16,7 @@ export type AdminScreen =
   | "admin-templates"
   | "admin-missions"
   | "admin-settings"
+  | "admin-backup"
   | "admin-audit";
 
 export interface AdminSection {
@@ -38,6 +39,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { slug: "templates", screen: "admin-templates", label: "Mẫu truyện", permission: "templates.manage" },
   { slug: "missions", screen: "admin-missions", label: "Nhiệm vụ", permission: "templates.manage" },
   { slug: "settings", screen: "admin-settings", label: "Cài đặt hệ thống", permission: "settings.read" },
+  { slug: "backup", screen: "admin-backup", label: "Sao lưu", permission: "backups.manage" },
   { slug: "audit", screen: "admin-audit", label: "Nhật ký", permission: "audit.read" },
 ];
 

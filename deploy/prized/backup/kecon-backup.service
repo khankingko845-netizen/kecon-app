@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=oneshot
 User=@KECON_USER@
 Environment=HOME=@KECON_HOME@ KECON_BACKUP_BASE=/srv/kecon/backup-github
-ExecStart=/usr/bin/python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --verify-restore
+ExecStart=/usr/bin/python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --tick --verify-restore
 Nice=10
 IOSchedulingClass=idle
 TimeoutStartSec=1800

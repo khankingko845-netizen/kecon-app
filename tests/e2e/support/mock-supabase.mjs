@@ -175,7 +175,7 @@ const editorProfile = { ...profile, id: MOCK_EDITOR_USER_ID, email: editorUser.e
 
 /** Mirror of migration 019 / src/lib/admin-permissions.ts for the mock roles. */
 const ALL_PERMISSIONS = [
-  "analytics.view", "audit.read", "categories.manage", "dashboard.view", "moderation.manage", "notifications.send", "roles.manage", "secrets.manage",
+  "analytics.view", "audit.read", "backups.manage", "categories.manage", "dashboard.view", "moderation.manage", "notifications.send", "roles.manage", "secrets.manage",
   "settings.read", "settings.write", "stories.read", "stories.write", "templates.manage", "users.read", "voices.manage",
 ];
 const ROLE_PERMISSIONS = {
@@ -486,6 +486,78 @@ const MISSIONS_ADMIN={audits:[],templates:[
 ]};
 const platformLinks=new Map();
 const publicLinkStory="00000000-0000-4000-8000-000000009a01";
+// Admin › Sao lưu (migration 040 semantics). Times are relative to "now" so the page is healthy;
+// POST /__e2e/backup-reset restores it. The worker never runs here: requests stay pending.
+const BACKUP_TOKEN_FORMAT = /^(github_pat_|ghp_)[A-Za-z0-9_]{20,250}$/;
+function freshBackupState() {
+  const ago = (min) => new Date(Date.now() - min * 60_000).toISOString();
+  const stamp = (min) => ago(min).replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const summary = { stories: 40, family_stories: 2, media: { files: 683, copied: 0, bytes: 140579254 }, private_buckets: { recordings: 0, "family-avatars": 0 },
+    db_snapshots: 7, restore_check: { ok: true, tables: 91, rows: { "public.stories": 40 }, pg_restore_errors: 0, vault: { secrets: 3, decrypted: 3, match: true } },
+    main_pushed: true, main_commit: "e67f81f0048a9439a663ebb86b6410cf67b9b323", snapshots_pushed: true, snapshots_commit: "77a3ac87ecacdd21d80bb70ddaee9a4f738af36c",
+    retention: { daily: 7, weekly: 4, monthly: 6 }, postgres: "17.6", duration_s: 74 };
+  const snaps = [0, 1, 2, 3, 4, 5, 6].map((d) => ({ file: `db-${stamp(90 + d * 1440)}.dump.gpg`, taken: stamp(90 + d * 1440), plain_bytes: 9_800_000, encrypted_bytes: 2_400_000 }));
+  return {
+    settings: { schedule_time: "03:15", keep_daily: 7, keep_weekly: 4, keep_monthly: 6, version: 1, updated_at: ago(3000), updated_by_email: null },
+    token: { is_set: false, last4: null, kind: null, set_at: null, set_by_email: null },
+    worker: { heartbeat_at: ago(1), release: "96787f9", repo: "khankingko845-netizen/kecon-backup", push_via: "file_token", passphrase_ok: true,
+      token_check: { status: "ok", source: "file_token", kind: "fine_grained", last4: "Ab12", expires_at: new Date(Date.now() + 60 * 86_400_000).toISOString(), push: true, private: true, message: null, checked_at: ago(30) },
+      snapshots: snaps },
+    runs: [{ id: 1, kind: "cli", status: "ok", phase: null, started_at: ago(92), finished_at: ago(90), exit_code: 0, release: "96787f9", error: null, summary, reason: null, requested_by_email: null }],
+    requests: [],
+    audits: [],
+  };
+}
+let backupState = freshBackupState();
+function backupRpc(name, sub, body, permissions) {
+  const B = backupState;
+  if (!permissions.includes("backups.manage")) return rpcError(400, "42501", "Permission denied");
+  const reasonOf = () => { const r = String(body?.p_reason ?? "").trim(); return r.length >= 10 && r.length <= 500 ? r : null; };
+  const open = () => B.requests.find((q) => q.status === "pending" || q.status === "running");
+  switch (name) {
+    case "admin_backup_status": {
+      const now = new Date().toISOString(), q = open();
+      const ok = B.runs.filter((r) => r.status === "ok")[0];
+      return { now, settings: { ...B.settings }, schedule: { timezone: "Asia/Ho_Chi_Minh", slot: now, slot_done: true, tries: 0, due: false, running: false, next_run_at: new Date(Date.now() + 20 * 3600_000).toISOString() },
+        token: { ...B.token }, worker: structuredClone(B.worker), runs: structuredClone(B.runs),
+        last_success: ok ? { id: ok.id, kind: ok.kind, started_at: ok.started_at, finished_at: ok.finished_at, summary: ok.summary } : null,
+        request: q ? { id: q.id, status: q.status, requested_at: q.requested_at, reason: q.reason, requested_by_email: USERS[q.by]?.email ?? null } : null,
+        requests_last_hour: B.requests.filter((r) => Date.parse(r.requested_at) > Date.now() - 3600_000).length,
+        limits: { requests_per_hour: 3, keep_daily: [3, 30], keep_weekly: [0, 12], keep_monthly: [0, 24] }, can_set_token: permissions.includes("secrets.manage") };
+    }
+    case "admin_update_backup_settings": {
+      const reason = reasonOf(); if (!reason) return rpcError(400, "22023", "Lý do cần 10–500 ký tự");
+      const t = String(body?.p_schedule_time ?? ""), d = body?.p_keep_daily, w = body?.p_keep_weekly, m = body?.p_keep_monthly;
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return rpcError(400, "22023", "Invalid time");
+      if (!(d >= 3 && d <= 30 && w >= 0 && w <= 12 && m >= 0 && m <= 24)) return rpcError(400, "22023", "Invalid retention");
+      if (body?.p_expected_version !== B.settings.version) return rpcError(409, "40001", "Settings changed; reload");
+      const s = B.settings;
+      if (s.schedule_time === t && s.keep_daily === d && s.keep_weekly === w && s.keep_monthly === m) return { changed: false, version: s.version };
+      Object.assign(s, { schedule_time: t, keep_daily: d, keep_weekly: w, keep_monthly: m, version: s.version + 1, updated_at: new Date().toISOString(), updated_by_email: USERS[sub]?.email ?? null });
+      B.audits.push({ action: "backup.settings_update", reason });
+      return { changed: true, version: s.version };
+    }
+    case "admin_request_backup": {
+      const reason = reasonOf(); if (!reason) return rpcError(400, "22023", "Lý do cần 10–500 ký tự");
+      if (open() || B.runs.some((r) => r.status === "running")) return rpcError(400, "55006", "A backup is already queued or running");
+      if (B.requests.filter((r) => Date.parse(r.requested_at) > Date.now() - 3600_000).length >= 3) return rpcError(400, "54000", "Too many backup requests this hour");
+      const q = { id: B.requests.length + 1, status: "pending", requested_at: new Date().toISOString(), reason, by: sub };
+      B.requests.push(q); B.audits.push({ action: "backup.run_request", reason });
+      return { id: q.id, status: q.status, requested_at: q.requested_at };
+    }
+    case "admin_set_backup_token": {
+      if (!permissions.includes("secrets.manage")) return rpcError(400, "42501", "Permission denied");
+      const reason = reasonOf(); if (!reason) return rpcError(400, "22023", "Lý do cần 10–500 ký tự");
+      const token = String(body?.p_token ?? "").trim(); if (!BACKUP_TOKEN_FORMAT.test(token)) return rpcError(400, "22023", "Invalid token format");
+      const kind = token.startsWith("github_pat_") ? "fine_grained" : "classic", set_at = new Date().toISOString();
+      B.token = { is_set: true, last4: token.slice(-4), kind, set_at, set_by_email: USERS[sub]?.email ?? null };
+      B.audits.push({ action: "backup.token_set", reason });
+      return { last4: token.slice(-4), kind, set_at };
+    }
+  }
+  return undefined;
+}
+
 function rpc(name, sub, body, claims={}) {
   const hasPin = sub === MOCK_PIN_USER_ID;
   const rawPermissions = permissionsOf(sub);
@@ -586,6 +658,8 @@ function rpc(name, sub, body, claims={}) {
       if(n<0)TABLES.ai_price_rates.push(row);else TABLES.ai_price_rates[n]=row;
       return null;
     }
+    case "admin_backup_status": case "admin_update_backup_settings": case "admin_request_backup": case "admin_set_backup_token":
+      return backupRpc(name, sub, body, permissions);
     case "admin_access_status":return access;
     case "open_admin_session": {
       if(!rawPermissions.length)return access;
@@ -756,6 +830,11 @@ createServer((req, res) => {
     });
     return;
   }
+  if (path === "/__e2e/backup-reset" && req.method === "POST") {
+    backupState = freshBackupState();
+    return send(res, 200, { ok: true });
+  }
+  if (path === "/__e2e/backup-state" && req.method === "GET") return send(res, 200, { requests: backupState.requests, audits: backupState.audits, settings: backupState.settings, token: backupState.token });
   if (path === "/__e2e/secrets-scan" && req.method === "POST") {
     readJson(req).then((body) => {
       secretsScan = Boolean(body?.on);

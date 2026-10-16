@@ -84,7 +84,7 @@ describe("A-03 · auditAdmin", () => {
     for (const key of Object.keys(AUDIT_ACTIONS)) expect(key).toMatch(/^[a-z_]+\.[a-z_]+$/);
     // Mọi hành động trigger DB có thể ghi đều có nhãn.
     for (const m of MIGRATIONS.matchAll(/'([a-z_]+\.[a-z_]+)'/g)) {
-      if (/^(user|secret|setting|story|category|template|default_voice)\./.test(m[1]) && !m[1].includes("_at")) {
+      if (/^(user|secret|setting|story|category|template|default_voice|backup)\./.test(m[1]) && !m[1].includes("_at")) {
         expect(Object.keys(AUDIT_ACTIONS), m[1]).toContain(m[1]);
       }
     }
