@@ -364,6 +364,8 @@ export function backupRpcError(error: { code?: string; message?: string } | null
   if (code === "22023" && /Lý do/.test(msg)) return `Lý do cần ${REASON_MIN}–${REASON_MAX} ký tự.`;
   if (code === "22023" && /token/i.test(msg)) return "Token phải bắt đầu bằng github_pat_ (fine-grained) hoặc ghp_ (classic).";
   if (code === "22023") return "Giá trị không hợp lệ: giờ HH:MM, giữ 3–30 bản ngày, 0–12 bản tuần, 0–24 bản tháng.";
+  // The server answered with an error we do not expect: not a network problem, nothing was changed.
+  if (/^(?:[0-9A-Z]{5}|PGRST\d{3})$/.test(code)) return `Máy chủ báo lỗi (mã ${code}), chưa có gì thay đổi. Thử lại sau; nếu vẫn lỗi, báo đội kỹ thuật kèm mã này.`;
   return "Chưa thực hiện được. Kiểm tra mạng rồi thử lại.";
 }
 

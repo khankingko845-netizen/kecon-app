@@ -349,6 +349,27 @@ print(json.dumps([kb.tick(True), [c["sql"] for c in calls]]))`);
     expect(JSON.parse(idle)).toEqual([0, ["backup_worker_token", "backup_worker_poll"]]);
   });
 
+  it("lượt timer khi DB chưa sẵn sàng: chưa có migration 040 (đang deploy) → bỏ qua, exit 0; DB lỗi → exit 1, một dòng log", () => {
+    const out = worker(String.raw`
+def missing(sql, **p):
+    raise subprocess.CalledProcessError(3, ["docker", "exec", "-i", "supabase_db_kecon-staging", "psql"],
+        stderr=b"ERROR:  function public.backup_worker_token() does not exist\nLINE 1: select public.backup_worker_token();\nHINT:  No function matches the given name and argument types.\n")
+kb.db = missing
+kb.backup = lambda *a: (_ for _ in ()).throw(AssertionError("must not run"))
+print(json.dumps([kb.tick(True), logs[:]]))
+logs.clear()
+def down(sql, **p):
+    raise subprocess.CalledProcessError(1, ["docker", "exec", "-i", "supabase_db_kecon-staging", "psql"],
+        stderr=b"Error response from daemon: container supabase_db_kecon-staging is not running\n")
+kb.db = down
+print(json.dumps([kb.tick(True), logs[:]]))`);
+    const [missing, down] = out.trim().split("\n").map((l) => JSON.parse(l));
+    expect(missing).toEqual([0, ["Admin › Sao lưu chưa có trong DB (migration 040 chưa chạy) — bỏ qua lượt này"]]);
+    expect(down[0]).toBe(1);
+    expect(down[1]).toHaveLength(1);
+    expect(down[1][0]).toMatch(/^không đọc được DB: docker exec -i supabase_db_kecon-staging → exit 1: Error response from daemon: container supabase_db_kecon-staging is not running$/);
+  });
+
   it("lượt đầu sau migration mang lần chạy cũ (last-run.json) vào lịch sử, đúng một lần", () => {
     const base = mkdtempSync(join(tmpdir(), "kecon-bkw-"));
     writeFileSync(
