@@ -11,6 +11,7 @@ import { cloneVoiceApi } from "@/lib/api-client";
 import { uploadRecording, createVoiceProfile } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 import Mascot from "@/components/ui/Mascot";
+import { listenErrorMessage, sampleAudio, type AudioOwner } from "@/lib/shared-audio";
 
 const SAMPLE_SCRIPTS = [
  {
@@ -66,6 +67,9 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
  const chunksRef = useRef<Blob[]>([]);
  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+ // The cloned-voice sample plays on the shared audition element (src/lib/shared-audio.ts).
+ const [sampleOwner] = useState<AudioOwner>(() => ({ lost: () => { if (!previewAudioRef.current) return; previewAudioRef.current = null; setIsPreviewPlaying(false); } }));
+ useEffect(() => () => { if (previewAudioRef.current) previewAudioRef.current.pause(); sampleAudio.release(sampleOwner); }, [sampleOwner]);
  const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
  const [isRecordingPlaying, setIsRecordingPlaying] = useState(false);
 
@@ -203,6 +207,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  setIsPreviewPlaying(false);
  return;
  }
+ // Inside the tap, before the fetch: the shared element may start the sample afterwards (iPhone).
+ sampleAudio.unlock();
  setIsLoadingPreview(true);
  try {
  const res = await fetch("/api/voice/tts", {
@@ -217,16 +223,18 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  if (!res.ok) throw new Error("TTS failed");
  const blob = await res.blob();
  const url = URL.createObjectURL(blob);
- const audio = new Audio(url);
+ const audio = sampleAudio.take(sampleOwner, url);
  previewAudioRef.current = audio;
  audio.onended = () => { setIsPreviewPlaying(false); URL.revokeObjectURL(url); };
- audio.play();
  setIsPreviewPlaying(true);
- } catch {
- setError("Không thể phát giọng mẫu");
+ await audio.play();
+ } catch (e) {
+ setIsPreviewPlaying(false);
+ const message = listenErrorMessage(e, { blocked: "Bấm nghe thử lần nữa để nghe giọng mẫu.", fallback: "Không thể phát giọng mẫu" });
+ if (message !== null) setError(e instanceof Error && e.message === "TTS failed" ? "Không thể phát giọng mẫu" : message);
  }
  setIsLoadingPreview(false);
- }, [cloneResult, isPreviewPlaying, voiceLang]);
+ }, [cloneResult, isPreviewPlaying, voiceLang, sampleOwner]);
 
  const formatTime = (s: number) => {
  const m = Math.floor(s / 60);

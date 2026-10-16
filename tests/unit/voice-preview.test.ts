@@ -1,31 +1,65 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VoicePreviewPlayer, VOICE_PREVIEW_TEXT } from "@/lib/voice-preview";
+import { createSharedAudio, SILENCE, type SharedAudio } from "@/lib/shared-audio";
+
 const fetchMock = vi.fn();
 const audios: FakeAudio[] = [];
+/** Just enough of HTMLAudioElement for the shared audition element. */
 class FakeAudio {
+  src = "";
+  preload = "";
+  paused = true;
   onended: (() => void) | null = null;
   onerror: (() => void) | null = null;
-  pause = vi.fn();
-  play = vi.fn(async () => {});
-  constructor(public src: string) {
+  /** Every src play() was called with, in order. */
+  plays: string[] = [];
+  /** Set to make play() reject (e.g. iPhone's NotAllowedError). */
+  refuse: Error | null = null;
+  private events = new Map<string, Array<() => void>>();
+  pause = vi.fn(() => {
+    this.paused = true;
+  });
+  load = vi.fn();
+  play = vi.fn(() => {
+    this.plays.push(this.src);
+    if (this.refuse) return Promise.reject(this.refuse);
+    this.paused = false;
+    this.events.get("playing")?.forEach((fn) => fn());
+    return Promise.resolve();
+  });
+  constructor() {
     audios.push(this);
   }
+  addEventListener(type: string, fn: () => void) {
+    this.events.set(type, [...(this.events.get(type) ?? []), fn]);
+  }
+  getAttribute(name: string) {
+    return name === "src" && this.src ? this.src : null;
+  }
+  removeAttribute(name: string) {
+    if (name === "src") this.src = "";
+  }
 }
+let shared: SharedAudio;
 let player: VoicePreviewPlayer;
+const urls: string[] = [];
 beforeEach(() => {
   audios.length = 0;
+  urls.length = 0;
   vi.stubGlobal("fetch", fetchMock);
-  vi.stubGlobal("Audio", FakeAudio);
-  vi.spyOn(URL, "createObjectURL").mockImplementation(
-    () => `blob:${Math.random()}`,
-  );
+  vi.spyOn(URL, "createObjectURL").mockImplementation(() => {
+    const url = `blob:sample-${urls.length + 1}`;
+    urls.push(url);
+    return url;
+  });
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   fetchMock
     .mockReset()
     .mockResolvedValue(
       new Response(new Blob(["audio"], { type: "audio/mpeg" })),
     );
-  player = new VoicePreviewPlayer();
+  shared = createSharedAudio(() => new FakeAudio() as unknown as HTMLAudioElement);
+  player = new VoicePreviewPlayer(shared);
 });
 afterEach(() => {
   player.dispose();
@@ -55,8 +89,28 @@ describe("one voice preview at a time", () => {
     expect(player.getSnapshot().status).toBe("idle");
     await player.toggle("clone", "ja");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    audios[1].onended?.();
+    audios[0].onended?.();
     expect(player.getSnapshot().status).toBe("idle");
+    // One element for every sample (iPhone only lets an element that played in a tap play again).
+    expect(audios).toHaveLength(1);
+    expect(audios[0].plays).toEqual([SILENCE, urls[0], urls[0]]);
+  });
+  it("unlocks the element inside the tap, before the sample is fetched", async () => {
+    let release!: (response: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const pending = player.toggle("voice", "vi");
+    // Synchronously, in the same tap: silence already played on the element.
+    expect(audios[0].plays).toEqual([SILENCE]);
+    expect(shared.unlocked).toBe(true);
+    release(new Response(new Blob(["audio"], { type: "audio/mpeg" })));
+    await pending;
+    expect(audios[0].plays).toEqual([SILENCE, urls[0]]);
+    expect(player.getSnapshot().status).toBe("playing");
   });
   it("never plays late responses after switching or leaving", async () => {
     let release!: (response: Response) => void;
@@ -70,7 +124,9 @@ describe("one voice preview at a time", () => {
     await player.toggle("new", "en");
     release(new Response(new Blob(["old"], { type: "audio/mpeg" })));
     await old;
+    expect(urls).toHaveLength(1);
     expect(audios).toHaveLength(1);
+    expect(audios[0].plays).toEqual([SILENCE, urls[0]]);
     expect(player.getSnapshot().voiceId).toBe("new");
     player.dispose();
     expect(audios[0].pause).toHaveBeenCalled();
@@ -90,7 +146,8 @@ describe("one voice preview at a time", () => {
     expect(signal.aborted).toBe(true);
     release(new Response(new Blob(["old"], { type: "audio/mpeg" })));
     await pending;
-    expect(audios).toHaveLength(0);
+    // Only the unlock's silence ever played.
+    expect(audios[0].plays).toEqual([SILENCE]);
     expect(player.getSnapshot().status).toBe("idle");
   });
   it("shows quota/provider/media errors rather than pretending to play", async () => {
@@ -108,5 +165,39 @@ describe("one voice preview at a time", () => {
     await player.toggle("voice", "vi");
     audios[0].onerror?.();
     expect(player.getSnapshot().error).toContain("Trình duyệt");
+  });
+  it("a refused play() (iPhone) asks for a tap in Vietnamese, never the browser's English text", async () => {
+    const webkit =
+      "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.";
+    shared.element();
+    audios[0].refuse = new DOMException(webkit, "NotAllowedError");
+    await player.toggle("voice", "vi");
+    expect(player.getSnapshot()).toMatchObject({
+      status: "idle",
+      error: "Bấm Nghe thử lần nữa để nghe nhé.",
+    });
+    // Safari's network failure is a TypeError("Load failed"): also never shown raw.
+    audios[0].refuse = null;
+    fetchMock.mockRejectedValueOnce(new TypeError("Load failed"));
+    await player.toggle("other", "vi");
+    expect(player.getSnapshot().error).toBe("Chưa nghe thử được giọng.");
+    // The tap that follows plays.
+    await player.toggle("voice", "vi");
+    expect(player.getSnapshot()).toMatchObject({ status: "playing", error: null });
+  });
+  it("another audition taking the element ends this preview quietly", async () => {
+    await player.toggle("voice", "vi");
+    expect(player.getSnapshot().status).toBe("playing");
+    const other = { lost: vi.fn() };
+    shared.take(other, "blob:library-sample");
+    expect(player.getSnapshot()).toMatchObject({ status: "idle", voiceId: null, error: null });
+    // The preview no longer drives the element: stopping it leaves the other sample alone.
+    const pauses = audios[0].pause.mock.calls.length;
+    player.stop();
+    expect(audios[0].pause).toHaveBeenCalledTimes(pauses);
+    // Tapping the preview again takes the element back.
+    await player.toggle("voice", "vi");
+    expect(other.lost).toHaveBeenCalledTimes(1);
+    expect(player.getSnapshot().status).toBe("playing");
   });
 });
