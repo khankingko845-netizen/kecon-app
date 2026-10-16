@@ -13,6 +13,7 @@
  */
 import { getPageAtTime } from "@/lib/audio-merger";
 import type { Celebration } from "@/lib/missions";
+import type { AudioOwner, SharedAudio } from "@/lib/shared-audio";
 
 export interface PageAudio {
   pageNumber: number;
@@ -96,7 +97,15 @@ export interface Released {
 type Timer = ReturnType<typeof setTimeout>;
 
 export interface PlayerDeps {
-  createAudio: (url: string) => HTMLAudioElement;
+  /**
+   * The element that plays `url`. The app hands out its one shared narration
+   * element (src/lib/shared-audio.ts — iPhone only lets an element that was
+   * started by a tap play on its own) and calls `lost` when the full player
+   * takes it for another story.
+   */
+  createAudio: (url: string, lost: () => void) => HTMLAudioElement;
+  /** The full player's element is ours now (hand-over); `lost` as above. */
+  claimAudio?: (audio: HTMLAudioElement, lost: () => void) => void;
   revoke: (url: string) => void;
   now: () => number;
   setTimer: (fn: () => void, ms: number) => Timer;
@@ -118,6 +127,26 @@ export const IDLE: PlayerSnapshot = Object.freeze({
 }) as PlayerSnapshot;
 
 const clamp = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0);
+
+/**
+ * PlayerDeps.createAudio/claimAudio on the shared narration element: every page
+ * plays on that one element (iPhone), and the player is told when the full
+ * player takes it.
+ */
+export function sharedElementAudio(shared: SharedAudio): Pick<PlayerDeps, "createAudio" | "claimAudio"> {
+  let onLost = () => {};
+  const owner: AudioOwner = { lost: () => onLost() };
+  return {
+    createAudio: (url, lost) => {
+      onLost = lost;
+      return shared.take(owner, url);
+    },
+    claimAudio: (_audio, lost) => {
+      onLost = lost;
+      shared.adopt(owner);
+    },
+  };
+}
 
 /** The page the child sees: the one being fetched/started ("turning") or that failed, else the audible one. */
 export function visiblePage(s: Pick<PlayerSnapshot, "track" | "status" | "pendingPage">): number {
@@ -199,6 +228,7 @@ export class BackgroundPlayer {
     this.dropElement(audio);
     this.dropOwned(track);
     this.audio = audio;
+    this.deps.claimAudio?.(audio, this.lostAudio);
     this.pageBlob = null;
     this.completed = false;
     this.resumePage = null;
@@ -427,6 +457,11 @@ export class BackgroundPlayer {
   private goTo(pageNumber: number) {
     const t = this.snap.track;
     if (!t || !this.on) return;
+    if (t.pageMarkers?.length && !this.audio && t.audioUrl) {
+      // Continuous mode after the full player took the element: the merged file again, from that page.
+      this.startElement({ ...t, pageNumber }, t.audioUrl, markerFor(t, pageNumber), false);
+      return;
+    }
     if (t.pageMarkers?.length && this.audio) {
       const a = this.audio;
       this.gen++;
@@ -480,6 +515,42 @@ export class BackgroundPlayer {
       });
   }
 
+  private lostAudio = () => this.onLost();
+
+  /**
+   * The full player took the shared narration element for another story: let go
+   * of it but keep the place — "Nghe tiếp" starts that page again (the element is
+   * the full player's now: not paused or rewired here).
+   */
+  private onLost() {
+    const s = this.snap;
+    const t = s.track;
+    const a = this.audio;
+    if (!t || (!a && s.status !== "turning")) return;
+    if (a) this.unwire(a);
+    this.audio = null;
+    this.pendingSeek = null;
+    this.gen++;
+    this.clearTurn();
+    // Between two pages (or a page that failed): the coming page is the place.
+    const between = s.status === "turning" || s.status === "error";
+    const page = between ? (s.pendingPage ?? t.pageNumber) : t.pageNumber;
+    let track = between ? { ...t, pageNumber: page } : t;
+    const blob = this.pageBlob;
+    this.pageBlob = null;
+    if (blob) {
+      // Fresh narration of the page that played: kept for "Nghe tiếp" (revoked with the track).
+      track = {
+        ...track,
+        allPages: [...(t.allPages ?? []).filter((p) => p.pageNumber !== t.pageNumber), { pageNumber: t.pageNumber, audioUrl: blob }],
+        ownedUrls: [...(t.ownedUrls ?? []), blob],
+      };
+    }
+    this.resumePage = s.status === "ended" ? null : page;
+    if (s.status === "ended" || s.status === "error") return this.set({ track, isPlaying: false });
+    this.set({ track, isPlaying: false, status: "paused", pendingPage: null });
+  }
+
   private failTurn(pageNumber: number) {
     this.resumePage = pageNumber;
     this.set({ status: "error", isPlaying: false, error: `Chưa tải được trang ${pageNumber}`, pendingPage: pageNumber });
@@ -490,7 +561,7 @@ export class BackgroundPlayer {
     this.clearTurn();
     const keepBlob = this.pageBlob === url;
     this.dropElement(null, keepBlob);
-    const audio = this.deps.createAudio(url);
+    const audio = this.deps.createAudio(url, this.lostAudio);
     this.audio = audio;
     this.pageBlob = fresh && url.startsWith("blob:") ? url : keepBlob ? url : null;
     this.pendingSeek = seek > 0 ? seek : null;

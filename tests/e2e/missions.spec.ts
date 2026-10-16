@@ -27,7 +27,11 @@ async function finishInstantly(page: Page) {
     w.__spoken = [];
     if ("speechSynthesis" in window) speechSynthesis.speak = (u: SpeechSynthesisUtterance) => void w.__spoken.push(u.text);
     HTMLMediaElement.prototype.play = function () {
-      setTimeout(() => this.onended?.(new Event("ended")), 30);
+      // One element plays every page (src/lib/shared-audio.ts): only the clip still loaded "finishes".
+      const src = this.src;
+      setTimeout(() => {
+        if (this.src === src) this.onended?.(new Event("ended"));
+      }, 30);
       return Promise.resolve();
     };
     HTMLMediaElement.prototype.pause = function () {};

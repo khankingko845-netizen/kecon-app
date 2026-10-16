@@ -12,7 +12,8 @@
  */
 import { useSettings } from "@/lib/settings-context";
 import { updateLastPlayedPage } from "@/lib/last-played";
-import { BackgroundPlayer, IDLE, type AudioTrack, type PlayerDeps, type PlayerSnapshot, type Released } from "@/lib/background-player";
+import { BackgroundPlayer, IDLE, sharedElementAudio, type AudioTrack, type PlayerDeps, type PlayerSnapshot, type Released } from "@/lib/background-player";
+import { narrationAudio } from "@/lib/shared-audio";
 import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 export type { AudioTrack, PlayerSnapshot, Released } from "@/lib/background-player";
@@ -64,7 +65,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     () =>
       new BackgroundPlayer(
         {
-          createAudio: (url) => new Audio(url),
+          // The one narration element (src/lib/shared-audio.ts), shared with the full player.
+          ...sharedElementAudio(narrationAudio),
           revoke: (url) => {
             if (url.startsWith("blob:")) URL.revokeObjectURL(url);
           },
@@ -110,6 +112,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   return <AudioPlayerContext.Provider value={player}>{children}</AudioPlayerContext.Provider>;
 }
 
+/** Called from a tap: the shared element may then start pages on its own (iPhone). */
+const tap = () => narrationAudio.unlock();
+
 /** Stable actions (never re-render on progress). */
 export function useAudioControls() {
   const player = useContext(AudioPlayerContext);
@@ -117,12 +122,24 @@ export function useAudioControls() {
     () => ({
       play: (track: AudioTrack) => player.play(track),
       pause: () => player.pause(),
-      resume: () => player.resume(),
+      resume: () => {
+        tap();
+        player.resume();
+      },
       stop: () => player.stop(),
-      replay: () => player.replay(),
+      replay: () => {
+        tap();
+        player.replay();
+      },
       seekTo: (pct: number) => player.seekTo(pct),
-      nextPage: () => player.nextPage(),
-      prevPage: () => player.prevPage(),
+      nextPage: () => {
+        tap();
+        player.nextPage();
+      },
+      prevPage: () => {
+        tap();
+        player.prevPage();
+      },
       dismissCelebration: () => player.dismissCelebration(),
       /** The full player was left while narrating: keep this element playing in the MiniPlayer. */
       adoptAudio: (audio: HTMLAudioElement, track: AudioTrack) => player.adopt(audio, track),

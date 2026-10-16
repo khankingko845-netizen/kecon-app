@@ -30,6 +30,7 @@ import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
 import { useAudioControls, type AudioTrack } from "@/lib/audio-player-context";
 import { visiblePage } from "@/lib/background-player";
+import { narrationAudio, listenErrorMessage, playFailure, type AudioOwner } from "@/lib/shared-audio";
 import { ListenRecord, type ListenLog } from "@/lib/listen-log";
 import { useAuth } from "@/lib/auth-context";
 import { makePageResolver, synthesizeSegments, type NarrationSetup } from "@/lib/page-narration";
@@ -263,11 +264,28 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  // Render-safe mirror of mergedRef (page tick marks on the seek bar)
  const [mergedResult, setMergedResult] = useState<MergeResult | null>(null);
  const mergeAbortRef = useRef(false);
+ // One narration element for the whole app (src/lib/shared-audio.ts): iPhone only lets an element that a
+ // tap started play on its own — the next page, narration after an await, the MiniPlayer.
+ const lostCountRef = useRef(0);
+ const playBlockedRef = useRef(false);
+ const [narrationOwner] = useState<AudioOwner>(() => ({
+  // The MiniPlayer took the element (the child went on with another story there): stop here, keep the page.
+  lost: () => {
+   lostCountRef.current++;
+   if (!audioRef.current) return;
+   audioRef.current = null;
+   setIsPlaying(false);
+   setPendingAutoPlay(false);
+   setAudioClock(null);
+   setMergeStatus((m) => (m === "playing" ? "ready" : m));
+  },
+ }));
  useEffect(()=>()=>{
  narrationEpochRef.current++;mergeAbortRef.current=true;
  const a=audioRef.current;a?.pause();if(a?.src.startsWith("blob:"))URL.revokeObjectURL(a.src);audioRef.current=null;
  prefetchCache.current.forEach(url=>{if(url.startsWith("blob:"))URL.revokeObjectURL(url);});prefetchCache.current.clear();
- },[]);
+ narrationAudio.release(narrationOwner);
+ },[narrationOwner]);
 
  // Sound mixer (Web Audio ambient layers).
  const engineRef = useRef<AmbientEngine | null>(null);
@@ -775,7 +793,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  }
  }
 
- const audio = new Audio(merged.blobUrl);
+ const audio = narrationAudio.take(narrationOwner, merged.blobUrl);
  audioRef.current = audio;
  setAudioClock(null);
 
@@ -786,10 +804,15 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  audio.currentTime = seekTime;
  };
  wireMergedAudio(audio, merged);
- audio.play().catch(e=>{setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Không phát được audio.");});
+ audio.play().catch(e=>{
+ if(audioRef.current!==audio)return;
+ const message=listenErrorMessage(e);
+ if(message===null)return; // a newer pause/page replaced this play
+ setIsPlaying(false);setAudioError(message);
+ });
  setIsPlaying(true);
  setMergeStatus("playing");
- }, [currentPage, wireMergedAudio]);
+ }, [currentPage, wireMergedAudio, narrationOwner]);
 
  // One page of narration: clock/progress, then the next page after a breath (or the story end).
  const wirePageAudio = useCallback((audio: HTMLAudioElement, pageIdx: number, epoch: number) => {
@@ -825,6 +848,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  if(!narrationEnabledRef.current)return;
  preview.stop();setShowVoicePicker(false);setAudioError(null);
  const epoch=narrationEpochRef.current;
+ const claim=lostCountRef.current;
  if (!hasElevenLabs || !currentText || !elevenVoiceId) {
  setAudioError("Chưa có giọng khả dụng hoặc provider chưa cấu hình.");return;
  }
@@ -843,7 +867,8 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  else {
  url = await generatePageAudio(currentText, currentPage);
  }
- if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
+ // Stale (voice changed, narration off, or the MiniPlayer took the element meanwhile): never start late audio.
+ if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current||claim!==lostCountRef.current){if(url.startsWith("blob:"))URL.revokeObjectURL(url);return;}
 
  if (audioRef.current) {
  audioRef.current.pause();
@@ -853,14 +878,25 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  }
  }
 
- const audio = new Audio(url);
+ const audio = narrationAudio.take(narrationOwner, url);
  audioRef.current = audio;
  setAudioClock(null);
  wirePageAudio(audio, currentPage, epoch);
 
  playbackUrlsRef.current.set(currentPage,url);
+ try {
  await audio.play();
+ } catch (e) {
+ if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current||audioRef.current!==audio)return;
+ const message=listenErrorMessage(e);
+ if(message===null)return; // a newer pause/page replaced this play
+ // iPhone refused to start without a tap: the page stays loaded, ▶ plays it (see togglePlay).
+ if(playFailure(e)==="blocked")playBlockedRef.current=true;
+ setIsPlaying(false);setAudioError(message);
+ return;
+ }
  if(epoch!==narrationEpochRef.current||!narrationEnabledRef.current){audio.pause();return;}
+ playBlockedRef.current=false;
  setIsPlaying(true);
 
  // Start prefetching next page while this one plays
@@ -871,11 +907,11 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  startBackgroundMerge();
  }
  } catch(e) {
- if(epoch===narrationEpochRef.current&&narrationEnabledRef.current){setIsPlaying(false);setAudioError(e instanceof Error?e.message:"Chưa phát được giọng đọc.");}
+ if(epoch===narrationEpochRef.current&&narrationEnabledRef.current){const message=listenErrorMessage(e,{fallback:"Chưa phát được giọng đọc."});setIsPlaying(false);if(message!==null)setAudioError(message);}
  } finally {
  if(epoch===narrationEpochRef.current)setIsTTSLoading(false);
  }
- }, [hasElevenLabs, currentText, currentPage, totalPages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, wirePageAudio, elevenVoiceId, preview.stop]);
+ }, [hasElevenLabs, currentText, currentPage, totalPages, generatePageAudio, prefetchNextPage, mergeStatus, startBackgroundMerge, wirePageAudio, elevenVoiceId, preview.stop, narrationOwner]);
 
  // Effects below are declared after playWithTTS (which they call) but keep
  // their original relative order: auto-play runs before fake-progress.
@@ -984,6 +1020,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  const a = r.audio;
  if (a && fits) {
  audioRef.current = a;
+ narrationAudio.adopt(narrationOwner);
  if (r.track.pageMarkers?.length && merged) {
  wireMergedAudio(a, merged);
  setMergeStatus("playing");
@@ -1008,7 +1045,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  return true;
  }
  return false;
- }, [storyId, globalPlayer, audioIdentity, attachSession, resumeSleepUntil, totalPages, wireMergedAudio, wirePageAudio, settings.narrationEnabled]);
+ }, [storyId, globalPlayer, audioIdentity, attachSession, resumeSleepUntil, totalPages, wireMergedAudio, wirePageAudio, settings.narrationEnabled, narrationOwner]);
  const takeBackRef = useRef(takeBack);
  useEffect(() => {
  takeBackRef.current = takeBack;
@@ -1032,6 +1069,8 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
 
  const togglePlay = () => {
  if(!settings.narrationEnabled){setAudioError("Giọng đọc đang tắt. Bật công tắc Giọng đọc truyện để nghe.");return;}
+ // Inside the tap, before any await: lets the shared element play on its own afterwards (iPhone).
+ narrationAudio.unlock();
  preview.stop();
  // Opened from the MiniPlayer a moment ago: carry on with that audio instead of starting over.
  if (handoff && !adoptedRef.current && takeBack()) return;
@@ -1045,8 +1084,19 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  } else if (audioRef.current && audioRef.current.paused && !audioRef.current.ended && !audioRef.current.error && mergeStatus !== "playing") {
  // Paused mid-page: carry on from there (it used to start the page over).
  const a = audioRef.current;
- a.play().catch(() => {
- if (audioRef.current === a) setIsPlaying(false);
+ const wasBlocked = playBlockedRef.current;
+ setAudioError(null);
+ a.play().then(() => {
+ if (audioRef.current !== a || !wasBlocked) return;
+ // The first start was refused (iPhone, no tap): what a normal start does next.
+ playBlockedRef.current = false;
+ prefetchNextPage(currentPage);
+ if (mergeStatus === "idle" && totalPages > 1) startBackgroundMerge();
+ }, (e) => {
+ if (audioRef.current !== a) return;
+ setIsPlaying(false);
+ const message = listenErrorMessage(e);
+ if (message !== null) setAudioError(message);
  });
  setIsPlaying(true);
  } else if (mergeStatus === "ready") {
@@ -1317,6 +1367,8 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  // "Nghe lại từ đầu" in the MiniPlayer after the end: a new listen, a new row.
  newListen: () => new ListenRecord({ ...who }, playSessionStore),
  };
+ // The element goes to the MiniPlayer: this player lets go first (no "lost" callback while leaving).
+ narrationAudio.release(narrationOwner);
  if (narrating && a) {
  globalPlayer.adoptAudio(a, track);
  audioRef.current = null; // Don't pause — MiniPlayer owns it now

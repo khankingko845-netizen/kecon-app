@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { BackgroundPlayer, IDLE, markerFor, mergedPosition, visiblePage, type AudioTrack, type ListenLog, type PlayerDeps } from "@/lib/background-player";
+import { BackgroundPlayer, IDLE, markerFor, mergedPosition, sharedElementAudio, visiblePage, type AudioTrack, type ListenLog, type PlayerDeps } from "@/lib/background-player";
 import type { Celebration } from "@/lib/missions";
+import { createSharedAudio } from "@/lib/shared-audio";
 
 /**
  * Trình nghe thu gọn (MiniPlayer) — page logic with fake audio elements and a
@@ -352,8 +353,8 @@ describe("BackgroundPlayer — page after page until the story ends", () => {
     const h = harness();
     const deps = (h.player as unknown as { deps: PlayerDeps }).deps;
     const create = deps.createAudio;
-    deps.createAudio = (url) => {
-      const a = create(url) as unknown as FakeAudio;
+    deps.createAudio = (url, lost) => {
+      const a = create(url, lost) as unknown as FakeAudio;
       a.failPlay = true;
       return a as unknown as HTMLAudioElement;
     };
@@ -730,5 +731,265 @@ describe("BackgroundPlayer — lượt nghe: one listen, wherever it is heard (P
     expect(h.snap().status).toBe("playing");
     expect(() => h.player.stop()).not.toThrow();
     expect(h.snap()).toBe(IDLE);
+  });
+});
+
+// ── iPhone/iPad: every browser there is WebKit ──────────────────────────────
+
+const WEBKIT_REFUSAL = "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.";
+let inTap = false;
+/** Run `fn` as if inside a tap (a user gesture). */
+function tap<T>(fn: () => T): T {
+  inTap = true;
+  try {
+    return fn();
+  } finally {
+    inTap = false;
+  }
+}
+
+/** WebKit's rule: script may start an element only once that very element was started inside a tap. */
+class WebKitAudio {
+  preload = "";
+  paused = true;
+  ended = false;
+  currentTime = 0;
+  duration = NaN;
+  /** Started inside a tap once: may play from script from now on. */
+  allowed = false;
+  played: string[] = [];
+  refused: string[] = [];
+  onloadedmetadata: (() => void) | null = null;
+  ontimeupdate: (() => void) | null = null;
+  onplaying: (() => void) | null = null;
+  onpause: (() => void) | null = null;
+  onended: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  private source = "";
+  private listeners = new Map<string, Array<() => void>>();
+  get src() {
+    return this.source;
+  }
+  set src(url: string) {
+    // Like a browser: a new source starts from the beginning, paused.
+    this.source = url;
+    this.paused = true;
+    this.ended = false;
+    this.currentTime = 0;
+    this.duration = NaN;
+  }
+  getAttribute(name: string) {
+    return name === "src" && this.source ? this.source : null;
+  }
+  removeAttribute(name: string) {
+    if (name === "src") this.source = "";
+  }
+  addEventListener(type: string, fn: () => void) {
+    this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]);
+  }
+  load() {}
+  play() {
+    if (inTap) this.allowed = true;
+    if (!this.allowed) {
+      this.refused.push(this.source);
+      return Promise.reject(new DOMException(WEBKIT_REFUSAL, "NotAllowedError"));
+    }
+    this.played.push(this.source);
+    this.paused = false;
+    this.ended = false;
+    queueMicrotask(() => {
+      this.onplaying?.();
+      this.listeners.get("playing")?.forEach((fn) => fn());
+    });
+    return Promise.resolve();
+  }
+  pause() {
+    if (this.paused) return;
+    this.paused = true;
+    queueMicrotask(() => this.onpause?.());
+  }
+  // ── test helpers ──
+  loaded(duration: number) {
+    this.duration = duration;
+    this.onloadedmetadata?.();
+  }
+  at(time: number) {
+    this.currentTime = time;
+    this.ontimeupdate?.();
+  }
+  end() {
+    this.currentTime = this.duration;
+    this.paused = true;
+    this.ended = true;
+    this.onpause?.();
+    this.onended?.();
+  }
+}
+
+/** The app's wiring (src/lib/audio-player-context.tsx): every page on the one shared narration element. */
+function onSharedElement(h: ReturnType<typeof harness>) {
+  const elements: WebKitAudio[] = [];
+  const shared = createSharedAudio(() => {
+    const a = new WebKitAudio();
+    elements.push(a);
+    return a as unknown as HTMLAudioElement;
+  });
+  Object.assign((h.player as unknown as { deps: PlayerDeps }).deps, sharedElementAudio(shared));
+  return { shared, elements, el: () => shared.element() as unknown as WebKitAudio };
+}
+
+describe("BackgroundPlayer — iPhone: one shared narration element", () => {
+  it("WebKit refuses a new element for page 2; the shared element plays page after page", async () => {
+    // Before: new Audio() per page — only the element started by the tap may play.
+    const before = harness();
+    const made: WebKitAudio[] = [];
+    (before.player as unknown as { deps: PlayerDeps }).deps.createAudio = (url) => {
+      const a = new WebKitAudio();
+      a.src = url;
+      made.push(a);
+      return a as unknown as HTMLAudioElement;
+    };
+    tap(() => before.player.play(track({ totalPages: 2 })));
+    await flush();
+    made[0].loaded(10);
+    made[0].end();
+    await before.tick(1200);
+    expect(made).toHaveLength(2);
+    expect(made[1].refused).toEqual(["https://cdn/p2.mp3"]);
+    expect(before.snap()).toMatchObject({ status: "paused", isPlaying: false });
+
+    // Now: one element, started by that tap, plays every page — then the story ends.
+    const h = harness();
+    const { elements, el } = onSharedElement(h);
+    tap(() => h.player.play(track({ totalPages: 2 })));
+    await flush();
+    el().loaded(10);
+    el().end();
+    await h.tick(1200);
+    expect(h.snap()).toMatchObject({ status: "playing", isPlaying: true });
+    expect(h.snap().track?.pageNumber).toBe(2);
+    el().loaded(8);
+    el().end();
+    await flush();
+    expect(h.snap().status).toBe("ended");
+    expect(elements).toHaveLength(1);
+    expect(el().played).toEqual(["https://cdn/p1.mp3", "https://cdn/p2.mp3"]);
+    expect(el().refused).toEqual([]);
+  });
+
+  it("adopting the full player's element makes the mini player its owner, and it auto-advances", async () => {
+    const h = harness();
+    const { shared, el } = onSharedElement(h);
+    // The full player started page 1 inside the tap on ▶…
+    const full = { lost: vi.fn() };
+    const a = shared.take(full, "https://cdn/p1.mp3");
+    await tap(() => a.play());
+    // …and is left while narrating: it lets go, the mini player adopts the very same element.
+    shared.release(full);
+    h.player.adopt(a, track({ totalPages: 2 }));
+    el().loaded(10);
+    el().end();
+    await h.tick(1200);
+    expect(h.snap().track?.pageNumber).toBe(2);
+    expect(h.snap().status).toBe("playing");
+    expect(el().played).toEqual(["https://cdn/p1.mp3", "https://cdn/p2.mp3"]);
+    expect(full.lost).not.toHaveBeenCalled();
+    // Another story's full player takes the element: the mini player is told.
+    shared.take({ lost: () => {} }, "https://cdn/other.mp3");
+    expect(h.snap()).toMatchObject({ status: "paused", isPlaying: false });
+  });
+
+  it("losing the element mid-page pauses on that page; Nghe tiếp starts it again without new narration", async () => {
+    const h = harness();
+    const { shared, el } = onSharedElement(h);
+    const resolvePage = vi.fn(async (n: number) => `blob:fresh-${n}`);
+    tap(() => h.player.play(track({ totalPages: 3, allPages: [{ pageNumber: 1, audioUrl: "https://cdn/p1.mp3" }], resolvePage })));
+    await flush();
+    el().loaded(10);
+    el().end();
+    await h.tick(1200);
+    expect(el().src).toBe("blob:fresh-2");
+    el().loaded(10);
+    el().at(3);
+    // The full player opens another story and takes the element.
+    const other = { lost: vi.fn() };
+    shared.take(other, "https://cdn/other-story.mp3");
+    expect(h.snap()).toMatchObject({ status: "paused", isPlaying: false });
+    expect(h.snap().track?.pageNumber).toBe(2);
+    // Not paused or rewired by the mini player: the element is the other story's now.
+    expect(el().onended).toBeNull();
+    expect(el().src).toBe("https://cdn/other-story.mp3");
+    expect(h.revoked).not.toContain("blob:fresh-2");
+    // "Nghe tiếp": page 2 again, on the same element, from the kept narration.
+    tap(() => h.player.resume());
+    await flush();
+    expect(other.lost).toHaveBeenCalledTimes(1);
+    expect(el().src).toBe("blob:fresh-2");
+    expect(resolvePage).toHaveBeenCalledTimes(1);
+    expect(h.snap()).toMatchObject({ status: "playing", isPlaying: true });
+    h.player.stop();
+    expect(h.revoked).toContain("blob:fresh-2");
+  });
+
+  it("losing the element between two pages pauses on the coming page and cancels the turn", async () => {
+    const h = harness();
+    const { shared, el } = onSharedElement(h);
+    tap(() => h.player.play(track({ totalPages: 2 })));
+    await flush();
+    el().loaded(10);
+    el().end();
+    expect(h.snap().status).toBe("turning");
+    shared.take({ lost: () => {} }, "https://cdn/other-story.mp3");
+    expect(h.snap()).toMatchObject({ status: "paused", isPlaying: false, pendingPage: null });
+    expect(visiblePage(h.snap())).toBe(2);
+    await h.tick(1200);
+    // The cancelled turn never takes the element back on its own.
+    expect(el().src).toBe("https://cdn/other-story.mp3");
+    tap(() => h.player.resume());
+    await flush();
+    expect(el().src).toBe("https://cdn/p2.mp3");
+    expect(h.snap()).toMatchObject({ status: "playing" });
+    expect(h.snap().track?.pageNumber).toBe(2);
+  });
+
+  it("continuous mode: after losing the element, Nghe tiếp plays the merged file again from that page", async () => {
+    const h = harness();
+    const { shared, el } = onSharedElement(h);
+    const t = track({ audioUrl: "blob:merged", allPages: undefined, pageMarkers: [0, 10, 20], totalPages: 3, ownedUrls: ["blob:merged"] });
+    tap(() => h.player.play({ ...t, pageNumber: 2 }));
+    el().loaded(30);
+    expect(el().currentTime).toBe(10);
+    el().at(15);
+    shared.take({ lost: () => {} }, "https://cdn/other-story.mp3");
+    expect(h.snap()).toMatchObject({ status: "paused", isPlaying: false });
+    expect(h.revoked).not.toContain("blob:merged");
+    tap(() => h.player.resume());
+    expect(el().src).toBe("blob:merged");
+    el().loaded(30);
+    expect(el().currentTime).toBe(10);
+    await flush();
+    expect(h.snap()).toMatchObject({ status: "playing", isPlaying: true });
+    expect(h.snap().track?.pageNumber).toBe(2);
+    expect(el().refused).toEqual([]);
+  });
+
+  it("a page that cannot start shows the tap-to-continue state, never an error text", async () => {
+    const h = harness();
+    const { shared, el } = onSharedElement(h);
+    // Never unlocked by a tap (e.g. restored after a reload): WebKit refuses.
+    h.player.play(track());
+    await flush();
+    expect(el().refused).toEqual(["https://cdn/p1.mp3"]);
+    expect(h.snap()).toMatchObject({ status: "paused", isPlaying: false, error: null });
+    // The tap on ▶ (useAudioControls().resume → unlock + resume) plays it.
+    tap(() => {
+      shared.unlock();
+      h.player.resume();
+    });
+    await flush();
+    expect(h.snap()).toMatchObject({ status: "playing", isPlaying: true });
+    // (unlock's play()+pause() inside the tap, then the page itself)
+    expect(new Set(el().played)).toEqual(new Set(["https://cdn/p1.mp3"]));
+    expect(el().paused).toBe(false);
   });
 });

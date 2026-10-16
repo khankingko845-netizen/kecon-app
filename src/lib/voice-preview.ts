@@ -1,3 +1,5 @@
+import { listenErrorMessage, sampleAudio, type AudioOwner, type SharedAudio } from "@/lib/shared-audio";
+
 /** Fixed, non-personal samples. Preview requests cannot supply arbitrary text. */
 export const VOICE_PREVIEW_TEXT = {
   vi: "Xin chào bé! Đóm sẽ kể một câu chuyện nhỏ. Trong khu vườn, bạn Thỏ và bạn Gấu cùng chia sẻ một quả táo ngọt.",
@@ -12,7 +14,11 @@ export interface PreviewState {
   status: "idle" | "loading" | "playing";
   error: string | null;
 }
-/** One owner, one playing sample; cancellation/stale results never start audio. */
+/**
+ * One owner, one playing sample; cancellation/stale results never start audio.
+ * Samples play on the shared audition element (src/lib/shared-audio.ts),
+ * unlocked inside the tap — on iPhone a new Audio() after the fetch was refused.
+ */
 export class VoicePreviewPlayer {
   private state: PreviewState = {
     voiceId: null,
@@ -25,6 +31,16 @@ export class VoicePreviewPlayer {
   private abort: AbortController | null = null;
   private sequence = 0;
   private cache = new Map<string, string>();
+  /** Another audition (or "Nghe thử" in the library) took the element: this sample is over. */
+  private owner: AudioOwner = {
+    lost: () => {
+      if (!this.audio) return;
+      this.sequence++;
+      this.audio = null;
+      this.publish({ voiceId: null, language: null, status: "idle", error: null });
+    },
+  };
+  constructor(private shared: SharedAudio = sampleAudio) {}
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -55,6 +71,7 @@ export class VoicePreviewPlayer {
   };
   dispose = () => {
     this.stop();
+    this.shared.release(this.owner);
     this.cache.forEach((url) => URL.revokeObjectURL(url));
     this.cache.clear();
   };
@@ -67,6 +84,8 @@ export class VoicePreviewPlayer {
       this.stop();
       return;
     }
+    // Inside the tap, before the fetch: the shared element may start the sample afterwards (iPhone).
+    this.shared.unlock();
     this.stop();
     const sequence = this.sequence;
     const key = `${language}:${voiceId}`;
@@ -100,7 +119,7 @@ export class VoicePreviewPlayer {
         }
       }
       if (sequence !== this.sequence) return;
-      const audio = new Audio(url);
+      const audio = this.shared.take(this.owner, url);
       this.audio = audio;
       audio.onended = () => {
         if (sequence === this.sequence) this.stop();
@@ -130,8 +149,11 @@ export class VoicePreviewPlayer {
         voiceId: null,
         language: null,
         status: "idle",
-        error:
-          error instanceof Error ? error.message : "Chưa nghe thử được giọng.",
+        // Never the browser's raw English text (e.g. NotAllowedError on iPhone).
+        error: listenErrorMessage(error, {
+          blocked: "Bấm Nghe thử lần nữa để nghe nhé.",
+          fallback: "Chưa nghe thử được giọng.",
+        }),
       });
     }
   }

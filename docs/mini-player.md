@@ -36,6 +36,27 @@ thu gọn phía trên thanh tab, trang này sang trang khác, tới hết truy�
   `logPlaySession` / `updatePlaySession` trong `src/lib/db.ts`. Test: `tests/unit/listen-log.test.ts`,
   `tests/unit/background-player.test.ts`, `tests/db/play-sessions.test.ts`, E2E trong `tests/e2e/mini-player.spec.ts`.
 
+## iPhone/iPad — một phần tử audio dùng chung
+
+Trên iOS mọi trình duyệt đều là WebKit: script chỉ được phát một `<audio>` khi **chính
+phần tử đó** đã từng được phát trong một lần chạm. Trước đây mỗi trang tạo `new Audio()`
+sau khi chờ tổng hợp giọng → trang 1, trang tự sang, mini và Nghe thử bị từ chối, và
+player hiện nguyên văn lỗi tiếng Anh “The request is not allowed by the user agent…”.
+
+- `src/lib/shared-audio.ts`: `narrationAudio` (player đầy đủ + mini dùng chung) và
+  `sampleAudio` (Nghe thử giọng, Nghe thử ở Thư viện, mẫu giọng nhân bản). `unlock()`
+  được gọi đồng bộ trong lần chạm (trước mọi `await`); mọi trang chỉ đổi `src` của cùng
+  phần tử. Ai `take`/`adopt` phần tử thì thành chủ, chủ cũ được báo (`lost`) — không bao
+  giờ hai trình phát cùng điều khiển một phần tử.
+- Mini mất phần tử (trình đầy đủ mở truyện khác) → tạm dừng, giữ trang; “Nghe tiếp” đọc
+  lại trang đó (giữ audio vừa đọc, không tổng hợp lại); chế độ liền mạch phát lại file
+  ghép từ mốc của trang.
+- Không bao giờ hiện chữ lỗi của trình duyệt: bị chặn → “Bấm ▶ để nghe nhé.” (Nghe thử:
+  “Bấm Nghe thử lần nữa để nghe nhé.”), lỗi khác → câu tiếng Việt.
+- Test: `tests/unit/shared-audio.test.ts`, `tests/unit/background-player.test.ts` (luật
+  WebKit giả lập), `tests/unit/voice-preview.test.ts`, E2E `tests/e2e/ios-audio-unlock.spec.ts`
+  (giả lập luật WebKit trên Chromium, kèm đúng câu lỗi của WebKit).
+
 ## Bố cục
 
 `AppShell` có một dock cố định dưới cùng (`data-testid="bottom-dock"`): MiniPlayer
@@ -50,6 +71,7 @@ trống 86 px (`mini-player-spacer`) để hàng cuối không bị che. Mọi n
   Màn chỉ cần biết “có đang phát không” dùng `useAudioPlaying()` / `useAudioControls()`
   (không re-render theo tiến độ); chỉ MiniPlayer dùng `useAudioPlayer()`.
 - `src/lib/page-narration.ts` — đọc một trang, dùng chung cho player và mini.
+- `src/lib/shared-audio.ts` — phần tử audio dùng chung (iPhone/iPad, xem trên).
 - E2E: `tests/e2e/mini-player.spec.ts` (360×640, 375×667, 412×915).
 
 ## Giới hạn
@@ -57,4 +79,5 @@ trống 86 px (`mini-player-spacer`) để hàng cuối không bị che. Mọi n
 - Lượt nghe được ghi khi rời trình nghe/khi app vào nền; nếu trình duyệt bị tắt đột ngột
   (không kịp vào nền) thì phần nghe sau lần ghi cuối bị mất — giống trình nghe đầy đủ.
 - `stories.completion_rate` (thống kê admin) vẫn chưa được tính từ các dòng này.
-- Kích thước màn kiểm bằng Chromium giả lập, chưa thử iPhone/Safari thật.
+- Kích thước màn kiểm bằng Chromium giả lập, chưa thử iPhone/Safari thật. Luật phát
+  audio của WebKit cũng được giả lập trên Chromium (E2E), chưa chạy trên iPhone thật.

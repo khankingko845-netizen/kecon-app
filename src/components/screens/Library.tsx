@@ -9,6 +9,7 @@ import { GlowDots } from "@/components/ui/states";
 import { useKidStories } from "@/lib/parental-controls-context";
 import { isCategoryAllowed } from "@/lib/content-filter";
 import { getStoryPages } from "@/lib/db";
+import { sampleAudio, type AudioOwner } from "@/lib/shared-audio";
 import { LibrarySkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import EmptyState from "@/components/ui/EmptyState";
@@ -77,10 +78,12 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
  const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+ // "Nghe thử" plays on the shared audition element (src/lib/shared-audio.ts); a voice sample elsewhere may take it.
+ const [sampleOwner] = useState<AudioOwner>(() => ({ lost: () => { if (!previewAudioRef.current) return; previewEpochRef.current++; previewAudioRef.current = null; setPlayingStoryId(null); } }));
  const searchRef = useRef<HTMLInputElement>(null);
 
  useEffect(()=>{narrationEnabledRef.current=settings.narrationEnabled;if(!settings.narrationEnabled){previewEpochRef.current++;previewAudioRef.current?.pause();previewAudioRef.current=null;setPlayingStoryId(null);}},[settings.narrationEnabled]);
- useEffect(()=>()=>{previewEpochRef.current++;previewAudioRef.current?.pause();},[]);
+ useEffect(()=>()=>{previewEpochRef.current++;previewAudioRef.current?.pause();sampleAudio.release(sampleOwner);},[sampleOwner]);
  const togglePreview = useCallback(async (storyId: string, e: React.MouseEvent) => {
  e.stopPropagation();
  if(!narrationEnabledRef.current){toast("info","Giọng đọc đang tắt. Bật trong Giọng đọc để nghe.");return;}
@@ -96,13 +99,15 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  previewAudioRef.current = null;
  setPlayingStoryId(null);
  }
+ // Inside the tap, before the fetch: the shared element may start the sample afterwards (iPhone).
+ sampleAudio.unlock();
  setLoadingAudio(storyId);
  try {
  const pages = await getStoryPages(storyId);
  const firstPageWithAudio = pages.find((p) => p.audio_url);
  if (!firstPageWithAudio?.audio_url) { toast("info","Truyện chưa có audio nghe thử."); setLoadingAudio(null); return; }
  if(!narrationEnabledRef.current||epoch!==previewEpochRef.current)return;
- const audio = new Audio(firstPageWithAudio.audio_url);
+ const audio = sampleAudio.take(sampleOwner, firstPageWithAudio.audio_url);
  previewAudioRef.current = audio;
  audio.onended = () => { setPlayingStoryId(null); previewAudioRef.current = null; };
  await audio.play();
@@ -110,7 +115,7 @@ export default function Library({ onNavigate, initialCategory }: LibraryProps) {
  setPlayingStoryId(storyId);
  } catch { if(epoch===previewEpochRef.current)toast("error","Chưa phát được đoạn nghe thử. Hãy thử lại."); }
  setLoadingAudio(null);
- }, [playingStoryId,toast]);
+ }, [playingStoryId,toast,sampleOwner]);
 
  const filtered = useMemo(() => {
  let result = stories.filter((s) => {

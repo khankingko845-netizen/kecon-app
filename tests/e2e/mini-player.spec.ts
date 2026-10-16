@@ -58,6 +58,7 @@ async function setup(page: Page, context: BrowserContext, baseURL: string, secon
 
 interface Media {
   id: number;
+  src: string;
   time: number;
   paused: boolean;
 }
@@ -66,7 +67,7 @@ const narration = (page: Page): Promise<Media[]> =>
   page.evaluate(() =>
     (window as unknown as { __media: (HTMLMediaElement & { __kid: number })[] }).__media
       .filter((m) => !m.src.includes("/audio/"))
-      .map((m) => ({ id: m.__kid, time: m.currentTime, paused: m.paused || m.ended })),
+      .map((m) => ({ id: m.__kid, src: m.src, time: m.currentTime, paused: m.paused || m.ended })),
   );
 const audible = async (page: Page) => (await narration(page)).filter((m) => !m.paused);
 
@@ -305,7 +306,8 @@ test("mở truyện khác hoặc vào Tạo khi trình nghe thu gọn đang đ�
   await page.getByRole("button", { name: "Phát", exact: true }).click();
   await expect.poll(async () => (await audible(page)).length).toBe(1);
   const [second] = await audible(page);
-  expect(second.id).not.toBe(first.id);
+  // The other story's narration — on the same shared element (iPhone needs one element for all pages).
+  expect(second.src).not.toBe(first.src);
   await back(page);
   await expect(mini).toContainText(OTHER);
   await expect(mini).toHaveAttribute("data-status", "playing");
