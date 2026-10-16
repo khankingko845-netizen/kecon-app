@@ -6,15 +6,27 @@ kecon-backup.timer, daily 03:15 Asia/Ho_Chi_Minh). Two branches:
 
   main          readable stories (story.json + README.md per story) with their
                 illustrations and narration audio, a story index, and —
-                encrypted — the parents' voice recordings and the server config.
+                encrypted — every private bucket (voice recordings, family
+                avatars, …) and the server config incl. the Vault root key.
   db-snapshots  encrypted full database dumps (pg_dump -Fc), rolling 7 daily +
                 4 weekly + 6 monthly, force-pushed as ONE orphan commit so the
                 repo does not grow by a full dump every day.
 
 Nothing secret leaves the server in clear text: the database (accounts,
-PIN hashes, provider keys), voice recordings and config are AES-256 encrypted
+PIN hashes, provider keys), private media and config are AES-256 encrypted
 with `gpg --symmetric` using BASE/passphrase. Story text, pictures and audio are
 plain so they can be read straight on GitHub.
+
+Provider API keys live in Supabase Vault (vault.secrets), encrypted with the
+DB container's pgsodium root key (/etc/postgresql-custom/pgsodium_root.key,
+written by the Supabase CLI when it creates the container). A dump restored on a
+server with another root key keeps the rows but cannot decrypt them, so the key
+in use is stored in server-config as srv/kecon/shared/pgsodium_root.key —
+supabase-stack.sh passes that file to the CLI (SUPABASE_DB_ROOT_KEY).
+Restoring needs the image superuser (supabase_admin): as `postgres` the Vault
+rows are refused ("permission denied for table secrets"). Restore steps and
+the server-migration runbook: README below / deploy/prized/README.md;
+kecon_restore.py does the DB + Storage part.
 
 Push credentials (BASE, chmod 600, never committed): `github-token` (fine-grained
 token with Contents read/write on the backup repo → HTTPS) or `deploy_key` (SSH
@@ -23,7 +35,9 @@ push time, so it never appears in a command line or in .git/config.
 
 Usage: kecon_backup.py [--no-push] [--verify-restore]
   --verify-restore  decrypt the newest DB snapshot, pg_restore it into a scratch
-                    database and compare row counts with the live database.
+                    database (as supabase_admin, with owners + privileges) and
+                    compare row counts and the decrypted Vault with the live DB;
+                    any pg_restore error fails the check.
 Exit: 0 ok · 3 local backup ok but push failed · 4 restore check failed · 1 error.
 """
 from __future__ import annotations
@@ -57,9 +71,12 @@ REMOTE = os.environ.get("KECON_BACKUP_REMOTE") or (
     f"https://github.com/{REPO_SLUG}.git" if TOKEN.exists() else f"git@github.com:{REPO_SLUG}.git")
 DB = os.environ.get("KECON_DB_CONTAINER", "supabase_db_kecon-staging")
 STORAGE = os.environ.get("KECON_STORAGE_CONTAINER", "supabase_storage_kecon-staging")
+SUPERUSER = os.environ.get("KECON_DB_SUPERUSER", "supabase_admin")  # superuser of the Supabase postgres image
+ROOT_KEY_FILE = "/etc/postgresql-custom/pgsodium_root.key"  # in the DB container (Vault/pgsodium root key)
+ROOT_KEY_ENTRY = "srv/kecon/shared/pgsodium_root.key"  # its place in server-config (= where supabase-stack.sh reads it)
 STORAGE_ROOT = "/mnt/stub/stub"  # file backend: <root>/<bucket>/<object name>/<version>
-PLAIN_BUCKETS = ("illustrations", "tts-cache")
-SECRET_BUCKETS = ("recordings",)
+PLAIN_BUCKETS = ("illustrations", "tts-cache")  # public story media → readable files in media/
+# Every other bucket (recordings, family-avatars, any new one) → encrypted/<bucket>.tar.gpg
 CONFIG_GLOBS = ["/srv/kecon/shared/*", "/etc/systemd/system/kecon*.service", "/etc/systemd/system/kecon*.timer",
                 "/srv/kecon/supabase-stack/supabase/config.toml"]
 KEEP_DAILY, KEEP_WEEKLY, KEEP_MONTHLY = 7, 4, 6
@@ -98,8 +115,8 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def psql(sql: str) -> str:
-    out = run(["docker", "exec", "-i", DB, "psql", "-U", "postgres", "-At", "-v", "ON_ERROR_STOP=1"], input=sql.encode())
+def psql(sql: str, db: str = "postgres", user: str = "postgres") -> str:
+    out = run(["docker", "exec", "-i", DB, "psql", "-U", user, "-d", db, "-At", "-v", "ON_ERROR_STOP=1"], input=sql.encode())
     return out.stdout.decode()
 
 
@@ -132,6 +149,7 @@ select coalesce(jsonb_agg(jsonb_build_object('bucket', bucket_id, 'name', name, 
   'size', (metadata->>'size')::bigint, 'mimetype', metadata->>'mimetype', 'updated_at', updated_at) order by bucket_id, name), '[]'::jsonb)
 from storage.objects where version is not null;
 """
+BUCKETS_SQL = "select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from storage.buckets;"
 STORAGE_URL = re.compile(r"/storage/v1/object/(?:public|sign|authenticated)/([^/?#]+)/([^?#]+)")
 
 
@@ -335,25 +353,49 @@ def encrypted_bundle(name: str, entries: list[tuple[str, bytes, int]], state: di
     return prev
 
 
-def secret_entries(objs: list[dict]) -> list[tuple[str, bytes, int]]:
-    paths = [f"{o['bucket']}/{o['name']}/{o['version']}" for o in objs if o["bucket"] in SECRET_BUCKETS]
+def private_buckets(buckets: list[str], objs: list[dict]) -> list[str]:
+    """Buckets that go into encrypted bundles: everything that is not plain story media (recordings always)."""
+    return sorted(({*buckets, *(o["bucket"] for o in objs), "recordings"}) - set(PLAIN_BUCKETS))
+
+
+def secret_entries(objs: list[dict], bucket: str) -> list[tuple[str, bytes, int]]:
+    """Tar entries '<bucket>/<object name>' (newest version) for one private bucket."""
+    paths = [f"{o['bucket']}/{o['name']}/{o['version']}" for o in objs if o["bucket"] == bucket]
     out = []
     for path, data in storage_tar(paths):
         out.append((path.rsplit("/", 1)[0], data, 0o600))
     if len(out) != len(paths):
-        raise RuntimeError(f"recordings: copied {len(out)} of {len(paths)}")
+        raise RuntimeError(f"{bucket}: copied {len(out)} of {len(paths)}")
     return out
 
 
-def config_entries() -> list[tuple[str, bytes, int]]:
+def db_root_key() -> bytes:
+    """The pgsodium/Vault root key the running DB container uses (64 hex chars)."""
+    key = run(["docker", "exec", DB, "cat", ROOT_KEY_FILE]).stdout.strip()
+    if not re.fullmatch(rb"[0-9a-f]{64}", key):
+        raise RuntimeError(f"unexpected root key format in {DB}:{ROOT_KEY_FILE}")
+    return key
+
+
+def config_entries(root_key: bytes) -> list[tuple[str, bytes, int]]:
+    """Server config files + the root key in use (overrides a pinned copy in /srv/kecon/shared)."""
     import glob
-    out = []
+    out = [(ROOT_KEY_ENTRY, root_key + b"\n", 0o600)]
     for pattern in CONFIG_GLOBS:
         for f in sorted(glob.glob(pattern)):
             p = Path(f)
-            if p.is_file():
+            if p.is_file() and p.as_posix().lstrip("/") != ROOT_KEY_ENTRY:
                 out.append((p.as_posix().lstrip("/"), p.read_bytes(), 0o600))
     return out
+
+
+def root_key_pinned(root_key: bytes) -> bool:
+    """True when /srv/kecon/shared/pgsodium_root.key holds the key in use (stack recreation keeps Vault readable)."""
+    p = Path("/") / ROOT_KEY_ENTRY
+    try:
+        return p.read_bytes().strip() == root_key
+    except OSError:
+        return False
 
 
 # --------------------------------------------------------------- database ---
@@ -416,36 +458,59 @@ select json_object_agg(t, n order by t) from (
   select 'public.stories', count(*) from public.stories union all
   select 'public.story_pages', count(*) from public.story_pages union all
   select 'public.play_sessions', count(*) from public.play_sessions union all
-  select 'storage.objects', count(*) from storage.objects) x;
+  select 'storage.objects', count(*) from storage.objects union all
+  select 'vault.secrets', count(*) from vault.secrets) x;
 """
+# Decrypted Vault: count, how many decrypt, and a digest of name:md5(secret) (compared in memory, never written out).
+VAULT_SQL = r"""
+select json_build_object('secrets', count(*), 'decrypted', count(decrypted_secret),
+  'digest', md5(coalesce(string_agg(coalesce(name, id::text) || ':' || md5(coalesce(decrypted_secret, '')), ','
+                                    order by coalesce(name, id::text)), '')))
+from vault.decrypted_secrets;
+"""
+TABLES_SQL = "select count(*) from pg_tables where schemaname in ('public','auth','storage');"
 
 
-def psql_db(db: str, sql: str) -> str:
-    return run(["docker", "exec", "-i", DB, "psql", "-U", "postgres", "-d", db, "-At", "-v", "ON_ERROR_STOP=1"],
-               input=sql.encode()).stdout.decode()
+def vault_state(db: str = "postgres") -> dict:
+    try:
+        return json.loads(psql(VAULT_SQL, db, SUPERUSER))
+    except subprocess.CalledProcessError as e:  # e.g. wrong root key → decrypt error
+        return {"error": (e.stderr or b"").decode().strip().splitlines()[-1:] or ["psql failed"]}
 
 
-def verify_restore(meta: dict, live: dict) -> dict:
-    """Decrypt a snapshot, pg_restore it into a scratch database and compare row counts with `live`."""
+def restore_verdict(rows: dict, live: dict, tables: int, errors: list[str], vault: dict, live_vault: dict) -> dict:
+    """Restore check result. ok only if rows match, the Vault decrypts to the same secrets and pg_restore had no error."""
+    vault_ok = ("error" not in vault and "error" not in live_vault and vault.get("secrets") == live_vault.get("secrets")
+                and vault.get("decrypted") == vault.get("secrets") and vault.get("digest") == live_vault.get("digest"))
+    return {"ok": rows == live and tables >= 50 and not errors and vault_ok, "tables": tables, "rows": rows,
+            "live_rows_at_dump": live, "pg_restore_errors": len(errors), "first_errors": errors[:3],
+            "vault": {"secrets": vault.get("secrets"), "decrypted": vault.get("decrypted"), "match": vault_ok,
+                      **({"error": vault.get("error") or live_vault.get("error")} if not vault_ok else {})}}
+
+
+def verify_restore(meta: dict, live: dict, live_vault: dict) -> dict:
+    """Decrypt a snapshot, restore it like a migration would (supabase_admin, owners + privileges, empty template0
+    database) and compare row counts + the decrypted Vault with the live values taken right before the dump."""
     plain = TMP / "verify-restore.dump"
     TMP.mkdir(mode=0o700, exist_ok=True)
     try:
         decrypt_to(SNAPS / meta["file"], plain)
         if sha256(plain.read_bytes()) != meta["plain_sha256"]:
             return {"ok": False, "error": "decrypted dump does not match its sha256"}
-        psql(f"drop database if exists {VERIFY_DB};")
-        psql(f"create database {VERIFY_DB};")
+        psql(f"drop database if exists {VERIFY_DB} with (force);", user=SUPERUSER)
+        psql(f"create database {VERIFY_DB} template template0;", user=SUPERUSER)
         with open(plain, "rb") as fh:
-            r = subprocess.run(["docker", "exec", "-i", DB, "pg_restore", "-U", "postgres", "-d", VERIFY_DB,
-                                "--no-owner", "--no-privileges"], stdin=fh, capture_output=True)
+            r = subprocess.run(["docker", "exec", "-i", DB, "pg_restore", "-U", SUPERUSER, "-d", VERIFY_DB],
+                               stdin=fh, capture_output=True)
         errors = [ln for ln in r.stderr.decode().splitlines() if "error:" in ln]
-        restored = json.loads(psql_db(VERIFY_DB, COUNT_SQL))
-        tables = int(psql_db(VERIFY_DB, "select count(*) from pg_tables where schemaname in ('public','auth','storage');"))
-        return {"ok": restored == live and tables >= 50, "tables": tables, "rows": restored,
-                "live_rows_at_dump": live, "pg_restore_errors": len(errors), "first_errors": errors[:3]}
+        if r.returncode != 0 and not errors:
+            errors = [f"pg_restore exit {r.returncode}"]
+        restored = json.loads(psql(COUNT_SQL, VERIFY_DB, SUPERUSER))
+        tables = int(psql(TABLES_SQL, VERIFY_DB, SUPERUSER))
+        return restore_verdict(restored, live, tables, errors, vault_state(VERIFY_DB), live_vault)
     finally:
         plain.unlink(missing_ok=True)
-        psql(f"drop database if exists {VERIFY_DB};")
+        psql(f"drop database if exists {VERIFY_DB} with (force);", user=SUPERUSER)
 
 
 # -------------------------------------------------------------------- git ---
@@ -505,15 +570,18 @@ README = """# KểCon — bản sao lưu (repo riêng tư)
 
 Máy chủ staging tự sao lưu lên đây mỗi ngày lúc 03:15 (giờ Việt Nam) bằng `tools/kecon_backup.py`
 (bản gốc: `deploy/prized/backup/` trong repo app; systemd `kecon-backup.timer`). Lần chạy gần nhất: **{when}**.
-Mỗi lần chạy đều giải mã bản chụp DB mới nhất và khôi phục thử vào một database tạm để chắc là dùng được.
+Mỗi lần chạy đều giải mã bản chụp DB mới nhất và **khôi phục thử như khi chuyển máy** (user `supabase_admin`, giữ
+owner + quyền, vào database trống), so số dòng và giải mã lại Vault (key nhà cung cấp AI) với DB thật; chỉ cần một
+lỗi `pg_restore` là báo hỏng (`manifest.json` → `restore_check`).
 
 | Phần | Ở đâu | Dạng |
 | --- | --- | --- |
 | Truyện ({stories} truyện, {family} truyện gia đình) | [`stories/`](stories/README.md) | đọc được: `README.md` + `story.json` (mọi cột) |
-| Tranh + audio của truyện ({media_files} file, {media_mb} MB) | `media/<bucket>/<đường dẫn trong Storage>` | file gốc, `media/manifest.json` ghi sha256 |
-| Ghi âm giọng bố mẹ ({rec_files} file) | `encrypted/recordings.tar.gpg` | **mã hoá** AES-256 |
-| Cấu hình máy chủ (.env, secrets, systemd) | `encrypted/server-config.tar.gpg` | **mã hoá** AES-256 |
-| Toàn bộ cơ sở dữ liệu (tài khoản, hộ, nhiệm vụ, …) | nhánh [`db-snapshots`](../../tree/db-snapshots) | **mã hoá** AES-256, 7 ngày + 4 tuần + 6 tháng |
+| Tranh + audio của truyện ({media_files} file, {media_mb} MB) | `media/<bucket>/<đường dẫn trong Storage>` | file gốc, `media/manifest.json` ghi version + sha256 |
+| Bucket riêng tư (ghi âm bố mẹ, ảnh đại diện gia đình…) | {private} | **mã hoá** AES-256 |
+| Cấu hình máy chủ (`/srv/kecon/shared`: .env, secrets, **khoá gốc Vault**; systemd; `config.toml`) | `encrypted/server-config.tar.gpg` | **mã hoá** AES-256 |
+| Toàn bộ cơ sở dữ liệu (tài khoản, hộ, nhiệm vụ, Vault, …) | nhánh [`db-snapshots`](../../tree/db-snapshots) | **mã hoá** AES-256, 7 ngày + 4 tuần + 6 tháng |
+| Công cụ | `tools/kecon_backup.py`, `tools/kecon_restore.py` | Python 3, chỉ cần Docker |
 
 ## Giải mã
 
@@ -521,25 +589,45 @@ Cần **mật khẩu sao lưu** (bố mẹ/chủ dự án giữ; trên máy ch�
 Không có mật khẩu thì phần mã hoá **không thể** khôi phục — phần truyện/tranh/audio vẫn đọc được bình thường.
 
 ```bash
-gpg --decrypt encrypted/recordings.tar.gpg > recordings.tar      # hỏi mật khẩu
-gpg --decrypt db-YYYYMMDDTHHMMSSZ.dump.gpg > kecon.dump          # file ở nhánh db-snapshots
+gpg --decrypt encrypted/server-config.tar.gpg > server-config.tar   # hỏi mật khẩu
+gpg --decrypt encrypted/recordings.tar.gpg > recordings.tar           # mỗi bucket riêng tư một file
+gpg --decrypt db-YYYYMMDDTHHMMSSZ.dump.gpg > kecon.dump               # file ở nhánh db-snapshots
 ```
 
-## Khôi phục cơ sở dữ liệu
+## Chuyển sang máy mới (khôi phục toàn bộ)
+
+Dump là `pg_dump -Fc` của database `postgres` trong Supabase (cả schema `auth`, `storage`, `vault`, `public`).
+Khôi phục vào stack Supabase CLI **cùng phiên bản** (Postgres {pg}; image DB `{db_image}`, Storage
+`{storage_image}` — `manifest.json` → `images`). Hai điều dễ sai: (1) phải khôi phục bằng **`supabase_admin`** —
+bằng `postgres` thì Vault bị từ chối (`permission denied for table secrets`) và mất key AI; (2) stack mới phải dùng
+**cùng khoá gốc Vault** (`srv/kecon/shared/pgsodium_root.key` trong server-config) — khoá khác thì Vault còn dòng
+nhưng không giải mã được. File Storage phải nằm đúng `<bucket>/<tên>/<version>` và có content-type, nếu không
+Storage trả `application/octet-stream`; `tools/kecon_restore.py` lo cả hai việc.
 
 ```bash
-pg_restore -l kecon.dump | head                                   # xem mục lục
-createdb -U postgres kecon_restore
-pg_restore -U postgres -d kecon_restore --no-owner --no-privileges kecon.dump
+# 0. Lấy bản sao lưu + giải mã (mục trên): server-config.tar, <bucket>.tar, kecon.dump (bản mới nhất ở db-snapshots)
+umask 077   # file giải mã chỉ user hiện tại đọc được
+git clone https://github.com/khankingko845-netizen/kecon-backup.git && cd kecon-backup
+git fetch origin db-snapshots && git show origin/db-snapshots:db-YYYYMMDDTHHMMSSZ.dump.gpg | gpg --decrypt > kecon.dump
+# 1. Máy mới: sudo bash deploy/prized/setup-server.sh (repo app), đăng nhập lại
+# 2. TRƯỚC bootstrap — cấu hình cũ: cùng jwt secret + khoá API (phiên đăng nhập giữ nguyên), key AI, khoá gốc Vault
+mkdir -p /tmp/kc-config && tar -xf server-config.tar -C /tmp/kc-config
+install -d -m 700 /srv/kecon/shared && install -m 600 /tmp/kc-config/srv/kecon/shared/* /srv/kecon/shared/
+rm -f /srv/kecon/shared/public-url /srv/kecon/shared/release   # URL tunnel + release của máy mới tự sinh
+# 3. bootstrap.sh như máy mới (deploy/prized/README.md) → stack Supabase tạo với khoá gốc cũ
+# 4. Dừng app, thay DB, chép file Storage
+sudo systemctl stop kecon-web kecon-backup.timer kecon-parent-notify.timer
+python3 tools/kecon_restore.py db kecon.dump --yes --root-key /srv/kecon/shared/pgsodium_root.key
+python3 tools/kecon_restore.py media . --private recordings.tar   # thêm --private <bucket>.tar cho mỗi bucket riêng tư
+# 5. Migration mới hơn bản sao lưu (nếu có), bật lại app + timer
+bash /srv/kecon/current/deploy/prized/deploy.sh /tmp/kecon-<sha>.tar.gz <sha>
 ```
 
-Dump lấy bằng `pg_dump -Fc` của database `postgres` trong Supabase (gồm cả schema `auth`, `storage`, `public`).
-Nên khôi phục vào một Supabase cùng phiên bản (Postgres {pg}) rồi chép lại `media/` vào Storage đúng bucket + đường dẫn.
-
-## Khôi phục file Storage
-
-`media/illustrations/…` và `media/tts-cache/…` giữ nguyên tên object; tải lại vào đúng bucket cùng tên.
-Ghi âm: giải mã `recordings.tar` → `recordings/<đường dẫn>` → bucket `recordings`.
+`kecon_restore.py db` dừng các container khác của stack, `DROP DATABASE postgres WITH (FORCE)`, `pg_restore --create`
+bằng `supabase_admin`, bật lại container rồi in số dòng + số secret Vault giải mã được (exit 4 nếu có lỗi). Nó từ
+chối nếu DB đang có tài khoản (chống chạy nhầm trên máy đang dùng) trừ khi thêm `--replace-existing`, và dừng ngay
+nếu `--root-key` khác khoá stack đang dùng. Xong thì đăng nhập bằng một tài khoản cũ và nghe thử một truyện.
+Unit systemd + `config.toml` trong server-config chỉ để đối chiếu — `install-units.sh`/`supabase-stack.sh` tự tạo lại.
 """
 
 
@@ -565,28 +653,41 @@ def main() -> int:
     stories = export_stories(objects)
     family = sum(1 for s in stories if story_group(s) == "gia-dinh")
     log(f"stories: {len(stories)} ({family} family)")
-    rec = secret_entries(objs)
-    state["recordings"] = encrypted_bundle("recordings", rec, state)
-    state["server-config"] = encrypted_bundle("server-config", config_entries(), state)
+    private = {}
+    for bucket in private_buckets(json.loads(psql(BUCKETS_SQL)), objs):
+        state[bucket] = encrypted_bundle(bucket, secret_entries(objs, bucket), state)
+        private[bucket] = state[bucket]["files"]
+    log(f"private buckets (encrypted): {private}")
+    root_key = db_root_key()
+    state["server-config"] = encrypted_bundle("server-config", config_entries(root_key), state)
     write_if_changed(state_path, (json.dumps(state, indent=1, sort_keys=True) + "\n").encode())
-    live = json.loads(psql(COUNT_SQL))  # counted right before the dump (staging is quiet at 03:15)
+    live = json.loads(psql(COUNT_SQL, user=SUPERUSER))  # counted right before the dump (staging is quiet at 03:15)
+    live_vault = vault_state()
     snap = db_snapshot()
     log(f"db snapshot: {snap['file']} {snap['plain_bytes']} bytes, {snap['table_data_entries']} tables with data")
-    restore = verify_restore(snap, live) if a.verify_restore else None
+    restore = verify_restore(snap, live, live_vault) if a.verify_restore else None
     if restore is not None:
         log(f"restore check: {json.dumps(restore, ensure_ascii=False)}")
     snaps = prune_snapshots()
 
     pg = psql("show server_version;").strip()
+    images = {c: run(["docker", "inspect", "-f", "{{.Config.Image}}", c], check=False).stdout.decode().strip() or None
+              for c in (DB, STORAGE)}
     tools = REPO / "tools"
     tools.mkdir(exist_ok=True)
     write_if_changed(tools / "kecon_backup.py", Path(__file__).read_bytes())
+    restore_tool = Path(__file__).with_name("kecon_restore.py")
+    if restore_tool.exists():
+        write_if_changed(tools / "kecon_restore.py", restore_tool.read_bytes())
     summary = {"last_run": STAMP, "stories": len(stories), "family_stories": family, "media": media,
-               "recordings": state["recordings"]["files"], "db_snapshots": [s["file"] for s in snaps], "postgres": pg,
-               "restore_check": None if restore is None else {k: restore.get(k) for k in ("ok", "tables", "rows", "pg_restore_errors")}}
+               "recordings": state["recordings"]["files"], "private_buckets": private,
+               "db_snapshots": [s["file"] for s in snaps], "postgres": pg, "images": images,
+               "db_root_key": {"in_server_config": ROOT_KEY_ENTRY, "pinned_on_server": root_key_pinned(root_key)},
+               "restore_check": None if restore is None else {k: restore.get(k) for k in ("ok", "tables", "rows", "pg_restore_errors", "vault")}}
     (REPO / "README.md").write_text(README.format(when=f"{NOW.astimezone(VN):%Y-%m-%d %H:%M}", stories=len(stories), family=family,
                                                   media_files=media["files"], media_mb=f"{media['bytes'] / 1e6:.0f}",
-                                                  rec_files=state["recordings"]["files"], pg=pg))
+                                                  private=", ".join(f"`encrypted/{b}.tar.gpg` ({n} file)" for b, n in private.items()),
+                                                  pg=pg, db_image=images[DB] or "?", storage_image=images[STORAGE] or "?"))
     write_if_changed(REPO / "manifest.json", (json.dumps(summary, indent=1, ensure_ascii=False) + "\n").encode())
     git(REPO, "add", "-A")
     if run(["git", "-C", str(REPO), "diff", "--cached", "--quiet"], check=False).returncode != 0:
