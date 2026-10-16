@@ -1004,8 +1004,15 @@ def tick(verify: bool) -> int:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         return 0  # a backup is running and reports its own progress
-    token, source = load_token()
-    poll = db_json("select public.backup_worker_poll(:'p'::jsonb);", p=json.dumps(worker_state(source, "tick"), ensure_ascii=False))
+    try:
+        token, source = load_token()
+        poll = db_json("select public.backup_worker_poll(:'p'::jsonb);", p=json.dumps(worker_state(source, "tick"), ensure_ascii=False))
+    except subprocess.CalledProcessError as e:
+        if b"does not exist" in (e.stderr or b""):  # deploy: units + code are in place before migration 040 ran
+            log("Admin › Sao lưu chưa có trong DB (migration 040 chưa chạy) — bỏ qua lượt này")
+            return 0
+        log(f"không đọc được DB: {error_text(e, None)}")  # DB down / restarting: no traceback, next tick retries
+        return 1
     (BASE / ".runs-in-db").touch()
     apply_settings(poll.get("settings"))
     claimed = poll.get("run")

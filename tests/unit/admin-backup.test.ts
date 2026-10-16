@@ -220,6 +220,11 @@ describe("thông báo cho nhân sự", () => {
     expect(backupRpcError({ code: "22023", message: "Invalid token format" })).toContain("github_pat_");
     expect(backupRpcError({ code: "22023", message: "Invalid retention" })).toContain("3–30");
     expect(backupRpcError({ code: "XX000", message: "internal secret detail" })).not.toContain("secret");
+    // e.g. pg-safeupdate (21000) on the real stack: a server error, not "check the network"
+    expect(backupRpcError({ code: "21000", message: "UPDATE requires a WHERE clause" })).toBe(
+      "Máy chủ báo lỗi (mã 21000), chưa có gì thay đổi. Thử lại sau; nếu vẫn lỗi, báo đội kỹ thuật kèm mã này.",
+    );
+    expect(backupRpcError(null)).toContain("Kiểm tra mạng");
   });
 
   it("báo khi một lần chạy vừa xong (kể cả yêu cầu bị từ chối ngay)", () => {

@@ -1,6 +1,6 @@
 # Admin › Sao lưu
 
-Migration `040_admin_backup.sql`, trang `/admin/backup`, worker `deploy/prized/backup/kecon_backup.py --tick`.
+Migration `040_admin_backup.sql` (+ `041_admin_backup_where.sql`), trang `/admin/backup`, worker `deploy/prized/backup/kecon_backup.py --tick`.
 Bổ sung (không xoá gì): quyền `backups.manage`, bảng `backup_settings` / `backup_requests` / `backup_runs` / `backup_worker`
 (RLS bật, không policy, `REVOKE ALL`: chỉ đọc/ghi qua RPC), 2 trigger audit.
 
@@ -51,10 +51,15 @@ Bổ sung (không xoá gì): quyền `backups.manage`, bảng `backup_settings` 
 
 ## Deploy / khôi phục
 
-1. Sao lưu DB trước 040; thử 040 trong `BEGIN … ROLLBACK` trên staging.
+1. Sao lưu DB trước 040/041; thử migration trong `BEGIN … ROLLBACK` trên staging.
+   041 sửa 040: Supabase bật **pg-safeupdate** cho phiên API (`authenticator`) nên `UPDATE`/`DELETE` thiếu `WHERE` bị từ chối
+   ("UPDATE requires a WHERE clause"), kể cả trong hàm SECURITY DEFINER → lưu lịch / token lỗi trên stack thật dù test PGlite
+   xanh. 041 thêm `WHERE id` (khoá chính boolean của dòng duy nhất); `tests/db/migrations.test.ts` kiểm mọi hàm `public`.
 2. `deploy.sh` chạy migration rồi **luôn** `enable` + `restart kecon-backup.timer` (timer 2 phút, `AccuracySec=15s`).
    Tick vẫn chạy khi máy chủ thiếu cấu hình: thiếu passphrase → không sao lưu, trang báo đỏ; thiếu token / deploy key →
    bản chụp chỉ nằm trên máy chủ, lượt chạy báo "đẩy lên GitHub lỗi".
+   Trong lúc deploy (code + unit đã thay, migration chưa chạy) tick chỉ ghi một dòng log và bỏ qua; DB đang khởi động lại →
+   exit 1 với một dòng log, lượt sau tự thử lại.
 3. Lượt tick đầu tiên chép `last-run.json` của job hằng ngày cũ thành một dòng lịch sử ("trên máy chủ"), nên nếu hôm nay đã
    sao lưu thì không chạy lại ngay.
 4. Kiểm tra bằng tài khoản QA riêng (TOTP): trang hiển thị đúng, token giả bị từ chối và không lưu, lưu token thật → máy chủ
@@ -66,7 +71,7 @@ Chạy tay trên máy chủ vẫn được: `kecon_backup.py --verify-restore` (
 
 ## Kiểm thử
 
-DB (`tests/db/admin-backup.test.ts`): quyền + TOTP, RLS chặn đọc/ghi trực tiếp, lịch (mốc, đổi giờ, thử lại, giờ VN), yêu cầu
+DB (`tests/db/admin-backup.test.ts`; `migrations.test.ts`: mọi `UPDATE`/`DELETE` trong hàm có `WHERE`): quyền + TOTP, RLS chặn đọc/ghi trực tiếp, lịch (mốc, đổi giờ, thử lại, giờ VN), yêu cầu
 (1 mở, 3/giờ, hết hạn), poll/progress/finish, lượt bị gián đoạn, nhập lịch sử cũ, chế độ cli/peek, token trong Vault, kết quả
 kiểm tra token chỉ giữ trường đã biết, audit. Unit: thư viện (`admin-backup.test.ts`: cảnh báo, giữ bản — cùng quy tắc với
 Python, định dạng), API token (`admin-backup-route.test.ts`), deploy + worker (`deploy-prized.test.ts`). E2E

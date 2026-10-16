@@ -94,6 +94,28 @@ describe("migrations", () => {
     expect(rows.map((r) => r.table)).toEqual([]);
   });
 
+  it("mọi UPDATE / DELETE trong hàm public đều có WHERE (Supabase bật pg-safeupdate cho API, kể cả trong SECURITY DEFINER)", async () => {
+    // PGlite has no safeupdate, so check the function bodies: on the real stack an UPDATE of a
+    // single-row table without WHERE fails with "UPDATE requires a WHERE clause" (040 → 041).
+    const { rows } = await db.query<{ name: string; src: string }>(
+      `SELECT p.oid::regprocedure::text AS name, p.prosrc AS src FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace JOIN pg_language l ON l.oid = p.prolang
+        WHERE n.nspname = 'public' AND l.lanname IN ('plpgsql', 'sql') ORDER BY 1`
+    );
+    expect(rows.length).toBeGreaterThan(50);
+    const offenders = rows.flatMap(({ name, src }) =>
+      src
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .replace(/--[^\n]*/g, " ")
+        .replace(/'(?:[^']|'')*'/g, "''")
+        .split(";")
+        .map((stmt) => stmt.replace(/\bDO\s+UPDATE\s+SET\b/gi, "DO NOTHING")) // INSERT … ON CONFLICT is not checked
+        .filter((stmt) => /\bUPDATE\s+(?:ONLY\s+)?[\w."]+(?:\s+(?:AS\s+)?\w+)?\s+SET\b|\bDELETE\s+FROM\b/i.test(stmt) && !/\bWHERE\b/i.test(stmt))
+        .map((stmt) => `${name}: ${stmt.replace(/\s+/g, " ").trim().slice(0, 120)}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("đăng ký user mới tạo profile mặc định role=user, gói free", async () => {
     const uid = await createUser();
     expect(await profile(uid)).toMatchObject({ role: "user", current_plan: "free" });
