@@ -61,6 +61,10 @@ export const AUDIT_ACTIONS = {
   "voice.import": "Thêm giọng thư viện vào tài khoản",
   "voice.lookup": "Tra cứu giọng ElevenLabs",
   "push.send": "Gửi thông báo đẩy",
+  "backup.settings_update": "Đổi lịch / số bản giữ lại của sao lưu",
+  "backup.token_set": "Đổi token GitHub sao lưu",
+  "backup.token_check": "Kiểm tra token GitHub sao lưu",
+  "backup.run_request": "Yêu cầu sao lưu ngay",
 } as const;
 export type AuditAction = keyof typeof AUDIT_ACTIONS;
 
@@ -78,6 +82,7 @@ export const AUDIT_TARGET_LABELS: Record<string, string> = {
   provider_key: "Key giọng nói",
   voice: "Giọng",
   push: "Thông báo",
+  backup: "Sao lưu",
 };
 
 export function auditActionLabel(action: string): string {

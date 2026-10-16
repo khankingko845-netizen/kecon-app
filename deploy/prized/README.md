@@ -19,7 +19,7 @@ Trình duyệt ──https──▶ Cloudflare tunnel ──▶ Caddy 127.0.0.1:
 | `kecon-proxy` | Caddy theo `Caddyfile` — app và Supabase API chung một origin |
 | `kecon-web` | `run-web.sh`: chờ URL tunnel, copy `.next-template` → `.next`, thay placeholder `kecon-public-origin.invalid` / `kecon-anon-key-placeholder`, rồi `next start` |
 | `kecon-urlwatch.timer` | Mỗi phút: tunnel đổi URL (khởi động lại máy) → restart `kecon-web` |
-| `kecon-backup.timer` | 03:15 giờ VN mỗi ngày (máy tạm dừng thì chạy bù khi thức): `backup/kecon_backup.py --verify-restore` → repo GitHub riêng tư `kecon-backup` (xem dưới) |
+| `kecon-backup.timer` | Mỗi 2 phút: `backup/kecon_backup.py --tick --verify-restore` — nhịp tim cho Admin › Sao lưu, nhận "Sao lưu ngay" hoặc lịch hằng ngày (mặc định 03:15 giờ VN; máy tắt đúng giờ thì chạy khi bật lại) → repo GitHub riêng tư `kecon-backup` (xem dưới) |
 
 Unit dùng `User=@KECON_USER@`: `install-units.sh` (bootstrap/deploy gọi) thay bằng **chủ sở hữu `/srv/kecon`**
 — tức user đã chạy `setup-server.sh` (vd. `doppel`, `longca`) — nên máy mới với tên user khác không phải sửa unit.
@@ -59,6 +59,10 @@ journalctl -u kecon-web -f                        # log app
 
 ## Sao lưu GitHub (hằng ngày)
 
+Giờ chạy, số bản giữ lại, "Sao lưu ngay" và token GitHub đặt ở **Admin › Sao lưu** (`docs/admin-backup.md`): web chỉ ghi
+DB, timer 2 phút đọc và chạy rồi báo kết quả. Token lưu từ trang admin nằm trong Vault và được máy chủ chép sang
+`github-token` (chmod 600). Repo sao lưu, passphrase và deploy key **chỉ đặt trên máy chủ** — không có trên web.
+
 `backup/kecon_backup.py` đẩy lên repo **riêng tư** `khankingko845-netizen/kecon-backup`: nhánh `main` có truyện
 đọc được (README + `story.json`), tranh + audio gốc, mọi bucket riêng tư (ghi âm bố mẹ, ảnh đại diện…) và cấu hình
 máy chủ kèm khoá gốc Vault (**mã hoá** AES-256); nhánh `db-snapshots` có `pg_dump` toàn bộ DB (**mã hoá**, 7 ngày +
@@ -71,9 +75,10 @@ openssl rand -base64 32 > $B/passphrase    # mật khẩu mã hoá — GIỮ M�
 # quyền đẩy (chọn 1): token fine-grained chỉ repo kecon-backup, Contents: Read and write …
 cat > $B/github-token                      # dán token, Ctrl-D (không đưa token vào lệnh/lịch sử shell)
 # … hoặc khoá SSH deploy key có quyền ghi: $B/deploy_key
-python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --verify-restore   # chạy thử lần đầu
-sudo systemctl enable --now kecon-backup.timer   # deploy.sh tự bật khi đã có passphrase + quyền đẩy
+python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --verify-restore   # chạy thử lần đầu (ghi lịch sử "Trên máy chủ")
+sudo systemctl enable --now kecon-backup.timer   # deploy.sh luôn bật + restart (tick 2 phút; thiếu cấu hình thì trang admin báo đỏ)
 cat $B/last-run.json                             # kết quả lần chạy gần nhất (exit 3 = đẩy lỗi, 4 = khôi phục thử lỗi)
+sudo journalctl -u kecon-backup.service -n 50    # log của các tick
 ```
 
 ## Chuyển sang máy mới (khôi phục từ bản sao lưu)
@@ -100,6 +105,7 @@ qua REST với JWT người dùng, 683/683 file Storage đúng sha256 + content-
 
 - URL `trycloudflare.com` đổi khi máy/tunnel khởi động lại và không có SLA → production cần domain riêng
   (Cloudflare named tunnel hoặc mở cổng 443 + Caddy TLS).
-- Postgres/Supabase chạy trên cùng máy; sao lưu ra ngoài **1 lần/ngày** (sự cố có thể mất tối đa ~1 ngày dữ liệu).
+- Postgres/Supabase chạy trên cùng máy; sao lưu ra ngoài **1 lần/ngày** theo lịch (sự cố có thể mất tối đa ~1 ngày dữ liệu;
+  trước thay đổi lớn bấm "Sao lưu ngay" ở Admin › Sao lưu).
 - Máy prized.dev dùng credit miễn phí: hết credit là máy dừng và **không đánh thức được** (tháng 10/2026 mất máy `lime`
   cùng toàn bộ dữ liệu vì khi đó chưa có bản sao lưu ngoài máy). Theo dõi credit; dữ liệu khôi phục từ repo backup.

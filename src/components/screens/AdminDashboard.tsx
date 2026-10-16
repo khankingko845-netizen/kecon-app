@@ -1,5 +1,6 @@
 "use client";
 import MeasurementPanel from "@/components/admin/MeasurementPanel";
+import BackupAlert from "@/components/admin/BackupAlert";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -23,6 +24,7 @@ import {
   X,
   Settings,
   FolderOpen,
+  HardDrive,
   History,
 } from "@/components/ui/icons";
 import { AdminHeader as TopBar } from "@/components/admin/AdminUi";
@@ -173,6 +175,7 @@ export default function AdminDashboard({
     <div className="min-h-screen bg-surface  pb-10">
       <TopBar title="Quản Trị" onBack={onBack} />
 
+      {canOpen("admin-backup") && <BackupAlert onOpen={() => onNavigate("admin-backup")} />}
       {canOpen("admin-analytics") && <MeasurementPanel/>}
       {loading ? (
         <div className="flex justify-center pt-20">
@@ -235,6 +238,12 @@ export default function AdminDashboard({
                 label: "Cài Đặt",
                 screen: "admin-settings" as Screen,
                 color: "text-orange-600 bg-orange-50",
+              },
+              {
+                icon: HardDrive,
+                label: "Sao lưu",
+                screen: "admin-backup" as Screen,
+                color: "text-sky-800 bg-sky-50",
               },
               {
                 icon: History,

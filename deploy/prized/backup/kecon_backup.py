@@ -2,7 +2,9 @@
 """KểCon → GitHub backup (private repo khankingko845-netizen/kecon-backup).
 
 Runs on the staging server as the app user (deploy/prized/backup: systemd
-kecon-backup.timer, daily 03:15 Asia/Ho_Chi_Minh). Two branches:
+kecon-backup.timer ticks every 2 minutes; the daily time — 03:15
+Asia/Ho_Chi_Minh by default — and the snapshots kept are set in Admin › Sao lưu,
+migration 040). Two branches:
 
   main          readable stories (story.json + README.md per story) with their
                 illustrations and narration audio, a story index, and —
@@ -32,8 +34,14 @@ Push credentials (BASE, chmod 600, never committed): `github-token` (fine-graine
 token with Contents read/write on the backup repo → HTTPS) or `deploy_key` (SSH
 deploy key with write access). The token is read by a git credential helper at
 push time, so it never appears in a command line or in .git/config.
+A token saved in Admin › Sao lưu lives in Supabase Vault; each tick copies it
+to `github-token` (chmod 600) when it differs, so the Vault copy wins.
 
-Usage: kecon_backup.py [--no-push] [--verify-restore]
+Usage: kecon_backup.py [--tick] [--no-push] [--verify-restore]
+  --tick            what the timer runs: heartbeat to the DB, pick up a
+                    "Sao lưu ngay" request or the daily slot, re-check the
+                    GitHub token every 6 h; exits at once when nothing is due.
+                    Without --tick the backup runs now (recorded as "trên máy chủ").
   --verify-restore  decrypt the newest DB snapshot, pg_restore it into a scratch
                     database (as supabase_admin, with owners + privileges) and
                     compare row counts and the decrypted Vault with the live DB;
@@ -43,6 +51,7 @@ Exit: 0 ok · 3 local backup ok but push failed · 4 restore check failed · 1 e
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import fcntl
 import hashlib
@@ -56,6 +65,8 @@ import sys
 import tarfile
 import tempfile
 import unicodedata
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 BASE = Path(os.environ.get("KECON_BACKUP_BASE", "/srv/kecon/backup-github"))
@@ -67,8 +78,6 @@ PASSPHRASE = BASE / "passphrase"
 GNUPGHOME = BASE / "gnupg"
 TOKEN = BASE / "github-token"
 REPO_SLUG = os.environ.get("KECON_BACKUP_REPO", "khankingko845-netizen/kecon-backup")
-REMOTE = os.environ.get("KECON_BACKUP_REMOTE") or (
-    f"https://github.com/{REPO_SLUG}.git" if TOKEN.exists() else f"git@github.com:{REPO_SLUG}.git")
 DB = os.environ.get("KECON_DB_CONTAINER", "supabase_db_kecon-staging")
 STORAGE = os.environ.get("KECON_STORAGE_CONTAINER", "supabase_storage_kecon-staging")
 SUPERUSER = os.environ.get("KECON_DB_SUPERUSER", "supabase_admin")  # superuser of the Supabase postgres image
@@ -79,19 +88,39 @@ PLAIN_BUCKETS = ("illustrations", "tts-cache")  # public story media → readabl
 # Every other bucket (recordings, family-avatars, any new one) → encrypted/<bucket>.tar.gpg
 CONFIG_GLOBS = ["/srv/kecon/shared/*", "/etc/systemd/system/kecon*.service", "/etc/systemd/system/kecon*.timer",
                 "/srv/kecon/supabase-stack/supabase/config.toml"]
+# Defaults; Admin › Sao lưu (backup_settings, migration 040) overrides them on every run.
 KEEP_DAILY, KEEP_WEEKLY, KEEP_MONTHLY = 7, 4, 6
-GIT_ENV = {
-    "GIT_SSH_COMMAND": f"ssh -i {BASE / 'deploy_key'} -o IdentitiesOnly=yes -o BatchMode=yes "
-                       f"-o StrictHostKeyChecking=accept-new -o UserKnownHostsFile={BASE / 'known_hosts'}",
-    "GIT_AUTHOR_NAME": "KểCon Backup", "GIT_AUTHOR_EMAIL": "backup@kecon.invalid",
-    "GIT_COMMITTER_NAME": "KểCon Backup", "GIT_COMMITTER_EMAIL": "backup@kecon.invalid",
-    "GIT_TERMINAL_PROMPT": "0",
-}
-if TOKEN.exists():  # HTTPS: helper prints the token only when git asks for it
-    GIT_ENV |= {"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "credential.helper", "GIT_CONFIG_VALUE_0": "",
+SCHEDULE_TIME = "03:15"
+RELEASE_FILE = Path(os.environ.get("KECON_RELEASE_FILE", "/srv/kecon/shared/release"))
+GITHUB_API = "https://api.github.com"
+GITHUB_WEB = "https://github.com"
+TOKEN_CHECK_EVERY = dt.timedelta(hours=6)
+# GitHub token shapes (classic ghp_/gho_/…, fine-grained github_pat_) — masked in anything stored or logged.
+TOKEN_PATTERN = re.compile(r"github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,}")
+
+
+def remote_url() -> str:
+    """HTTPS when a token file exists (token ↔ deploy key can be switched any time), else SSH deploy key."""
+    return os.environ.get("KECON_BACKUP_REMOTE") or (
+        f"https://github.com/{REPO_SLUG}.git" if TOKEN.exists() else f"git@github.com:{REPO_SLUG}.git")
+
+
+def git_env() -> dict:
+    env = {
+        "GIT_SSH_COMMAND": f"ssh -i {BASE / 'deploy_key'} -o IdentitiesOnly=yes -o BatchMode=yes "
+                           f"-o StrictHostKeyChecking=accept-new -o UserKnownHostsFile={BASE / 'known_hosts'}",
+        "GIT_AUTHOR_NAME": "KểCon Backup", "GIT_AUTHOR_EMAIL": "backup@kecon.invalid",
+        "GIT_COMMITTER_NAME": "KểCon Backup", "GIT_COMMITTER_EMAIL": "backup@kecon.invalid",
+        "GIT_TERMINAL_PROMPT": "0",
+    }
+    if TOKEN.exists():  # HTTPS: helper prints the token only when git asks for it
+        env |= {"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "credential.helper", "GIT_CONFIG_VALUE_0": "",
                 "GIT_CONFIG_KEY_1": "credential.helper",
                 "GIT_CONFIG_VALUE_1": f"!f() {{ test \"$1\" = get || exit 0; echo username=x-access-token; "
                                       f"printf 'password=%s\\n' \"$(cat '{TOKEN}')\"; }}; f"}
+    return env
+
+
 NOW = dt.datetime.now(dt.timezone.utc)
 STAMP = NOW.strftime("%Y%m%dT%H%M%SZ")
 VN = dt.timezone(dt.timedelta(hours=7))
@@ -108,7 +137,7 @@ def run(cmd: list[str], *, input: bytes | None = None, cwd: Path | None = None, 
 
 
 def git(repo: Path, *args: str, check: bool = True) -> str:
-    return run(["git", "-C", str(repo), *args], env=GIT_ENV, check=check).stdout.decode().strip()
+    return run(["git", "-C", str(repo), *args], env=git_env(), check=check).stdout.decode().strip()
 
 
 def sha256(data: bytes) -> str:
@@ -519,18 +548,18 @@ def ensure_repo(path: Path, branch: str) -> None:
     if not (path / ".git").exists():
         path.mkdir(parents=True, exist_ok=True)
         run(["git", "init", "-q", "-b", branch, str(path)])
-        git(path, "remote", "add", "origin", REMOTE)
+        git(path, "remote", "add", "origin", remote_url())
         git(path, "config", "core.quotepath", "false")
-    git(path, "remote", "set-url", "origin", REMOTE)  # token ↔ deploy key can be switched any time
+    git(path, "remote", "set-url", "origin", remote_url())  # token ↔ deploy key can be switched any time
     (path / ".gitattributes").write_text("*.gpg binary\n*.webp binary\n*.png binary\n*.jpg binary\n*.mp3 binary\n*.wav binary\n*.webm binary\n")
 
 
 def push(path: Path, branch: str, force: bool = False) -> tuple[bool, str]:
     args = ["push", "-q", "origin", f"{branch}:{branch}"] + (["--force"] if force else [])
-    r = run(["git", "-C", str(path), *args], env=GIT_ENV, check=False)
+    r = run(["git", "-C", str(path), *args], env=git_env(), check=False)
     if r.returncode != 0:
-        return False, (r.stderr.decode() or r.stdout.decode()).strip()[:500]
-    remote = run(["git", "-C", str(path), "ls-remote", "origin", f"refs/heads/{branch}"], env=GIT_ENV, check=False).stdout.decode().split()
+        return False, scrub((r.stderr.decode() or r.stdout.decode()).strip())[:500]
+    remote = run(["git", "-C", str(path), "ls-remote", "origin", f"refs/heads/{branch}"], env=git_env(), check=False).stdout.decode().split()
     local = git(path, "rev-parse", branch)
     return (bool(remote) and remote[0] == local), local
 
@@ -558,7 +587,7 @@ def publish_snapshots(snaps: list[dict], do_push: bool) -> dict:
     head = git(SNAP_REPO, "rev-parse", "-q", "--verify", "refs/heads/db-snapshots", check=False)
     head_tree = git(SNAP_REPO, "rev-parse", f"{head}^{{tree}}", check=False) if head else ""
     if tree != head_tree:
-        commit = run(["git", "-C", str(SNAP_REPO), "commit-tree", tree, "-m", f"db snapshots {STAMP}"], env=GIT_ENV).stdout.decode().strip()
+        commit = run(["git", "-C", str(SNAP_REPO), "commit-tree", tree, "-m", f"db snapshots {STAMP}"], env=git_env()).stdout.decode().strip()
         git(SNAP_REPO, "update-ref", "refs/heads/db-snapshots", commit)
     ok, info = push(SNAP_REPO, "db-snapshots", force=True) if do_push else (False, "skipped (--no-push)")
     return {"count": len(snaps), "pushed": ok, "info": info}
@@ -568,8 +597,9 @@ README = """# KểCon — bản sao lưu (repo riêng tư)
 
 > ⚠️ Repo này phải luôn để **Private**. Trong đó có truyện, tranh và giọng đọc của các gia đình.
 
-Máy chủ staging tự sao lưu lên đây mỗi ngày lúc 03:15 (giờ Việt Nam) bằng `tools/kecon_backup.py`
-(bản gốc: `deploy/prized/backup/` trong repo app; systemd `kecon-backup.timer`). Lần chạy gần nhất: **{when}**.
+Máy chủ staging tự sao lưu lên đây mỗi ngày lúc {schedule} (giờ Việt Nam; đổi giờ / số bản giữ lại / token ở
+**Admin › Sao lưu**) bằng `tools/kecon_backup.py` (bản gốc: `deploy/prized/backup/` trong repo app; systemd
+`kecon-backup.timer`). Lần chạy gần nhất: **{when}**.
 Mỗi lần chạy đều giải mã bản chụp DB mới nhất và **khôi phục thử như khi chuyển máy** (user `supabase_admin`, giữ
 owner + quyền, vào database trống), so số dòng và giải mã lại Vault (key nhà cung cấp AI) với DB thật; chỉ cần một
 lỗi `pg_restore` là báo hỏng (`manifest.json` → `restore_check`).
@@ -580,7 +610,7 @@ lỗi `pg_restore` là báo hỏng (`manifest.json` → `restore_check`).
 | Tranh + audio của truyện ({media_files} file, {media_mb} MB) | `media/<bucket>/<đường dẫn trong Storage>` | file gốc, `media/manifest.json` ghi version + sha256 |
 | Bucket riêng tư (ghi âm bố mẹ, ảnh đại diện gia đình…) | {private} | **mã hoá** AES-256 |
 | Cấu hình máy chủ (`/srv/kecon/shared`: .env, secrets, **khoá gốc Vault**; systemd; `config.toml`) | `encrypted/server-config.tar.gpg` | **mã hoá** AES-256 |
-| Toàn bộ cơ sở dữ liệu (tài khoản, hộ, nhiệm vụ, Vault, …) | nhánh [`db-snapshots`](../../tree/db-snapshots) | **mã hoá** AES-256, 7 ngày + 4 tuần + 6 tháng |
+| Toàn bộ cơ sở dữ liệu (tài khoản, hộ, nhiệm vụ, Vault, …) | nhánh [`db-snapshots`](../../tree/db-snapshots) | **mã hoá** AES-256, {keep} |
 | Công cụ | `tools/kecon_backup.py`, `tools/kecon_restore.py` | Python 3, chỉ cần Docker |
 
 ## Giải mã
@@ -631,16 +661,12 @@ Unit systemd + `config.toml` trong server-config chỉ để đối chiếu — 
 """
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--no-push", action="store_true")
-    ap.add_argument("--verify-restore", action="store_true")
-    a = ap.parse_args()
-    BASE.mkdir(parents=True, exist_ok=True)
-    lock = open(BASE / ".lock", "w")
-    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+def backup(verify: bool, do_push: bool, progress=lambda phase: None) -> tuple[int, dict]:
+    """One full backup (caller holds the lock). Returns (exit code, result written to last-run.json)."""
     if not PASSPHRASE.exists() or PASSPHRASE.stat().st_mode & 0o077:
         raise SystemExit("passphrase missing or readable by others")
+    started = dt.datetime.now(dt.timezone.utc)
+    progress("media")
     ensure_repo(REPO, "main")
     state_path = REPO / "encrypted" / "state.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
@@ -650,9 +676,11 @@ def main() -> int:
     log(f"storage objects: {len(objs)}")
     media = sync_media(objs)
     log(f"media: {media}")
+    progress("stories")
     stories = export_stories(objects)
     family = sum(1 for s in stories if story_group(s) == "gia-dinh")
     log(f"stories: {len(stories)} ({family} family)")
+    progress("private")
     private = {}
     for bucket in private_buckets(json.loads(psql(BUCKETS_SQL)), objs):
         state[bucket] = encrypted_bundle(bucket, secret_entries(objs, bucket), state)
@@ -661,12 +689,15 @@ def main() -> int:
     root_key = db_root_key()
     state["server-config"] = encrypted_bundle("server-config", config_entries(root_key), state)
     write_if_changed(state_path, (json.dumps(state, indent=1, sort_keys=True) + "\n").encode())
-    live = json.loads(psql(COUNT_SQL, user=SUPERUSER))  # counted right before the dump (staging is quiet at 03:15)
+    progress("db_snapshot")
+    live = json.loads(psql(COUNT_SQL, user=SUPERUSER))  # counted right before the dump (staging is quiet at night)
     live_vault = vault_state()
     snap = db_snapshot()
     log(f"db snapshot: {snap['file']} {snap['plain_bytes']} bytes, {snap['table_data_entries']} tables with data")
-    restore = verify_restore(snap, live, live_vault) if a.verify_restore else None
-    if restore is not None:
+    restore = None
+    if verify:
+        progress("restore_check")
+        restore = verify_restore(snap, live, live_vault)
         log(f"restore check: {json.dumps(restore, ensure_ascii=False)}")
     snaps = prune_snapshots()
 
@@ -682,26 +713,335 @@ def main() -> int:
     summary = {"last_run": STAMP, "stories": len(stories), "family_stories": family, "media": media,
                "recordings": state["recordings"]["files"], "private_buckets": private,
                "db_snapshots": [s["file"] for s in snaps], "postgres": pg, "images": images,
+               "retention": {"daily": KEEP_DAILY, "weekly": KEEP_WEEKLY, "monthly": KEEP_MONTHLY},
                "db_root_key": {"in_server_config": ROOT_KEY_ENTRY, "pinned_on_server": root_key_pinned(root_key)},
                "restore_check": None if restore is None else {k: restore.get(k) for k in ("ok", "tables", "rows", "pg_restore_errors", "vault")}}
+    keep = f"{KEEP_DAILY} ngày + {KEEP_WEEKLY} tuần + {KEEP_MONTHLY} tháng"
     (REPO / "README.md").write_text(README.format(when=f"{NOW.astimezone(VN):%Y-%m-%d %H:%M}", stories=len(stories), family=family,
                                                   media_files=media["files"], media_mb=f"{media['bytes'] / 1e6:.0f}",
                                                   private=", ".join(f"`encrypted/{b}.tar.gpg` ({n} file)" for b, n in private.items()),
-                                                  pg=pg, db_image=images[DB] or "?", storage_image=images[STORAGE] or "?"))
+                                                  pg=pg, db_image=images[DB] or "?", storage_image=images[STORAGE] or "?",
+                                                  schedule=SCHEDULE_TIME, keep=keep))
     write_if_changed(REPO / "manifest.json", (json.dumps(summary, indent=1, ensure_ascii=False) + "\n").encode())
     git(REPO, "add", "-A")
     if run(["git", "-C", str(REPO), "diff", "--cached", "--quiet"], check=False).returncode != 0:
         git(REPO, "commit", "-q", "-m", f"Sao lưu {NOW.astimezone(VN):%Y-%m-%d %H:%M}: {len(stories)} truyện, {media['files']} file media")
-    main_push = push(REPO, "main") if not a.no_push else (False, "skipped (--no-push)")
-    snap_push = publish_snapshots(snaps, not a.no_push)
-    result = {**summary, "main_pushed": main_push[0], "main_info": main_push[1], "snapshots": snap_push}
+    if do_push:
+        progress("push")
+    main_push = push(REPO, "main") if do_push else (False, "skipped (--no-push)")
+    snap_push = publish_snapshots(snaps, do_push)
+    result = {**summary, "main_pushed": main_push[0], "main_info": main_push[1], "snapshots": snap_push,
+              "duration_s": round((dt.datetime.now(dt.timezone.utc) - started).total_seconds())}
     (BASE / "last-run.json").write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n")
     log(json.dumps(result, ensure_ascii=False))
     if restore is not None and not restore["ok"]:
-        return 4
-    if a.no_push:
+        return 4, result
+    if not do_push:
+        return 0, result
+    return (0 if main_push[0] and snap_push["pushed"] else 3), result
+
+
+# ------------------------------------------------- Admin › Sao lưu worker ---
+# The web app never controls this server: staff write settings / requests to the
+# DB (migration 040) and this worker reads them through psql as the table owner.
+
+def scrub(text: str, token: str | None = None) -> str:
+    """Mask GitHub tokens (the one in use and anything token-shaped) before storing or logging."""
+    out = text.replace(token, "[đã ẩn]") if token and len(token) >= 8 else text
+    return TOKEN_PATTERN.sub("[đã ẩn]", out)
+
+
+def db(sql: str, **params: str) -> str:
+    """One statement as the table owner. Values travel as psql variables (:'name'), never spliced into SQL."""
+    cmd = ["docker", "exec", "-i", DB, "psql", "-U", "postgres", "-d", "postgres", "-At", "-v", "ON_ERROR_STOP=1"]
+    for key, value in params.items():
+        cmd += ["-v", f"{key}={value}"]
+    return run(cmd, input=sql.encode()).stdout.decode().strip()
+
+
+def db_json(sql: str, **params: str):
+    out = db(sql, **params)
+    return json.loads(out) if out else None
+
+
+def apply_settings(settings: dict | None) -> None:
+    """Retention + daily time from Admin › Sao lưu (DB CHECKs keep them in range; clamp anyway)."""
+    global KEEP_DAILY, KEEP_WEEKLY, KEEP_MONTHLY, SCHEDULE_TIME
+    if not settings:
+        return
+    clamp = lambda v, lo, hi, d: min(hi, max(lo, v)) if isinstance(v, int) and not isinstance(v, bool) else d  # noqa: E731
+    KEEP_DAILY = clamp(settings.get("keep_daily"), 3, 30, KEEP_DAILY)
+    KEEP_WEEKLY = clamp(settings.get("keep_weekly"), 0, 12, KEEP_WEEKLY)
+    KEEP_MONTHLY = clamp(settings.get("keep_monthly"), 0, 24, KEEP_MONTHLY)
+    if isinstance(settings.get("schedule_time"), str) and re.fullmatch(r"\d\d:\d\d", settings["schedule_time"]):
+        SCHEDULE_TIME = settings["schedule_time"]
+
+
+def write_token_file(token: str) -> bool:
+    """Vault token → BASE/github-token (chmod 600, atomic) when it differs. Returns True if it changed."""
+    if TOKEN.exists() and TOKEN.read_text().strip() == token:
+        return False
+    BASE.mkdir(parents=True, exist_ok=True)
+    tmp = BASE / ".github-token.tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        fh.write(token + "\n")
+    os.replace(tmp, TOKEN)
+    return True
+
+
+def load_token() -> tuple[str | None, str]:
+    """(token in use, where it comes from): Vault (Admin › Sao lưu) > github-token file > SSH deploy key > none."""
+    token = db("select public.backup_worker_token();") or None
+    if token:
+        if write_token_file(token):
+            log("GitHub token updated from Admin › Sao lưu (Vault)")
+        return token, "vault_token"
+    if TOKEN.exists() and TOKEN.read_text().strip():
+        return TOKEN.read_text().strip(), "file_token"
+    return None, "deploy_key" if (BASE / "deploy_key").exists() else "none"
+
+
+def token_kind(token: str) -> str:
+    return "fine_grained" if token.startswith("github_pat_") else "classic" if token.startswith("ghp_") else "other"
+
+
+def parse_expiry(value: str | None) -> str | None:
+    """GitHub-Authentication-Token-Expiration, e.g. '2026-11-04 11:57:04 UTC' → ISO 8601 UTC."""
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S %Z", "%Y-%m-%d %H:%M:%S %z"):
+        try:
+            d = dt.datetime.strptime(value.strip(), fmt)
+        except ValueError:
+            continue
+        return (d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)).astimezone(dt.timezone.utc).isoformat()
+    return None
+
+
+def check_token(token: str | None, source: str, slug: str = REPO_SLUG, opener=None) -> dict:
+    """Same checks as the admin route: repo visible + private (GitHub API), push allowed (the git
+    receive-pack advertisement only answers 200 to a credential that may push), expiry header.
+    The result never contains the token."""
+    res = {"status": "missing" if source == "none" else source, "source": source, "kind": None, "last4": None,
+           "push": None, "private": None, "expires_at": None, "message": None}
+    if not token:
+        return res
+    opener = opener or urllib.request.urlopen
+    res.update(status="error", kind=token_kind(token), last4=token[-4:] if len(token) >= 12 else None)
+    api = urllib.request.Request(f"{GITHUB_API}/repos/{slug}", headers={
+        "Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "KeCon-Backup"})
+    try:
+        with opener(api, timeout=15) as r:
+            info = json.loads(r.read() or b"{}")
+            res["expires_at"] = parse_expiry(r.headers.get("github-authentication-token-expiration"))
+    except urllib.error.HTTPError as e:
+        headers = e.headers or {}
+        if e.code == 401:
+            res.update(status="invalid", message="GitHub không nhận token (sai, đã hết hạn hoặc bị thu hồi)")
+        elif e.code == 404:
+            res.update(status="not_found", message=f"Token không truy cập được repo {slug}")
+        elif e.code == 403 and headers.get("x-ratelimit-remaining") == "0":
+            res.update(message="GitHub đang giới hạn số lần gọi — thử lại sau")
+        elif e.code == 403:
+            res.update(status="invalid", message="GitHub từ chối token (HTTP 403)")
+        else:
+            res.update(message=f"GitHub trả lỗi HTTP {e.code}")
+        return res
+    except (urllib.error.URLError, OSError, ValueError):
+        res.update(message="Không kết nối được GitHub")
+        return res
+    res["private"] = info.get("private") is True
+    basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+    refs = urllib.request.Request(f"{GITHUB_WEB}/{slug}.git/info/refs?service=git-receive-pack",
+                                  headers={"Authorization": f"Basic {basic}", "User-Agent": "git/2 KeCon-Backup"})
+    try:
+        with opener(refs, timeout=15) as r:
+            res["push"] = r.status == 200 and (r.headers.get("content-type") or "").startswith(
+                "application/x-git-receive-pack-advertisement")
+    except urllib.error.HTTPError as e:
+        if e.code not in (401, 403, 404):
+            res.update(message=f"GitHub trả lỗi HTTP {e.code} khi kiểm tra quyền đẩy")
+            return res
+        res["push"] = False
+    except (urllib.error.URLError, OSError):
+        res.update(message="Không kết nối được GitHub")
+        return res
+    if not res["private"]:
+        res.update(status="public_repo", message=f"Repo {slug} đang công khai — đổi về Private ngay")
+    elif not res["push"]:
+        res.update(status="no_push", message="Token chỉ đọc được — cần quyền Contents: Read and write")
+    elif res["expires_at"] and res["expires_at"] <= dt.datetime.now(dt.timezone.utc).isoformat():
+        res.update(status="expired", message="Token đã hết hạn")
+    else:
+        res.update(status="ok")
+    return res
+
+
+def token_check_due(prev: dict | None, source: str, last4: str | None, now: dt.datetime, claimed: bool) -> bool:
+    """Re-check before every run, when the token changed and every 6 h."""
+    if claimed or not prev or prev.get("source") != source or prev.get("last4") != last4:
+        return True
+    try:
+        return now - dt.datetime.fromisoformat(prev["checked_at"]) >= TOKEN_CHECK_EVERY
+    except (KeyError, TypeError, ValueError):
+        return True
+
+
+def snapshot_list() -> list[dict]:
+    out = []
+    for meta in sorted(SNAPS.glob("db-*.dump.gpg.json"), reverse=True)[:80]:
+        try:
+            m = json.loads(meta.read_text())
+            enc = SNAPS / m["file"]
+            out.append({"file": m["file"], "taken": m.get("taken"), "plain_bytes": m.get("plain_bytes"),
+                        "encrypted_bytes": enc.stat().st_size if enc.exists() else None})
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    return out
+
+
+def compact_summary(r: dict) -> dict:
+    """What Admin › Sao lưu shows for a run — counts and commit ids, no secrets, no file lists."""
+    snaps = r.get("snapshots") or {}
+    return {"stories": r.get("stories"), "family_stories": r.get("family_stories"), "media": r.get("media"),
+            "private_buckets": r.get("private_buckets"), "db_snapshots": len(r.get("db_snapshots") or []),
+            "restore_check": r.get("restore_check"), "main_pushed": r.get("main_pushed"),
+            "main_commit": r.get("main_info") if r.get("main_pushed") else None,
+            "snapshots_pushed": snaps.get("pushed"), "snapshots_commit": snaps.get("info") if snaps.get("pushed") else None,
+            "retention": r.get("retention"), "postgres": r.get("postgres"), "duration_s": r.get("duration_s")}
+
+
+STATUS_BY_EXIT = {0: "ok", 3: "push_failed", 4: "restore_failed"}
+
+
+def failure_text(rc: int, r: dict, token: str | None) -> str | None:
+    if rc == 3:
+        parts = [f"main: {r.get('main_info')}" if not r.get("main_pushed") else "",
+                 f"db-snapshots: {(r.get('snapshots') or {}).get('info')}" if not (r.get("snapshots") or {}).get("pushed") else ""]
+        return scrub("Đẩy lên GitHub lỗi — " + "; ".join(p for p in parts if p), token)[:500]
+    if rc == 4:
+        rc_ = r.get("restore_check") or {}
+        return (f"Khôi phục thử không đạt: {rc_.get('pg_restore_errors')} lỗi pg_restore, "
+                f"Vault {'khớp' if (rc_.get('vault') or {}).get('match') else 'không khớp'}")[:500]
+    return None
+
+
+def error_text(e: BaseException, token: str | None) -> str:
+    if isinstance(e, subprocess.CalledProcessError):
+        cmd = e.cmd if isinstance(e.cmd, list) else [str(e.cmd)]
+        last = ((e.stderr or b"").decode(errors="replace").strip().splitlines() or [""])[-1]
+        text = f"{' '.join(map(str, cmd[:4]))} → exit {e.returncode}: {last}"
+    else:
+        text = f"{type(e).__name__}: {e}"
+    return scrub(text, token)[:500]
+
+
+def legacy_run() -> dict | None:
+    """last-run.json of the old daily job → one history row (only imported while backup_runs is empty)."""
+    f = BASE / "last-run.json"
+    if not f.exists() or (BASE / ".runs-in-db").exists():
+        return None
+    try:
+        d = json.loads(f.read_text())
+        started = dt.datetime.strptime(d["last_run"], "%Y%m%dT%H%M%SZ").replace(tzinfo=dt.timezone.utc)
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    restore_ok = (d.get("restore_check") or {}).get("ok")
+    pushed = d.get("main_pushed") and (d.get("snapshots") or {}).get("pushed")
+    status = "restore_failed" if restore_ok is False else "ok" if pushed else "push_failed"
+    return {"started_at": started.isoformat(), "status": status, "exit_code": {"ok": 0, "push_failed": 3, "restore_failed": 4}[status],
+            "finished_at": dt.datetime.fromtimestamp(f.stat().st_mtime, dt.timezone.utc).isoformat(), "summary": compact_summary(d)}
+
+
+def worker_state(source: str, mode: str) -> dict:
+    release = RELEASE_FILE.read_text().strip()[:64] if RELEASE_FILE.exists() else None
+    ok = PASSPHRASE.exists() and not PASSPHRASE.stat().st_mode & 0o077
+    state = {"mode": mode, "release": release, "repo": REPO_SLUG, "push_via": source, "passphrase_ok": ok, "snapshots": snapshot_list()}
+    legacy = legacy_run()
+    if legacy:
+        state["legacy"] = legacy
+    return state
+
+
+def report_token(token: str | None, source: str) -> dict:
+    check = check_token(token, source)
+    db("select public.backup_worker_token_check(:'p'::jsonb);", p=json.dumps(check, ensure_ascii=False))
+    if check["status"] not in ("ok", "deploy_key"):
+        log(f"GitHub token check: {check['status']} — {check['message']}")
+    return check
+
+
+def recorded_backup(run_id: int, verify: bool, token: str | None) -> int:
+    """Run the backup for a claimed run and report the outcome; the DB row is closed whatever happens."""
+    def progress(phase: str) -> None:
+        try:
+            db("select public.backup_worker_progress(:'r'::bigint, :'p');", r=str(run_id), p=phase)
+        except (subprocess.CalledProcessError, OSError):
+            pass  # progress is informative only
+    try:
+        rc, result = backup(verify, True, progress)
+        report = {"status": STATUS_BY_EXIT.get(rc, "failed"), "exit_code": rc, "summary": compact_summary(result),
+                  "error": failure_text(rc, result, token), "snapshots": snapshot_list()}
+    except BaseException as e:  # noqa: BLE001 — incl. SystemExit/KeyboardInterrupt: the run row is closed, the unit exits 1
+        report = {"status": "failed", "exit_code": 1, "error": error_text(e, token), "snapshots": snapshot_list()}
+        try:
+            db("select public.backup_worker_finish(:'r'::bigint, :'p'::jsonb);", r=str(run_id), p=json.dumps(report, ensure_ascii=False))
+        finally:
+            log(f"run #{run_id} failed: {report['error']}")
+        return 1
+    db("select public.backup_worker_finish(:'r'::bigint, :'p'::jsonb);", r=str(run_id), p=json.dumps(report, ensure_ascii=False))
+    log(f"run #{run_id}: {report['status']}")
+    return rc
+
+
+def tick(verify: bool) -> int:
+    """Timer entry point: heartbeat, then at most one run (a "Sao lưu ngay" request first, else the daily slot)."""
+    BASE.mkdir(parents=True, exist_ok=True)
+    lock = open(BASE / ".lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return 0  # a backup is running and reports its own progress
+    token, source = load_token()
+    poll = db_json("select public.backup_worker_poll(:'p'::jsonb);", p=json.dumps(worker_state(source, "tick"), ensure_ascii=False))
+    (BASE / ".runs-in-db").touch()
+    apply_settings(poll.get("settings"))
+    claimed = poll.get("run")
+    last4 = token[-4:] if token and len(token) >= 12 else None
+    if token_check_due(poll.get("token_check"), source, last4, dt.datetime.now(dt.timezone.utc), bool(claimed)):
+        report_token(token, source)
+    if not claimed:
         return 0
-    return 0 if main_push[0] and snap_push["pushed"] else 3
+    log(f"run #{claimed['id']} ({claimed['kind']}) — keep {KEEP_DAILY}/{KEEP_WEEKLY}/{KEEP_MONTHLY}")
+    return recorded_backup(int(claimed["id"]), verify, token)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tick", action="store_true")
+    ap.add_argument("--no-push", action="store_true")
+    ap.add_argument("--verify-restore", action="store_true")
+    a = ap.parse_args()
+    if a.tick:
+        return tick(a.verify_restore)
+    BASE.mkdir(parents=True, exist_ok=True)
+    lock = open(BASE / ".lock", "w")
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:  # settings + history from the DB; a backup still runs if the DB API is not there (pre-040)
+        token, source = load_token()
+        poll = db_json("select public.backup_worker_poll(:'p'::jsonb);",
+                       p=json.dumps(worker_state(source, "peek" if a.no_push else "cli"), ensure_ascii=False))
+        (BASE / ".runs-in-db").touch()
+    except (subprocess.CalledProcessError, OSError, ValueError) as e:
+        log(f"Admin › Sao lưu not reachable ({error_text(e, None)}) — default settings, run not recorded")
+        poll, token = None, None
+    apply_settings((poll or {}).get("settings"))
+    run_id = ((poll or {}).get("run") or {}).get("id")
+    if run_id:  # --no-push (peek) runs are not recorded: they must not count as the day's backup
+        return recorded_backup(int(run_id), a.verify_restore, token)
+    return backup(a.verify_restore, not a.no_push)[0]
 
 
 if __name__ == "__main__":

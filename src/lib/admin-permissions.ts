@@ -25,6 +25,7 @@ export const ADMIN_PERMISSIONS = [
   "moderation.manage",
   "notifications.send",
   "audit.read",
+  "backups.manage",
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 

@@ -17,6 +17,7 @@ import {
   BarChart3,
   BookOpen,
   FolderOpen,
+  HardDrive,
   History,
   LayoutDashboard,
   LayoutList,
@@ -82,6 +83,9 @@ const AdminSettings = dynamic(
 const AdminAudit = dynamic(() => import("@/components/screens/AdminAudit"), {
   loading: Fallback,
 });
+const AdminBackup = dynamic(() => import("@/components/screens/AdminBackup"), {
+  loading: Fallback,
+});
 const StoryEditor = dynamic(() => import("@/components/screens/StoryEditor"), {
   loading: Fallback,
 });
@@ -104,6 +108,7 @@ const SECTION_ICONS: Record<AdminScreen, typeof Users> = {
   "admin-templates": BookOpen,
   "admin-missions": Star,
   "admin-settings": Settings,
+  "admin-backup": HardDrive,
   "admin-audit": History,
 };
 
@@ -219,6 +224,13 @@ function AdminContent({ screen }: { screen: AdminScreen }) {
         <AdminSettings
           onBack={toDashboard}
           canManageSecrets={can("secrets.manage")}
+        />
+      );
+    case "admin-backup":
+      return (
+        <AdminBackup
+          onBack={toDashboard}
+          canSetToken={can("secrets.manage")}
         />
       );
     case "admin-audit":

@@ -25,6 +25,7 @@ const ALL_SECTIONS = [
   "Mẫu truyện",
   "Nhiệm vụ",
   "Cài đặt hệ thống",
+  "Sao lưu",
   "Nhật ký",
 ];
 // G-08: mission copy is content, so editors (templates.manage) see "Nhiệm vụ".
@@ -413,6 +414,7 @@ test.describe("A-02 · biên tập (vai trò hẹp)", () => {
       "/admin/settings",
       "/admin/users",
       "/admin/analytics",
+      "/admin/backup",
       "/admin/audit",
     ])
       await expectNotFound(page, url);
