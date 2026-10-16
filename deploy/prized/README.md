@@ -60,9 +60,10 @@ journalctl -u kecon-web -f                        # log app
 ## Sao lưu GitHub (hằng ngày)
 
 `backup/kecon_backup.py` đẩy lên repo **riêng tư** `khankingko845-netizen/kecon-backup`: nhánh `main` có truyện
-đọc được (README + `story.json`), tranh + audio gốc, ghi âm bố mẹ và cấu hình máy chủ (**mã hoá** AES-256);
-nhánh `db-snapshots` có `pg_dump` toàn bộ DB (**mã hoá**, 7 ngày + 4 tuần + 6 tháng). Mỗi lần chạy giải mã bản
-DB mới nhất, khôi phục thử vào database tạm và so số dòng. Cách khôi phục: README trong repo backup.
+đọc được (README + `story.json`), tranh + audio gốc, mọi bucket riêng tư (ghi âm bố mẹ, ảnh đại diện…) và cấu hình
+máy chủ kèm khoá gốc Vault (**mã hoá** AES-256); nhánh `db-snapshots` có `pg_dump` toàn bộ DB (**mã hoá**, 7 ngày +
+4 tuần + 6 tháng). Mỗi lần chạy giải mã bản DB mới nhất và khôi phục thử như khi chuyển máy (`supabase_admin`, giữ
+owner + quyền): so số dòng, giải mã lại Vault, có lỗi `pg_restore` là exit 4.
 
 ```bash
 B=/srv/kecon/backup-github; mkdir -p $B && chmod 700 $B && umask 077
@@ -74,6 +75,26 @@ python3 /srv/kecon/current/deploy/prized/backup/kecon_backup.py --verify-restore
 sudo systemctl enable --now kecon-backup.timer   # deploy.sh tự bật khi đã có passphrase + quyền đẩy
 cat $B/last-run.json                             # kết quả lần chạy gần nhất (exit 3 = đẩy lỗi, 4 = khôi phục thử lỗi)
 ```
+
+## Chuyển sang máy mới (khôi phục từ bản sao lưu)
+
+Trình tự đầy đủ (lệnh copy được): README của repo backup › *Chuyển sang máy mới*. Tóm tắt:
+
+1. `setup-server.sh` → **trước** `bootstrap.sh`, chép `srv/kecon/shared/*` từ `server-config.tar.gpg` vào
+   `/srv/kecon/shared` (chmod 600): giữ jwt secret + khoá API, key AI và `pgsodium_root.key`.
+2. `bootstrap.sh` như máy mới. `supabase-stack.sh` đưa `pgsodium_root.key` cho CLI (`SUPABASE_DB_ROOT_KEY`) nên
+   container DB mới dùng **cùng khoá gốc Vault** — khoá khác thì key AI trong Vault không giải mã được.
+   `pin-root-key.sh` (stack start + mỗi lần deploy) ghim khoá đang dùng vào `shared/` nếu chưa có, và cảnh báo nếu lệch.
+3. Dừng `kecon-web`, `backup/kecon_restore.py db kecon.dump --yes --root-key /srv/kecon/shared/pgsodium_root.key`
+   (thay database `postgres` bằng `supabase_admin` — bằng `postgres` thì Vault bị từ chối), rồi
+   `kecon_restore.py media <repo backup> --private recordings.tar …` (file vào đúng `<bucket>/<tên>/<version>` + content-type).
+4. `deploy.sh` lần nữa (migration mới hơn bản sao lưu, bật lại app + timer); đăng nhập thử + nghe một truyện.
+
+Đã diễn tập 16/10/2026 ngay trên máy staging với một stack Supabase thứ hai cùng phiên bản (project riêng, cổng 554xx,
+dựng như bootstrap: config + secrets + khoá gốc từ bản sao lưu, migrations của release): 0 lỗi `pg_restore`, Vault 3/3
+giải mã giống hệt máy thật (RPC `get_provider_key_pool` của app trả đủ key AI), đăng nhập bằng mật khẩu cũ, 40 truyện
+qua REST với JWT người dùng, 683/683 file Storage đúng sha256 + content-type. Đối chứng: tạo lại stack với khoá gốc khác
+→ Vault không giải mã được và `kecon_restore.py --root-key` từ chối chạy.
 
 ## Giới hạn (staging)
 

@@ -53,4 +53,9 @@ rsync_migrations() {
 }
 rsync_migrations
 export PUBLIC_URL=${PUBLIC_URL:-$(cat "$KECON/shared/public-url" 2>/dev/null || echo http://127.0.0.1:3000)}
+# Khoá gốc Vault/pgsodium (key AI trong Vault mã hoá bằng nó): dùng khoá đã ghim — xem pin-root-key.sh.
+if [[ -s $KECON/shared/pgsodium_root.key ]]; then
+  SUPABASE_DB_ROOT_KEY=$(tr -d '[:space:]' < "$KECON/shared/pgsodium_root.key"); export SUPABASE_DB_ROOT_KEY
+fi
 supabase start --workdir "$STACK" -x studio,logflare,vector,edge-runtime,supavisor "$@"
+bash "$(dirname "$(readlink -f "$0")")/pin-root-key.sh"
