@@ -94,11 +94,11 @@ export function ageUiFor(value: string | number | null | undefined): AgeUi {
 }
 
 /**
- * The family profile's age wins (it is what parents edit in "Hồ sơ gia đình");
+ * The chosen child's age wins (T10: computed from the birth year in "Hồ sơ bé");
  * the device setting is the fallback; default 3–5.
  */
-export function resolveChildBand(profileAge: number | null | undefined, settingsAge: string | null | undefined): AgeBandId {
-  if (typeof profileAge === "number" && Number.isFinite(profileAge) && profileAge > 0) return normalizeAgeBand(profileAge);
+export function resolveChildBand(childAge: number | null | undefined, settingsAge: string | null | undefined): AgeBandId {
+  if (typeof childAge === "number" && Number.isFinite(childAge) && childAge > 0) return normalizeAgeBand(childAge);
   return settingsAge ? normalizeAgeBand(settingsAge) : DEFAULT_AGE_BAND;
 }
 

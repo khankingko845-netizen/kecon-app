@@ -1,23 +1,26 @@
 /**
  * Hồ sơ gia đình: payload gửi lên `profiles` không được có null ở cột NOT NULL
- * (lỗi thật trên staging: tên gia đình trống → 23502 → tuổi bé không được lưu).
+ * (lỗi thật trên staging: tên gia đình trống → 23502 → hồ sơ không được lưu).
+ * T10: tên/tuổi bé nằm ở Hồ sơ bé (child_profiles) — payload không còn child_age.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildProfileUpdate } from "@/lib/profile-form";
 
-const base = { displayName: "Mẹ Gấu", familyName: "Gia đình Gấu", avatarEmoji: "🐻", childAge: "4", locale: "vi" };
+const base = { displayName: "Mẹ Gấu", familyName: "Gia đình Gấu", avatarEmoji: "🐻", locale: "vi" };
 
 describe("buildProfileUpdate", () => {
-  it("trims names and parses the age", () => {
-    expect(buildProfileUpdate({ ...base, displayName: "  Mẹ Gấu ", familyName: " Nhà Mít  ", childAge: "10" })).toEqual({
+  it("trims names; never sends the child's age (T10: Hồ sơ bé)", () => {
+    const u = buildProfileUpdate({ ...base, displayName: "  Mẹ Gấu ", familyName: " Nhà Mít  " });
+    expect(u).toEqual({
       display_name: "Mẹ Gấu",
       family_name: "Nhà Mít",
       avatar_emoji: "🐻",
-      child_age: 10,
       locale: "vi",
     });
+    expect(u).not.toHaveProperty("child_age");
+    expect(u).not.toHaveProperty("child_name");
   });
 
   it("persists a mascot URL and clears the conflicting legacy emoji", () => {
@@ -33,11 +36,7 @@ describe("buildProfileUpdate", () => {
     expect(u.family_name).toBe("");
   });
 
-  it("no / invalid age → null; locale falls back to vi", () => {
-    expect(buildProfileUpdate({ ...base, childAge: "" }).child_age).toBeNull();
-    expect(buildProfileUpdate({ ...base, childAge: "abc" }).child_age).toBeNull();
-    expect(buildProfileUpdate({ ...base, childAge: "0" }).child_age).toBeNull();
-    expect(buildProfileUpdate({ ...base, childAge: "13" }).child_age).toBeNull();
+  it("locale falls back to vi", () => {
     expect(buildProfileUpdate({ ...base, locale: "" }).locale).toBe("vi");
   });
 
@@ -46,7 +45,7 @@ describe("buildProfileUpdate", () => {
     const table = /CREATE TABLE[^(]*profiles\s*\(([\s\S]*?)\n\);/i.exec(sql)?.[1] ?? "";
     const notNullText = [...table.matchAll(/^\s*(\w+)\s+TEXT\s+NOT NULL/gim)].map((m) => m[1]);
     expect(notNullText).toEqual(expect.arrayContaining(["family_name", "display_name"]));
-    const payload = buildProfileUpdate({ displayName: "", familyName: "", avatarEmoji: "", childAge: "", locale: "" }) as unknown as Record<string, unknown>;
+    const payload = buildProfileUpdate({ displayName: "", familyName: "", avatarEmoji: "", locale: "" }) as unknown as Record<string, unknown>;
     for (const col of notNullText) if (col in payload) expect(typeof payload[col]).toBe("string");
   });
 });

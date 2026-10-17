@@ -3,7 +3,7 @@ import { useFeatureFlags } from "@/lib/feature-flags-context";
 import {recordMilestone} from "@/lib/measurement-client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
+import { Baby, Camera, ChevronDown, ChevronRight, FolderOpen, Heart, Palette, Play, Sparkles, Star, Upload, Wand2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useKidStories } from "@/lib/parental-controls-context";
 import { filterAllowed, isCategoryAllowed } from "@/lib/content-filter";
@@ -24,6 +24,8 @@ import { weekChipAria, weekChipParts } from "@/lib/missions";
 import { useFeedback } from "@/lib/feedback-context";
 import { useAgeUi } from "@/lib/age-ui-context";
 import { exploreFor } from "@/lib/age-ui";
+import { useChildProfiles } from "@/lib/child-profiles-context";
+import ChildPicker from "@/components/ui/ChildPicker";
 
 /** Đóm greets once per app session (sessionStorage), not on every return to Home. */
 const GREETED_KEY = "kecon-dom-greeted";
@@ -74,7 +76,11 @@ export default function Home({ onNavigate }: HomeProps) {
   const now = useMemo(() => new Date(), []);
   const hero = heroFor(now.getHours());
   const dateLine = `${WEEKDAYS[now.getDay()]} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const childName = settings.childName?.trim() || profile?.child_name?.trim();
+  // T10: the child chosen on this device (Hồ sơ bé); siblings switch from the greeting.
+  const { kids, activeChild, loaded: kidsLoaded, pendingDraft } = useChildProfiles();
+  const childName = activeChild?.display_name;
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const greeting = childName ? `Chào bé ${childName}!` : "Chào bé!";
 
   useEffect(() => {
     getRecommendations({ childAge: settings.childAge })
@@ -190,7 +196,20 @@ export default function Home({ onNavigate }: HomeProps) {
         </button>
         <div className="min-w-0">
           <h1 className="truncate font-display text-[24px] font-bold leading-[1.05] text-ink">
-            {childName ? `Chào bé ${childName}!` : "Chào bé!"}
+            {kids.length >= 2 ? (
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                aria-haspopup="dialog"
+                data-testid="child-switch"
+                className="inline-flex max-w-full min-h-11 items-center gap-1 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <span className="truncate">{greeting}</span>
+                <ChevronDown size={18} className="shrink-0 text-ink-2" aria-hidden />
+              </button>
+            ) : (
+              greeting
+            )}
           </h1>
           <p data-kid-detail className="text-[14px] font-bold text-ink-2">{dateLine}</p>
         </div>
@@ -218,6 +237,25 @@ export default function Home({ onNavigate }: HomeProps) {
           )}
         </button>
       </div>
+
+      {kidsLoaded && kids.length === 0 && !pendingDraft && (
+        <button
+          type="button"
+          onClick={() => onNavigate("child-profiles")}
+          data-testid="add-child-card"
+          className={`mt-3 flex min-h-[60px] w-full items-center gap-3 rounded-2xl bg-white px-3.5 py-3 text-left ${CARD_SHADOW}`}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-glow-soft text-[#9A6A00]">
+            <Baby size={22} aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-extrabold text-ink">Thêm hồ sơ bé</span>
+            <span data-kid-detail className="block text-[14px] font-bold text-ink-2">Để Đóm gọi tên bé và chọn truyện hợp tuổi</span>
+          </span>
+          <ChevronRight size={18} className="shrink-0 text-ink-2" aria-hidden />
+        </button>
+      )}
+      {pickerOpen && <ChildPicker onClose={() => setPickerOpen(false)} />}
 
       {/* Hero (board `.hero`) */}
       <section className="relative mt-3.5 h-[150px] overflow-hidden rounded-[28px] bg-gradient-to-br from-brand to-[#7B61FF] p-[18px] text-white" aria-label="Gợi ý của Đóm">

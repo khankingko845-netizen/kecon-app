@@ -14,6 +14,7 @@ import {
 
 import Mascot from "@/components/ui/Mascot";
 import type { Screen } from "@/lib/types";
+import { MAX_CHILD_NAME_LENGTH, birthYearOptions, normalizeChildName, pendingChildKey } from "@/lib/child-profiles";
 
 interface SignupProps {
  onNavigate: (screen: Screen) => void;
@@ -33,8 +34,8 @@ export default function Signup({ onNavigate }: SignupProps) {
  const email = String(form.get("email") || "").trim();
  const password = String(form.get("password") || "");
  const familyName = String(form.get("familyName") || "").trim();
- const childName = String(form.get("childName") || "").trim();
- const childAge = String(form.get("childAge") || "").trim();
+ const childName = normalizeChildName(String(form.get("childName") || "")).slice(0, MAX_CHILD_NAME_LENGTH);
+ const birthYear = Number.parseInt(String(form.get("childBirthYear") || ""), 10);
 
  if (!email || !password) {
  setError("Vui lòng nhập email và mật khẩu");
@@ -52,11 +53,11 @@ export default function Signup({ onNavigate }: SignupProps) {
  password,
  options: {
  emailRedirectTo: `${window.location.origin}/auth/callback`,
+ // T10: the child's name/year are not sent to the server here — they become the
+ // first Hồ sơ bé on this device once the parent has consented (T11).
  data: {
  family_name: familyName,
  display_name: familyName || email.split("@")[0],
- child_name: childName,
- child_age: childAge ? parseInt(childAge) : null,
  },
  },
  });
@@ -65,6 +66,16 @@ export default function Signup({ onNavigate }: SignupProps) {
  if (error) {
  setError(error.message);
  return;
+ }
+ if (childName && data.user?.id) {
+ try {
+ localStorage.setItem(
+ pendingChildKey(data.user.id),
+ JSON.stringify({ displayName: childName, birthYear: Number.isInteger(birthYear) ? birthYear : null }),
+ );
+ } catch {
+ /* private mode: the parent adds the child in Hồ sơ bé */
+ }
  }
  if (!data.session) {
  setNotice(
@@ -164,36 +175,47 @@ export default function Signup({ onNavigate }: SignupProps) {
 
  <div className="grid grid-cols-2 gap-3 mb-4">
  <div>
- <label className="text-[13px] font-bold text-gray-900 dark:text-white/90 block mb-2">
+ <label htmlFor="signup-child-name" className="text-[13px] font-bold text-gray-900 dark:text-white/90 block mb-2">
  Tên con
  </label>
  <div className="relative">
  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30" />
  <input
+ id="signup-child-name"
  name="childName"
  type="text"
+ maxLength={MAX_CHILD_NAME_LENGTH}
+ autoComplete="off"
  placeholder="VD: Minh"
  className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
  />
  </div>
  </div>
  <div>
- <label className="text-[13px] font-bold text-gray-900 dark:text-white/90 block mb-2">
- Tuổi con
+ <label htmlFor="signup-child-birth-year" className="text-[13px] font-bold text-gray-900 dark:text-white/90 block mb-2">
+ Năm sinh của con
  </label>
  <div className="relative">
- <Baby className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30" />
- <input
- name="childAge"
- type="number"
- min="0"
- max="18"
- placeholder="4"
- className="w-full pl-11 pr-4 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 placeholder:text-gray-400 dark:text-white/30 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
- />
+ <Baby className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30" />
+ <select
+ id="signup-child-birth-year"
+ name="childBirthYear"
+ defaultValue=""
+ className="w-full appearance-none pl-11 pr-3 py-3.5 rounded-[14px] border-[1.5px] border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-[15px] font-medium text-gray-900 dark:text-white/90 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
+ >
+ <option value="">Chọn năm</option>
+ {birthYearOptions().map((o) => (
+ <option key={o.year} value={o.year}>
+ {o.year} · {o.age === 0 ? "dưới 1 tuổi" : `${o.age} tuổi`}
+ </option>
+ ))}
+ </select>
  </div>
  </div>
  </div>
+ <p className="-mt-2 mb-4 text-[13px] text-gray-600 dark:text-white/60">
+ Chỉ lưu năm sinh. Hồ sơ bé được tạo sau khi bố mẹ đồng ý chính sách; thêm bé khác trong Bố mẹ → Hồ sơ bé.
+ </p>
 
  <button
  type="submit"

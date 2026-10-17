@@ -133,8 +133,6 @@ export interface AdminUserRow {
   display_name: string | null;
   family_name: string | null;
   role: string;
-  child_name: string | null;
-  child_age: number | null;
   created_at: string;
   storyCount: number;
   voiceCount: number;
@@ -922,7 +920,7 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
   const supabase = createClient();
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, display_name, family_name, role, child_name, child_age, created_at")
+    .select("id, display_name, family_name, role, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
   const { data: stories } = await supabase
@@ -1095,18 +1093,21 @@ export async function exportUserData(): Promise<Record<string, unknown>> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Chưa đăng nhập");
 
-  const [profile, voices, stories, members, behavior] = await Promise.all([
+  const [profile, voices, stories, members, behavior, children] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("voice_profiles").select("*").eq("user_id", user.id),
     supabase.from("stories").select("*").eq("user_id", user.id),
     supabase.from("family_members").select("*").eq("user_id", user.id),
     supabase.from("user_behavior").select("*").eq("user_id", user.id).limit(500),
+    // T10: the household's child profiles (RLS: members only).
+    supabase.from("child_profiles").select("id, display_name, birth_year, interests, created_at, updated_at").order("created_at"),
   ]);
 
   return {
     exported_at: new Date().toISOString(),
     account: { id: user.id, email: user.email },
     profile: profile.data,
+    child_profiles: children.data ?? [],
     voice_profiles: voices.data ?? [],
     stories: stories.data ?? [],
     family_members: members.data ?? [],
@@ -1114,7 +1115,7 @@ export async function exportUserData(): Promise<Record<string, unknown>> {
   };
 }
 
-// Deletes all user-generated content (voices, stories, members, behavior).
+// Deletes all user-generated content (voices, stories, members, behavior, child profiles).
 // Auth account removal requires a privileged server action and is requested
 // separately; this clears the personal data the client can reach under RLS.
 export async function deleteUserData(): Promise<void> {
@@ -1135,6 +1136,8 @@ export async function deleteUserData(): Promise<void> {
   await supabase.from("stories").delete().eq("user_id", user.id);
   await supabase.from("voice_profiles").delete().eq("user_id", user.id);
   await supabase.from("family_members").delete().eq("user_id", user.id);
+  // T10: the household's child profiles (RLS limits the delete to the caller's household).
+  await supabase.from("child_profiles").delete().not("id", "is", null);
 }
 
 // ============================================================

@@ -18,8 +18,6 @@ interface Profile {
   display_name: string;
   avatar_url: string | null;
   avatar_emoji: string | null;
-  child_age: number | null;
-  child_name: string | null;
   role: string;
   locale: string;
   email: string | null;

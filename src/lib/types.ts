@@ -32,6 +32,7 @@ export type Screen =
   | "downloads"
   | "notifications"
   | "profile-edit"
+  | "child-profiles"
   | "collections"
   | "scan-book"
   | "draw-story"

@@ -35,7 +35,7 @@ const at = (hhmm: string, day = "2025-06-02") => new Date(`${day}T${hhmm}:00`);
 
 describe("parent-gate · vùng phụ huynh", () => {
   it("tab Bố mẹ và mọi màn chỉ mở từ đó đều cần cổng", () => {
-    for (const s of ["settings", "parental-controls", "parent-analytics", "subscription", "profile-edit", "notifications", "admin"] as Screen[]) {
+    for (const s of ["settings", "parental-controls", "parent-analytics", "subscription", "profile-edit", "child-profiles", "notifications", "admin"] as Screen[]) {
       expect(isParentArea(s)).toBe(true);
     }
   });

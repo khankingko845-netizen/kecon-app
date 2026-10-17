@@ -4,12 +4,15 @@
  * AgeUiProvider (UI-13): resolves the child's age band and mirrors it on
  * <html> — `data-age` (CSS sizes), `data-density` (text density) and
  * `data-say-labels` (FeedbackProvider reads `[data-say]` labels aloud).
- * The profile age also syncs to `settings.childAge`, so story creation,
- * drawing and recommendations follow the same band.
+ * T10: the band comes from the child chosen on this device (Hồ sơ bé, birth
+ * year); without a child or a birth year the device setting is the fallback.
+ * The band also syncs to `settings.childAge`, so story creation, drawing and
+ * recommendations follow the same band.
  */
 import { createContext, useContext, useEffect, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/settings-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
+import { childAge } from "@/lib/child-profiles";
 import { AGE_UI, resolveChildBand, type AgeUi } from "@/lib/age-ui";
 import { DEFAULT_AGE_BAND } from "@/lib/age-bands";
 
@@ -20,9 +23,9 @@ export function useAgeUi(): AgeUi {
 }
 
 export function AgeUiProvider({ children }: { children: ReactNode }) {
-  const { profile } = useAuth();
+  const { activeChild } = useChildProfiles();
   const { settings, updateSettings } = useSettings();
-  const ui = AGE_UI[resolveChildBand(profile?.child_age, settings.childAge)];
+  const ui = AGE_UI[resolveChildBand(childAge(activeChild?.birth_year), settings.childAge)];
 
   useEffect(() => {
     if (ui.band !== settings.childAge) updateSettings({ childAge: ui.band });

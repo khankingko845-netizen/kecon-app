@@ -13,6 +13,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeProvider } from "@/lib/theme-context";
 import { FeedbackProvider } from "@/lib/feedback-context";
 import { AgeUiProvider } from "@/lib/age-ui-context";
+import { ChildProfilesProvider } from "@/lib/child-profiles-context";
 
 /**
  * Shared client context stack for the kid app (`/`) and the admin console
@@ -24,6 +25,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
  <AuthProvider>
  <FeatureFlagsProvider>
  <SettingsProvider>
+ <ChildProfilesProvider>
  <DataProvider>
  <AudioPlayerProvider>
  <I18nProvider>
@@ -39,6 +41,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
  </I18nProvider>
  </AudioPlayerProvider>
  </DataProvider>
+ </ChildProfilesProvider>
  </SettingsProvider>
  </FeatureFlagsProvider>
  </AuthProvider>

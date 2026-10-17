@@ -3,12 +3,13 @@ import { useFeatureFlags } from "@/lib/feature-flags-context";
 
 import { useState } from "react";
 import {
- ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer, Mail, Star,
+ ChevronRight, Key, Mic, BookOpen, Globe, Bell, Moon, Info, LogOut, Shield, Check, AlertCircle, ExternalLink, BarChart3, Download, Trash2, Crown, LayoutDashboard, User, MoonStars, Timer, Mail, Star, Baby,
 } from "@/components/ui/icons";
 import { CARD_SHADOW } from "@/components/ui/kit";
 import { useSettings, type StoryProvider } from "@/lib/settings-context";
 import { useAuth } from "@/lib/auth-context";
 import { useAgeUi } from "@/lib/age-ui-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
 import { useData } from "@/lib/data-context";
 import { PROVIDER_MODELS } from "@/lib/story-ai";
 import { exportUserData, deleteUserData } from "@/lib/db";
@@ -376,6 +377,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  const { settings, updateSettings, isConfigured, hasElevenLabs, hasStoryProvider, systemStatus } = useSettings();
  const { user, profile, signOut, isAdmin, isStaff } = useAuth();
  const ageUi = useAgeUi();
+ const { activeChild, loaded: childLoaded } = useChildProfiles();
  const { refreshAll } = useData();
  const { locale } = useI18n();
  const { mode: themeMode, isDark, setMode: setThemeMode, nightPref, setNightPref } = useTheme();
@@ -579,7 +581,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SettingsCard>
  <SettingsRow icon={Mail} label="Thông báo" onClick={() => onNavigate("notifications")} />
  <SettingsRow icon={Shield} label="Kiểm soát phụ huynh" tone="success" onClick={() => onNavigate("parental-controls")} />
- <SettingsRow icon={User} avatar={<FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={40} label={null} />} label="Hồ sơ gia đình" value={`${ageUi.short} · ${ageUi.label}`} onClick={() => onNavigate("profile-edit")} />
+ <SettingsRow icon={User} avatar={<FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={40} label={null} />} label="Hồ sơ gia đình" onClick={() => onNavigate("profile-edit")} />
+ <SettingsRow icon={Baby} label="Hồ sơ bé" tone="glow" value={activeChild ? `${activeChild.display_name} · ${ageUi.short} · ${ageUi.label}` : childLoaded ? "Thêm bé" : undefined} onClick={() => onNavigate("child-profiles")} />
  {features.enabled("missions") && <SettingsRow icon={Star} label="Tuần của bé" tone="glow" onClick={() => onNavigate("parent-week")} />}
  <SettingsRow icon={BarChart3} label="Thống kê của bé" onClick={() => onNavigate("parent-analytics")} />
  </SettingsCard>

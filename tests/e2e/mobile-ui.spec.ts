@@ -105,7 +105,7 @@ test("màn của bố mẹ dùng tốt ở 360×640", async ({ page, context, ba
   await passParentGate(page, MOCK_PIN);
   await expect(page.getByRole("button", { name: /Thống kê của bé/ })).toBeVisible();
   await expectMobileFriendly(page, "Bố mẹ");
-  for (const row of ["Tuần của bé", "Hồ sơ gia đình", "Kiểm soát phụ huynh", "Thống kê của bé", "Thông báo", "Gói cước"]) {
+  for (const row of ["Tuần của bé", "Hồ sơ gia đình", "Hồ sơ bé", "Kiểm soát phụ huynh", "Thống kê của bé", "Thông báo", "Gói cước"]) {
     await page.getByRole("button", { name: new RegExp(row) }).first().click();
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
     await expectMobileFriendly(page, row);
@@ -165,15 +165,16 @@ test("màn phụ của bé dùng tốt ở 360×640: Khám phá thêm, ghi giọ
   };
   // The mock child is 4 (band 3–5): Khám phá thêm shows only these three.
   for (const label of ["Yêu thích", "Vẽ truyện", "Chụp sách"]) await openExplore(label);
-  // Band 6–8 shows every item: serve the same profile with child_age 7.
-  await page.route("**/rest/v1/profiles*", async (route) => {
+  // Band 6–8 shows every item: serve the same child (Hồ sơ bé, T10) born 7 years ago.
+  const sevenYearsAgo = Number(new Intl.DateTimeFormat("en", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric" }).format(new Date())) - 7;
+  await page.route("**/rest/v1/child_profiles*", async (route) => {
     const res = await route.fetch();
     const body: unknown = await res.json().catch(() => null);
-    const older = (p: unknown) => (p && typeof p === "object" ? { ...p, child_age: 7 } : p);
+    const older = (c: unknown) => (c && typeof c === "object" ? { ...c, birth_year: sevenYearsAgo } : c);
     await route.fulfill({ response: res, json: Array.isArray(body) ? body.map(older) : older(body) });
   });
   await openExplore("Bộ sưu tập");
-  await page.unroute("**/rest/v1/profiles*");
+  await page.unroute("**/rest/v1/child_profiles*");
 
   await page.goto("/");
   await page.getByTestId("home-topics").waitFor();

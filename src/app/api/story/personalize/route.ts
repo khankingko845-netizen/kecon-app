@@ -6,22 +6,28 @@ import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
 import { callLlmJson } from "@/lib/llm-metered";
 import { z } from "zod";
-import { llmSelectionFields, optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
+import { llmSelectionFields, optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
+import { loadStoryChild } from "@/lib/child-profile-server";
+import { childAge as ageFromBirthYear } from "@/lib/child-profiles";
 
 /**
  * Personalize a story for a specific child.
- * POST { storyId, childName, childAge, interests?, petName?, petType? }
+ * POST { storyId, childProfileId? | childName, childAge?, interests?, petName?, petType? }
+ * T10: with `childProfileId` the name/age/interests come from the household's child profile.
  * Creates a new personalized copy of the story.
  */
-const PersonalizeBody = z.object({
-  ...llmSelectionFields,
-  storyId: uuid,
-  childName: requiredText(60),
-  childAge: z.union([optionalText(20), z.number().int().min(0).max(18).transform(String)]),
-  interests: optionalText(300),
-  petName: optionalText(60),
-  petType: optionalText(60),
-});
+const PersonalizeBody = z
+  .object({
+    ...llmSelectionFields,
+    storyId: uuid,
+    childProfileId: uuid.optional(),
+    childName: optionalText(60),
+    childAge: z.union([optionalText(20), z.number().int().min(0).max(18).transform(String)]),
+    interests: optionalText(300),
+    petName: optionalText(60),
+    petType: optionalText(60),
+  })
+  .refine((b) => Boolean(b.childProfileId || b.childName), { message: "Chọn hồ sơ bé hoặc nhập tên bé", path: ["childName"] });
 
 export async function POST(request: NextRequest) {
  return withAiContext("story.personalize",async(request)=>{
@@ -37,7 +43,16 @@ export async function POST(request: NextRequest) {
   if (!parsedBody.ok) return parsedBody.response;
   const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsedBody.data.apiKey);
   if (byoBlocked) return byoBlocked;
-  const { storyId, childName, childAge, interests, petName, petType } = parsedBody.data;
+  const { storyId, petName, petType } = parsedBody.data;
+
+  // T10: household child profile (RLS) — before reading the story or spending quota.
+  const picked = await loadStoryChild(supabase, parsedBody.data.childProfileId);
+  if ("response" in picked) return picked.response;
+  const child = picked.child;
+  const childName = child?.display_name ?? parsedBody.data.childName ?? "";
+  const profileAge = child ? ageFromBirthYear(child.birth_year) : null;
+  const childAge = profileAge !== null ? String(profileAge) : parsedBody.data.childAge;
+  const interests = child?.interests.length ? child.interests.join(", ") : parsedBody.data.interests;
 
   // Get original story + pages
   const { data: story } = await supabase
@@ -125,12 +140,7 @@ Hãy cá nhân hóa truyện này cho bé ${childName}. Trả về JSON.`;
         status: "draft",
         tags: [...(story.tags || []), "personalized"],
         moral_lesson: story.moral_lesson,
-        metadata: {
-          personalized_for: childName,
-          original_story_id: storyId,
-          child_age: childAge,
-          interests,
-        },
+        // No `metadata` here: public.stories has no such column (the insert used to fail).
       })
       .select("id")
       .single();

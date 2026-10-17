@@ -28,6 +28,10 @@ export const MOCK_VC_USER_ID = "00000000-0000-4000-8000-00000000e2d1";
 export const MOCK_VC_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2d2";
 /** A consented voice ("Ông của bé", speaker Ông Tư) and a voice made before consents ("Giọng cũ"). */
 export const MOCK_VC_WITHDRAW_USER_ID = "00000000-0000-4000-8000-00000000e2d3";
+/** T10 Hồ sơ bé: "Gia đình Sóc" starts with one child, Bông (5 tuổi). */
+export const MOCK_KIDS_USER_ID = "00000000-0000-4000-8000-00000000e2b1";
+/** T10: a new family — no child profile yet and the parent policy not accepted (signup draft flow). */
+export const MOCK_KIDS_NEW_USER_ID = "00000000-0000-4000-8000-00000000e2b2";
 
 const MOCK_EMAILS: Record<string, string> = {
   [MOCK_A15_ADMIN_ID]:"e2e-a15-admin@kecon.test",
@@ -46,8 +50,10 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_VC_USER_ID]: "e2e-vc@kecon.test",
   [MOCK_VC_PIN_USER_ID]: "e2e-vc-pin@kecon.test",
   [MOCK_VC_WITHDRAW_USER_ID]: "e2e-vc-withdraw@kecon.test",
+  [MOCK_KIDS_USER_ID]: "e2e-kids@kecon.test",
+  [MOCK_KIDS_NEW_USER_ID]: "e2e-kids-new@kecon.test",
 };
-const CONSENT_FIXTURES = new Set([MOCK_CONSENT_USER_ID, MOCK_CONSENT_PIN_USER_ID]);
+const CONSENT_FIXTURES = new Set([MOCK_CONSENT_USER_ID, MOCK_CONSENT_PIN_USER_ID, MOCK_KIDS_NEW_USER_ID]);
 
 const b64url = (v: string) => Buffer.from(v).toString("base64url");
 
