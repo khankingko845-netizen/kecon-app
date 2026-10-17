@@ -404,7 +404,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  story?.locale || "vi"
  );
  const audioUrl = await uploadTtsAudio(missing[i].id, blob);
- await savePageAudio(missing[i].id, audioUrl, 0);
+ await savePageAudio(missing[i].id, audioUrl, 0, null, [voiceId]);
  updatePageLocal(missing[i].id, { audio_url: audioUrl });
  } catch (e) {
  setError(`Lỗi trang ${missing[i].page_number}: ${e instanceof Error ? e.message : "?"}`);
@@ -445,7 +445,7 @@ export default function StoryEditor({ storyId, onBack, onNavigate }: StoryEditor
  story?.locale || "vi"
  );
  const audioUrl = await uploadTtsAudio(pageId, blob);
- await savePageAudio(pageId, audioUrl, 0);
+ await savePageAudio(pageId, audioUrl, 0, null, [voiceId]);
  updatePageLocal(pageId, { audio_url: audioUrl });
  } catch {
  setError("Lỗi tạo audio cho trang");

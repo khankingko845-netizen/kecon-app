@@ -7,11 +7,13 @@ import {
 } from "@/components/ui/icons";
 import { useSettings } from "@/lib/settings-context";
 import { useData } from "@/lib/data-context";
-import { cloneVoiceApi } from "@/lib/api-client";
+import { cloneVoiceApi, CloneVoiceError } from "@/lib/api-client";
 import { uploadRecording, createVoiceProfile } from "@/lib/db";
 import type { Screen } from "@/lib/types";
 import Mascot from "@/components/ui/Mascot";
 import { listenErrorMessage, sampleAudio, type AudioOwner } from "@/lib/shared-audio";
+import VoiceConsentStep from "@/components/parent/VoiceConsentStep";
+import { RERECORD_REASONS, type SavedVoiceConsent } from "@/lib/voice-consent";
 
 const SAMPLE_SCRIPTS = [
  {
@@ -47,7 +49,7 @@ interface VoiceRecordingProps {
 }
 
 export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingProps) {
- const { settings, hasElevenLabs: hasSystemElevenLabs } = useSettings();
+ const { systemStatus } = useSettings();
  const { refreshVoices } = useData();
  const [isRecording, setIsRecording] = useState(false);
  const [elapsed, setElapsed] = useState(0);
@@ -55,6 +57,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const [voiceName, setVoiceName] = useState("");
  const [gender, setGender] = useState<"male" | "female">("female");
  const [voiceLang, setVoiceLang] = useState<string>("vi");
+ // T12: the contributor's spoken consent (step 1) — required before any sample is cloned.
+ const [consent, setConsent] = useState<SavedVoiceConsent | null>(null);
  const [isCloning, setIsCloning] = useState(false);
  const [cloneResult, setCloneResult] = useState<{ voice_id: string; name: string } | null>(null);
  const [error, setError] = useState<string | null>(null);
@@ -73,7 +77,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
  const [isRecordingPlaying, setIsRecordingPlaying] = useState(false);
 
- const hasElevenKey = Boolean(settings.elevenLabsApiKey) || hasSystemElevenLabs;
+ // T12: family voices are cloned only in KểCon's ElevenLabs pool (deletable on withdrawal).
+ const hasElevenKey = systemStatus.hasElevenLabs;
 
  const stopRecording = useCallback(() => {
  if (mediaRecorderRef.current?.state === "recording") {
@@ -138,8 +143,18 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  }
  };
 
+ const handleConsented = useCallback((saved: SavedVoiceConsent) => {
+ setConsent(saved);
+ setVoiceName((v) => v || saved.speakerName);
+ setError(null);
+ }, []);
+
  const handleClone = async () => {
  if (!audioBlob || !voiceName.trim()) return;
+ if (!consent) {
+ setError("Cần ghi lời đồng ý của người góp giọng trước khi tạo giọng.");
+ return;
+ }
  if (!hasElevenKey) {
  onNavigate?.("settings");
  return;
@@ -149,12 +164,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  setError(null);
 
  try {
- const result = await cloneVoiceApi(
- voiceName.trim(),
- audioBlob,
- settings.elevenLabsApiKey || undefined,
- voiceLang
- );
+ const result = await cloneVoiceApi(voiceName.trim(), audioBlob, voiceLang, consent.consentId);
 
  // Persist sample recording + voice profile to Supabase.
  let sampleUrl: string | null = null;
@@ -178,6 +188,9 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  } catch (err) {
  toast("error", "Chưa hoàn tất tạo giọng. Kiểm tra trạng thái trước khi thử lại.");
  setError(err instanceof Error ? err.message : "Clone thất bại");
+ // This consent cannot be used any more (withdrawn, used, expired, text updated…): record a new one.
+ const reason = err instanceof CloneVoiceError && err.code?.startsWith("voice_consent_") ? err.code.slice("voice_consent_".length) : null;
+ if (reason && RERECORD_REASONS.has(reason)) setConsent(null);
  } finally {
  setIsCloning(false);
  }
@@ -252,6 +265,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  const litBars = Math.round((Math.min(progress, 100) / 100) * WAVE.length);
  const listenTitle = cloneResult
  ? "Đóm đã học giọng của bạn!"
+ : !consent
+ ? "Trước tiên: lời đồng ý"
  : isRecording
  ? "Đóm đang lắng nghe…"
  : audioBlob
@@ -289,11 +304,35 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  <div>
  <b className="block text-[16px] font-bold">{listenTitle}</b>
  <small className="text-[13.5px] text-ink-2">
- {cloneResult ? `Giọng "${cloneResult.name}" đã sẵn sàng kể cho bé` : "Đọc tự nhiên như kể cho bé nghe nhé"}
+ {cloneResult
+ ? `Giọng "${cloneResult.name}" đã sẵn sàng kể cho bé`
+ : !consent
+ ? "Người góp giọng tự đọc to câu đồng ý, rồi mới ghi âm mẫu"
+ : "Đọc tự nhiên như kể cho bé nghe nhé"}
  </small>
  </div>
  </div>
 
+ {!consent && !cloneResult && <VoiceConsentStep onConsented={handleConsented} />}
+
+ {consent && !cloneResult && (
+ <div className="mt-3 flex items-start gap-2.5 rounded-[16px] bg-success-soft px-3.5 py-3" data-testid="voice-consent-saved">
+ <ShieldCheck size={18} weight="fill" className="mt-px shrink-0 text-success" />
+ <p className="flex-1 text-[13.5px] font-semibold leading-snug text-success">
+ Đã lưu lời đồng ý của {consent.speakerName} (bản {consent.version}). Bước 2/2: ghi âm mẫu.
+ </p>
+ <button
+ type="button"
+ onClick={() => { setConsent(null); setAudioBlob(null); setError(null); }}
+ disabled={isRecording || isCloning}
+ className="shrink-0 text-[13px] font-semibold text-brand-ink underline disabled:opacity-50"
+ >
+ Ghi lại
+ </button>
+ </div>
+ )}
+
+ {consent && (<>
  {/* Script picker */}
  <div className="-mx-5 mt-3 flex gap-1.5 overflow-x-auto px-5 pb-1 no-scrollbar" role="tablist" aria-label="Đoạn đọc mẫu">
  {SAMPLE_SCRIPTS.map((x) => (
@@ -495,6 +534,8 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  </div>
  )}
 
+ </>)}
+
  {/* Error */}
  {error && (
  <div className="w-full mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2">
@@ -506,7 +547,7 @@ export default function VoiceRecording({ onBack, onNavigate }: VoiceRecordingPro
  {/* Privacy (board `.priv`) */}
  <p className="mx-1 mt-[18px] flex gap-2 text-[13px] leading-normal text-ink-2">
  <LockKey size={18} weight="fill" className="shrink-0 text-success" />
- Giọng nói chỉ dùng trong gia đình bạn và có thể xoá bất cứ lúc nào.
+ Giọng nói chỉ dùng trong gia đình bạn. Rút đồng ý bất cứ lúc nào trong Cài đặt › Đồng ý giọng nói — giọng bị xoá trong vòng 24 giờ.
  </p>
  </div>
  );

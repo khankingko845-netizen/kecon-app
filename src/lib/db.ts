@@ -1179,18 +1179,27 @@ export async function uploadTtsAudio(
   return data.publicUrl;
 }
 
+// Saved narration records which provider voices rendered it (T12): when a family voice is
+// withdrawn, exactly those pages are cleared. Audio saved without voice IDs counts as "unknown"
+// and is cleared conservatively. A withdrawn voice can no longer be saved (42501).
 export async function savePageAudio(
   storyPageId: string,
   audioUrl: string,
   durationSec: number,
-  audioKey: string | null = null
+  audioKey: string | null = null,
+  voiceIds: readonly string[] | null = null
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase
-    .from("story_pages")
-    .update({ audio_url: audioUrl, audio_duration: Math.round(durationSec), audio_key: audioKey })
-    .eq("id", storyPageId);
+  const ids = voiceIds ? [...new Set(voiceIds.filter((v) => typeof v === "string" && v.length > 0))] : [];
+  const { data, error } = await supabase.rpc("save_page_audio", {
+    p_page: storyPageId,
+    p_url: audioUrl,
+    p_duration: Math.max(0, Math.round(durationSec || 0)),
+    p_key: audioKey,
+    p_voice_ids: ids.length ? ids : null,
+  });
   if (error) throw error;
+  if (data !== true) throw new Error("Không lưu được giọng đọc của trang.");
 }
 
 // ============================================================

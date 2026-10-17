@@ -26,6 +26,8 @@ import { useParentUnlock } from "@/lib/use-parent-unlock";
 import { useScrollMemory } from "@/lib/use-scroll-memory";
 import { useScreenTime } from "@/lib/use-screen-time";
 import AppProviders from "@/components/AppProviders";
+import { purgeRevokedAudio } from "@/lib/voice-consent";
+import { createClient } from "@/lib/supabase/client";
 import { adminPath, isAdminScreen } from "@/lib/admin-routes";
 
 /**
@@ -146,6 +148,16 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  // Another family signs in on this device: their story must not keep playing.
  const sessionUserId = user?.id ?? null;
  useEffect(() => () => audio.stop(), [sessionUserId, audio]);
+
+ // T12: narration of withdrawn / deleted family voices leaves this device too (offline
+ // downloads + service-worker cache), once per app session and account.
+ useEffect(() => {
+ if (!sessionUserId || loading) return;
+ const timer = window.setTimeout(() => {
+ void purgeRevokedAudio(createClient(), sessionUserId).catch(() => undefined);
+ }, 4000);
+ return () => window.clearTimeout(timer);
+ }, [sessionUserId, loading]);
 
  // UI-12: once signed in, warm the chunks of the kid tabs in the background
  // (after first paint, when the browser is idle) so tab switches stay instant.

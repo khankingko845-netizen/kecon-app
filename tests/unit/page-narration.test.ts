@@ -52,7 +52,7 @@ describe("makePageResolver (MiniPlayer narration for the next pages)", () => {
     expect(m.ttsApi).toHaveBeenCalledWith("narrator", P2, undefined, undefined, "vi", "calm");
     await flush();
     expect(m.uploadTtsAudio).toHaveBeenCalledWith("p2", expect.any(Blob));
-    expect(m.savePageAudio).toHaveBeenCalledWith("p2", "https://cdn/new-p2.mp3", 0, await keyFor(P2));
+    expect(m.savePageAudio).toHaveBeenCalledWith("p2", "https://cdn/new-p2.mp3", 0, await keyFor(P2), ["narrator"]);
     expect(await resolve(2)).toBe("https://cdn/new-p2.mp3");
     expect(m.ttsApi).toHaveBeenCalledTimes(1);
     URL.revokeObjectURL(url!);

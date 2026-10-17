@@ -57,7 +57,7 @@ describe("policy documents", () => {
     expect(v1.body).toContain("tối đa khoảng 6 tháng");
     expect(v1.body).toContain("không lưu địa chỉ IP");
     expect(v1.body_sha256).toBe(sha(v1 as Required<Doc>));
-    const anon = await asAnon(db, (tx) => tx.query<J>("SELECT version, body_sha256 FROM public.consent_documents"));
+    const anon = await asAnon(db, (tx) => tx.query<J>("SELECT version, body_sha256 FROM public.consent_documents WHERE kind = 'parent_policy'"));
     expect(anon.rows).toEqual([{ version: 1, body_sha256: v1.body_sha256 }]);
   });
 

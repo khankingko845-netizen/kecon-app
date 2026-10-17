@@ -57,7 +57,7 @@ export function makePageResolver(pages: Pick<StoryPageRow, "id" | "content" | "a
     const blob = await synthesizeSegments(segments, setup);
     void uploadTtsAudio(row.id, blob)
       .then(async (remote) => {
-        await savePageAudio(row.id, remote, 0, key);
+        await savePageAudio(row.id, remote, 0, key, segments.map((s) => s.voiceId));
         known.set(pageNumber, remote);
       })
       .catch(() => {});
