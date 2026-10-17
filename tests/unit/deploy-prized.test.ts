@@ -600,3 +600,53 @@ describe("deploy/prized/backup · khôi phục được khi chuyển máy (Vault
     expect(ok.log).not.toContain("other_db");
   });
 });
+
+// 17/10: máy tạm dừng (Prized) rồi thức dậy → Cloudflare đã huỷ quick tunnel; cloudflared lặp
+// "Tunnel not found" mãi, URL cũ hết phân giải, staging chết ~20 phút tới khi restart tay.
+describe("deploy/prized · url-watch tự cứu quick tunnel", () => {
+  function runWatch({ journal, host, current }: { journal: string; host: string; current: string }) {
+    const tmp = mkdtempSync(join(tmpdir(), "kecon-urlwatch-"));
+    const bin = join(tmp, "bin");
+    cpSync(`${DIR}/url-watch.sh`, join(tmp, "url-watch.sh"));
+    execFileSync("mkdir", ["-p", bin]);
+    writeFileSync(join(tmp, "journal.txt"), journal);
+    writeFileSync(join(tmp, "public-url"), current + "\n");
+    const fake = (name: string, body: string) => {
+      writeFileSync(join(bin, name), `#!/usr/bin/env bash\n${body}\n`);
+      chmodSync(join(bin, name), 0o755);
+    };
+    fake("systemctl", `echo "systemctl $*" >> "${tmp}/calls"; [[ "$1" == show ]] && echo 4242; exit 0`);
+    fake("journalctl", `echo "journalctl $*" >> "${tmp}/calls"; cat "${tmp}/journal.txt"`);
+    fake("curl", `echo '{"hostname":"${host}"}'`);
+    const out = execFileSync("bash", [join(tmp, "url-watch.sh")], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, KECON_PUBLIC_URL_FILE: join(tmp, "public-url") },
+    });
+    let calls: string[] = [];
+    try {
+      calls = read(join(tmp, "calls")).trim().split("\n");
+    } catch {}
+    return { out, calls };
+  }
+  const notFound = 'ERR Register tunnel error from server side error="Unauthorized: Tunnel not found" connIndex=0\n';
+
+  it("tunnel bị Cloudflare huỷ (≥ 3 lần 'Tunnel not found' của tiến trình hiện tại trong 2 phút) → restart kecon-tunnel", () => {
+    const { out, calls } = runWatch({ journal: notFound.repeat(4), host: "old-host.trycloudflare.com", current: "https://old-host.trycloudflare.com" });
+    expect(calls).toContain("systemctl restart kecon-tunnel");
+    expect(calls).not.toContain("systemctl restart kecon-web");
+    // chỉ đếm log của tiến trình cloudflared đang chạy (không restart lặp vì log của tiến trình cũ)
+    expect(calls.find((c) => c.startsWith("journalctl"))).toMatch(/_PID=4242/);
+    expect(out).toContain("Tunnel not found");
+  });
+
+  it("lỗi lẻ tẻ (< 3 lần) không restart tunnel; URL không đổi thì không làm gì", () => {
+    const { calls } = runWatch({ journal: notFound, host: "same.trycloudflare.com", current: "https://same.trycloudflare.com" });
+    expect(calls.filter((c) => c.includes("restart"))).toEqual([]);
+  });
+
+  it("tunnel đổi URL → restart kecon-web để tiêm URL mới (như trước)", () => {
+    const { calls } = runWatch({ journal: "", host: "new-host.trycloudflare.com", current: "https://old-host.trycloudflare.com" });
+    expect(calls).toContain("systemctl restart kecon-web");
+    expect(calls).not.toContain("systemctl restart kecon-tunnel");
+  });
+});

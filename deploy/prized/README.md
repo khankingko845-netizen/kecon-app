@@ -18,7 +18,7 @@ Trình duyệt ──https──▶ Cloudflare tunnel ──▶ Caddy 127.0.0.1:
 | `kecon-tunnel` | `cloudflared tunnel --url http://127.0.0.1:8080` (metrics `127.0.0.1:20241/quicktunnel` trả hostname) |
 | `kecon-proxy` | Caddy theo `Caddyfile` — app và Supabase API chung một origin |
 | `kecon-web` | `run-web.sh`: chờ URL tunnel, copy `.next-template` → `.next`, thay placeholder `kecon-public-origin.invalid` / `kecon-anon-key-placeholder`, rồi `next start` |
-| `kecon-urlwatch.timer` | Mỗi phút: tunnel đổi URL (khởi động lại máy) → restart `kecon-web` |
+| `kecon-urlwatch.timer` | Mỗi phút: tunnel đổi URL (khởi động lại máy) → restart `kecon-web`; Cloudflare đã huỷ quick tunnel (sau khi máy tạm dừng rồi thức, cloudflared lặp `Tunnel not found` ≥ 3 lần/2 phút) → restart `kecon-tunnel` để lấy URL mới |
 | `kecon-backup.timer` | Mỗi 2 phút: `backup/kecon_backup.py --tick --verify-restore` — nhịp tim cho Admin › Sao lưu, nhận "Sao lưu ngay" hoặc lịch hằng ngày (mặc định 03:15 giờ VN; máy tắt đúng giờ thì chạy khi bật lại) → repo GitHub riêng tư `kecon-backup` (xem dưới) |
 
 Unit dùng `User=@KECON_USER@`: `install-units.sh` (bootstrap/deploy gọi) thay bằng **chủ sở hữu `/srv/kecon`**
