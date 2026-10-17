@@ -112,12 +112,23 @@ test("thêm bé thứ hai, đổi bé trên Trang chủ → lời chào + nhóm 
   // Lựa chọn giữ sau khi tải lại trang (lưu trên thiết bị)
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Chào bé Na!" })).toBeVisible();
-  // Máy hẹp 360px: tên bé xuống dòng chứ không bị cắt ("Chào bé N…")
+  // Máy hẹp 360px: tên bé xuống dòng chứ không bị cắt ("Chào bé N…"): mọi dòng chữ nằm trong khung
   await page.setViewportSize({ width: 360, height: 740 });
   const greetingText = page.getByTestId("child-switch").locator("span").first();
-  await expect
-    .poll(() => greetingText.evaluate((el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1))
-    .toBe(true);
+  const greetingFit = () =>
+    greetingText.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const rects = [...range.getClientRects()];
+      return {
+        lines: new Set(rects.map((r) => Math.round(r.top))).size <= 2,
+        // glyph boxes are taller than the 1.1 line height, so a line counts as shown when its middle is inside
+        inside: rects.every((r) => r.left >= box.left - 1 && r.right <= box.right + 1 && (r.top + r.bottom) / 2 <= box.bottom),
+        noEllipsis: getComputedStyle(el).textOverflow !== "ellipsis" || el.scrollWidth <= el.clientWidth + 1,
+      };
+    });
+  await expect.poll(greetingFit).toEqual({ lines: true, inside: true, noEllipsis: true });
   await page.setViewportSize({ width: 412, height: 839 });
 
   // ── Tạo truyện: mặc định cho bé đang chọn; đổi sang Bông → gửi hồ sơ + nhóm tuổi của Bông ──
