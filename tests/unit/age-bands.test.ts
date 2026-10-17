@@ -24,7 +24,7 @@ describe("age bands (UI-13)", () => {
     ["4-6", "3-5"],
     ["7-9", "6-8"],
     ["10+", "9-12"],
-    // tuổi đơn lẻ (profile.child_age)
+    // tuổi đơn lẻ (T10: tính từ năm sinh trong Hồ sơ bé)
     [4, "3-5"],
     ["6", "6-8"],
     [8, "6-8"],

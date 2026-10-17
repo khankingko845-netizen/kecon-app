@@ -113,13 +113,13 @@ describe("020 · ghi tự động thao tác của nhân sự", () => {
 
   it("gia đình tự sửa hồ sơ của mình: không ghi; nhân sự sửa hồ sơ người khác: chỉ ghi tên cột", async () => {
     const from = await lastId();
-    await run(u.family, "UPDATE public.profiles SET child_name = 'Bống' WHERE id = $1", [u.family]);
+    await run(u.family, "UPDATE public.profiles SET family_name = 'Nhà Bống' WHERE id = $1", [u.family]);
     expect(await logsSince(from)).toEqual([]);
 
-    await run(u.admin, "UPDATE public.profiles SET child_name = 'Bin', display_name = 'Mẹ Bin' WHERE id = $1", [u.family]);
+    await run(u.admin, "UPDATE public.profiles SET family_name = 'Nhà Bin', display_name = 'Mẹ Bin' WHERE id = $1", [u.family]);
     const logs = await logsSince(from);
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatchObject({ action: "user.update", before: null, after: { fields: ["child_name", "display_name"] } });
+    expect(logs[0]).toMatchObject({ action: "user.update", before: null, after: { fields: ["display_name", "family_name"] } });
     expect(JSON.stringify(logs[0])).not.toContain("Bin");
   });
 

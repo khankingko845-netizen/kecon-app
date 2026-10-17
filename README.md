@@ -372,7 +372,8 @@ ANTHROPIC_API_KEY=your-anthropic-key
 | `022_provider_key_pool.sql` | Kho nhiều key giọng nói (A-04b): `provider_api_keys` (key trong Vault, trạng thái, credit, lượt dùng) + `provider_voice_bindings`; RPC admin thêm / sửa / xoá / liệt kê (có nhật ký), RPC chỉ service role để máy chủ xoay vòng + báo trạng thái; chuyển key ElevenLabs của A-04 vào kho; cài đặt `fishaudio_model_id` |
 
 ### Bảng chính:
-- `profiles` — User profiles (display_name, role, child_name, child_age...)
+- `profiles` — User profiles (display_name, family_name, role, avatar...)
+- `child_profiles` — Hồ sơ bé: 1–5 children per household (display_name, birth_year, interests) — see `docs/child-profiles.md`
 - `voice_profiles` — Giọng nói đã clone (elevenlabs_voice_id, quality_score...)
 - `stories` — Truyện (title, category, is_published, is_platform_content, deleted_at...)
 - `story_pages` — Trang truyện (content, scene_description, particle_effect, choices...)

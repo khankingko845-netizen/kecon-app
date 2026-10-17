@@ -112,6 +112,13 @@ test("thêm bé thứ hai, đổi bé trên Trang chủ → lời chào + nhóm 
   // Lựa chọn giữ sau khi tải lại trang (lưu trên thiết bị)
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Chào bé Na!" })).toBeVisible();
+  // Máy hẹp 360px: tên bé xuống dòng chứ không bị cắt ("Chào bé N…")
+  await page.setViewportSize({ width: 360, height: 740 });
+  const greetingText = page.getByTestId("child-switch").locator("span").first();
+  await expect
+    .poll(() => greetingText.evaluate((el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1))
+    .toBe(true);
+  await page.setViewportSize({ width: 412, height: 839 });
 
   // ── Tạo truyện: mặc định cho bé đang chọn; đổi sang Bông → gửi hồ sơ + nhóm tuổi của Bông ──
   await tabBar(page).getByRole("button", { name: "Tạo", exact: true }).click();

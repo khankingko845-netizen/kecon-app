@@ -195,7 +195,8 @@ export default function Home({ onNavigate }: HomeProps) {
           <FamilyAvatar avatarUrl={profile?.avatar_url} emoji={profile?.avatar_emoji} size={52} label={null} />
         </button>
         <div className="min-w-0">
-          <h1 className="truncate font-display text-[24px] font-bold leading-[1.05] text-ink">
+          {/* The child's name wraps to a second line instead of being cut ("Chào bé T…"). */}
+          <h1 className="font-display text-[24px] font-bold leading-[1.1] text-ink">
             {kids.length >= 2 ? (
               <button
                 type="button"
@@ -204,11 +205,11 @@ export default function Home({ onNavigate }: HomeProps) {
                 data-testid="child-switch"
                 className="inline-flex max-w-full min-h-11 items-center gap-1 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <span className="truncate">{greeting}</span>
+                <span className="line-clamp-2 [overflow-wrap:anywhere]">{greeting}</span>
                 <ChevronDown size={18} className="shrink-0 text-ink-2" aria-hidden />
               </button>
             ) : (
-              greeting
+              <span className="line-clamp-2 [overflow-wrap:anywhere]">{greeting}</span>
             )}
           </h1>
           <p data-kid-detail className="text-[14px] font-bold text-ink-2">{dateLine}</p>

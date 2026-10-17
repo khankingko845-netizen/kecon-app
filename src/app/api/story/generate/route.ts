@@ -223,6 +223,12 @@ export async function POST(request: NextRequest) {
     if ("response" in picked) return picked.response;
     const child = picked.child;
     const childName = child?.display_name ?? input.childName ?? "";
+    // The "bé là nhân vật chính" card takes the profile's name too (the client may hold a
+    // stale or typed one), in the prompt and in the saved cast alike.
+    const brief: GenerateInput =
+      child && input.characters?.some((c) => c.isChild)
+        ? { ...input, characters: input.characters.map((c) => (c.isChild ? { ...c, name: child.display_name } : c)) }
+        : input;
 
     const chosenVoice = await validateStoryNarrator(supabase, user.id, language || "vi", voiceId, narratorVoiceId);
     if ("error" in chosenVoice) return Response.json({ error: chosenVoice.error }, { status: 400 });
@@ -245,7 +251,7 @@ export async function POST(request: NextRequest) {
           language: language || "vi",
           extraPrompt,
           interests: child?.interests,
-          characters: input.characters,
+          characters: brief.characters,
           length: input.length,
           pace: input.pace ?? defaultPace(age, theme),
         },
@@ -253,7 +259,7 @@ export async function POST(request: NextRequest) {
         { qualityRetry: true, budgetMs: GENERATION_BUDGET_MS },
       );
       const storyId = persist
-        ? await persistStory(supabase, user.id, input, story, chosenVoice, {
+        ? await persistStory(supabase, user.id, brief, story, chosenVoice, {
             provider: target.provider,
             model: target.model,
             attempts,
