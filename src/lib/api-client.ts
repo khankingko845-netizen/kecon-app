@@ -112,6 +112,8 @@ export async function generateStoryApi(input: {
   model: string;
   theme: string;
   childName?: string;
+  /** T10: the household's child profile (the server reads its name/interests). */
+  childProfileId?: string;
   age?: string;
   language?: string;
   extraPrompt?: string;

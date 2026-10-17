@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { callLlmJson, type FetchLike, type LlmProvider, type LlmResult, type LlmTarget } from "@/lib/llm";
 import { getAgeBand } from "@/lib/age-bands";
+import { interestsPromptLine } from "@/lib/child-profiles";
 import {
   cleanCharacterName,
   pagePlan,
@@ -80,6 +81,8 @@ export interface StoryParams {
   age: string;
   language: string;
   extraPrompt?: string;
+  /** T10: the chosen child's interests (Hồ sơ bé), woven in lightly when they fit. */
+  interests?: string[];
   /** v2 brief — all optional so older callers keep working. */
   characters?: BriefCharacter[];
   length?: StoryLength;
@@ -149,6 +152,7 @@ export function buildStoryPrompt(params: StoryParams, plan: PagePlan = pagePlan(
       ? "chậm rãi, êm như lời ru: câu ngắn, hình ảnh dịu dàng, vài câu lặp lại nhẹ nhàng; các trang cuối chậm dần và yên bình"
       : "tự nhiên, sinh động, có lúc hồi hộp vừa phải rồi nhẹ nhõm";
   const extra = params.extraPrompt?.trim();
+  const interests = interestsPromptLine(params.interests);
   return `Viết một câu chuyện ${forChild}.
 Chủ đề: ${THEME_LABEL[params.theme] || params.theme}
 Ngôn ngữ của truyện: ${LANGUAGE_LABEL[params.language] || params.language}
@@ -156,6 +160,7 @@ Phong cách theo độ tuổi: ${band.tone}
 Độ dài: ĐÚNG ${plan.pages} trang. Mỗi trang ${plan.words[0]}–${plan.words[1]} chữ (không tính thẻ markup). Tổng khoảng ${total} chữ, khoảng ${estimatedMinutes(plan, pace)} phút nghe. Không viết trang nào ngắn hơn ${plan.words[0]} chữ.
 Nhịp kể: ${paceLine}.
 ${characterLines(params)}
+${interests ?? ""}
 ${extra ? `Yêu cầu thêm của gia đình: ${extra}` : ""}
 
 Trả về JSON đúng cấu trúc sau:

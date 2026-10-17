@@ -2,10 +2,10 @@
 import { useToast } from "@/components/ui/Toast";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, Check, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
+import { ChevronLeft, ChevronRight, Check, Users, Baby, Calendar, Globe, Loader2 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
-import { useSettings } from "@/lib/settings-context";
-import { ageUiFor } from "@/lib/age-ui";
+import { useChildProfiles } from "@/lib/child-profiles-context";
+import { childNames } from "@/lib/child-profiles";
 import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import { FAMILY_AVATARS, familyAvatarFor, customAvatarUrl } from "@/lib/family-avatar";
 import { buildProfileUpdate } from "@/lib/profile-form";
@@ -18,14 +18,13 @@ interface ProfileEditProps {
  onBack: () => void;
 }
 
-export default function ProfileEdit({ onBack }: ProfileEditProps) {
+export default function ProfileEdit({ onBack, onNavigate }: ProfileEditProps) {
  const { toast } = useToast();
  const { profile, refreshProfile } = useAuth();
- const { updateSettings } = useSettings();
+ const { kids } = useChildProfiles();
  const [displayName, setDisplayName] = useState(profile?.display_name || "");
  const [familyName, setFamilyName] = useState(profile?.family_name || "");
  const [selectedAvatar, setSelectedAvatar] = useState(customAvatarUrl(profile?.avatar_url) ?? familyAvatarFor(profile?.avatar_url, profile?.avatar_emoji).src);
- const [childAge, setChildAge] = useState(profile?.child_age?.toString() || "");
  const [locale, setLocale] = useState(profile?.locale || "vi");
  const [saving, setSaving] = useState(false);
  const [saved, setSaved] = useState(false);
@@ -56,12 +55,10 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
   if(!response.ok||!data.avatarUrl)throw new Error(data.error||"Chưa tải được ảnh.");uploaded=data.avatarUrl;
  }
  const supabase = createClient();
- const update = buildProfileUpdate({ displayName, familyName, avatarEmoji: "", avatarUrl: uploaded ?? selectedAvatar, childAge, locale });
+ const update = buildProfileUpdate({ displayName, familyName, avatarEmoji: "", avatarUrl: uploaded ?? selectedAvatar, locale });
  // `.select` so an update that matched no row (RLS) is not reported as saved.
  const { data, error } = await supabase.from("profiles").update(update).eq("id", profile.id).select("id");
  if (error || !data?.length) throw error ?? new Error("profile not updated");
- // UI-13: the kid screens follow the new age band right away.
- if (update.child_age) updateSettings({ childAge: ageUiFor(update.child_age).band });
  await refreshProfile();
  const previousId=avatarIdFromUrl(profile.avatar_url);
  if(previousId && profile.avatar_url!==update.avatar_url)fetch(`/api/profile/avatar/${previousId}`,{method:"DELETE"}).catch(()=>{});
@@ -169,37 +166,19 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
  <p className="text-[14px] text-txt-secondary dark:text-white/65 mt-2">Tên gọi chung của cả nhà trong hồ sơ.</p>
  </div>
 
- {/* Child Age */}
- <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">
- <label className="text-[13px] font-bold text-txt dark:text-white mb-2.5 flex items-center gap-2">
- <Baby size={14} /> Tuổi của bé
- </label>
- <div className="grid grid-cols-4 gap-2">
- {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map((age) => (
+ {/* T10: the children (name, birth year, interests) live in Hồ sơ bé */}
  <button
- key={age}
  type="button"
- onClick={() => setChildAge(age)}
- aria-pressed={childAge === age}
- className={`h-11 w-full rounded-xl text-[15px] font-bold flex items-center justify-center transition-all ${
- childAge === age
- ? "bg-brand text-white"
- : "bg-gray-50 dark:bg-white/[0.04] text-txt dark:text-white border border-gray-200 dark:border-white/10"
- }`}
+ onClick={() => onNavigate("child-profiles")}
+ className="w-full bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4 flex items-center gap-3 text-left"
  >
- {age}
+ <span className="w-10 h-10 rounded-[14px] bg-glow-soft text-[#9A6A00] flex items-center justify-center shrink-0"><Baby size={20} /></span>
+ <span className="flex-1 min-w-0">
+ <span className="block text-[14px] font-bold text-txt dark:text-white">Hồ sơ bé</span>
+ <span className="block truncate text-[14px] text-txt-secondary dark:text-white/65">{kids.length ? childNames(kids) : "Thêm tên gọi, năm sinh, sở thích của bé"}</span>
+ </span>
+ <ChevronRight size={16} className="text-[#C9C3DD] shrink-0" />
  </button>
- ))}
- </div>
- {childAge && (() => {
-   const ui = ageUiFor(parseInt(childAge));
-   return (
-     <p data-testid="age-band-summary" data-band={ui.band} className="mt-3 rounded-xl bg-accent/10 px-3 py-2.5 text-[12px] font-semibold leading-snug text-txt dark:text-white">
-       Nhóm <b>{ui.short} · {ui.label}</b>: {ui.summary}.
-     </p>
-   );
- })()}
- </div>
 
  {/* Language */}
  <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 shadow-sm mb-4">

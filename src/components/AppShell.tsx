@@ -7,6 +7,7 @@ import type { Screen, TabId } from "@/lib/types";
 import { backScreenHistory, notificationScreen, tabScreenHistory, type ScreenState } from "@/lib/screen-navigation";
 import { onNotificationClick } from "@/lib/push-notifications";
 import { useAuth } from "@/lib/auth-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
 import TabBar from "@/components/ui/TabBar";
 import { KidLoading } from "@/components/ui/states";
 import Onboarding from "@/components/screens/Onboarding";
@@ -55,6 +56,7 @@ const ParentAnalytics = dynamic(() => import("@/components/screens/ParentAnalyti
 const Downloads = dynamic(() => import("@/components/screens/Downloads"), { loading: ScreenFallback });
 const Notifications = dynamic(() => import("@/components/screens/Notifications"), { loading: ScreenFallback });
 const ProfileEdit = dynamic(() => import("@/components/screens/ProfileEdit"), { loading: ScreenFallback });
+const ChildProfiles = dynamic(() => import("@/components/screens/ChildProfiles"), { loading: ScreenFallback });
 const Collections = dynamic(() => import("@/components/screens/Collections"), { loading: ScreenFallback });
 const ScanBook = dynamic(() => import("@/components/screens/ScanBook"), { loading: ScreenFallback });
 const DrawStory = dynamic(() => import("@/components/screens/DrawStory"), { loading: ScreenFallback });
@@ -133,6 +135,11 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  const consentView: "gate" | "loading" | null =
   loading || !user || consentOpen ? null
    : consentKnown && (consent.phase === "required" || consent.phase === "error") ? "gate" : "loading";
+ // T10: the child entered at signup becomes the first Hồ sơ bé once the server has the consent.
+ const { flushPending } = useChildProfiles();
+ useEffect(() => {
+  if (consentKnown && consent.phase === "ok") void flushPending();
+ }, [consentKnown, consent.phase, flushPending]);
  // New screen → top of the page; Back (or the gate / time lock closing) → where the kid was.
  useScrollMemory(gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : rawCurrent, current.screen);
  const lockReason = screenTime.verdict.blocked ? screenTime.verdict.reason : "limit";
@@ -388,6 +395,9 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  )}
  {current.screen === "profile-edit" && (
  <ProfileEdit onBack={goBack} onNavigate={navigate} />
+ )}
+ {current.screen === "child-profiles" && (
+ <ChildProfiles onBack={goBack} onNavigate={navigate} />
  )}
  {current.screen === "collections" && (
  <Collections onBack={goBack} onNavigate={navigate} />

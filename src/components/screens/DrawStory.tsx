@@ -8,6 +8,7 @@ import {
 import { GlowDots } from "@/components/ui/states";
 import TopBar from "@/components/ui/TopBar";
 import { useSettings } from "@/lib/settings-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
 import { useData } from "@/lib/data-context";
 import type { Screen } from "@/lib/types";
 import { normalizeAgeBand } from "@/lib/age-bands";
@@ -45,7 +46,11 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  const [isGenerating, setIsGenerating] = useState(false);
  const [error, setError] = useState<string | null>(null);
  const { toast } = useToast();
- const [childName, setChildName] = useState(settings.childName || "");
+ // T10: prefilled with the child chosen on this device; typing another name drops the profile.
+ const { activeChild } = useChildProfiles();
+ const [typedName, setTypedName] = useState<string | null>(null);
+ const childName = typedName ?? activeChild?.display_name ?? "";
+ const profileId = typedName === null ? activeChild?.id : undefined;
  const [hasDrawn, setHasDrawn] = useState(false);
  const undoStack = useRef<ImageData[]>([]);
  const lastPoint = useRef<DrawPoint | null>(null);
@@ -160,7 +165,8 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  headers: { "Content-Type": "application/json" },
  body: JSON.stringify({
  imageData,
- childName: childName || undefined,
+ childName: childName.trim() || undefined,
+ childProfileId: profileId,
  age: normalizeAgeBand(settings.childAge),
  language: settings.language || "vi",
  }),
@@ -190,7 +196,8 @@ export default function DrawStory({ onBack, onNavigate }: DrawStoryProps) {
  <input
  type="text"
  value={childName}
- onChange={(e) => setChildName(e.target.value)}
+ onChange={(e) => setTypedName(e.target.value)}
+ maxLength={40}
  placeholder="Tên bé (tuỳ chọn)"
  aria-label="Tên bé (tuỳ chọn)"
  className="w-full min-h-11 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-surface dark:bg-white/[0.04] text-sm font-medium text-txt dark:text-white outline-none focus:border-accent"

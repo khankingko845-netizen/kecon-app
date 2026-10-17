@@ -27,6 +27,7 @@ import MissionCelebration from "@/components/ui/MissionCelebration";
 import type { Screen } from "@/lib/types";
 import type { GeneratedStory } from "@/lib/story-ai";
 import { useSettings } from "@/lib/settings-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
 import { useData } from "@/lib/data-context";
 import { useAudioControls, type AudioTrack } from "@/lib/audio-player-context";
 import { visiblePage } from "@/lib/background-player";
@@ -222,7 +223,8 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
  const [reviewText, setReviewText] = useState("");
  const [submittingReview, setSubmittingReview] = useState(false);
  const [showShare, setShowShare] = useState(false);
- const { toast } = useToast();
+ const { toast, showConfirm } = useToast();
+ const { activeChild } = useChildProfiles();
  const [isFav, setIsFav] = useState(false);
 
  // Swipe gesture
@@ -1215,16 +1217,26 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
 
  const handlePersonalize = async () => {
  if (!storyId || isPersonalizing) return;
- const childName = prompt("Tên bé:");
- if (!childName) return;
- const interests = prompt("Sở thích bé (tuỳ chọn):");
+ // T10: with a Hồ sơ bé the server uses the chosen child's name, age and interests.
+ let body: Record<string, string | null>;
+ let childName: string;
+ if (activeChild) {
+ if (!(await showConfirm(`Đưa bé ${activeChild.display_name} vào truyện?`, "Đóm viết lại truyện với tên, tuổi và sở thích trong Hồ sơ bé."))) return;
+ childName = activeChild.display_name;
+ body = { storyId, childProfileId: activeChild.id };
+ } else {
+ const typed = prompt("Tên bé:");
+ if (!typed) return;
+ childName = typed;
+ body = { storyId, childName: typed, interests: prompt("Sở thích bé (tuỳ chọn):") };
+ }
  setIsPersonalizing(true);
  setAiMessage("Đang cá nhân hoá truyện...");
  try {
  const res = await fetch("/api/story/personalize", {
  method: "POST",
  headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ storyId, childName, interests }),
+ body: JSON.stringify(body),
  });
  const data = await res.json();
  if (data.error) throw new Error(data.error);

@@ -86,7 +86,7 @@ test.describe("UI-12 · a11y — đã đăng nhập", () => {
     await expectAccessible(page, "player");
   });
 
-  test("vùng phụ huynh: cổng, Bố mẹ, Hồ sơ gia đình, Kiểm soát phụ huynh", async ({ page }) => {
+  test("vùng phụ huynh: cổng, Bố mẹ, Hồ sơ gia đình, Hồ sơ bé, Kiểm soát phụ huynh", async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto("/");
     await page.getByTestId("home-topics").waitFor();
@@ -98,6 +98,17 @@ test.describe("UI-12 · a11y — đã đăng nhập", () => {
     await page.getByRole("button", { name: /Hồ sơ gia đình/ }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Hồ sơ gia đình" })).toBeVisible();
     await expectAccessible(page, "profile-edit");
+    await page.getByRole("button", { name: "Quay lại" }).click();
+    // T10: Hồ sơ bé — danh sách và form sửa (không lưu gì)
+    await page.getByRole("button", { name: /Hồ sơ bé/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Hồ sơ bé" })).toBeVisible();
+    await expect(page.getByTestId("child-card").first()).toBeVisible();
+    await expectAccessible(page, "child-profiles");
+    await page.getByRole("button", { name: /^Sửa hồ sơ / }).first().click();
+    await expect(page.getByLabel("Năm sinh", { exact: true })).toBeVisible();
+    await expectAccessible(page, "child-profile-form");
+    await expectNfcText(page);
+    await page.getByRole("button", { name: "Huỷ", exact: true }).click();
     await page.getByRole("button", { name: "Quay lại" }).click();
     await page.getByRole("button", { name: /Kiểm soát phụ huynh/ }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Kiểm soát phụ huynh" })).toBeVisible();

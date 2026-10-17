@@ -28,6 +28,8 @@ export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 
 const MOCK_A15_ADMIN_ID="00000000-0000-4000-8000-00000000e2a0",MOCK_A15_TARGET_ID="00000000-0000-4000-8000-00000000e2a1";
 const MOCK_MFA_USER_ID="00000000-0000-4000-8000-00000000e2e9";
+/** T10 Hồ sơ bé: a family with one child (Bông) to add/edit/switch, and a new family (no child, no consent yet). */
+const MOCK_KIDS_USER_ID="00000000-0000-4000-8000-00000000e2b1",MOCK_KIDS_NEW_USER_ID="00000000-0000-4000-8000-00000000e2b2";
 /** T11: families that have not accepted the parent policy yet (no PIN / PIN {@link MOCK_PIN}). */
 const MOCK_CONSENT_USER_ID="00000000-0000-4000-8000-00000000e2c1",MOCK_CONSENT_PIN_USER_ID="00000000-0000-4000-8000-00000000e2c2";
 /** Families whose parent PIN is {@link MOCK_PIN}. */
@@ -78,6 +80,8 @@ const USERS = {
   [MOCK_ADMIN_USER_ID]: adminUser,
   [MOCK_EDITOR_USER_ID]: editorUser,
   [MOCK_CONSENT_USER_ID]: {...user,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test"},
+  [MOCK_KIDS_USER_ID]: {...user,id:MOCK_KIDS_USER_ID,email:"e2e-kids@kecon.test"},
+  [MOCK_KIDS_NEW_USER_ID]: {...user,id:MOCK_KIDS_NEW_USER_ID,email:"e2e-kids-new@kecon.test"},
   [MOCK_CONSENT_PIN_USER_ID]: {...user,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test"},
   // T12 voice consent (mock-voice-consent.mjs)
   [MOCK_VC_USER_ID]: {...user,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test"},
@@ -220,13 +224,107 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}, {...profile,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test",family_name:"Gia đình Giọng"}, {...profile,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test",family_name:"Gia đình Giọng PIN"}, {...profile,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test",family_name:"Gia đình Ông Tư"}],
+  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}, {...profile,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test",family_name:"Gia đình Giọng"}, {...profile,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test",family_name:"Gia đình Giọng PIN"}, {...profile,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test",family_name:"Gia đình Ông Tư"}, {...profile,id:MOCK_KIDS_USER_ID,email:"e2e-kids@kecon.test",family_name:"Gia đình Sóc",child_name:"Bông",child_age:5}, {...profile,id:MOCK_KIDS_NEW_USER_ID,email:"e2e-kids-new@kecon.test",family_name:"Gia đình Mới",child_name:null,child_age:null}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
   parental_controls: parentalControls,
   admin_audit_log: adminAuditLog,
 };
+// T10 · Hồ sơ bé (migration 044). The household is the account itself in the mock; every
+// account starts like the backfill did on the real DB: profiles.child_name / child_age → one child.
+const vnYear = () => Number(new Intl.DateTimeFormat("en", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric" }).format(new Date()));
+TABLES.child_profiles = TABLES.profiles
+  .filter((p) => p.child_name || p.child_age != null)
+  .map((p, i) => ({
+    id: `00000000-0000-4000-8000-0000c41d${String(i).padStart(4, "0")}`,
+    household_id: p.id,
+    display_name: p.child_name || "Bé",
+    birth_year: p.child_age != null ? vnYear() - p.child_age : null,
+    interests: [],
+    created_by: p.id,
+    created_at: now,
+    updated_at: now,
+  }));
+const CHILD_WRITABLE = ["display_name", "birth_year", "interests"];
+const childError = (status, code, message) => ({ status, body: { code, details: null, hint: null, message } });
+/** Mirror of the child_profiles_guard trigger: returns the cleaned row or an error. */
+function childClean(sub, input, existing) {
+  const row = { ...existing };
+  for (const key of Object.keys(input ?? {})) {
+    if (key === "household_id" && !existing) {
+      if (input.household_id !== sub) return childError(403, "42501", "household_scope");
+      continue;
+    }
+    if (!CHILD_WRITABLE.includes(key)) return childError(403, "42501", `permission denied for table child_profiles`);
+    row[key] = input[key];
+  }
+  if (!consentActive(sub)) return childError(403, "42501", "consent_required");
+  const rawName = String(row.display_name ?? "");
+  const name = rawName.normalize("NFC").replace(/\s+/g, " ").trim();
+  if (!name || name.length > 40 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(rawName)) return childError(400, "22023", "invalid_child_name");
+  row.display_name = name;
+  const year = row.birth_year ?? null;
+  if (year !== null && (!Number.isInteger(year) || year < vnYear() - 18 || year > vnYear())) return childError(400, "22023", "invalid_birth_year");
+  row.birth_year = year;
+  const tags = [];
+  for (const t of Array.isArray(row.interests) ? row.interests : []) {
+    const tag = String(t).normalize("NFC").replace(/\s+/g, " ").trim();
+    if (!tag) continue;
+    if (tag.length > 24) return childError(400, "22023", "invalid_child_interest");
+    if (!tags.some((x) => x.toLowerCase() === tag.toLowerCase())) tags.push(tag);
+  }
+  if (tags.length > 5) return childError(400, "22023", "too_many_child_interests");
+  row.interests = tags;
+  return { row };
+}
+function childProject(rows, url) {
+  const cols = (url.searchParams.get("select") ?? "*").split(",").map((c) => c.trim()).filter(Boolean);
+  return cols.includes("*") ? rows : rows.map((r) => Object.fromEntries(cols.map((c) => [c, r[c]])));
+}
+function childProfilesRoute(req, res, url, sub) {
+  const mine = () => TABLES.child_profiles.filter((r) => r.household_id === sub);
+  const reply = (status, rows) => {
+    const out = childProject(rows, url);
+    if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) {
+      return out.length === 1 ? send(res, status, out[0]) : send(res, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" });
+    }
+    if (req.method !== "GET" && !(req.headers.prefer ?? "").includes("return=representation")) return send(res, req.method === "POST" ? 201 : 204);
+    return send(res, status, out, { "Content-Range": out.length ? `0-${out.length - 1}/${out.length}` : "*/0" });
+  };
+  if (req.method === "GET" || req.method === "HEAD") return reply(200, filterRows(mine(), url.searchParams));
+  if (req.method === "DELETE") {
+    const gone = filterRows(mine(), url.searchParams);
+    TABLES.child_profiles = TABLES.child_profiles.filter((r) => !gone.includes(r));
+    return reply(200, gone);
+  }
+  readJson(req).then((body) => {
+    if (req.method === "POST") {
+      const created = [];
+      for (const input of (Array.isArray(body) ? body : [body]).filter(Boolean)) {
+        if (mine().length + created.length >= 5) return send(res, 400, childError(400, "23514", "child_profile_limit").body);
+        const out = childClean(sub, input, null);
+        if (out.status) return send(res, out.status, out.body);
+        const at = new Date().toISOString();
+        created.push({ ...out.row, id: randomUUID(), household_id: sub, created_by: sub, created_at: at, updated_at: at });
+      }
+      TABLES.child_profiles.push(...created);
+      return reply(201, created);
+    }
+    if (req.method === "PATCH") {
+      const targets = filterRows(mine(), url.searchParams);
+      const next = [];
+      for (const r of targets) {
+        const out = childClean(sub, body, r);
+        if (out.status) return send(res, out.status, out.body);
+        next.push(out.row);
+      }
+      targets.forEach((r, i) => Object.assign(r, next[i], { updated_at: new Date().toISOString() }));
+      return reply(200, targets);
+    }
+    send(res, 405, { message: "method not allowed (mock)" });
+  });
+}
 // T12 spoken voice consent (migration 043): consents, deletion jobs, bucket voice-consents.
 const voiceConsent = createVoiceConsentMock({
   tables: TABLES,
@@ -460,7 +558,7 @@ const proofOk=(sub,token)=>{const g=gateTokens.get(token);return Boolean(g&&g.su
 // two consent fixtures; POST /__e2e/consent-reset sets an account's state (current
 // version, accepted version or none) and GET /__e2e/consent-state reads it back.
 const consentDoc=(version)=>{const title="Chính sách quyền riêng tư cho bố mẹ",summary=version===1?"- KểCon lưu những gì bố mẹ nhập và tạo trong app.\n- Không quảng cáo, không bán dữ liệu.":"- Bản "+version+": KểCon cập nhật cách giữ dữ liệu.\n- Không quảng cáo, không bán dữ liệu.",body="## 1. Văn bản này là gì\nĐây là bản "+version+" của chính sách quyền riêng tư dành cho bố mẹ dùng KểCon.\n\n## 5. Nhà cung cấp dịch vụ nhận dữ liệu\n- Tạo chữ và tranh bằng AI: OpenAI, Anthropic, Google (Gemini).\n- Giọng đọc: ElevenLabs hoặc Fish Audio.";return {id:"00000000-0000-4000-8000-0000000c0"+String(version).padStart(3,"0"),version,locale:"vi",title,summary,body,body_sha256:createHash("sha256").update(title+"\n\n"+summary+"\n\n"+body).digest("hex"),published_at:"2026-10-16T00:00:00Z"};};
-const CONSENT_FRESH=new Set([MOCK_CONSENT_USER_ID,MOCK_CONSENT_PIN_USER_ID]);
+const CONSENT_FRESH=new Set([MOCK_CONSENT_USER_ID,MOCK_CONSENT_PIN_USER_ID,MOCK_KIDS_NEW_USER_ID]);
 const consentState=new Map();
 const consentOf=(sub)=>{if(!consentState.has(sub))consentState.set(sub,{current:1,records:CONSENT_FRESH.has(sub)?[]:[{version:1,accepted_at:now,method:"account_holder",withdrawn_at:null}],calls:[]});return consentState.get(sub);};
 const consentActive=(sub)=>{const c=consentOf(sub);return c.records.some(r=>!r.withdrawn_at&&r.version===c.current);};
@@ -1000,6 +1098,10 @@ createServer((req, res) => {
       if(req.method==="PATCH")return readJson(req).then(body=>{const id=url.searchParams.get("id")?.replace(/^eq\./,"");const r=TABLES[table].find(r=>r.id===id);if(r)Object.assign(r,body);send(res,200,null)});
     }
 
+    if (table === "child_profiles") {
+      if (!authed) return send(res, 401, { code: "42501", message: "permission denied for table child_profiles" });
+      return childProfilesRoute(req, res, url, sub);
+    }
     if (req.method === "PATCH" && table === "stories" && authed) {
       // PR #49: owners may set the thumbnail columns of their own family stories (RLS mirror).
       readJson(req).then((body) => {

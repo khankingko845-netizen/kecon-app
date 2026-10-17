@@ -6,15 +6,19 @@ import { resolveLlmTarget } from "@/lib/llm-config";
 import { callLlmJson } from "@/lib/llm-metered";
 import { z } from "zod";
 import { initialThumbnailFields } from "@/lib/story-thumbnails";
-import { imageData as imageDataSchema, languageCode, optionalText, parseJsonBody } from "@/lib/api-validation";
+import { imageData as imageDataSchema, languageCode, optionalText, parseJsonBody, uuid } from "@/lib/api-validation";
+import { loadStoryChild } from "@/lib/child-profile-server";
+import { childBand, interestsPromptLine } from "@/lib/child-profiles";
 
 /**
  * Generate a story from a child's drawing.
- * POST { imageData (base64), childName?, age?, language? }
+ * POST { imageData (base64), childProfileId?, childName?, age?, language? }
+ * T10: with `childProfileId` the name, age band and interests come from the child profile.
  * Uses the admin default (vision-capable) model to analyze the drawing, then generates a story.
  */
 const FromDrawingBody = z.object({
   imageData: imageDataSchema,
+  childProfileId: uuid.optional(),
   childName: optionalText(60),
   age: optionalText(20),
   language: languageCode,
@@ -32,8 +36,14 @@ export async function POST(request: NextRequest) {
 
   const parsedBody = await parseJsonBody(request, FromDrawingBody);
   if (!parsedBody.ok) return parsedBody.response;
-  const { imageData, childName } = parsedBody.data;
-  const age = parsedBody.data.age || "3-5";
+  const { imageData } = parsedBody.data;
+  // T10: household child profile (RLS) — before any quota/provider call.
+  const picked = await loadStoryChild(supabase, parsedBody.data.childProfileId);
+  if ("response" in picked) return picked.response;
+  const child = picked.child;
+  const childName = child?.display_name ?? parsedBody.data.childName;
+  const age = parsedBody.data.age || (child ? childBand(child) : "3-5");
+  const interestsLine = interestsPromptLine(child?.interests);
   const language = parsedBody.data.language || "vi";
 
   // Platform key + admin default provider/model for both steps (all providers support images)
@@ -89,7 +99,7 @@ Yêu cầu: 5-8 trang, có bài học, kết thúc có hậu.`;
 - Bối cảnh: ${analysis.scene || "không rõ"}
 - Cảm xúc: ${analysis.mood || "vui vẻ"}
 - Ý tưởng: ${analysis.story_seed || ""}
-
+${interestsLine ? `${interestsLine}\n` : ""}
 Hãy viết truyện thiếu nhi dựa trên bản vẽ này!`;
 
     const { data: storyData } = await callLlmJson({
@@ -128,7 +138,7 @@ Hãy viết truyện thiếu nhi dựa trên bản vẽ này!`;
         source: "ai",
         status: "draft",
         tags: ["from-drawing"],
-        metadata: { drawing_analysis: analysis, from_drawing: true },
+        // No `metadata` here: public.stories has no such column (the insert used to fail).
         ...thumbnail,
       })
       .select("id")

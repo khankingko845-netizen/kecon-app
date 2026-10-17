@@ -28,7 +28,7 @@ export interface AppSettings {
   /** Device preference: story narration only, not explicit voice previews or ambient sounds. */
   narrationEnabled: boolean;
   sleepTimerDefault: number;
-  childName: string;
+  /** Age band of the chosen child (synced by AgeUiProvider from Hồ sơ bé, T10). */
   childAge: string;
 }
 
@@ -57,7 +57,6 @@ const defaultSettings: AppSettings = {
   autoPlay: true,
   narrationEnabled: true,
   sleepTimerDefault: 15,
-  childName: "",
   childAge: DEFAULT_AGE_BAND,
 };
 
@@ -103,8 +102,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
     // Older versions persisted API keys — rewrite storage without them.
     // Age bands v2 (UI-13): map legacy values like "4-6" → "3-5".
-    const childAge = normalizeAgeBand(loaded.childAge);
-    const migrated = childAge !== loaded.childAge ? { ...loaded, childAge } : loaded;
+    // T10: the child's name lives in Hồ sơ bé now — drop the old device copy.
+    const { childName: legacyName, ...rest } = loaded as AppSettings & { childName?: unknown };
+    const childAge = normalizeAgeBand(rest.childAge);
+    const migrated = childAge !== rest.childAge || legacyName !== undefined ? { ...rest, childAge } : loaded;
     if (hadSecrets || migrated !== loaded) localStorage.setItem(SETTINGS_STORAGE_KEY, serializeSettings(migrated));
     return migrated;
   });

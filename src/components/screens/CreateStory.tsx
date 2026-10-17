@@ -17,6 +17,8 @@ import { Icon3D, type Icon3DName } from "@/components/ui/Icon3D";
 import { AGE_BANDS, normalizeAgeBand } from "@/lib/age-bands";
 import { storyThemes } from "@/lib/data";
 import { useSettings } from "@/lib/settings-context";
+import { useChildProfiles } from "@/lib/child-profiles-context";
+import { childAge, childBand, type ChildProfile } from "@/lib/child-profiles";
 import { useData } from "@/lib/data-context";
 import { generateStoryApi } from "@/lib/api-client";
 import { rankedDefaultsForLocale, resolveNarratorChoice, type NarratorChoice } from "@/lib/voice-selection";
@@ -196,6 +198,35 @@ function hasOtherVoice(voices: { voice_id: string }[], narratorId: string | null
   return voices.some((v) => v.voice_id !== narratorId);
 }
 
+/** T10: chips for the household's children + "Bé khác" (a typed name, no profile). */
+function ChildChoice({
+ kids,
+ picked,
+ onPick,
+ label,
+}: {
+ kids: ChildProfile[];
+ picked: ChildProfile | null;
+ onPick: (child: ChildProfile | null) => void;
+ label: string;
+}) {
+ if (kids.length === 0) return null;
+ const chip = (on: boolean) =>
+  `min-h-[48px] rounded-[16px] px-4 text-[15px] font-black transition-colors ${on ? "bg-brand text-white shadow-[0_4px_0_var(--color-brand-press)]" : `bg-white text-ink ${CARD_SHADOW}`}`;
+ return (
+ <div role="group" aria-label={label} className="mt-2 flex flex-wrap gap-2">
+ {kids.map((child) => (
+ <button key={child.id} type="button" aria-pressed={picked?.id === child.id} onClick={() => onPick(child)} className={chip(picked?.id === child.id)}>
+ {child.display_name}
+ </button>
+ ))}
+ <button type="button" aria-pressed={!picked} onClick={() => onPick(null)} className={chip(!picked)}>
+ Bé khác
+ </button>
+ </div>
+ );
+}
+
 export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const features = useFeatureFlags();
  const { settings, systemStatus } = useSettings();
@@ -203,7 +234,18 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const [selectedTheme, setSelectedTheme] = useState("cotich");
  const [selectedAge, setSelectedAge] = useState<string>(normalizeAgeBand(settings.childAge));
  const [voiceChoice,setVoiceChoice]=useState<NarratorChoice>(null);
- const [childName, setChildName] = useState(settings.childName || "");
+ // T10: the story is for a child profile (default: the child chosen on this device) or,
+ // with "Bé khác", for a typed name. undefined = follow the chosen child.
+ const { kids, activeChild } = useChildProfiles();
+ const [childPick, setChildPick] = useState<string | null | undefined>(undefined);
+ const pickedChild: ChildProfile | null =
+  childPick === null ? null : (childPick === undefined ? activeChild : kids.find((k) => k.id === childPick) ?? activeChild);
+ const [childName, setChildName] = useState("");
+ const storyChildName = pickedChild?.display_name ?? childName.trim();
+ const pickChild = (child: ChildProfile | null) => {
+  setChildPick(child ? child.id : null);
+  if (child && childAge(child.birth_year) !== null) setSelectedAge(childBand(child));
+ };
  const [extraPrompt, setExtraPrompt] = useState("");
  const [isGenerating, setIsGenerating] = useState(false);
  const [error, setError] = useState<string | null>(null);
@@ -257,7 +299,7 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  const canIllustrate = features.enabled("ai_illustrations") && Boolean(systemStatus.hasIllustrationProvider);
  const childInCast = cast.some((c) => c.isChild);
  const castFull = cast.length >= MAX_BRIEF_CHARACTERS;
- const castName = (c: CastMember) => (c.isChild ? childName.trim() || "Bé" : c.name.trim());
+ const castName = (c: CastMember) => (c.isChild ? storyChildName || "Bé" : c.name.trim());
 
  const toggleCast = (member: CastMember) => {
  setCast((prev) => {
@@ -345,7 +387,8 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  apiKey: settings.storyApiKey || undefined,
  baseUrl: settings.storyBaseUrl || undefined,
  theme: selectedTheme,
- childName: childName || undefined,
+ childName: storyChildName || undefined,
+ childProfileId: pickedChild?.id,
  age: selectedAge,
  language: storyLocale,
  extraPrompt: composedPrompt || undefined,
@@ -493,6 +536,9 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  sub="Đóm viết truyện về chính bé"
  />
  {childInCast && (
+ <ChildChoice kids={kids} picked={pickedChild} onPick={pickChild} label="Bé nào là nhân vật chính?" />
+ )}
+ {childInCast && !pickedChild && (
  <input
  aria-label="Tên của bé trong truyện"
  value={childName}
@@ -730,6 +776,14 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  <SwitchRow checked={illustrateOn} onChange={setIllustrateOn} label="Tranh vẽ riêng cho từng trang" sub="Đóm vẽ thêm tranh theo truyện (vài phút đầu dùng tranh khung cảnh)" />
  )}
 
+ {kids.length > 0 && (
+ <>
+ <h3 className="mb-2 mt-5 font-display text-[19px] font-bold text-ink">Truyện cho bé</h3>
+ <ChildChoice kids={kids} picked={pickedChild} onPick={pickChild} label="Truyện cho bé" />
+ </>
+ )}
+ {!pickedChild && (
+ <>
  <label htmlFor="child-name" className="mb-2 mt-5 block font-display text-[19px] font-bold text-ink">
  Tên bé <small className="font-sans text-[13px] font-bold text-ink-2">(không bắt buộc)</small>
  </label>
@@ -738,8 +792,11 @@ export default function CreateStory({ onBack, onNavigate }: CreateStoryProps) {
  value={childName}
  onChange={(e) => setChildName(e.target.value)}
  placeholder="VD: Bông, Bin, Na…"
+ maxLength={40}
  className={`h-14 w-full rounded-[18px] bg-white px-4 text-[16px] font-bold text-ink outline-none placeholder:text-ink-2/60 focus:ring-2 focus:ring-brand ${CARD_SHADOW}`}
  />
+ </>
+ )}
 
  <label htmlFor="story-idea" className="mb-2 mt-5 block font-display text-[19px] font-bold text-ink">
  Thêm ý tưởng <small className="font-sans text-[13px] font-bold text-ink-2">(bố mẹ gõ giúp bé)</small>

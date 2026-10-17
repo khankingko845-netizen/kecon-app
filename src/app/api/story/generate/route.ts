@@ -7,7 +7,8 @@ import { guardUsage } from "@/lib/usage-guard";
 import { rejectByoKeyUnlessAllowed } from "@/lib/byo-key";
 import { resolveLlmTarget } from "@/lib/llm-config";
 import { z } from "zod";
-import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText } from "@/lib/api-validation";
+import { languageCode, llmSelectionFields, optionalText, parseJsonBody, requiredText, uuid } from "@/lib/api-validation";
+import { loadStoryChild } from "@/lib/child-profile-server";
 import { BriefCharactersSchema, NARRATION_PACES, STORY_LENGTHS, defaultPace } from "@/lib/story-brief";
 import { castVoices, castingNarrator, type CastableVoice } from "@/lib/voice-casting";
 import { sceneForPage } from "@/lib/scene-library";
@@ -29,6 +30,8 @@ const GenerateBody = z.object({
   theme: requiredText(40),
   age: z.union([requiredText(20), z.number().int().min(0).max(18).transform(String)]),
   childName: optionalText(60),
+  /** T10: the household's child profile; its name/interests replace `childName`. */
+  childProfileId: uuid.optional(),
   language: languageCode,
   extraPrompt: optionalText(1000),
   voiceId: optionalText(120),
@@ -82,7 +85,7 @@ async function persistStory(
   input: GenerateInput,
   story: GeneratedStory,
   narrator: { voiceId: string | null; narratorId: string | null; name: string | null },
-  meta: { provider: string; model: string; attempts: number; words: number },
+  meta: { provider: string; model: string; attempts: number; words: number; childProfileId: string | null },
 ): Promise<string> {
   const { theme, age, language } = input;
   const locale = language || "vi";
@@ -180,7 +183,15 @@ async function persistStory(
     user_id: userId,
     action_type: "create",
     story_id: storyId,
-    metadata: { theme, provider: meta.provider, model: meta.model, generator: STORY_GENERATOR_VERSION, attempts: meta.attempts, words: meta.words },
+    metadata: {
+      theme,
+      provider: meta.provider,
+      model: meta.model,
+      generator: STORY_GENERATOR_VERSION,
+      attempts: meta.attempts,
+      words: meta.words,
+      ...(meta.childProfileId ? { child_profile_id: meta.childProfileId } : {}),
+    },
   });
   return storyId;
 }
@@ -205,7 +216,13 @@ export async function POST(request: NextRequest) {
     const byoBlocked = await rejectByoKeyUnlessAllowed(supabase, user.id, parsed.data.apiKey);
     if (byoBlocked) return byoBlocked;
     const input = parsed.data;
-    const { theme, childName, age, language, extraPrompt, voiceId, narratorVoiceId, persist } = input;
+    const { theme, age, language, extraPrompt, voiceId, narratorVoiceId, persist } = input;
+
+    // T10: a chosen child profile (household-only via RLS) — checked before any spend.
+    const picked = await loadStoryChild(supabase, input.childProfileId);
+    if ("response" in picked) return picked.response;
+    const child = picked.child;
+    const childName = child?.display_name ?? input.childName ?? "";
 
     const chosenVoice = await validateStoryNarrator(supabase, user.id, language || "vi", voiceId, narratorVoiceId);
     if ("error" in chosenVoice) return Response.json({ error: chosenVoice.error }, { status: 400 });
@@ -223,10 +240,11 @@ export async function POST(request: NextRequest) {
         target,
         {
           theme,
-          childName: childName || "",
+          childName,
           age,
           language: language || "vi",
           extraPrompt,
+          interests: child?.interests,
           characters: input.characters,
           length: input.length,
           pace: input.pace ?? defaultPace(age, theme),
@@ -240,6 +258,7 @@ export async function POST(request: NextRequest) {
             model: target.model,
             attempts,
             words: assessment.totalWords,
+            childProfileId: child?.id ?? null,
           })
         : null;
       return { ...story, storyId, generatorVersion: STORY_GENERATOR_VERSION };
