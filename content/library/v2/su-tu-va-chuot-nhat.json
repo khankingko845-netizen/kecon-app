@@ -1,0 +1,115 @@
+{
+  "slug": "su-tu-va-chuot-nhat",
+  "title": "Sư Tử và Chuột Nhắt",
+  "category": "animal",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Chuột Nhắt lỡ làm Sư Tử thức giấc và được tha. Ít hôm sau, Sư Tử vướng vào tấm lưới cũ trong rừng, chính Chuột Nhắt bé nhỏ đã gặm đứt dây cứu bạn.",
+  "moral": "Đừng coi thường người nhỏ bé; làm điều tốt thì sẽ nhận lại điều tốt.",
+  "tags": [
+    "ngu-ngon",
+    "dong-vat",
+    "tinh-ban",
+    "giup-do"
+  ],
+  "origin": "Phỏng theo truyện ngụ ngôn Aesop (Hy Lạp cổ đại) 'Sư tử và chuột', quen thuộc trong sách thiếu nhi Việt Nam.",
+  "adaptation": [
+    "Không có thợ săn: Sư Tử vướng vào một tấm lưới cũ bị bỏ quên trong rừng.",
+    "Thêm đoạn kết hai bạn kết thân, Sư Tử nhận mình đã sai khi cười Chuột Nhắt."
+  ],
+  "characters": [
+    {
+      "name": "Chuột Nhắt",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Cô chuột nhỏ bé, lễ phép, giữ lời hứa",
+      "appearance": "chuột nhắt lông xám, tai tròn hồng, đuôi dài, mắt đen láy",
+      "look": "little grey mouse, round pink ears, long tail, shiny black eyes"
+    },
+    {
+      "name": "Sư Tử",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Chúa sơn lâm oai vệ nhưng rộng lượng",
+      "appearance": "sư tử bờm vàng rực, thân to khoẻ, mắt màu hổ phách",
+      "look": "big lion with a bright golden mane and amber eyes, gentle expression"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable in a green jungle with big trees and vines; an old rope net, nothing scary."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Giữa trưa hè, Sư Tử nằm ngủ dưới bóng cây to. Chuột Nhắt bé nhỏ đi tìm hạt dẻ, chạy lon ton thế nào lại trèo ngay lên mũi Sư Tử.[/narrator]\n[narrator]Sư Tử hắt xì một cái, mở mắt ra, đưa bàn chân to tướng giữ chặt lấy Chuột Nhắt.[/narrator]\n[character:Sư Tử]Ai dám làm ta mất giấc ngủ trưa thế này?[/character]\n[narrator]Chuột Nhắt run cầm cập, hai tai cụp xuống.[/narrator]",
+      "sceneDescription": "Sư tử bờm vàng nằm dưới bóng cây, bàn chân giữ lấy chú chuột nhắt nhỏ",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chuột Nhắt lấy hết can đảm, ngước nhìn Sư Tử.[/narrator]\n[character:Chuột Nhắt]Thưa ngài Sư Tử, cháu xin lỗi. Cháu không cố ý đâu ạ. Ngài thả cháu ra nhé. Biết đâu sau này, cháu sẽ giúp được ngài.[/character]\n[narrator]Sư Tử nghe vậy thì phá lên cười, tiếng cười vang cả khu rừng.[/narrator]\n[character:Sư Tử]Ha ha! Bé tí như cháu mà đòi giúp ta ư? Ta là chúa sơn lâm cơ mà![/character]",
+      "sceneDescription": "Chuột Nhắt ngước nhìn xin lỗi, Sư Tử ngửa cổ cười vang",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cười xong, Sư Tử thấy Chuột Nhắt nhỏ bé, đáng yêu quá. Sư Tử từ từ nhấc bàn chân lên.[/narrator]\n[character:Sư Tử]Thôi được, ta tha cho cháu. Lần sau nhớ nhìn đường mà đi nhé.[/character]\n[character:Chuột Nhắt]Cháu cảm ơn ngài! Cháu sẽ nhớ ơn ngài mãi mãi![/character]\n[narrator]Chuột Nhắt cúi chào, rồi chạy tọt vào hang, vui mừng khôn xiết. Ngày hôm ấy, cả khu rừng lại yên ả như cũ.[/narrator]",
+      "sceneDescription": "Sư Tử nhấc chân thả Chuột Nhắt, Chuột Nhắt cúi chào cảm ơn",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Vài hôm sau, Sư Tử đi dạo trong rừng. Bỗng sột soạt một tiếng, Sư Tử vướng phải một tấm lưới cũ ai bỏ quên giữa bụi cây. Sư Tử càng giãy, lưới càng quấn chặt.[/narrator]\n[character:Sư Tử]Gừ... Ai cứu ta với! Ta không ra được![/character]\n[narrator]Tiếng gầm vang khắp khu rừng. Các con vật nghe thấy, nhưng chẳng ai dám lại gần.[/narrator]",
+      "sceneDescription": "Sư Tử bị tấm lưới cũ quấn chặt giữa bụi cây, gầm vang",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Trong hang nhỏ, Chuột Nhắt cũng nghe thấy tiếng gầm. Chuột Nhắt dỏng tai lên nghe.[/narrator]\n[character:Chuột Nhắt]Đúng là tiếng ngài Sư Tử rồi! Chắc ngài đang gặp nạn. Mình phải đến giúp ngài ngay![/character]\n[narrator]Chuột Nhắt chạy thật nhanh qua bụi rậm, qua gốc cây, đến bên Sư Tử.[/narrator]\n[character:Chuột Nhắt]Ngài đừng lo, có cháu đây rồi![/character]\n[narrator]Sư Tử ngạc nhiên nhìn cô bạn bé xíu.[/narrator]",
+      "sceneDescription": "Chuột Nhắt chạy qua bụi rậm đến bên Sư Tử đang mắc lưới",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Chuột Nhắt leo lên tấm lưới, dùng những chiếc răng nhỏ mà sắc gặm từng sợi dây. Gặm mãi, gặm mãi, răng mỏi nhừ, nhưng Chuột Nhắt không bỏ cuộc.[/narrator]\n[character:Sư Tử]Cháu bé thế, liệu có gặm nổi không?[/character]\n[character:Chuột Nhắt]Ngài cứ nằm yên nhé. Từng sợi một, rồi sẽ xong thôi ạ![/character]\n[narrator]Phựt, phựt! Từng sợi dây đứt ra. Sư Tử nằm im, hồi hộp chờ đợi.[/narrator]",
+      "sceneDescription": "Chuột Nhắt gặm từng sợi dây lưới, Sư Tử nằm im chờ đợi",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cuối cùng, tấm lưới rách toạc ra một lỗ to. Sư Tử vươn mình, chui ra ngoài, rũ bờm thật mạnh.[/narrator]\n[character:Sư Tử]Ta thoát rồi! Cảm ơn cháu, Chuột Nhắt ạ. Hôm trước ta đã cười cháu. Ta thật là sai.[/character]\n[character:Chuột Nhắt]Ngài đã tha cho cháu, nay cháu giúp lại ngài. Bạn bè là thế mà![/character]\n[narrator]Cả khu rừng reo vui khi thấy Sư Tử được tự do.[/narrator]",
+      "sceneDescription": "Sư Tử thoát khỏi lưới, rũ bờm vàng, Chuột Nhắt đứng trên tảng đá",
+      "scene": "forest",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Từ hôm đó, Sư Tử và Chuột Nhắt trở thành đôi bạn thân. Chiều chiều, Chuột Nhắt ngồi trên bờm Sư Tử, hai bạn cùng đi dạo khắp khu rừng.[/narrator]\n[character:Sư Tử]Bây giờ ta mới hiểu, bạn nhỏ cũng có thể giúp được việc lớn.[/character]\n[character:Chuột Nhắt]Còn cháu biết rằng, làm điều tốt thì sẽ nhận lại điều tốt![/character]\n[narrator]Ánh nắng chiều vàng óng chiếu qua tán lá.[/narrator]",
+      "sceneDescription": "Chuột Nhắt ngồi trên bờm Sư Tử, hai bạn đi dạo trong rừng lúc chiều",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    }
+  ]
+}

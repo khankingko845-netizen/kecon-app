@@ -1,0 +1,12 @@
+[Unit]
+Description=KểCon → GitHub backup: kiểm tra mỗi 2 phút (giờ chạy hằng ngày, số bản giữ lại và "Sao lưu ngay" đặt ở Admin › Sao lưu)
+
+[Timer]
+# Mỗi lượt chỉ báo "còn sống" rồi thoát nếu chưa đến giờ; lịch giờ Việt Nam do DB tính (backup_schedule).
+# Lượt đang sao lưu (oneshot) chưa xong thì systemd không chạy chồng; máy thức dậy là lượt kế tiếp chạy bù.
+OnCalendar=*:0/2
+AccuracySec=15s
+Unit=kecon-backup.service
+
+[Install]
+WantedBy=timers.target

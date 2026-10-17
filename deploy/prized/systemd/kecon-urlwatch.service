@@ -1,0 +1,6 @@
+[Unit]
+Description=KểCon staging — restart web nếu URL tunnel đổi
+
+[Service]
+Type=oneshot
+ExecStart=/srv/kecon/current/deploy/prized/url-watch.sh

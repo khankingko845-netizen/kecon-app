@@ -1,0 +1,36 @@
+/* KểCon UI v2 — design tokens đề xuất (Tailwind v4 @theme). Dán vào src/app/globals.css thay khối token cũ. */
+@theme {
+  /* Brand */
+  --color-brand: #5B4BDB;        /* Tím đêm — CTA phụ, link, trạng thái chọn (trắng trên nền: 6.0:1) */
+  --color-brand-press: #4636C2;
+  --color-brand-soft: #ECE9FF;
+  --color-cta: #E85A2A;          /* Cam san hô đậm — CTA chính, chữ trắng ≥18px bold (3.5:1) */
+  --color-cta-press: #B9441C;
+  --color-glow: #FFC94D;         /* Ánh đom đóm — thưởng, streak, highlight (chữ ink trên nền: 9.4:1) */
+  --color-success: #1F6B57;      /* chữ */
+  --color-success-soft: #E3F8F1; /* nền */
+  /* Day (bé) */
+  --color-day-bg: #FFF8EE;
+  --color-day-card: #FFFFFF;
+  --color-ink: #2B2350;          /* 13.6:1 trên day-bg */
+  --color-ink-2: #6B6390;        /* 5.2:1 trên day-bg */
+  /* Night (chế độ ngủ) — không dùng trắng tinh */
+  --color-night-bg: #151233;
+  --color-night-card: #221C4A;
+  --color-moon: #F3E9D2;         /* 14.9:1 */
+  --color-moon-2: #B9AED6;       /* 8.6:1 */
+  --color-amber: #FFB547;        /* nút play / tiến độ ban đêm */
+  /* Parent */
+  --color-parent-bg: #F7F6FB;
+  /* Type */
+  --font-display: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --font-kid: "Nunito", system-ui, sans-serif;
+  --font-parent: "Be Vietnam Pro", system-ui, sans-serif;
+  /* Shape */
+  --radius-card: 24px;
+  --radius-btn: 22px;
+  --radius-tile: 20px;
+  /* Touch targets */
+  --spacing-tap-kid: 64px;       /* nút chính cho bé */
+  --spacing-tap-min: 48px;       /* tối thiểu mọi control */
+}

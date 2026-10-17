@@ -1,0 +1,122 @@
+{
+  "slug": "ech-ngoi-day-gieng",
+  "title": "Ếch ngồi đáy giếng",
+  "category": "animal",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Chú Ếch sống lâu dưới đáy giếng, tưởng bầu trời chỉ bằng cái vung và mình là to nhất. Ra ngoài, Ếch suýt bị Bác Trâu giẫm phải, may nhờ Chim Sáo nhắc mà biết khiêm tốn.",
+  "moral": "Thế giới rất rộng lớn; đừng huênh hoang, hãy khiêm tốn học hỏi.",
+  "tags": [
+    "ngu-ngon",
+    "thanh-ngu",
+    "khiem-ton"
+  ],
+  "origin": "Truyện ngụ ngôn dân gian Việt Nam gắn với thành ngữ 'Ếch ngồi đáy giếng'; ý tương tự có trong sách Trang Tử (Trung Hoa cổ).",
+  "adaptation": [
+    "Bản gốc: ếch nghênh ngang bị trâu giẫm bẹp. Bản này: Chim Sáo nhắc, Ếch kịp tránh, xin lỗi Bác Trâu và học cách khiêm tốn.",
+    "Thêm nhân vật Chim Sáo và Bác Trâu có lời thoại."
+  ],
+  "characters": [
+    {
+      "name": "Ếch",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Chú ếch nhỏ sống lâu dưới giếng, hay huênh hoang, biết sửa mình",
+      "appearance": "chú ếch xanh mắt lồi, bụng trắng, hay ưỡn ngực",
+      "look": "green frog with bulging eyes and a white belly, proud puffed-out chest"
+    },
+    {
+      "name": "Chim Sáo",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Chị chim sáo hiểu biết, hay khuyên bảo",
+      "appearance": "chim sáo lông đen, mỏ vàng, khoang trắng ở cánh",
+      "look": "black myna bird with a yellow beak and white wing patches"
+    },
+    {
+      "name": "Bác Trâu",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Bác trâu già hiền lành, chăm chỉ cày ruộng",
+      "appearance": "con trâu đen to khoẻ, sừng cong, đôi mắt hiền",
+      "look": "big black water buffalo with curved horns and kind eyes"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable in the Vietnamese countryside: an old mossy stone well, rice paddies, ponds and a wide open sky."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một chú Ếch sống dưới đáy một cái giếng cũ ở góc làng. Xung quanh Ếch chỉ có vài con nhái, con cua và mấy con ốc nhỏ.[/narrator]\n[narrator]Mỗi lần Ếch kêu ộp ộp, tiếng vang lên ầm ĩ khắp giếng. Các con vật nhỏ đều giật mình.[/narrator]\n[character:Ếch]Ta kêu to thế này, chắc ta là chúa tể muôn loài rồi![/character]",
+      "sceneDescription": "Chú ếch xanh ngồi ưỡn ngực dưới đáy giếng rêu phong, xung quanh là nhái, cua, ốc",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Ếch ngước nhìn lên miệng giếng. Bầu trời trên cao chỉ tròn bằng cái vung nồi.[/narrator]\n[character:Ếch]Trời chỉ bé bằng cái vung thôi. Thế giới này nhỏ xíu, mà ta lại to nhất ở đây![/character]\n[narrator]Một hôm, Chim Sáo bay ngang qua, đậu xuống thành giếng uống nước.[/narrator]\n[character:Chim Sáo]Chào Ếch! Bầu trời rộng lắm, bay cả ngày cũng chưa hết đâu.[/character]\n[character:Ếch]Chị nói sai rồi! Trời chỉ bằng cái vung thôi![/character]",
+      "sceneDescription": "Ếch ngước nhìn khoảng trời tròn nhỏ, Chim Sáo đậu trên thành giếng",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Năm ấy, trời mưa to suốt mấy ngày liền. Nước trong giếng dâng lên, dâng lên mãi, tràn cả ra ngoài.[/narrator]\n[narrator]Ếch theo dòng nước, nổi lên miệng giếng rồi nhảy ra bãi cỏ bên ngoài.[/narrator]\n[character:Ếch]Ôi, trời rộng thế này cơ à? Có mây, có cây, có cánh đồng xa tít![/character]\n[narrator]Nhưng chỉ một lát, Ếch lại ưỡn ngực lên.[/narrator]\n[character:Ếch]Chẳng sao cả. Ở đâu thì ta cũng là to nhất![/character]",
+      "sceneDescription": "Mưa to, nước tràn miệng giếng, chú ếch nhảy ra bãi cỏ",
+      "scene": "rain",
+      "mood": "tense",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ếch nhảy nghênh ngang khắp nơi, ngửa mặt lên trời, kêu ộp ộp thật to.[/narrator]\n[character:Ếch]Hỡi muôn loài, hãy cúi chào ta đi![/character]\n[narrator]Nhưng ngoài này rộng quá. Tiếng kêu của Ếch bé tí, lẫn vào tiếng gió, tiếng chim. Chẳng ai để ý đến Ếch cả.[/narrator]\n[narrator]Chim Sáo đậu trên cành tre, lắc đầu.[/narrator]\n[character:Chim Sáo]Ếch ơi, đi đường phải nhìn trước nhìn sau, đừng nhìn mãi lên trời thế![/character]",
+      "sceneDescription": "Ếch ngửa mặt kêu to giữa đường làng, Chim Sáo đậu trên cành tre lắc đầu",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ếch chẳng thèm nghe. Ếch cứ ngẩng cao đầu, nhảy ra giữa con đường làng.[/narrator]\n[narrator]Đúng lúc ấy, Bác Trâu đi cày về, bước những bước chân to và nặng. Bác mệt nên không nhìn thấy Ếch bé xíu dưới đất.[/narrator]\n[character:Chim Sáo]Ếch ơi, coi chừng! Nhảy sang bên mau lên![/character]\n[character:Bác Trâu]Ụm bò... Ai đấy? Ai ở dưới chân ta thế?[/character]",
+      "sceneDescription": "Bác Trâu to lớn bước tới, Ếch nhỏ ngồi giữa đường, Chim Sáo hốt hoảng gọi",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "footsteps"
+      ]
+    },
+    {
+      "text": "[narrator]Ếch giật mình, nhảy phắt sang bụi cỏ bên đường. Chiếc chân to của Bác Trâu đặt xuống ngay chỗ Ếch vừa đứng. Bùn bắn tung toé.[/narrator]\n[narrator]Bác Trâu dừng lại, cúi đầu nhìn xuống.[/narrator]\n[character:Bác Trâu]May quá, cháu không sao chứ? Đi đường phải cẩn thận, cháu ạ.[/character]\n[character:Ếch]Dạ... cháu không sao. Em cảm ơn chị Sáo. Cháu xin lỗi bác Trâu ạ.[/character]",
+      "sceneDescription": "Ếch nấp trong bụi cỏ, Bác Trâu cúi đầu hiền từ nhìn xuống",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ếch ngồi trong bụi cỏ bên bờ ao, tim vẫn còn đập thình thịch. Ếch nhìn bầu trời rộng, nhìn cánh đồng mênh mông.[/narrator]\n[character:Ếch]Hoá ra thế giới rộng lớn lắm. Ếch chỉ biết mỗi cái giếng nhỏ mà cứ tưởng mình to nhất.[/character]\n[character:Chim Sáo]Biết mình chưa biết là giỏi rồi đấy. Thế giới còn bao nhiêu điều để học.[/character]\n[character:Bác Trâu]Muốn biết nhiều thì phải đi nhiều, nghe nhiều cháu ạ.[/character]",
+      "sceneDescription": "Ếch ngồi bên bờ ao nhìn cánh đồng rộng, Chim Sáo và Bác Trâu bên cạnh",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Từ hôm đó, Ếch không còn khoe khoang nữa. Ếch theo Chim Sáo đi thăm ao làng, cánh đồng, rặng tre. Đi đến đâu, Ếch cũng lắng nghe và học hỏi.[/narrator]\n[character:Ếch]Ộp ộp! Hôm nay em lại biết thêm một điều mới![/character]\n[character:Chim Sáo]Giỏi lắm! Ngày mai chị dẫn em đi xem dòng sông lớn nhé.[/character]\n[narrator]Bầu trời trên đầu Ếch giờ đây thật rộng, thật xanh.[/narrator]",
+      "sceneDescription": "Ếch vui vẻ nhảy theo Chim Sáo dọc bờ ao, bầu trời xanh rộng",
+      "scene": "stream",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": []
+    }
+  ]
+}

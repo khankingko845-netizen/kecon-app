@@ -1,0 +1,8 @@
+[Unit]
+Description=KểCon first-party measurement retention (90/365 days)
+After=docker.service kecon-supabase.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec supabase_db_kecon-staging psql -U postgres -v ON_ERROR_STOP=1 -c "SELECT public.prune_measurement();"

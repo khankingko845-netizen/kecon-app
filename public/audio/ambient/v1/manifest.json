@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "verifiedAt": "2026-10-07T11:23:05.914764+00:00",
+  "processing": "Mono 24 kHz MP3 80 kbps; excerpt, circular crossfade, highpass 70 Hz, loudnorm -28 LUFS / -9 dBTP / LRA7. Lullaby is licensed composed music, not a field recording.",
+  "tracks": [
+    {
+      "id": "rain",
+      "label": "Mưa nhẹ",
+      "url": "/audio/ambient/v1/rain.mp3",
+      "author": "Ylmir",
+      "source": "https://opengameart.org/content/rain-loopable",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "field-recording",
+      "sha256": "8f7bae2b6297bd7ef0af578d7c2cb3bd55225ee5c00cb35a4b8efb6cc01ccbaa",
+      "bytes": 263324,
+      "duration": 26.304,
+      "sourceFiles": [
+        {
+          "name": "1.mp3",
+          "sha256": "da5f63758a4d74e10ab9dd1b0bed62aa4c06fd960af6a7cdb83266354d75204f"
+        }
+      ]
+    },
+    {
+      "id": "waves",
+      "label": "Sóng biển",
+      "url": "/audio/ambient/v1/waves.mp3",
+      "author": "jasinski; biên tập: qubodup",
+      "source": "https://opengameart.org/content/beach-ocean-waves",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "sound-recording",
+      "sha256": "87c4fee0e76d3a08a8c621b05d457244261adf4684f850dddebffc0341d9910c",
+      "bytes": 107564,
+      "duration": 10.728,
+      "sourceFiles": [
+        {
+          "name": "wave_01_cc0-18363__jasinski__alkaibeach.flac",
+          "sha256": "fcfca178eca2eac536e8c2a4ed5cf8096e44c921acd587047b3d9f1d7845435c"
+        },
+        {
+          "name": "wave_02_cc0-18363__jasinski__alkaibeach.flac",
+          "sha256": "53b5c28c0edc36f049e77e65f2cf8a86135103328c44c1507c416e6469d18096"
+        },
+        {
+          "name": "wave_03_cc0-18363__jasinski__alkaibeach.flac",
+          "sha256": "fc795f95f352b354867d69a587daecb8815334e28e3b56a7798c5f3005349054"
+        },
+        {
+          "name": "wave_04_cc0-18363__jasinski__alkaibeach.flac",
+          "sha256": "3c490e736365fdd617ce8405470d8878fc6146d9a8dba448d622addb01cfff3b"
+        }
+      ]
+    },
+    {
+      "id": "wind",
+      "label": "Gió qua đồng",
+      "url": "/audio/ambient/v1/wind.mp3",
+      "author": "Thimras",
+      "source": "https://opengameart.org/content/park-ambiences",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "field-recording",
+      "sha256": "8881670c0f5cfc60345a0d954f51728e1b417bf6146624f8759e2d24662f01b2",
+      "bytes": 313484,
+      "duration": 31.32,
+      "sourceFiles": [
+        {
+          "name": "wind.wav",
+          "sha256": "5c381856745b4706e7eba55eb9271a61a530e90c05df8126adb2db89ecfa6c5a"
+        }
+      ]
+    },
+    {
+      "id": "fire",
+      "label": "Lửa reo",
+      "url": "/audio/ambient/v1/fire.mp3",
+      "author": "PagDev",
+      "source": "https://opengameart.org/content/fireplace-sound-loop",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "sound-recording",
+      "sha256": "56b09657d61ad318e22a0f3cf01ee3abebd9dba67b8da1c47c7a3ab714961003",
+      "bytes": 286124,
+      "duration": 28.584,
+      "sourceFiles": [
+        {
+          "name": "fire.wav",
+          "sha256": "85ca0cc60d0c037fff8b185e31ad1fcdbda6ce45eee17c3ee1318d1b8f59e330"
+        }
+      ]
+    },
+    {
+      "id": "forest",
+      "label": "Chim trong cây",
+      "url": "/audio/ambient/v1/forest.mp3",
+      "author": "Thimras",
+      "source": "https://opengameart.org/content/park-ambiences",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "field-recording",
+      "sha256": "d4802271f8820cb4195e388abf4270dc06ea9c74169e74be10bb59d26103ad28",
+      "bytes": 313484,
+      "duration": 31.32,
+      "sourceFiles": [
+        {
+          "name": "forest.wav",
+          "sha256": "dc1a5ac34b89cab7f8f261b53a23da7c1c5e3cc895aae4cb6fb4a1a04001b2af"
+        }
+      ]
+    },
+    {
+      "id": "night",
+      "label": "Dế đêm",
+      "url": "/audio/ambient/v1/night.mp3",
+      "author": "Ted Kerr (Wolfgang_)",
+      "source": "https://opengameart.org/content/crickets-ambient-noise-loopable",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "sound-recording",
+      "sha256": "cba22189fce7960022f47572fedaf8c3dace5d7a00de4b111c58f4fbfa7a7d95",
+      "bytes": 107804,
+      "duration": 10.752,
+      "sourceFiles": [
+        {
+          "name": "night.mp3",
+          "sha256": "5b5bd1f744087888c5623543c3ff80be9c2ce106093993e7c8a8492b0280b2c0"
+        }
+      ]
+    },
+    {
+      "id": "stream",
+      "label": "Dòng suối",
+      "url": "/audio/ambient/v1/stream.mp3",
+      "author": "Thimras",
+      "source": "https://opengameart.org/content/park-ambiences",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "field-recording",
+      "sha256": "fdf8a48fb2aec34cdbd06be8698033fddff896604926a51b3d8d52536ea5f63b",
+      "bytes": 313484,
+      "duration": 31.32,
+      "sourceFiles": [
+        {
+          "name": "stream.wav",
+          "sha256": "da0c0c9b1249a83a1611cc116d5737b0864a8db9f45f1ae8dcc079d0f7c0bbbf"
+        }
+      ]
+    },
+    {
+      "id": "lullaby",
+      "label": "Nhạc chuông ru",
+      "url": "/audio/ambient/v1/lullaby.mp3",
+      "author": "cynicmusic",
+      "source": "https://opengameart.org/content/happy-lullaby-song17",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "kind": "music",
+      "sha256": "1b66933ca5842fa483f5de2f2874179ca1cc008ad91ab497ade4ccb1b30710cd",
+      "bytes": 395564,
+      "duration": 39.528,
+      "sourceFiles": [
+        {
+          "name": "lullaby.mp3",
+          "sha256": "9fa0b0e96860eace536fa36f4e9c2c1284db894a8df3cdaa19ddae429b1bfd42"
+        }
+      ]
+    }
+  ]
+}

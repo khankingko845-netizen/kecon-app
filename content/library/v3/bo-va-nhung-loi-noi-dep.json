@@ -1,0 +1,127 @@
+{
+  "slug": "bo-va-nhung-loi-noi-dep",
+  "title": "Bo và những lời nói đẹp",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Bo nghe một từ không đẹp ở sân chơi rồi nói ra lúc bực, làm em Su buồn. Mẹ bình tĩnh giải thích và dạy Bo câu nói thay thế, cả nhà làm lọ sao lời nói đẹp.",
+  "moral": "Lời nói đẹp làm mọi người vui; khi bực, hãy nói 'Con đang giận' và hít thở thật sâu.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "noi-tuc",
+    "loi-noi-dep"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 78: không nói tục, chửi bậy.",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Không nhắc lại bất kỳ từ tục nào; chỉ gọi là 'từ không đẹp'.",
+    "Gợi ý cho cha mẹ: đừng phản ứng quá mạnh khi bé nói tục; hỏi bé nghe ở đâu, giải thích ngắn gọn, đưa câu thay thế và khen khi bé dùng lời đẹp."
+  ],
+  "characters": [
+    {
+      "name": "Bo",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
+    },
+    {
+      "name": "Su",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a neighborhood playground and a cozy family living room."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Chiều thứ bảy, Bo ra sân chơi gần nhà. Mấy anh lớn đang đá bóng ở góc sân. Khi bóng lăn ra ngoài, một anh bực mình hét lên một từ rất lạ.[/narrator]\n[narrator]Bo nghe thấy, khúc khích cười.[/narrator]\n[character:Bo]Từ gì mà nghe buồn cười thế nhỉ? Mình nhớ để về nói cho Su nghe.[/character]\n[narrator]Bo đâu biết, đó là một từ không đẹp chút nào.[/narrator]",
+      "sceneDescription": "Bo đứng ở sân chơi nhìn mấy anh lớn đá bóng ở góc sân",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, cả nhà ngồi ăn cơm. Su vô ý làm đổ cốc nước lên bức tranh Bo vừa vẽ. Bo tức quá, buột miệng nói ngay cái từ nghe được ở sân.[/narrator]\n[narrator]Cả nhà bỗng im lặng. Su mếu máo.[/narrator]\n[character:Su]Anh Bo nói từ gì thế? Nghe sợ lắm.[/character]\n[character:Mẹ]Bo ơi, ăn xong mẹ con mình nói chuyện một chút nhé.[/character]",
+      "sceneDescription": "Bàn ăn tối, cốc nước đổ lên bức tranh, Su mếu máo, Bo đỏ mặt",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Ăn cơm xong, mẹ ngồi xuống cạnh Bo. Mẹ không mắng, mẹ chỉ nhẹ nhàng hỏi.[/narrator]\n[character:Mẹ]Con nghe từ ấy ở đâu? Con có biết nó nghĩa là gì không?[/character]\n[character:Bo]Con nghe các anh ở sân nói. Con không biết, con thấy buồn cười thôi ạ.[/character]\n[character:Mẹ]Đó là một từ không đẹp. Nói ra, người nghe sẽ buồn, giống như bị gai đâm vào lòng vậy.[/character]",
+      "sceneDescription": "Mẹ ngồi xuống ngang tầm mắt Bo trên ghế sofa, nhẹ nhàng trò chuyện",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo nhìn sang Su. Em đang ôm gấu bông, mắt vẫn còn đỏ hoe.[/narrator]\n[character:Bo]Su ơi, anh xin lỗi. Anh không muốn làm em buồn đâu.[/character]\n[character:Su]Em hết buồn rồi. Nhưng anh đừng nói từ ấy nữa nhé.[/character]\n[character:Bo]Anh hứa. Mẹ ơi, nhưng lúc bực quá, con biết nói gì bây giờ?[/character]\n[narrator]Mẹ mỉm cười, xoa đầu hai anh em.[/narrator]",
+      "sceneDescription": "Bo xin lỗi Su đang ôm gấu bông, mẹ xoa đầu hai anh em",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[character:Mẹ]Lúc bực, con có thể nói: Ôi, con bực quá! Hoặc: Con đang giận đấy! Rồi con hít một hơi thật sâu, thở ra thật chậm.[/character]\n[narrator]Bo thử ngay. Bo hít vào như đang ngửi một bông hoa, rồi thở ra như đang thổi một ngọn nến.[/narrator]\n[character:Bo]Ôi, con bực quá! Phù... Ơ, con thấy đỡ hơn thật![/character]\n[character:Su]Em cũng thử! Ngửi hoa... thổi nến... phù![/character]",
+      "sceneDescription": "Bo và Su giả vờ ngửi bông hoa rồi thổi ngọn nến, mẹ làm mẫu",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ đưa cho hai anh em một chiếc lọ thủy tinh và mấy ngôi sao giấy. Mỗi khi ai nói một lời đẹp, người ấy được bỏ vào lọ một ngôi sao.[/narrator]\n[character:Su]Cảm ơn anh Bo đã dán lại tranh cho em! Thế là anh được một ngôi sao![/character]\n[character:Bo]Su vẽ con mèo đẹp quá! Em cũng được một ngôi sao này![/character]\n[narrator]Chẳng mấy chốc, chiếc lọ đã lấp lánh sao.[/narrator]",
+      "sceneDescription": "Chiếc lọ thủy tinh đầy ngôi sao giấy lấp lánh trên bàn, hai anh em cười",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Hôm sau ra sân, Bo đang chạy thì vấp ngã, đầu gối trầy một chút. Bo nhăn mặt, suýt nữa thì nói ra cái từ không đẹp. Nhưng Bo dừng lại, hít một hơi thật sâu.[/narrator]\n[character:Bo]Ối, đau quá! Bực quá đi mất![/character]\n[narrator]Rồi Bo phủi tay, đứng dậy chơi tiếp. Mấy anh lớn nhìn thấy, giơ ngón tay cái lên khen Bo.[/narrator]",
+      "sceneDescription": "Bo phủi tay đứng dậy ở sân chơi, mấy anh lớn giơ ngón tay cái khen",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối về, Bo kể cho mẹ nghe. Mẹ ôm Bo thật chặt.[/narrator]\n[character:Mẹ]Mẹ tự hào về con. Lời nói đẹp làm mọi người vui, và làm con thêm đáng yêu nữa.[/character]\n[character:Bo]Con được bỏ thêm một ngôi sao vào lọ rồi![/character]\n[narrator]Bé ơi, khi đang bực, bé sẽ nói gì thay cho từ không đẹp nhỉ? Bé thử hít vào như ngửi hoa, thở ra như thổi nến xem nào.[/narrator]",
+      "sceneDescription": "Mẹ ôm Bo, Bo bỏ ngôi sao giấy vào lọ",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

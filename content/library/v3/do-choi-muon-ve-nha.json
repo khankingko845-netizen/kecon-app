@@ -1,0 +1,135 @@
+{
+  "slug": "do-choi-muon-ve-nha",
+  "title": "Đồ chơi muốn về nhà",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Phòng của Su bừa bộn đến mức bé không tìm thấy Gấu Bông. Gấu Bông thì thầm rằng đồ chơi nào cũng muốn về nhà, và mẹ dán hình lên từng chiếc hộp để Su tự dọn.",
+  "moral": "Đồ chơi nào cũng có nhà; chơi xong mình đưa đồ chơi về nhà nhé.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "don-do-choi",
+    "ngan-nap"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 33 (chủ động làm việc đơn giản hằng ngày) và 96 (phân loại đồ dùng).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Gấu Bông chỉ nói trong trí tưởng tượng của Su; cả nhà cùng dọn bằng bài hát và hộp có hình dán để biến việc dọn thành trò chơi.",
+    "Gợi ý cho cha mẹ: dán hình lên hộp đựng để bé tự biết chỗ cất, cùng hát một câu ngắn khi dọn, bắt đầu bằng một việc nhỏ và khen ngay khi bé làm."
+  ],
+  "characters": [
+    {
+      "name": "Su",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
+    },
+    {
+      "name": "Gấu Bông",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Chú gấu bông của Su, chỉ biết nói trong trí tưởng tượng của bé",
+      "appearance": "chú gấu bông màu nâu nhạt, thắt nơ đỏ ở cổ, một tai hơi cụp",
+      "look": "light-brown teddy bear with a red bow at the neck and one slightly floppy ear"
+    },
+    {
+      "name": "Bo",
+      "role": "friend",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a child's bedroom with toys, shelves and toy boxes with picture labels."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Su rất thích chơi. Sáng nay Su chơi xếp hình, trưa chơi búp bê, chiều lại chơi tô màu. Chơi xong món nào, Su để luôn món ấy ở đó. Chẳng mấy chốc, sàn phòng đầy những khối gỗ, bút màu và mảnh ghép.[/narrator]\n[character:Su]Chơi gì tiếp đây nhỉ? À, mình đi tìm Gấu Bông![/character]",
+      "sceneDescription": "Phòng ngủ bừa bộn, sàn đầy khối gỗ, bút màu và mảnh ghép, Su đứng giữa phòng",
+      "scene": "bedroom",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su tìm dưới gối, không thấy. Su tìm trong chăn, cũng không thấy. Su bước vội qua đống đồ chơi, giẫm phải một mảnh ghép nhọn.[/narrator]\n[character:Su]Ui da! Đau chân quá! Gấu Bông ơi, cậu ở đâu rồi?[/character]\n[narrator]Su ngồi phịch xuống sàn, mắt rơm rớm. Đồ chơi nhiều thế này mà chẳng tìm thấy bạn thân nhất của mình.[/narrator]",
+      "sceneDescription": "Su ngồi trên sàn xoa chân, xung quanh đầy đồ chơi vương vãi",
+      "scene": "bedroom",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bỗng Su nghe một tiếng thì thầm rất khẽ từ dưới gầm giường. Su cúi xuống nhìn. A, Gấu Bông đây rồi, nằm lẫn giữa mấy chiếc tất và một cái hộp bút.[/narrator]\n[character:Gấu Bông]Su ơi, tớ ở đây! Dưới này tối quá. Tớ muốn về nhà cơ.[/character]\n[character:Su]Nhà của cậu ở đâu hả Gấu Bông?[/character]\n[character:Gấu Bông]Nhà tớ là cái kệ cạnh cửa sổ, chỗ có nắng ấm ấy![/character]",
+      "sceneDescription": "Su cúi nhìn gầm giường, Gấu Bông nằm giữa mấy chiếc tất",
+      "scene": "bedroom",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Su ôm Gấu Bông, đặt bạn lên kệ cạnh cửa sổ. Gấu Bông cười tít mắt.[/narrator]\n[character:Gấu Bông]Cảm ơn Su! Mà này, các bạn đồ chơi khác cũng muốn về nhà đấy. Khối gỗ muốn về hộp gỗ, bút màu muốn về hộp bút, mảnh ghép muốn về túi ghép hình.[/character]\n[character:Su]Ơ, thế đồ chơi nào cũng có nhà à?[/character]\n[character:Gấu Bông]Đúng rồi! Chơi xong, mình đưa các bạn ấy về nhà.[/character]",
+      "sceneDescription": "Gấu Bông ngồi trên kệ cạnh cửa sổ đầy nắng, Su đứng nhìn",
+      "scene": "bedroom",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ bước vào phòng. Su kể cho mẹ nghe chuyện đồ chơi muốn về nhà. Mẹ mỉm cười, mang đến mấy chiếc hộp và một tờ hình dán.[/narrator]\n[character:Mẹ]Mình dán hình lên từng hộp nhé. Hộp có hình khối gỗ là nhà của khối gỗ. Hộp có hình cây bút là nhà của bút màu.[/character]\n[character:Su]Con dán! Con dán! Thế này thì con biết ngay đồ chơi nào ở nhà nào.[/character]",
+      "sceneDescription": "Mẹ và Su dán hình khối gỗ, cây bút lên những chiếc hộp nhiều màu",
+      "scene": "bedroom",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ bày ra một trò chơi: vừa dọn vừa hát.[/narrator]\n[character:Mẹ]Đồ chơi ơi, về nhà thôi! Đồ chơi ơi, về nhà thôi![/character]\n[narrator]Su nhặt từng khối gỗ bỏ vào hộp gỗ, rồi gom bút màu vào hộp bút. Anh Bo nghe tiếng hát cũng chạy vào.[/narrator]\n[character:Bo]Anh nhặt mảnh ghép giúp em nhé! Ai nhanh hơn nào?[/character]\n[character:Su]Em thắng rồi! Đồ chơi ơi, về nhà thôi![/character]",
+      "sceneDescription": "Su và Bo vừa hát vừa nhặt đồ chơi bỏ vào hộp có hình dán, mẹ vỗ tay",
+      "scene": "bedroom",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Chỉ một lát sau, sàn phòng đã sạch bong. Hộp nào cũng đầy đồ chơi, kệ nào cũng gọn gàng. Su chạy tung tăng khắp phòng mà không giẫm phải mảnh ghép nào.[/narrator]\n[character:Gấu Bông]Cảm ơn Su! Bây giờ ai cũng được về nhà rồi.[/character]\n[character:Mẹ]Con giỏi quá! Phòng gọn gàng thì tìm gì cũng thấy ngay.[/character]",
+      "sceneDescription": "Phòng ngủ gọn gàng, các hộp có hình dán xếp ngay ngắn, Su tung tăng",
+      "scene": "bedroom",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hôm sau, chơi xếp hình xong, Su tự cất khối gỗ vào hộp mà không cần ai nhắc. Tối đến, Su ôm Gấu Bông lên giường.[/narrator]\n[character:Su]Chúc ngủ ngon, các bạn đồ chơi. Ai cũng ở nhà mình rồi nhé.[/character]\n[narrator]Bé ơi, đồ chơi của bé có nhà ở đâu? Chơi xong, bé sẽ đưa món đồ chơi nào về nhà trước nhỉ?[/narrator]",
+      "sceneDescription": "Su ôm Gấu Bông nằm trên giường, phòng gọn gàng dưới ánh đèn ngủ",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

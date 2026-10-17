@@ -1,0 +1,139 @@
+{
+  "slug": "coc-kien-troi",
+  "title": "Cóc kiện Trời",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Trời hạn hán lâu ngày, chú Cóc nhỏ cùng Ong, Cáo, Gấu, Cua lên kiện Trời. Gà, Chó rồi Thiên Lôi đều bị các bạn làm cho chạy mất, Ngọc Hoàng đành cho mưa xuống.",
+  "moral": "Đoàn kết và dũng cảm thì việc khó mấy cũng làm được.",
+  "tags": [
+    "truyen-dan-gian",
+    "doan-ket",
+    "dung-cam",
+    "hai-huoc"
+  ],
+  "origin": "Truyện cổ tích người Việt (Cóc kiện Trời), gắn với câu tục ngữ 'Con cóc là cậu ông Trời'.",
+  "adaptation": [
+    "Gà và Chó nhà Trời chỉ bị đuổi chạy, không bị hại; Thiên Lôi bị ong và cua làm cho chạy mất theo lối hài hước.",
+    "Rút gọn đoàn của Cóc còn Ong, Cáo, Gấu, Cua (Ong và Cáo có lời thoại); bỏ vế sau của câu tục ngữ."
+  ],
+  "characters": [
+    {
+      "name": "Cóc",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Chú cóc nhỏ gan dạ, mưu trí",
+      "appearance": "chú cóc da sần màu nâu, mắt to, quàng khăn đỏ",
+      "look": "small brave brown toad with bumpy skin, big eyes, red scarf"
+    },
+    {
+      "name": "Cáo",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Bác cáo nhanh nhẹn, tinh khôn",
+      "appearance": "con cáo lông đỏ cam, đuôi xù, mõm nhọn",
+      "look": "orange-red fox with a bushy tail and pointy snout"
+    },
+    {
+      "name": "Ong",
+      "role": "friend",
+      "voiceType": "creature",
+      "description": "Chị ong vàng dũng cảm",
+      "appearance": "con ong vàng sọc đen, cánh trong suốt",
+      "look": "yellow-and-black striped bee with clear wings"
+    },
+    {
+      "name": "Thiên Lôi",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Thần sét hung hăng nhưng hài hước",
+      "appearance": "vị thần mặt đỏ, râu xồm, vác lưỡi tầm sét",
+      "look": "comic thunder god, red face, bushy beard, carrying a big thunder axe, more silly than scary"
+    },
+    {
+      "name": "Ngọc Hoàng",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Vua nhà Trời",
+      "appearance": "ông vua râu dài, áo bào vàng, mũ miện ngọc, ngồi trên ngai mây",
+      "look": "Jade Emperor, long beard, golden robe, jade crown, sitting on a throne of clouds"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese animal fable: dry cracked land in a drought, then the sky kingdom on white clouds with an East Asian heavenly palace (curved red-tiled pagoda roofs, red lacquered pillars); funny and gentle."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, có một năm trời làm hạn hán rất lâu. Ruộng đồng nứt nẻ, cây cỏ héo khô, suối cạn trơ đá. Muông thú khát nước, kêu than khắp nơi.[/narrator]\n[narrator]Chú Cóc nhỏ nhìn ao làng khô cạn, nghiến răng tức giận.[/narrator]\n[character:Cóc]Trời không chịu mưa thì mình lên tận nơi kiện Trời![/character]\n[character:Ong]Cậu bé tí như thế mà dám lên kiện Trời ư? Thôi được, tớ đi cùng cậu![/character]",
+      "sceneDescription": "Ruộng đồng nứt nẻ, chú cóc nhỏ đứng bên ao cạn, chị ong bay bên cạnh",
+      "scene": "village",
+      "mood": "sad",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cóc và Ong lên đường. Đi một quãng, gặp Cua đang bò trên bãi cát khô. Đi thêm đoạn nữa, gặp Gấu và Cáo đang đi tìm nước. Nghe Cóc định lên kiện Trời, ai cũng xin đi theo.[/narrator]\n[character:Cáo]Cho tớ đi với! Tớ khát khô cả cổ rồi.[/character]\n[narrator]Đến cửa nhà Trời, Cóc bàn kế.[/narrator]\n[character:Cóc]Cua nấp vào chum nước. Ong nấp sau cánh cửa. Cáo và Gấu nấp hai bên. Cứ nghe tớ ra hiệu nhé![/character]",
+      "sceneDescription": "Đoàn Cóc, Ong, Cua, Gấu, Cáo đi trên đường mây đến cửa nhà Trời",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cóc nhảy lên, cầm dùi đánh ba hồi trống thật to. Tùng! Tùng! Tùng! Ngọc Hoàng đang ngồi trên ngai mây, giật mình tức giận.[/narrator]\n[character:Ngọc Hoàng]Đứa nào dám làm ồn trước cửa nhà Trời? Gà đâu, ra đuổi nó đi![/character]\n[narrator]Gà nhà Trời vừa ra tới, Cáo đã nhảy xổ ra. Gà hoảng quá, kêu quang quác, cắm đầu chạy mất.[/narrator]\n[character:Cáo]Ha ha, Gà chạy nhanh thật đấy![/character]",
+      "sceneDescription": "Cóc đánh trống trước cổng mây, Gà nhà Trời chạy toán loạn trước Cáo",
+      "scene": "sky",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": [
+        "bell"
+      ]
+    },
+    {
+      "text": "[narrator]Ngọc Hoàng sai Chó ra. Chó vừa sủa được hai tiếng, Gấu đã đứng chắn trước mặt, gầm lên một tiếng. Chó cụp đuôi, chạy biến vào trong.[/narrator]\n[character:Ngọc Hoàng]Thiên Lôi đâu! Ra trị tội con cóc kia ngay![/character]\n[narrator]Thiên Lôi vác lưỡi tầm sét, hùng hổ bước ra, mặt đỏ phừng phừng.[/narrator]\n[character:Thiên Lôi]Kẻ nào to gan dám đến đây gây chuyện?[/character]\n[character:Cóc]Các bạn ơi, đến lượt chúng mình rồi![/character]",
+      "sceneDescription": "Thiên Lôi mặt đỏ vác lưỡi tầm sét bước ra, Cóc ra hiệu cho các bạn",
+      "scene": "sky",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ong từ sau cánh cửa bay vù ra, đốt tới tấp vào mặt Thiên Lôi. Thiên Lôi ôm mặt, nhảy ùm vào chum nước cho đỡ rát. Cua trong chum giơ càng kẹp ngay một cái.[/narrator]\n[character:Thiên Lôi]Ối ối! Rát quá! Kẹp đau quá! Tha cho ta với![/character]\n[narrator]Thiên Lôi nhảy khỏi chum, ướt như chuột lột, chạy một mạch không dám ngoái lại.[/narrator]\n[character:Ong]Thần sét gì mà chạy nhanh hơn cả Gà![/character]",
+      "sceneDescription": "Thiên Lôi ướt sũng nhảy khỏi chum nước, Ong bay vòng quanh, Cua giơ càng",
+      "scene": "sky",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Ngọc Hoàng thấy vậy thì hoảng, vội cho mời Cóc vào, lại còn dịu giọng hỏi han.[/narrator]\n[character:Ngọc Hoàng]Cậu Cóc có việc gì mà phải lên tận đây?[/character]\n[character:Cóc]Muôn tâu Ngọc Hoàng, hạ giới đã lâu lắm không có một giọt mưa. Ruộng khô, cây héo, muôn loài đều khát. Xin Ngọc Hoàng cho mưa xuống ngay ạ![/character]\n[character:Ngọc Hoàng]Ồ, ta mải việc mà quên mất. Ta sẽ sai Thần Mưa làm mưa ngay bây giờ.[/character]",
+      "sceneDescription": "Chú cóc nhỏ đứng trước ngai mây tâu với Ngọc Hoàng",
+      "scene": "sky",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ngọc Hoàng còn dặn thêm.[/narrator]\n[character:Ngọc Hoàng]Từ nay, hễ hạ giới cần mưa, cậu chỉ cần nghiến răng báo cho ta biết. Ta sẽ cho mưa ngay, không phải đánh trống nữa nhé.[/character]\n[narrator]Cóc cảm ơn rồi cùng các bạn trở về. Vừa về tới nơi, mây đen kéo đến. Rồi mưa rơi lộp độp, lộp độp, rồi mưa ào ào như trút nước.[/narrator]\n[character:Cóc]Mưa rồi! Mưa thật rồi các bạn ơi![/character]",
+      "sceneDescription": "Mưa ào ào trên cánh đồng, Cóc và các bạn nhảy múa reo vui",
+      "scene": "rain",
+      "mood": "happy",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ao hồ đầy nước, ruộng đồng xanh tươi trở lại. Cây cối đâm chồi, muông thú vui mừng nhảy múa.[/narrator]\n[character:Cáo]Cóc bé tí mà giỏi thật, kiện được cả Trời![/character]\n[character:Ong]Đúng là đoàn kết thì việc khó mấy cũng làm được.[/character]\n[narrator]Từ đó, mỗi khi Cóc nghiến răng, trời lại đổ mưa. Người ta vẫn bảo nhau rằng con cóc là cậu ông Trời đấy.[/narrator]",
+      "sceneDescription": "Ao làng đầy nước, ruộng xanh tươi, Cóc ngồi trên lá sen giữa các bạn",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": []
+    }
+  ]
+}

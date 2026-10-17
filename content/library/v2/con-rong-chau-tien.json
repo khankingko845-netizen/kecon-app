@@ -1,0 +1,123 @@
+{
+  "slug": "con-rong-chau-tien",
+  "title": "Con Rồng cháu Tiên",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Lạc Long Quân nòi rồng gặp nàng tiên Âu Cơ. Âu Cơ sinh bọc trăm trứng nở trăm người con. Năm mươi con theo cha xuống biển, năm mươi con theo mẹ lên núi, con cả làm vua Hùng.",
+  "moral": "Người Việt cùng một bọc sinh ra, là đồng bào, phải thương yêu, giúp đỡ nhau.",
+  "tags": [
+    "truyen-thuyet",
+    "nguon-goc",
+    "dong-bao",
+    "viet-nam"
+  ],
+  "origin": "Truyền thuyết về nguồn gốc dân tộc Việt, ghi trong Lĩnh Nam chích quái (thế kỷ XV) và có trong sách giáo khoa Ngữ văn.",
+  "adaptation": [
+    "Lược bỏ các trận đánh yêu quái (Ngư Tinh, Hồ Tinh, Mộc Tinh) cho phù hợp lứa tuổi.",
+    "Nhấn mạnh ý nghĩa hai chữ 'đồng bào' và lời hẹn giúp đỡ nhau giữa miền núi và miền biển."
+  ],
+  "characters": [
+    {
+      "name": "Lạc Long Quân",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Thần nòi rồng, sức khoẻ phi thường, thương dân",
+      "appearance": "chàng trai cao lớn, áo choàng xanh biển ánh vảy rồng, tóc dài buộc cao",
+      "look": "tall dragon-lord, long black hair tied high, sea-blue cloak shimmering with dragon scales"
+    },
+    {
+      "name": "Âu Cơ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Nàng tiên xinh đẹp ở vùng núi cao, người mẹ hiền",
+      "appearance": "nàng tiên tóc dài, áo lụa trắng thêu hoa, khăn voan hồng",
+      "look": "beautiful fairy, long black hair, white silk dress embroidered with flowers, pink veil"
+    },
+    {
+      "name": "Con Cả",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Người con trai cả, sau làm vua Hùng",
+      "appearance": "chàng trai khoẻ mạnh, áo nâu, đội mũ lông chim, đeo vòng đồng",
+      "look": "strong young man, brown tunic, feather headdress, bronze bracelets"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "the origin legend of Vietnam: misty mountains and the blue East Sea; ancient Lac Viet people wearing feather headdresses and bronze jewelry."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xửa ngày xưa, ở vùng đất Lạc Việt có một vị thần nòi rồng tên là Lạc Long Quân. Thần sống dưới thủy cung, mình rồng, sức khoẻ phi thường. Thần thường lên cạn dạy dân cách trồng lúa, chăn nuôi và làm nhà để ở.[/narrator]\n[character:Lạc Long Quân]Các con hãy cấy lúa ở đồng bằng, trồng dâu bên bờ sông. Có làm thì mới có ăn, có mặc.[/character]\n[narrator]Dân làng ai cũng biết ơn thần.[/narrator]",
+      "sceneDescription": "Lạc Long Quân áo choàng ánh vảy rồng đứng giữa thủy cung xanh biếc",
+      "scene": "underwater",
+      "mood": "calm",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bấy giờ, ở vùng núi cao phương Bắc có nàng Âu Cơ, thuộc dòng tiên, xinh đẹp tuyệt trần. Nghe nói vùng đất Lạc Việt có nhiều hoa thơm cỏ lạ, nàng tìm đến thăm.[/narrator]\n[character:Âu Cơ]Ôi, nơi đây núi xanh, sông biếc, hoa nở khắp nơi. Đẹp quá![/character]\n[narrator]Đúng lúc ấy, Lạc Long Quân đi ngang qua và bước tới chào nàng.[/narrator]\n[character:Lạc Long Quân]Chào nàng tiên. Ta là Lạc Long Quân. Nàng có muốn ở lại đây cùng ta, giúp dân làm ăn không?[/character]",
+      "sceneDescription": "Nàng tiên Âu Cơ giữa rừng hoa, Lạc Long Quân bước tới chào",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Âu Cơ gật đầu. Hai người nên vợ nên chồng, sống hạnh phúc trên cạn. Ít lâu sau, Âu Cơ sinh ra một cái bọc lạ, trong bọc có một trăm quả trứng. Trăm trứng nở ra một trăm người con trai hồng hào, khoẻ mạnh.[/narrator]\n[character:Âu Cơ]Chàng xem này, các con chẳng cần bú mớm mà lớn nhanh như thổi![/character]\n[character:Con Cả]Thưa cha mẹ, anh em chúng con sẽ chăm ngoan, giúp đỡ cha mẹ.[/character]",
+      "sceneDescription": "Âu Cơ và Lạc Long Quân bên bọc trăm trứng, những em bé hồng hào nở ra",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Lạc Long Quân vốn quen sống dưới nước. Ở trên cạn lâu ngày, chàng nhớ biển cả da diết. Một hôm, chàng ngồi buồn bên hiên nhà.[/narrator]\n[character:Lạc Long Quân]Ta là nòi rồng ở miền nước thẳm, nàng là dòng tiên ở chốn non cao. Ở mãi một nơi, ta khó lòng sống trọn vẹn.[/character]\n[character:Âu Cơ]Vậy chàng tính sao cho các con đây? Thiếp không muốn gia đình mình xa cách.[/character]",
+      "sceneDescription": "Lạc Long Quân ngồi buồn bên hiên nhìn về phía biển, Âu Cơ đứng cạnh",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[character:Lạc Long Quân]Nay ta đưa năm mươi con xuống biển, nàng đưa năm mươi con lên núi. Chia nhau cai quản các phương. Kẻ miền núi, người miền biển, khi có việc thì giúp đỡ lẫn nhau, đừng quên lời hẹn.[/character]\n[narrator]Âu Cơ và các con nghe lời. Trên bờ biển, cả nhà nắm tay nhau thật chặt trước lúc chia tay.[/narrator]\n[character:Con Cả]Chúng con hứa, núi và biển sẽ luôn là anh em một nhà.[/character]",
+      "sceneDescription": "Cả gia đình nắm tay nhau trên bờ biển, một nửa hướng ra biển, một nửa hướng về núi",
+      "scene": "beach",
+      "mood": "calm",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Lạc Long Quân dẫn năm mươi người con xuống biển. Âu Cơ dẫn năm mươi người con lên núi, đến vùng đất Phong Châu có đồi núi trập trùng, sông suối trong xanh.[/narrator]\n[character:Âu Cơ]Các con ơi, đây sẽ là quê hương mới của chúng ta. Các con hãy cùng nhau khai hoang, dựng nhà, trồng lúa.[/character]\n[character:Con Cả]Thưa mẹ, chúng con sẽ chăm chỉ làm ăn, giữ gìn nơi này thật tốt.[/character]",
+      "sceneDescription": "Âu Cơ dẫn các con đi giữa đồi núi trập trùng vùng Phong Châu",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Người con cả khôn ngoan, khoẻ mạnh được các em tôn lên làm vua, gọi là Hùng Vương. Vua đóng đô ở Phong Châu, đặt tên nước là Văn Lang.[/narrator]\n[character:Con Cả]Từ nay, nước ta là nước Văn Lang. Ai cũng phải thương yêu, đùm bọc lẫn nhau.[/character]\n[narrator]Ngôi vua truyền từ cha sang con, đời đời đều gọi là Hùng Vương. Dân Văn Lang trồng lúa nước, làm nhà sàn, đánh trống đồng mừng mùa vụ.[/narrator]",
+      "sceneDescription": "Vua Hùng đứng trước nhà sàn, dân Văn Lang đánh trống đồng mừng mùa",
+      "scene": "village",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Vì cùng sinh ra từ một bọc trứng của mẹ Âu Cơ, người Việt Nam gọi nhau thân thương là đồng bào. Ai cũng tự hào mình là con Rồng cháu Tiên.[/narrator]\n[character:Âu Cơ]Dù ở núi hay ở biển, các con vẫn là anh em ruột thịt một nhà.[/character]\n[character:Lạc Long Quân]Hễ có việc, các con gọi cha, cha sẽ về ngay.[/character]\n[narrator]Đến nay, mỗi khi gặp khó khăn, người Việt lại nắm tay nhau, giúp đỡ nhau như lời cha mẹ dặn.[/narrator]",
+      "sceneDescription": "Người miền núi và người miền biển nắm tay nhau, trên trời hiện bóng rồng và tiên",
+      "scene": "village",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

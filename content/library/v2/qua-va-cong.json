@@ -1,0 +1,121 @@
+{
+  "slug": "qua-va-cong",
+  "title": "Quạ và Công",
+  "category": "animal",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Ngày xưa Quạ và Công đều có bộ lông trắng. Hai bạn rủ nhau tô màu cho nhau. Quạ tô cho Công thật đẹp, còn Quạ vì nóng vội nên bị đen thui.",
+  "moral": "Làm việc gì cũng cần kiên nhẫn, đừng nóng vội mà hỏng việc.",
+  "tags": [
+    "ngu-ngon",
+    "dong-vat",
+    "kien-nhan"
+  ],
+  "origin": "Truyện dân gian giải thích (truyện sự tích loài vật) của người Việt.",
+  "adaptation": [
+    "Quạ không bị chê cười; cuối truyện Quạ tự nhận lỗi nóng vội và vẫn là bạn của Công."
+  ],
+  "characters": [
+    {
+      "name": "Quạ",
+      "role": "hero",
+      "voiceType": "boy",
+      "description": "Chú quạ hiếu động, hay nóng vội",
+      "appearance": "chú chim lông trắng muốt, mỏ dài, mắt tinh nghịch",
+      "look": "crow-shaped bird with snow-white feathers (until painted black at the end), long beak, playful eyes"
+    },
+    {
+      "name": "Công",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô công điềm đạm, khéo tay",
+      "appearance": "cô chim công đuôi dài, dáng thanh mảnh",
+      "look": "slender peacock with a long tail; white at first, then painted in brilliant blue, green and gold"
+    },
+    {
+      "name": "Chim Sẻ",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Cô sẻ nhỏ hay chuyền tin",
+      "appearance": "chim sẻ nhỏ lông nâu, nhảy nhót",
+      "look": "small brown sparrow, hopping"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "an animal fable long ago in a tropical Vietnamese forest; the birds use pots of paint and leaf brushes."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xửa ngày xưa, các loài chim trong rừng đều có bộ lông trắng muốt như nhau. Quạ và Công là đôi bạn thân.[/narrator]\n[narrator]Một hôm, hai bạn ngồi trên cành cây, nhìn những bông hoa rực rỡ dưới gốc.[/narrator]\n[character:Công]Hoa nào cũng có màu đẹp. Giá mà lông chúng mình cũng có màu nhỉ?[/character]\n[character:Quạ]Hay là chúng mình tô màu cho nhau đi![/character]",
+      "sceneDescription": "Quạ và Công lông trắng muốt đậu trên cành cây giữa rừng hoa",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hai bạn hái lá, vắt hoa, pha thành những bát màu xanh, đỏ, vàng, tím. Quạ nhận tô cho Công trước.[/narrator]\n[character:Quạ]Công đứng yên nhé, tớ sẽ tô thật cẩn thận.[/character]\n[narrator]Quạ ngậm cành lông nhỏ, chấm từng chút màu. Cổ Công màu xanh biếc, cánh Công màu nâu óng, mỗi chiếc lông đuôi có một con mắt tròn lấp lánh.[/narrator]",
+      "sceneDescription": "Quạ cẩn thận tô màu xanh biếc lên lông Công",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Quạ tô suốt từ sáng đến chiều. Xong rồi, Công soi mình xuống mặt suối, xoè chiếc đuôi rộng như một cái quạt lớn.[/narrator]\n[character:Công]Ôi, đẹp quá! Cảm ơn Quạ, cậu khéo tay thật đấy![/character]\n[character:Quạ]Đến lượt cậu tô cho tớ nhé. Tớ cũng muốn đẹp như cậu.[/character]\n[narrator]Công vui vẻ nhận lời, chuẩn bị bát màu thật cẩn thận.[/narrator]",
+      "sceneDescription": "Công xoè đuôi rực rỡ soi mình bên suối",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "stream",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Công vừa chấm màu đầu tiên thì Chim Sẻ bay vụt tới, ríu rít báo tin.[/narrator]\n[character:Chim Sẻ]Các bạn ơi, bên kia đồi có cây sung chín đỏ cả cành! Chim muông kéo nhau đến ăn đông lắm![/character]\n[narrator]Quạ nghe vậy thì sốt ruột, đứng không yên, cứ ngó mãi về phía đồi xa.[/narrator]\n[character:Quạ]Thôi rồi, đến muộn là hết sung mất![/character]",
+      "sceneDescription": "Chim Sẻ bay tới báo tin, Quạ sốt ruột ngó về phía đồi",
+      "scene": "forest",
+      "mood": "curious",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Quạ giục Công liên hồi.[/narrator]\n[character:Quạ]Công ơi, tô từng chút lâu lắm. Cậu đổ cả bát màu lên người tớ cho nhanh đi![/character]\n[character:Công]Không được đâu Quạ ạ. Tô vội thì sẽ không đẹp đâu.[/character]\n[character:Công]Cậu chờ tớ thêm một lát thôi, tớ sẽ tô cho cậu thật đẹp mà.[/character]\n[character:Quạ]Không sao, nhanh lên là được rồi![/character]\n[narrator]Công khuyên mãi, nhưng Quạ vẫn nằng nặc không nghe.[/narrator]",
+      "sceneDescription": "Quạ giục giã, Công cầm bát màu ngần ngừ",
+      "scene": "forest",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Chiều bạn, Công đành trộn hết các bát màu lại với nhau. Màu xanh, màu đỏ, màu vàng, màu tím hoà vào nhau thành một màu đen sẫm.[/narrator]\n[narrator]Công dội cả bát màu lên người Quạ. Ào một cái, từ đầu đến chân Quạ đen thui. Quạ chẳng kịp soi gương, vỗ cánh bay vù về phía đồi sung.[/narrator]\n[character:Quạ]Cảm ơn nhé, tớ đi đây![/character]",
+      "sceneDescription": "Bát màu đen dội lên người Quạ, Quạ vội vàng bay đi",
+      "scene": "forest",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Đến nơi thì sung đã hết. Quạ đậu xuống bờ suối, nhìn bóng mình dưới nước.[/narrator]\n[character:Quạ]Ôi, sao tớ lại đen thui thế này![/character]\n[narrator]Quạ ngồi buồn thiu, kêu lên những tiếng quạ quạ. Công bay tới, đậu bên cạnh bạn.[/narrator]\n[character:Công]Quạ đừng buồn. Màu đen cũng óng ánh lắm, nhìn kỹ còn thấy lấp lánh nữa đấy.[/character]",
+      "sceneDescription": "Quạ đen nhìn bóng mình bên suối, Công an ủi bạn",
+      "scene": "forest",
+      "mood": "sad",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Quạ nghĩ một lúc rồi gật đầu.[/narrator]\n[character:Quạ]Tại tớ nóng vội quá. Lần sau tớ sẽ kiên nhẫn hơn.[/character]\n[character:Công]Cậu vẫn là bạn thân của tớ mà.[/character]\n[narrator]Từ đó, Quạ mang bộ lông đen, còn Công có bộ lông rực rỡ. Mỗi lần nhìn bộ lông của mình, Quạ lại nhớ rằng làm việc gì cũng không nên vội vàng.[/narrator]",
+      "sceneDescription": "Quạ đen và Công rực rỡ ngồi cạnh nhau trên cành cây lúc hoàng hôn",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "forest",
+      "sfx": []
+    }
+  ]
+}

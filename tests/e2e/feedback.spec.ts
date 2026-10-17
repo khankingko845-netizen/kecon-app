@@ -1,0 +1,221 @@
+import { expect, test, type Page } from "@playwright/test";
+import { DOM_LINES } from "../../src/lib/dom-lines";
+import { passParentGate, pureWhiteElements, signInAsMockFamily } from "./support/fixtures";
+
+/**
+ * UI-11 — Âm thanh, haptic + câu thoại của Đóm: tắt được trong tab Bố mẹ,
+ * im lặng ở Chế độ ngủ. Web Audio / rung / giọng đọc được "nghe lén" bằng
+ * init script (headless Chromium không có loa, không có giọng tiếng Việt).
+ */
+
+type Probe = { vib: unknown[]; osc: number; spoken: string[]; cancels: number };
+
+async function instrument(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown> & { __fb: Probe };
+    w.__fb = { vib: [], osc: 0, spoken: [], cancels: 0 };
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      value: (p: unknown) => {
+        w.__fb.vib.push(p);
+        return true;
+      },
+    });
+    const AC = window.AudioContext;
+    if (AC) {
+      const orig = AC.prototype.createOscillator;
+      AC.prototype.createOscillator = function (this: AudioContext) {
+        w.__fb.osc++;
+        return orig.call(this);
+      };
+    }
+    const voice = { lang: "vi-VN", name: "Đóm (test)", localService: true, default: true, voiceURI: "dom-test" };
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        getVoices: () => [voice],
+        speak: (u: { text: string }) => w.__fb.spoken.push(u.text),
+        cancel: () => {
+          w.__fb.cancels++;
+        },
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      },
+    });
+    w.SpeechSynthesisUtterance = class {
+      text: string;
+      lang = "";
+      voice: unknown = null;
+      rate = 1;
+      pitch = 1;
+      volume = 1;
+      constructor(text: string) {
+        this.text = text;
+      }
+    };
+  });
+}
+
+const probe = (page: Page) => page.evaluate(() => (window as unknown as { __fb: Probe }).__fb);
+const resetProbe = (page: Page) =>
+  page.evaluate(() => {
+    const fb = (window as unknown as { __fb: Probe }).__fb;
+    fb.vib.length = 0;
+    fb.spoken.length = 0;
+    fb.osc = 0;
+    fb.cancels = 0;
+  });
+const tabBar = (page: Page) => page.getByRole("navigation", { name: "Điều hướng chính" });
+const pokeDom = (page: Page) => page.getByRole("button", { name: "Chạm để nghe Đóm nói" }).click();
+
+test.describe("UI-11 · âm thanh, rung, Đóm nói", () => {
+  test.beforeEach(async ({ context, baseURL, page }) => {
+    await signInAsMockFamily(context, baseURL!);
+    await instrument(page);
+  });
+
+  test("ban ngày: Đóm chào, chạm Đóm → bong bóng + giọng + rung + âm", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    await page.goto("/");
+    const bubble = page.getByTestId("dom-speech");
+    // Lời chào một lần mỗi phiên (sáng, hoặc khen chuỗi ≥ 3 đêm)
+    await expect(bubble).toBeVisible();
+    await expect(bubble).toContainText(/Chào buổi sáng|nhiều tối/);
+    await expect.poll(async () => (await probe(page)).spoken.length).toBe(1);
+
+    await resetProbe(page);
+    await pokeDom(page);
+    await expect(bubble).toContainText(DOM_LINES.poke.text);
+    const p = await probe(page);
+    expect(p.spoken).toEqual([DOM_LINES.poke.text]);
+    expect(p.vib).toEqual([12]); // "pop"
+    expect(p.osc).toBeGreaterThan(0);
+
+    // Chạm bong bóng để đóng; về Trang chủ lần nữa không chào lại
+    await bubble.click();
+    await expect(bubble).toHaveCount(0);
+    await tabBar(page).getByRole("button", { name: "Thư viện" }).click();
+    await tabBar(page).getByRole("button", { name: "Trang chủ" }).click();
+    await expect(page.getByRole("button", { name: "Chạm để nghe Đóm nói" })).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(bubble).toHaveCount(0);
+  });
+
+  test("mở truyện: bong bóng của Đóm tắt, không che nút Quay lại / Chế độ ngủ", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    await page.goto("/");
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toBeVisible();
+    await page.getByText("Sóc Nhỏ tìm hạt dẻ").first().click();
+    await expect(page.getByTestId("story-book")).toBeVisible();
+    // Gone right away — not only after the bubble's own 3.5–5 s timeout.
+    await expect(bubble).toHaveCount(0, { timeout: 1000 });
+    await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Chạm để nghe Đóm nói" })).toBeVisible();
+  });
+
+  test("rời Trang chủ: lời chào tắt theo, không che nút Quay lại của màn sau", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    await page.goto("/");
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toBeVisible();
+    await expect.poll(async () => (await probe(page)).spoken.length).toBe(1);
+    await resetProbe(page);
+    // Bé 4 tuổi (nhóm 3–5): Đóm đọc tên nút vừa chạm — tên đó không bị cắt khi lời chào tắt.
+    await page.getByTestId("home-explore").getByRole("button", { name: "Vẽ truyện" }).click();
+    await expect(page.getByRole("group", { name: "Màu bút" })).toBeVisible();
+    // Gone right away — not only after the bubble's own 3.5–5 s timeout.
+    await expect(bubble).toHaveCount(0, { timeout: 1000 });
+    const p = await probe(page);
+    expect(p.spoken).toEqual(["Vẽ truyện"]);
+    expect(p.cancels).toBe(1); // only speak()'s own cancel before the label
+    // Nothing on top of Quay lại: the first tap goes back.
+    const back = page.getByRole("button", { name: "Quay lại", exact: true });
+    const hit = await back.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!top && el.contains(top);
+    });
+    expect(hit).toBe(true);
+    await back.click();
+    await expect(page.getByRole("button", { name: "Chạm để nghe Đóm nói" })).toBeVisible();
+  });
+
+  test("lời chào đến muộn không nói đè lên truyện; chào ở lần về Trang chủ sau", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    await page.route("**/rest/v1/reading_streaks*", async (r) => {
+      await held;
+      await r.continue();
+    });
+    await page.goto("/");
+    await page.getByText("Sóc Nhỏ tìm hạt dẻ").first().click();
+    await expect(page.getByTestId("story-book")).toBeVisible();
+    await resetProbe(page);
+    release();
+    await page.waitForTimeout(800);
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toHaveCount(0);
+    expect((await probe(page)).spoken).toEqual([]);
+    await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+    await expect(bubble).toBeVisible();
+    await expect(bubble).toContainText(/Chào buổi sáng|nhiều tối/);
+  });
+
+  test("tắt trong tab Bố mẹ → im lặng hẳn, vẫn hiện chữ", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T10:00:00"));
+    await page.goto("/");
+    await expect(page.getByTestId("dom-speech")).toBeVisible();
+    await resetProbe(page);
+
+    await tabBar(page).getByRole("button", { name: "Bố mẹ", exact: true }).click();
+    // Cổng phụ huynh: Đóm đọc to cho bé chưa biết chữ
+    await expect.poll(async () => (await probe(page)).spoken).toEqual([DOM_LINES["parent-only"].text]);
+    await passParentGate(page);
+    await expect(page.getByRole("heading", { level: 1, name: "Bố mẹ", exact: true })).toBeVisible();
+
+    const card = page.getByTestId("feedback-settings");
+    await card.scrollIntoViewIfNeeded();
+    for (const name of ["Âm thanh khi chạm", "Rung nhẹ", "Đóm nói chuyện"]) {
+      const sw = card.getByRole("switch", { name: new RegExp(name) });
+      await expect(sw).toHaveAttribute("aria-checked", "true");
+      await sw.click();
+      await expect(sw).toHaveAttribute("aria-checked", "false");
+    }
+    expect(await page.evaluate(() => localStorage.getItem("kecon-feedback"))).toBe('{"sound":false,"haptics":false,"voice":false}');
+
+    await resetProbe(page);
+    await tabBar(page).getByRole("button", { name: "Trang chủ" }).click();
+    await pokeDom(page);
+    await expect(page.getByTestId("dom-speech")).toContainText(DOM_LINES.poke.text);
+    expect(await probe(page)).toEqual({ vib: [], osc: 0, spoken: [], cancels: 0 });
+  });
+
+  test("Chế độ ngủ: không âm, không giọng; rung nhẹ vẫn có; không #FFF", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("kecon-night-mode", "on"));
+    await page.goto("/");
+    await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("bedtime"))).toBe(true);
+    await expect(page.getByRole("button", { name: "Chạm để nghe Đóm nói" })).toBeVisible();
+    await resetProbe(page);
+
+    await pokeDom(page);
+    await expect(page.getByTestId("dom-speech")).toContainText(DOM_LINES.poke.text);
+    await expect(page.getByTestId("dom-speech").locator("[data-tone]")).toHaveAttribute("data-tone", "night");
+    const p = await probe(page);
+    expect(p.spoken).toEqual([]);
+    expect(p.osc).toBe(0);
+    expect(p.vib).toEqual([12]);
+    expect(await pureWhiteElements(page)).toEqual([]);
+  });
+
+  test("tự động 21:00: lời chào chỉ hiện chữ, bong bóng tông đêm", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2025-06-02T21:00:00"));
+    await page.goto("/");
+    const bubble = page.getByTestId("dom-speech");
+    await expect(bubble).toBeVisible();
+    await expect(bubble.locator("[data-tone]")).toHaveAttribute("data-tone", "night");
+    expect((await probe(page)).spoken).toEqual([]);
+    expect((await probe(page)).osc).toBe(0);
+  });
+});

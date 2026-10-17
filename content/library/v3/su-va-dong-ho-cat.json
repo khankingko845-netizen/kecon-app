@@ -1,0 +1,136 @@
+{
+  "slug": "su-va-dong-ho-cat",
+  "title": "Su và chiếc đồng hồ cát",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Su mải chơi lề mề mỗi sáng nên đến lớp muộn, lỡ giờ cho cá vàng ăn. Bố làm bảng tranh các việc buổi sáng và chiếc đồng hồ cát, Su chạy đua với cát và đến lớp thật sớm.",
+  "moral": "Làm từng việc một, không mải chơi giữa chừng, thì việc gì cũng xong đúng giờ.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "le-me",
+    "dung-gio",
+    "tu-lap"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 33 (chủ động làm việc đơn giản hằng ngày) và 31 (cố gắng thực hiện công việc đến cùng).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Dùng bảng tranh các bước và đồng hồ cát biến việc buổi sáng thành trò chơi, thay vì giục giã.",
+    "Gợi ý cho cha mẹ: làm cùng bé một bảng tranh 4–5 việc buổi sáng, dùng đồng hồ cát hoặc bài hát ngắn cho từng việc, khen khi bé tự làm xong."
+  ],
+  "characters": [
+    {
+      "name": "Su",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
+    },
+    {
+      "name": "Bố",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Bố của Bo và Su, vui tính, hay bày trò",
+      "appearance": "người bố đeo kính, áo sơ mi kẻ ca rô",
+      "look": "young Vietnamese father, glasses, short black hair, red-and-navy checkered shirt"
+    },
+    {
+      "name": "Bo",
+      "role": "friend",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
+    },
+    {
+      "name": "Cô Hoa",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Cô giáo mầm non dịu dàng",
+      "appearance": "cô giáo áo dài xanh nhạt, tóc buộc đuôi ngựa",
+      "look": "young Vietnamese kindergarten teacher, black ponytail, light blue ao dai, warm smile"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a family home in the morning and a kindergarten classroom with a goldfish tank."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Sáng nào bố cũng gọi Su dậy thật sớm. Nhưng Su cứ ngồi trên giường chải tóc cho búp bê, rồi ngắm chú chim ngoài cửa sổ. Một chân Su đã đi tất, chân kia vẫn chưa.[/narrator]\n[character:Bố]Su ơi, đánh răng rồi thay quần áo đi con.[/character]\n[character:Su]Dạ, con làm ngay đây ạ![/character]\n[narrator]Nói vậy, nhưng Su lại mải chơi tiếp.[/narrator]",
+      "sceneDescription": "Su ngồi trên giường chải tóc búp bê, một chân đi tất, bố đứng ở cửa",
+      "scene": "bedroom",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bữa sáng nguội dần. Bo đã đeo cặp, đứng chờ ở cửa từ lâu.[/narrator]\n[character:Bo]Su ơi, nhanh lên! Muộn học mất rồi![/character]\n[narrator]Su vẫn thong thả ngắm từng hạt cơm, xếp chúng thành hình bông hoa. Đến khi ra khỏi nhà, kim đồng hồ đã chỉ quá giờ vào lớp. Bố phải vội vàng đưa hai anh em đi.[/narrator]",
+      "sceneDescription": "Bo đeo cặp đứng ở cửa sốt ruột, Su ngồi xếp hạt cơm thành bông hoa",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su đến lớp thì các bạn đã cho cá vàng ăn xong rồi. Việc cho cá ăn là việc Su thích nhất mỗi sáng.[/narrator]\n[character:Su]Cô ơi, hôm nay con không được cho cá vàng ăn ạ?[/character]\n[character:Cô Hoa]Các bạn cho cá ăn từ đầu giờ rồi con ạ. Mai con đến sớm, cô để phần con nhé.[/character]\n[narrator]Su buồn thiu, nhìn bể cá mãi.[/narrator]",
+      "sceneDescription": "Su buồn thiu đứng bên bể cá vàng trong lớp, cô Hoa an ủi",
+      "scene": "school",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, bố bày ra một trò chơi mới. Bố vẽ một tấm bảng có năm bức tranh: đánh răng, rửa mặt, thay quần áo, ăn sáng, đeo cặp. Bên cạnh là một chiếc đồng hồ cát nhỏ.[/narrator]\n[character:Bố]Mỗi việc, con chạy đua với đồng hồ cát nhé. Cát chảy hết mà con làm xong là con thắng![/character]\n[character:Su]Hay quá! Con sẽ thắng đồng hồ cát![/character]",
+      "sceneDescription": "Bố giới thiệu tấm bảng năm bức tranh việc buổi sáng và chiếc đồng hồ cát",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, Su vừa dậy đã chạy đến bên tấm bảng. Bố lật đồng hồ cát. Cát chảy xuống rào rào.[/narrator]\n[character:Bố]Việc thứ nhất: đánh răng! Bắt đầu nào![/character]\n[narrator]Su đánh răng thật kỹ, súc miệng sạch sẽ. Cát vẫn còn một ít.[/narrator]\n[character:Su]Con thắng rồi! Con dán ngôi sao vào tranh đánh răng nhé![/character]",
+      "sceneDescription": "Su đánh răng trước gương, bên cạnh là đồng hồ cát đang chảy",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Su làm tiếp từng việc một: rửa mặt, thay quần áo, rồi ngồi vào bàn ăn sáng. Su không mải chơi giữa chừng nữa.[/narrator]\n[character:Bo]Su nhanh quá! Anh phải cố lên mới theo kịp em đấy![/character]\n[character:Su]Em đeo cặp xong rồi! Năm ngôi sao, năm việc luôn![/character]\n[character:Bố]Giỏi quá! Hôm nay cả nhà đi sớm rồi![/character]",
+      "sceneDescription": "Su đeo cặp đứng cạnh tấm bảng có năm ngôi sao, Bo vừa xỏ giày",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su đến lớp khi các bạn mới đến được vài người. Cô Hoa đưa cho Su hộp thức ăn của cá.[/narrator]\n[character:Cô Hoa]Hôm nay con đến sớm quá! Con cho cá vàng ăn nhé.[/character]\n[character:Su]Cá vàng ơi, hôm nay tớ đến sớm này! Ăn ngon nhé![/character]\n[narrator]Đàn cá vàng bơi tung tăng, đớp những hạt thức ăn nhỏ xíu.[/narrator]",
+      "sceneDescription": "Su rắc thức ăn cho đàn cá vàng, cô Hoa mỉm cười",
+      "scene": "school",
+      "mood": "triumphant",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Chiều về, Su kể cho bố nghe chuyện cho cá ăn.[/narrator]\n[character:Bố]Con tự làm từng việc một, không cần ai giục. Bố tự hào về con lắm.[/character]\n[character:Su]Con làm từng việc một, không mải chơi giữa chừng, thế là xong hết ạ![/character]\n[narrator]Bé ơi, buổi sáng bé thường làm những việc gì? Bé thử đếm xem có mấy việc nào![/narrator]",
+      "sceneDescription": "Su ngồi trong lòng bố kể chuyện, tấm bảng ngôi sao treo trên tường",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

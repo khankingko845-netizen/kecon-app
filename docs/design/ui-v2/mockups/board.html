@@ -1,0 +1,200 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{--ink:#2B2350;--ink2:#6B6390;--cream:#FFF8EE;--cream2:#FFEFD9;--indigo:#5B4BDB;--indigo2:#4636C2;--isoft:#ECE9FF;--coral:#E85A2A;--coral2:#FF7A45;--glow:#FFC94D;--mint:#2EC4A0;--night:#151233;--night2:#221C4A;--moon:#F3E9D2;--amber:#FFB547;--A:'../assets/'}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E9E4F5;font-family:Nunito,sans-serif;color:var(--ink);padding:48px 56px 56px}
+.head{display:flex;align-items:center;gap:18px;margin-bottom:34px}
+.head img{width:74px}
+.head h1{font-family:'Baloo 2';font-size:40px;line-height:1;color:var(--ink)}
+.head p{font-size:18px;color:var(--ink2);font-weight:700;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(3,390px);gap:44px 52px}
+.cell .lbl{font-family:'Baloo 2';font-weight:700;font-size:22px;margin:0 0 12px 6px;color:var(--ink)}
+.cell .lbl span{display:block;font-family:Nunito;font-size:15px;color:var(--ink2);font-weight:700;margin-top:2px}
+.phone{width:390px;height:844px;border-radius:52px;overflow:hidden;position:relative;background:var(--cream);box-shadow:0 0 0 10px #1b1530,0 30px 60px rgba(43,35,80,.35)}
+.status{height:50px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font-weight:800;font-size:16px;position:relative;z-index:5}
+.status:after{content:"";position:absolute;left:50%;top:11px;transform:translateX(-50%);width:120px;height:34px;border-radius:20px;background:#000}
+.status i{font-size:17px;margin-left:5px}
+.night .status{color:var(--moon)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;height:64px;border-radius:22px;font-family:'Baloo 2';font-weight:800;font-size:22px;border:0;color:#fff;background:var(--coral);box-shadow:0 6px 0 #B9441C}
+.btn.indigo{background:var(--indigo);box-shadow:0 6px 0 var(--indigo2)}
+.deco{position:absolute;color:var(--indigo);opacity:.16}
+/* A onboarding */
+.onb{padding:4px 26px 0;display:flex;flex-direction:column;align-items:center;height:794px;position:relative}
+.skip{align-self:flex-end;font-weight:800;color:var(--ink2);font-size:16px;padding:8px 4px}
+.halo{width:270px;height:270px;border-radius:50%;background:radial-gradient(circle,#FFE7A6 0%,#FFF1CF 45%,rgba(255,248,238,0) 72%);display:flex;align-items:center;justify-content:center;margin-top:18px;position:relative}
+.halo img{width:210px}
+.bubble{background:#fff;border-radius:22px;padding:12px 18px;font-weight:800;font-size:18px;box-shadow:0 6px 18px rgba(43,35,80,.12);position:relative}
+.onb .bubble{position:absolute;top:70px;right:18px;transform:rotate(3deg)}
+.onb .bubble:after{content:"";position:absolute;left:24px;bottom:-9px;border:10px solid transparent;border-top-color:#fff;border-bottom:0}
+.onb h2{font-family:'Baloo 2';font-weight:800;font-size:31px;line-height:1.15;text-align:center;margin-top:18px}
+.onb h2 em{font-style:normal;color:var(--indigo)}
+.onb p.sub{font-size:17px;line-height:1.5;text-align:center;color:var(--ink2);font-weight:700;margin-top:12px}
+.dots{display:flex;gap:8px;margin:26px 0 22px}.dots b{width:10px;height:10px;border-radius:6px;background:#DCD5F5}.dots b.on{width:30px;background:var(--indigo)}
+.onb .btn{width:100%}
+.onb .alt{margin-top:18px;font-weight:700;color:var(--ink2);font-size:16px}.onb .alt b{color:var(--indigo)}
+.trust{display:flex;gap:8px;margin-top:20px}.trust span{font-size:13px;font-weight:800;color:#1F6B57;background:#E3F8F1;padding:6px 10px;border-radius:12px;display:flex;align-items:center;gap:5px}
+/* B home */
+.home{padding:2px 20px 0}
+.hrow{display:flex;align-items:center;gap:12px;margin-top:6px}
+.av{width:50px;height:50px;border-radius:18px;background:var(--isoft);overflow:hidden;display:flex;align-items:center;justify-content:center}.av img{width:58px}
+.hrow h3{font-family:'Baloo 2';font-size:24px;line-height:1.05}.hrow small{display:block;font-family:Nunito;font-size:14px;color:var(--ink2);font-weight:700}
+.streak{margin-left:auto;display:flex;align-items:center;gap:6px;background:#FFF0C7;color:#7A4A00;font-weight:900;padding:8px 12px;border-radius:16px;font-size:15px}.streak i{color:#F2A900;font-size:20px}
+.hero{margin-top:14px;border-radius:28px;background:linear-gradient(135deg,#5B4BDB,#7B61FF);color:#fff;padding:18px 18px;position:relative;height:150px;overflow:hidden}
+.hero h4{font-family:'Baloo 2';font-size:25px;line-height:1.1;width:200px}
+.hero .mini{margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:#FFC94D;color:var(--ink);font-weight:900;font-size:15px;padding:9px 14px;border-radius:16px}
+.hero img{position:absolute;right:-6px;bottom:-14px;width:150px}
+.hero .st{position:absolute;color:#FFE7A6;font-size:14px}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:16px 2px 8px}.sec b{font-family:'Baloo 2';font-size:21px}.sec a{font-weight:800;color:var(--indigo);font-size:15px}
+.cont{display:flex;gap:12px;background:#fff;border-radius:24px;padding:10px;align-items:center;box-shadow:0 4px 14px rgba(43,35,80,.08)}
+.cont .th{width:70px;height:70px;border-radius:18px;background:url(../assets/night-bg.jpg) center 70%/cover}
+.cont .tx{flex:1}.cont .tx b{font-weight:900;font-size:17px;display:block}.cont .tx small{font-weight:700;color:var(--ink2);font-size:13.5px}
+.bar{height:7px;border-radius:5px;background:#EEE9FA;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:62%;background:var(--indigo);border-radius:5px}
+.play{width:52px;height:52px;border-radius:50%;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 0 #B9441C}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cat{background:#fff;border-radius:22px;padding:8px 6px 10px;text-align:center;box-shadow:0 4px 14px rgba(43,35,80,.07)}
+.cat .ic{width:70px;height:70px;margin:0 auto;border-radius:20px;overflow:hidden}.cat .ic img{width:118%;margin:-9%}
+.cat span{display:block;font-weight:900;font-size:15px;margin-top:4px}
+.tab{position:absolute;left:0;right:0;bottom:0;height:92px;background:#fff;border-top:1px solid #EFE9F7;display:flex;justify-content:space-around;align-items:flex-start;padding-top:10px}
+.tab div{display:flex;flex-direction:column;align-items:center;font-size:12.5px;font-weight:800;color:#9A93B8;gap:2px;width:64px}.tab div i{font-size:28px}
+.tab .on{color:var(--indigo)}.tab .mid{margin-top:-30px}.tab .mid b{width:66px;height:66px;border-radius:24px;background:var(--coral);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 0 #B9441C}.tab .mid b i{font-size:32px}.tab .mid{color:var(--ink)}
+/* C player night */
+.night{background:var(--night)}
+.pbg{position:absolute;inset:0;background:url(../assets/night-bg.jpg) center/cover;filter:brightness(.8) saturate(.9)}
+.pov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,18,51,.15) 0%,rgba(21,18,51,.1) 40%,rgba(21,18,51,.88) 66%,#151233 100%)}
+.pl{position:relative;z-index:2;padding:0 22px;color:var(--moon)}
+.ptop{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.ptop i{font-size:26px;color:var(--moon);opacity:.85}
+.pill{display:flex;align-items:center;gap:6px;background:rgba(255,181,71,.16);border:1px solid rgba(255,181,71,.35);color:var(--amber);font-weight:800;font-size:14px;padding:7px 12px;border-radius:14px}
+.sleepy{position:absolute;right:30px;top:150px;width:122px;filter:brightness(.82)}
+.zz{position:absolute;right:30px;top:118px;font-family:'Baloo 2';color:var(--amber);font-size:22px;opacity:.7;font-weight:700}
+.ptitle{margin-top:262px}
+.ptitle h2{font-family:'Baloo 2';font-size:31px;line-height:1.1;font-weight:700}
+.ptitle small{font-size:15px;font-weight:700;color:#B9AED6;display:flex;align-items:center;gap:6px;margin-top:4px}
+.kar{margin-top:16px;background:rgba(34,28,74,.72);border:1px solid rgba(243,233,210,.08);border-radius:22px;padding:16px 18px;font-size:19px;line-height:1.6;font-weight:700;color:#CFC6E6}
+.kar .hl{color:var(--amber);background:rgba(255,181,71,.14);border-radius:6px;padding:0 3px}.kar .dim{opacity:.55}
+.prog{margin-top:18px;height:6px;border-radius:4px;background:rgba(243,233,210,.15)}.prog i{display:block;height:100%;width:44%;background:var(--amber);border-radius:4px;position:relative}.prog i:after{content:"";position:absolute;right:-7px;top:-5px;width:16px;height:16px;border-radius:50%;background:var(--amber)}
+.times{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#9F95C2;margin-top:8px}
+.ctl{display:flex;justify-content:center;align-items:center;gap:40px;margin-top:10px}.ctl i{font-size:36px;color:var(--moon);opacity:.85}
+.big{width:86px;height:86px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,181,71,.35)}.big i{color:var(--night)!important;opacity:1!important;font-size:40px!important}
+.chips{display:flex;gap:6px;margin-top:22px;justify-content:center}.chips span{white-space:nowrap;display:flex;align-items:center;gap:6px;background:rgba(243,233,210,.08);border:1px solid rgba(243,233,210,.12);border-radius:16px;padding:10px 10px;font-size:13.5px;font-weight:800;color:#DCD3EE}.chips i{font-size:18px;color:var(--amber)}
+/* D create */
+.cr{padding:0 20px}
+.ctop{display:flex;align-items:center;gap:12px;margin-top:6px}.ctop i{font-size:26px}.ctop b{font-family:'Baloo 2';font-size:22px}.ctop small{margin-left:auto;font-weight:800;color:var(--ink2)}
+.steps{display:flex;gap:6px;margin-top:12px}.steps i{flex:1;height:8px;border-radius:5px;background:#E6E0F6}.steps i.on{background:var(--indigo)}
+.ask{display:flex;align-items:flex-end;gap:6px;margin-top:16px}.ask img{width:112px}
+.ask .bubble{flex:1;font-size:20px;line-height:1.3;margin-bottom:34px;font-family:'Baloo 2';font-weight:700}
+.ask .bubble:after{content:"";position:absolute;left:-9px;bottom:18px;border:10px solid transparent;border-right-color:#fff;border-left:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.opt{background:#fff;border-radius:24px;padding:10px 10px 14px;text-align:center;border:3px solid transparent;box-shadow:0 4px 14px rgba(43,35,80,.08);position:relative}
+.opt .ic{width:96px;height:96px;margin:0 auto;border-radius:22px;overflow:hidden}.opt .ic img{width:118%;margin:-9%}
+.opt b{display:block;font-weight:900;font-size:17px;margin-top:4px}
+.opt.sel{border-color:var(--indigo);background:#F5F3FF}.opt.sel:after{content:"✓";position:absolute;top:8px;right:10px;width:28px;height:28px;border-radius:50%;background:var(--indigo);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}
+.voice{margin-top:14px;display:flex;align-items:center;gap:12px;background:#FFF0C7;border-radius:22px;padding:10px 14px;font-weight:900;font-size:16px;color:#7A4A00}.voice .m{width:46px;height:46px;border-radius:16px;overflow:hidden}.voice .m img{width:118%;margin:-9%}.voice i{margin-left:auto;font-size:22px}
+.cr .btn{position:absolute;left:20px;right:20px;bottom:34px}
+/* E voice parent */
+.parent{background:#F7F6FB;font-family:'Be Vietnam Pro',sans-serif}
+.vp{padding:0 20px}
+.vtop{display:flex;align-items:center;gap:10px;margin-top:6px}.vtop i{font-size:24px}.vtop b{font-size:19px;font-weight:700}.vtop span{white-space:nowrap;margin-left:auto;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#1F6B57;background:#E3F8F1;padding:6px 10px;border-radius:12px}
+.lis{display:flex;align-items:center;gap:12px;margin-top:16px;background:#fff;border-radius:20px;padding:10px 14px;box-shadow:0 2px 10px rgba(43,35,80,.06)}.lis img{width:64px}.lis b{font-size:16px;font-weight:700;display:block}.lis small{font-size:13.5px;color:var(--ink2)}
+.script{margin-top:14px;background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 10px rgba(43,35,80,.06)}.script small{font-size:13px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}.script p{font-size:18px;line-height:1.6;margin-top:8px;color:#9C96B5}.script p b{color:var(--ink);font-weight:600;background:#FFF0C7;border-radius:6px;padding:0 3px}
+.wave{display:flex;align-items:center;justify-content:center;gap:4px;height:70px;margin-top:20px}.wave i{width:5px;border-radius:3px;background:var(--indigo);display:block}
+.timer{text-align:center;font-weight:700;font-size:28px;margin-top:6px}.timer small{font-size:16px;color:var(--ink2);font-weight:500}
+.rec{margin:16px auto 0;width:112px;height:112px;border-radius:50%;background:conic-gradient(var(--coral) 0 40%,#F0E2DB 40% 100%);display:flex;align-items:center;justify-content:center}.rec b{width:92px;height:92px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}.rec b i{width:38px;height:38px;border-radius:10px;background:var(--coral);display:block}
+.tips{display:flex;gap:6px;justify-content:center;margin-top:18px;flex-wrap:wrap}.tips span{white-space:nowrap;font-size:12.5px;font-weight:600;background:#fff;border:1px solid #E7E3F2;border-radius:12px;padding:7px 10px;display:flex;gap:5px;align-items:center}.tips i{color:var(--indigo);font-size:16px}
+.priv{margin:18px 4px 0;font-size:13px;line-height:1.5;color:var(--ink2);display:flex;gap:8px}.priv i{font-size:18px;color:#1F6B57}
+/* F states */
+.stt{padding:0 18px}
+.stt h3{font-family:'Baloo 2';font-size:22px;white-space:nowrap;margin:8px 4px 10px}
+.sc{background:#fff;border-radius:26px;padding:14px 16px;display:flex;gap:14px;align-items:center;margin-bottom:12px;box-shadow:0 4px 14px rgba(43,35,80,.07);min-height:200px}
+.sc img{width:118px;flex:none}.sc .t{flex:1}.sc .tag{font-size:12px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}.sc b{display:block;font-family:'Baloo 2';font-size:21px;line-height:1.15;margin:4px 0 6px}.sc p{font-size:14.5px;font-weight:700;color:var(--ink2);line-height:1.4}
+.sc .bar{margin-top:10px;height:10px}.sc .bar i{width:60%;background:linear-gradient(90deg,var(--glow),var(--coral2))}
+.sm{margin-top:10px;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:16px;font-family:'Baloo 2';font-weight:800;font-size:17px;color:#fff;background:var(--indigo);box-shadow:0 4px 0 var(--indigo2)}
+.badge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:#FFF0C7;padding:6px 10px;border-radius:12px;font-weight:900;color:#7A4A00;font-size:14px}.badge img{width:30px!important;border-radius:8px}
+.sc.ok{background:linear-gradient(135deg,#FFF6DD,#FFFFFF)}
+</style></head><body>
+<div class="head"><img src="../assets/dom-hello.png"><div><h1>KểCon UI v2 — concept "Đóm kể chuyện"</h1><p>Mascot đom đóm · bảng màu Ngày/Đêm · icon 3D clay + Phosphor duotone · font Baloo 2 + Nunito (trẻ), Be Vietnam Pro (phụ huynh)</p></div></div>
+<div class="grid">
+
+<div class="cell"><div class="lbl">1 · Onboarding <span>một nền kem thống nhất, mascot dẫn dắt</span></div>
+<div class="phone"><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="onb"><i class="deco ph-fill ph-star" style="left:30px;top:90px;font-size:26px"></i><i class="deco ph-fill ph-moon-stars" style="left:60px;top:240px;font-size:34px"></i><i class="deco ph-fill ph-sparkle" style="right:40px;top:300px;font-size:28px"></i>
+<div class="skip">Bỏ qua</div>
+<div class="halo"><img src="../assets/dom-hello.png"></div>
+<div class="bubble">Chào bé! Tớ là <b style="color:var(--indigo)">Đóm</b></div>
+<h2>Mỗi tối, Đóm thắp sáng <em>một câu chuyện</em> cho bé</h2>
+<p class="sub">Cổ tích Việt Nam, truyện bé tự sáng tạo — và cả giọng kể của bố mẹ.</p>
+<div class="dots"><b class="on"></b><b></b><b></b></div>
+<div class="btn">Bắt đầu nào! <i class="ph-bold ph-arrow-right"></i></div>
+<div class="alt">Bố mẹ đã có tài khoản? <b>Đăng nhập</b></div>
+<div class="trust"><span><i class="ph-fill ph-shield-check"></i>Không quảng cáo</span><span><i class="ph-fill ph-lock-key"></i>Khoá phụ huynh</span></div>
+</div></div></div>
+
+<div class="cell"><div class="lbl">2 · Trang chủ (bé) <span>"Tối nay nghe gì?" + icon 3D</span></div>
+<div class="phone"><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="home">
+<div class="hrow"><div class="av"><img src="../assets/icon-paw.png"></div><h3>Chào bé Bông!<small>Thứ Năm · 19:45</small></h3><div class="streak"><i class="ph-fill ph-star"></i>5 đêm</div></div>
+<div class="hero"><i class="st ph-fill ph-star" style="left:196px;top:12px"></i><i class="st ph-fill ph-sparkle" style="left:205px;top:60px"></i><h4>Tối nay mình nghe truyện gì nhỉ?</h4><div class="mini"><i class="ph-fill ph-magic-wand"></i>Đóm gợi ý cho bé</div><img src="../assets/dom-story.png"></div>
+<div class="sec"><b>Nghe tiếp</b></div>
+<div class="cont"><div class="th"></div><div class="tx"><b>Sự tích cây vú sữa</b><small>Giọng Mẹ · còn 6 phút</small><div class="bar"><i></i></div></div><div class="play"><i class="ph-fill ph-play"></i></div></div>
+<div class="sec"><b>Chủ đề</b><a>Xem tất cả</a></div>
+<div class="cats">
+<div class="cat"><div class="ic"><img src="../assets/icon-castle.png"></div><span>Cổ tích</span></div>
+<div class="cat"><div class="ic"><img src="../assets/icon-rocket.png"></div><span>Phiêu lưu</span></div>
+<div class="cat"><div class="ic"><img src="../assets/icon-moon.png"></div><span>Ru ngủ</span></div>
+<div class="cat"><div class="ic"><img src="../assets/icon-paw.png"></div><span>Động vật</span></div>
+<div class="cat"><div class="ic"><img src="../assets/icon-book.png"></div><span>Học chơi</span></div>
+<div class="cat"><div class="ic"><img src="../assets/icon-lotus.png"></div><span>Dân gian</span></div>
+</div></div>
+<div class="tab"><div class="on"><i class="ph-duotone ph-house"></i>Trang chủ</div><div><i class="ph-duotone ph-books"></i>Thư viện</div><div class="mid"><b><i class="ph-fill ph-magic-wand"></i></b>Tạo</div><div><i class="ph-duotone ph-microphone"></i>Giọng đọc</div><div><i class="ph-duotone ph-shield-check"></i>Bố mẹ</div></div>
+</div></div>
+
+<div class="cell"><div class="lbl">3 · Player — Chế độ ngủ <span>ấm, tối, không trắng tinh</span></div>
+<div class="phone night"><div class="pbg"></div><div class="pov"></div><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="pl"><div class="ptop"><i class="ph-bold ph-caret-down"></i><div class="pill"><i class="ph-fill ph-moon-stars"></i>Chế độ ngủ</div><i class="ph-bold ph-dots-three"></i></div>
+<div class="zz">z z</div><img class="sleepy" src="../assets/dom-sleepy.png">
+<div class="ptitle"><h2>Chú Cuội cung trăng</h2><small><i class="ph-fill ph-heart"></i>Giọng Mẹ · Cổ tích Việt Nam</small></div>
+<div class="kar"><span class="dim">Ngày xửa ngày xưa, ở một làng nọ</span> có chàng tiều phu tên là <span class="hl">Cuội</span>. Một hôm, Cuội vào rừng đốn củi…</div>
+<div class="prog"><i></i></div><div class="times"><span>04:12</span><span>-05:18</span></div>
+<div class="ctl"><i class="ph-bold ph-arrow-counter-clockwise"></i><div class="big"><i class="ph-fill ph-pause"></i></div><i class="ph-bold ph-arrow-clockwise"></i></div>
+<div class="chips"><span><i class="ph-fill ph-timer"></i>Tắt sau 15'</span><span><i class="ph-fill ph-waveform"></i>Tiếng dế</span><span><i class="ph-fill ph-eye-slash"></i>Tắt màn</span></div>
+</div></div></div>
+
+<div class="cell"><div class="lbl">4 · Tạo truyện <span>wizard 4 bước, chạm to, ít chữ</span></div>
+<div class="phone"><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="cr"><div class="ctop"><i class="ph-bold ph-arrow-left"></i><b>Tạo truyện mới</b><small>Bước 2/4</small></div>
+<div class="steps"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+<div class="ask"><img src="../assets/dom-thinking.png"><div class="bubble">Nhân vật chính của mình là ai nhỉ?</div></div>
+<div class="opts">
+<div class="opt sel"><div class="ic"><img src="../assets/icon-paw.png"></div><b>Bạn thú rừng</b></div>
+<div class="opt"><div class="ic"><img src="../assets/icon-rocket.png"></div><b>Phi hành gia</b></div>
+<div class="opt"><div class="ic"><img src="../assets/icon-castle.png"></div><b>Công chúa</b></div>
+<div class="opt"><div class="ic"><img src="../assets/icon-lantern.png"></div><b>Chú Cuội</b></div>
+</div>
+<div class="voice"><div class="m"><img src="../assets/icon-mic.png"></div>Hoặc bé tự nói cho Đóm nghe<i class="ph-bold ph-caret-right"></i></div>
+<div class="btn">Tiếp tục <i class="ph-bold ph-arrow-right"></i></div>
+</div></div></div>
+
+<div class="cell"><div class="lbl">5 · Ghi giọng (phụ huynh) <span>gọn, tin cậy, Be Vietnam Pro</span></div>
+<div class="phone parent"><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="vp"><div class="vtop"><i class="ph-bold ph-x"></i><b>Ghi giọng bố mẹ</b><span><i class="ph-fill ph-shield-check"></i>Phụ huynh</span></div>
+<div class="lis"><img src="../assets/dom-listen.png"><div><b>Đóm đang lắng nghe…</b><small>Đọc tự nhiên như kể cho bé nghe nhé</small></div></div>
+<div class="script"><small>Đoạn 2/5 · Đọc to</small><p>Ngày xửa ngày xưa, có hai chị em cùng cha khác mẹ. <b>Chị tên là Tấm, em tên là Cám.</b> Tấm hiền lành, chăm chỉ…</p></div>
+<div class="wave" id="wave"></div>
+<div class="timer">00:24 <small>/ 01:00</small></div>
+<div class="rec"><b><i></i></b></div>
+<div class="tips"><span><i class="ph-duotone ph-speaker-simple-slash"></i>Phòng yên tĩnh</span><span><i class="ph-duotone ph-ruler"></i>Cách mic 20 cm</span><span><i class="ph-duotone ph-turtle"></i>Đọc chậm</span></div>
+<div class="priv"><i class="ph-fill ph-lock-key"></i><span>Giọng nói chỉ dùng trong gia đình bạn và có thể xoá bất cứ lúc nào.</span></div>
+</div></div></div>
+
+<div class="cell"><div class="lbl">6 · Trạng thái có Đóm <span>loading · lỗi · ăn mừng</span></div>
+<div class="phone"><div class="status">9:41<span><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div class="stt"><h3>Đóm thay spinner &amp; lỗi khô khan</h3>
+<div class="sc"><img src="../assets/dom-story.png"><div class="t"><div class="tag">Đang tạo</div><b>Đóm đang viết truyện cho bé…</b><p>Bé có biết? Đom đóm phát sáng để gọi bạn bè đấy!</p><div class="bar"><i></i></div></div></div>
+<div class="sc"><img src="../assets/dom-oops.png"><div class="t"><div class="tag">Lỗi mạng</div><b>Ối, mất kết nối rồi!</b><p>Truyện đã tải sẵn vẫn nghe được nhé.</p><div class="sm"><i class="ph-bold ph-arrow-clockwise"></i>Thử lại</div></div></div>
+<div class="sc ok"><img src="../assets/dom-celebrate.png"><div class="t"><div class="tag">Thành tích</div><b>Tuyệt vời! 7 đêm liền nghe truyện</b><div class="badge"><img src="../assets/icon-chest.png">+1 rương kho báu</div></div></div>
+</div></div></div>
+
+</div>
+<script>const w=document.getElementById('wave');[14,22,36,50,30,58,44,64,40,28,52,60,34,20,46,56,30,18,40,26,12,8,6,6,6,6].forEach((h,i)=>{const b=document.createElement('i');b.style.height=h+'px';if(i>20)b.style.background='#D9D3EE';w.appendChild(b)});</script>
+</body></html>

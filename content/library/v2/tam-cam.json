@@ -1,0 +1,145 @@
+{
+  "slug": "tam-cam",
+  "title": "Tấm Cám",
+  "category": "fairy_tale",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Tấm hiền lành bị Cám lừa lấy giỏ tép, rồi mất cả cá bống. Nhờ Bụt giúp, Tấm có quần áo đẹp đi hội, đánh rơi chiếc hài và được nhà vua đón về làm hoàng hậu.",
+  "moral": "Ở hiền thì gặp lành; biết tha thứ là điều đáng quý.",
+  "tags": [
+    "co-tich-viet-nam",
+    "hien-lanh",
+    "tha-thu"
+  ],
+  "origin": "Truyện cổ tích người Việt thuộc kiểu truyện cô gái và chiếc hài (như Lọ Lem), có trong Kho tàng truyện cổ tích Việt Nam của Nguyễn Đổng Chi.",
+  "adaptation": [
+    "Chỉ kể phần đầu đến khi Tấm thành hoàng hậu; bỏ phần sau (Tấm bị hại, hoá thân và kết cục trả thù).",
+    "Cá bống được thả ra sông lớn (bản gốc: bống bị dì và Cám bắt ăn); Tấm chôn vảy bống thay vì xương.",
+    "Kết thúc bằng sự tha thứ: dì và Cám biết lỗi, Tấm tha thứ."
+  ],
+  "characters": [
+    {
+      "name": "Tấm",
+      "role": "hero",
+      "voiceType": "woman",
+      "description": "Cô gái hiền lành, chăm chỉ, sống cùng dì và em Cám",
+      "appearance": "cô gái tóc dài, áo tứ thân nâu, yếm trắng, khăn mỏ quạ",
+      "look": "kind young Vietnamese woman, long black hair, brown four-panel dress (ao tu than), white yem bodice, crow-beak headscarf"
+    },
+    {
+      "name": "Cám",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Cô em lười biếng, hay ganh tị, cuối truyện biết lỗi",
+      "appearance": "cô bé tóc buộc nơ đỏ, áo hoa, má phính",
+      "look": "chubby-cheeked young girl, hair tied with a red bow, floral blouse"
+    },
+    {
+      "name": "Dì",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Người dì khó tính, chiều chuộng Cám",
+      "appearance": "người phụ nữ áo the tím, khăn vấn, mặt cau có",
+      "look": "stepmother, purple silk tunic, hair wrapped in a headscarf, frowning"
+    },
+    {
+      "name": "Bụt",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông Bụt hiền từ hay giúp người tốt",
+      "appearance": "ông cụ râu tóc trắng như cước, áo vàng, tay cầm phất trần",
+      "look": "kind fairy grandfather (Ong But), snow-white hair and beard, yellow robe, holding a horsetail whisk"
+    },
+    {
+      "name": "Nhà Vua",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Nhà vua nhân hậu",
+      "appearance": "nhà vua trẻ, áo bào vàng thêu rồng, đội mũ miện",
+      "look": "young Vietnamese king, kind face, yellow silk robe embroidered with dragons, black-and-gold Vietnamese imperial hat with two upturned wings at the back (not a European crown)"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese folk tale long ago: a northern village with rice paddies and a pond, and a village festival with a royal procession."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, Tấm sống cùng dì và cô em tên là Cám. Tấm hiền lành, chăm chỉ, quanh năm làm lụng vất vả. Một hôm, dì đưa cho hai chị em mỗi người một cái giỏ.[/narrator]\n[character:Dì]Đứa nào bắt được đầy giỏ tép, ta thưởng cho cái yếm đỏ.[/character]\n[narrator]Tấm chăm chỉ mò cua bắt tép, chẳng mấy chốc đã đầy giỏ. Cám mải chơi, giỏ vẫn trống trơn.[/narrator]\n[character:Cám]Chị Tấm ơi, đầu chị lấm bùn rồi. Chị lên gội đầu đi kẻo về mẹ mắng![/character]",
+      "sceneDescription": "Tấm mò tép dưới ao, Cám đứng trên bờ cầm giỏ không",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "stream",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tấm tin lời, xuống ao gội đầu. Cám liền trút hết tép của chị vào giỏ mình rồi chạy về nhà trước. Tấm lên bờ, thấy giỏ không, oà khóc nức nở.[/narrator]\n[narrator]Bỗng Bụt hiện lên.[/narrator]\n[character:Bụt]Làm sao con khóc? Con nhìn xem, trong giỏ còn một con cá bống đấy. Con mang về thả xuống giếng mà nuôi. Mỗi bữa, con để dành cơm cho bống, gọi thế này: Bống bống bang bang, lên ăn cơm vàng cơm bạc nhà ta.[/character]",
+      "sceneDescription": "Bụt râu tóc trắng hiện lên bên bờ ao, Tấm cầm giỏ có con cá bống nhỏ",
+      "scene": "stream",
+      "mood": "sad",
+      "ambient": "stream",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Tấm làm đúng lời Bụt dặn. Mỗi bữa, Tấm để dành cơm, mang ra giếng gọi bống. Bống ngoi lên đớp cơm, ngày một lớn, vảy óng ánh.[/narrator]\n[character:Tấm]Bống ơi, có bống, chị đỡ buồn hẳn.[/character]\n[narrator]Dì rình thấy, bèn bảo Tấm đi chăn trâu ở đồng xa. Ở nhà, dì và Cám bắt chước gọi bống lên, bắt lấy, rồi mang thả ra dòng sông lớn tít ngoài xa.[/narrator]\n[character:Cám]Ai bảo chị giấu bống riêng một mình![/character]",
+      "sceneDescription": "Tấm cho cá bống ăn bên giếng, dì và Cám nấp sau bụi chuối rình xem",
+      "scene": "garden",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "water-drop"
+      ]
+    },
+    {
+      "text": "[narrator]Chiều về, Tấm ra giếng gọi mãi chẳng thấy bống đâu, chỉ còn mấy chiếc vảy nổi trên mặt nước. Tấm oà khóc. Bụt lại hiện lên.[/narrator]\n[character:Bụt]Con đừng khóc. Bống đã ra sông lớn, vẫn bơi lội vui vẻ. Con nhặt vảy bống, bỏ vào bốn cái hũ, chôn ở bốn chân giường. Khi nào cần, con sẽ có điều kỳ diệu.[/character]\n[character:Tấm]Con cảm ơn Bụt. Con sẽ làm đúng lời Bụt dặn.[/character]",
+      "sceneDescription": "Tấm ngồi khóc bên giếng, Bụt hiện lên hiền từ an ủi",
+      "scene": "garden",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Ít lâu sau, làng mở hội. Dì trộn một đấu thóc với một đấu gạo, bắt Tấm ở nhà nhặt riêng ra.[/narrator]\n[character:Dì]Nhặt cho xong rồi mới được đi xem hội![/character]\n[narrator]Dì đưa Cám đi hội. Tấm nhìn đống thóc gạo, rưng rưng nước mắt. Bụt hiện lên, sai một đàn chim sẻ bay xuống. Chim nhặt thoăn thoắt, chẳng mấy chốc thóc ra thóc, gạo ra gạo.[/narrator]\n[character:Tấm]Cảm ơn các bạn chim sẻ! Cảm ơn Bụt![/character]",
+      "sceneDescription": "Đàn chim sẻ nhặt thóc gạo thoăn thoắt quanh Tấm giữa sân nhà",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tấm đào bốn cái hũ lên. Trong hũ có áo tứ thân, khăn nhiễu, yếm lụa và một đôi hài thêu lấp lánh. Tấm mặc vào, xinh đẹp như một nàng tiên.[/narrator]\n[character:Bụt]Con đi hội đi. Nhớ giữ gìn đôi hài nhé.[/character]\n[narrator]Qua chỗ lội, Tấm sơ ý đánh rơi một chiếc hài xuống nước. Đúng lúc ấy, đoàn xe của nhà vua đi qua. Voi dừng lại, rống lên, không chịu đi.[/narrator]\n[character:Nhà Vua]Quân lính đâu, xuống xem dưới nước có gì![/character]",
+      "sceneDescription": "Tấm áo đẹp đi hội, chiếc hài thêu rơi xuống nước, đoàn voi nhà vua dừng lại",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Nhà vua cho truyền khắp nơi: hễ người con gái nào ướm vừa chiếc hài, vua sẽ lấy làm vợ. Các cô gái thi nhau đến thử. Cám ướm mãi, chân to quá, chẳng vừa.[/narrator]\n[character:Cám]Hài gì mà bé thế! Chắc là hài hỏng rồi![/character]\n[narrator]Đến lượt Tấm. Tấm ướm vào, vừa khít như in. Tấm lấy chiếc hài còn lại trong túi áo ra, đi vào cả đôi.[/narrator]\n[character:Nhà Vua]Nàng chính là người ta tìm. Ta đón nàng về cung nhé![/character]",
+      "sceneDescription": "Tấm ướm vừa chiếc hài thêu, nhà vua mỉm cười, Cám đứng bên ngỡ ngàng",
+      "scene": "village",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Tấm trở thành hoàng hậu. Dì và Cám vừa ngạc nhiên vừa xấu hổ, cúi đầu không dám nhìn Tấm.[/narrator]\n[character:Dì]Ngày trước dì đối xử với con không tốt. Dì biết lỗi rồi.[/character]\n[character:Cám]Em xin lỗi chị. Em sẽ không ganh tị với chị nữa.[/character]\n[character:Tấm]Dì và em đừng buồn nữa. Chỉ mong cả nhà mình sống hiền lành, thương yêu nhau.[/character]\n[narrator]Từ đó, ai trong làng cũng nhắc chuyện cô Tấm hiền thảo.[/narrator]",
+      "sceneDescription": "Hoàng hậu Tấm nắm tay dì và Cám đang cúi đầu xin lỗi",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    }
+  ]
+}

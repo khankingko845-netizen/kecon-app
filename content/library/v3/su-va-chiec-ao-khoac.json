@@ -1,0 +1,124 @@
+{
+  "slug": "su-va-chiec-ao-khoac",
+  "title": "Su và chiếc áo khoác",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Sáng lạnh, Su cãi lời mẹ, dậm chân không chịu mặc áo khoác. Mẹ bình tĩnh hỏi lý do, bà dạy Su cách nói khi không đồng ý. Su học cách lắng nghe và nói lễ phép.",
+  "moral": "Biết lắng nghe bố mẹ; khi không đồng ý, hãy nói nhẹ nhàng, lễ phép để cả nhà hiểu nhau.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "cai-loi",
+    "le-phep",
+    "lang-nghe"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 48 (lắng nghe ý kiến người khác), 54 (xưng hô lễ phép) và 34 (mạnh dạn nói ý kiến).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Không dạy vâng lời tuyệt đối: bé được nói ý kiến, nhưng nói lễ phép; người lớn cũng lắng nghe bé.",
+    "Gợi ý cho cha mẹ: khi bé cãi, hạ giọng và ngồi ngang tầm mắt bé; hỏi lý do, đưa bé mẫu câu 'Mẹ ơi, con không thích vì…, con… được không ạ?' và cho bé lựa chọn trong giới hạn."
+  ],
+  "characters": [
+    {
+      "name": "Su",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
+    },
+    {
+      "name": "Bà",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà nội hiền hậu, kể chuyện hay",
+      "appearance": "bà cụ tóc bạc búi gọn, áo bà ba tím nhạt, đeo kính lão",
+      "look": "kind Vietnamese grandmother, silver hair in a neat bun, round reading glasses, light lavender ao ba ba blouse, dark trousers"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam on a cool winter morning: a cozy family home and the street outside."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Sáng mùa đông, gió lạnh thổi vù vù ngoài cửa sổ. Mẹ lấy chiếc áo khoác len xanh đưa cho Su.[/narrator]\n[character:Mẹ]Su ơi, con mặc áo khoác vào kẻo lạnh nhé.[/character]\n[character:Su]Không! Con không mặc đâu! Áo này xấu lắm![/character]\n[narrator]Su khoanh tay, quay mặt đi chỗ khác. Su chỉ muốn mặc chiếc váy hồng chấm bi mỏng tang thôi.[/narrator]",
+      "sceneDescription": "Buổi sáng mùa đông, mẹ cầm chiếc áo khoác len xanh, Su khoanh tay quay đi",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ nhắc lại một lần nữa. Su dậm chân thình thịch, nói càng to hơn.[/narrator]\n[character:Su]Mẹ lúc nào cũng bắt con! Con không nghe đâu![/character]\n[narrator]Mẹ không quát Su. Mẹ hít một hơi thật sâu, rồi ngồi xuống cho bằng Su, nhìn vào mắt Su.[/narrator]\n[character:Mẹ]Mẹ thấy con đang không vui. Con nói cho mẹ biết vì sao con không muốn mặc áo được không?[/character]",
+      "sceneDescription": "Su dậm chân, mẹ bình tĩnh ngồi xuống ngang tầm mắt Su",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su nhìn mẹ, giọng nhỏ dần.[/narrator]\n[character:Su]Áo len này ngứa cổ lắm ạ. Con mặc vào là gãi suốt.[/character]\n[character:Mẹ]À, hoá ra là thế! Khi con nói nhẹ nhàng, mẹ hiểu ngay. Lúc nãy con hét lên, mẹ chỉ nghe thấy là con đang giận thôi.[/character]\n[narrator]Su cúi đầu, ngón tay xoắn xoắn vạt váy.[/narrator]",
+      "sceneDescription": "Su nói nhỏ, tay chỉ vào cổ áo len, mẹ gật đầu lắng nghe",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bà từ trong bếp đi ra, cười hiền.[/narrator]\n[character:Bà]Su ơi, khi không đồng ý, cháu nói thế này nhé: Mẹ ơi, con không thích vì..., con muốn... được không ạ?[/character]\n[narrator]Su nghĩ một chút rồi thử nói.[/narrator]\n[character:Su]Mẹ ơi, áo len ngứa cổ. Con mặc áo khoác đỏ được không ạ?[/character]\n[character:Mẹ]Được chứ! Cảm ơn con đã nói lễ phép.[/character]",
+      "sceneDescription": "Bà đứng ở cửa bếp mỉm cười, Su lễ phép nói với mẹ",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su mặc chiếc áo khoác đỏ, nắm tay bà đi đến lớp. Gió lạnh thổi mạnh, lá vàng bay lả tả trên đường.[/narrator]\n[character:Su]Bà ơi, may mà cháu mặc áo ấm. Gió lạnh thế này cơ mà![/character]\n[character:Bà]Mẹ nhắc là vì mẹ thương cháu đấy. Cháu biết lắng nghe, lại biết nói ý mình, giỏi lắm.[/character]",
+      "sceneDescription": "Su mặc áo khoác đỏ nắm tay bà đi trên con đường lá vàng",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Buổi tối, Su đang tô màu bông hoa thì mẹ gọi.[/narrator]\n[character:Mẹ]Su ơi, cất bút màu rồi đi tắm nhé.[/character]\n[narrator]Su suýt nữa lại hét lên: Không! Nhưng Su dừng lại, nhớ lời bà dặn.[/narrator]\n[character:Su]Dạ, con nghe ạ. Mẹ cho con tô nốt bông hoa này rồi con đi tắm được không ạ?[/character]\n[character:Mẹ]Được, con tô nốt nhé. Mẹ chờ con.[/character]",
+      "sceneDescription": "Su ngồi tô màu bông hoa, ngẩng lên lễ phép trả lời mẹ",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Su tô xong bông hoa, cất bút màu vào hộp, rồi đi tắm ngay như đã hứa.[/narrator]\n[character:Mẹ]Con nói lễ phép, lại giữ đúng lời hứa nữa. Mẹ vui lắm![/character]\n[character:Su]Con thấy nói nhẹ nhàng thì mẹ con mình chẳng ai phải giận ai cả.[/character]\n[narrator]Mẹ cười, thơm lên má Su một cái thật kêu.[/narrator]",
+      "sceneDescription": "Su cất bút màu vào hộp, mẹ cúi xuống thơm má Su",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đến giờ đi ngủ, bà ngồi bên giường, kéo chăn cho Su.[/narrator]\n[character:Bà]Biết lắng nghe bố mẹ, có gì không thích thì nói nhẹ nhàng. Thế là ngoan nhất nhà rồi.[/character]\n[character:Su]Dạ, cháu nhớ rồi ạ. Bà ngủ ngon ạ.[/character]\n[narrator]Bé ơi, khi không đồng ý với bố mẹ, bé sẽ nói thế nào cho lễ phép nhỉ? Bé thử nói cùng Su nhé.[/narrator]",
+      "sceneDescription": "Bà kéo chăn cho Su trong phòng ngủ ấm áp, đèn ngủ vàng dịu",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+import { it, expect, vi, beforeEach } from "vitest";
+const s=vi.hoisted(()=>({signed:true,error:false,data:{household_id:"00000000-0000-4000-8000-000000000001",role:"owner"} as unknown,calls:[] as string[]}));
+vi.mock("@/lib/supabase/server",()=>({createClient:async()=>({auth:{getUser:async()=>({data:{user:s.signed?{id:"verified-user"}:null}})},rpc:async(name:string)=>{s.calls.push(name);return{data:s.data,error:s.error?{message:"private-error-secret"}:null}}})}));
+import { GET } from "@/app/api/household/context/route";
+beforeEach(()=>Object.assign(s,{signed:true,error:false,data:{household_id:"00000000-0000-4000-8000-000000000001",role:"owner"},calls:[]}));
+it("verifies the user before bounded RPC; unsigned calls cannot read identity",async()=>{s.signed=false;const r=await GET();expect(r.status).toBe(401);expect(s.calls).toHaveLength(0);expect(r.headers.get("Cache-Control")).toContain("no-store")});
+it("returns only schema-checked self household identity with private no-store and cookie variation",async()=>{const r=await GET();expect(r.status).toBe(200);expect(await r.json()).toEqual(s.data);expect(s.calls).toEqual(["my_household_context"]);expect(r.headers.get("Cache-Control")).toContain("private, no-store");expect(r.headers.get("Vary")).toBe("Cookie")});
+it("unavailable or malformed/extra-field responses fail closed without backend detail or PII",async()=>{for(const data of[null,{}, {household_id:"not-uuid",role:"owner"},{household_id:"00000000-0000-4000-8000-000000000001",role:"admin"},{household_id:"00000000-0000-4000-8000-000000000001",role:"owner",email:"private@example.test"}]){s.data=data;const r=await GET();expect(r.status).toBe(503);expect(await r.text()).not.toContain("private")}});
+it("RPC failure remains sanitized even if its payload looks valid",async()=>{s.error=true;const r=await GET();expect(r.status).toBe(503);expect(await r.text()).not.toContain("private-error-secret")});

@@ -1,0 +1,134 @@
+{
+  "slug": "su-tich-ho-ba-be",
+  "title": "Sự tích hồ Ba Bể",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Ngày hội, cả làng xua đuổi bà lão ăn xin, chỉ hai mẹ con nghèo cho bà ăn và ngủ nhờ. Bà lão là thần báo trước nước lớn. Hai mẹ con dùng thuyền vỏ trấu cứu cả làng, nơi ấy thành hồ Ba Bể.",
+  "moral": "Thương người như thể thương thân; lòng tốt sẽ được đền đáp.",
+  "tags": [
+    "truyen-thuyet",
+    "thuong-nguoi",
+    "dia-danh"
+  ],
+  "origin": "Truyền thuyết dân gian của đồng bào Tày quanh hồ Ba Bể (vùng núi Đông Bắc), có trong sách giáo khoa Tiếng Việt tiểu học.",
+  "adaptation": [
+    "Không có người thiệt mạng: hai mẹ con dùng thuyền vỏ trấu cứu cả làng, dân làng biết lỗi.",
+    "Bà lão được tả gầy gò, rách rưới thay vì lở loét; con rồng hiện ra lấp lánh, hiền hoà."
+  ],
+  "characters": [
+    {
+      "name": "Bà Mẹ",
+      "role": "hero",
+      "voiceType": "woman",
+      "description": "Người mẹ nghèo tốt bụng, hay giúp người",
+      "appearance": "người phụ nữ Tày áo chàm, khăn vấn đầu, vòng bạc",
+      "look": "Tay ethnic mother, indigo dress, indigo headscarf, silver necklace"
+    },
+    {
+      "name": "Con Trai",
+      "role": "friend",
+      "voiceType": "boy",
+      "description": "Cậu con trai hiền lành, thương người",
+      "appearance": "cậu bé áo chàm ngắn, quần xắn gối, đeo vòng bạc ở cổ",
+      "look": "8-year-old Tay boy, short indigo shirt, rolled-up trousers, silver neck ring"
+    },
+    {
+      "name": "Bà Lão Ăn Xin",
+      "role": "friend",
+      "voiceType": "grandma",
+      "description": "Bà cụ ăn xin, thật ra là thần hiện xuống thử lòng người",
+      "appearance": "bà cụ gầy gò, tóc bạc rối, áo rách nhiều mảnh vá, chống gậy",
+      "look": "thin old beggar woman, messy white hair, patched ragged clothes, walking stick; secretly a kind goddess"
+    },
+    {
+      "name": "Dân Làng",
+      "role": "friend",
+      "voiceType": "man",
+      "description": "Một người dân làng, lúc đầu xua đuổi bà lão, sau biết lỗi",
+      "appearance": "người đàn ông áo chàm, khăn quấn đầu, tay cầm quạt",
+      "look": "Tay villager, indigo shirt, head cloth, holding a fan"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "a legend of the Tay people in the northern Vietnamese mountains: wooden stilt houses, terraced fields, misty green mountains and a festival; the flood is shown gently, everyone safe in boats."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Ngày xưa, ở vùng núi Đông Bắc có một làng tên là Nam Mẫu. Năm ấy, làng mở hội lớn, cỗ bàn bày khắp sân, tiếng khèn tiếng sáo vang xa. Giữa ngày hội, có một bà lão ăn xin gầy gò, quần áo rách rưới, chống gậy đi đến.[/narrator]\n[character:Bà Lão Ăn Xin]Ai làm phúc, cho bà già này xin bát cơm với.[/character]\n[character:Dân Làng]Đi chỗ khác đi! Đừng làm bẩn ngày hội của làng![/character]",
+      "sceneDescription": "Làng Nam Mẫu mở hội, bà lão ăn xin chống gậy, người dân xua tay",
+      "scene": "village",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "happy-jingle"
+      ]
+    },
+    {
+      "text": "[narrator]Bà lão đi hết nhà này sang nhà khác. Ai thấy bà cũng bịt mũi, xua tay. Có nhà còn đóng sập cửa lại.[/narrator]\n[character:Dân Làng]Nhà tôi đang bận cỗ, chẳng có gì cho bà đâu![/character]\n[character:Bà Lão Ăn Xin]Cả một làng giàu có, mà chẳng ai có lấy một bát cơm cho người đói.[/character]\n[narrator]Trời tối dần. Bà lão lặng lẽ chống gậy đi ra cuối làng, nơi có túp lều nhỏ của hai mẹ con nghèo.[/narrator]",
+      "sceneDescription": "Bà lão lặng lẽ chống gậy đi trên đường làng lúc chiều tối",
+      "scene": "village",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": [
+        "creak"
+      ]
+    },
+    {
+      "text": "[narrator]Hai mẹ con vừa đi làm đồng về. Thấy bà lão run rẩy trước cửa, cậu con trai vội đỡ bà vào nhà.[/narrator]\n[character:Con Trai]Bà ơi, bà vào đây ngồi cho ấm. Mẹ ơi, nhà mình còn gạo không mẹ?[/character]\n[character:Bà Mẹ]Còn một ít, mẹ nấu cháo cho bà ăn. Bà cứ nghỉ lại đây đêm nay, nhà nghèo nhưng ấm áp.[/character]\n[character:Bà Lão Ăn Xin]Cảm ơn hai mẹ con. Lòng tốt của hai người, bà sẽ không quên.[/character]",
+      "sceneDescription": "Hai mẹ con mời bà lão ngồi bên bếp lửa, bưng bát cháo nóng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": "fire",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đêm ấy, cậu bé thức giấc, thấy chỗ bà lão nằm sáng rực. Một con rồng vàng óng ánh đang cuộn mình ngủ ngon lành. Cậu dụi mắt nhìn lại, chỉ thấy bà lão nằm đó.[/narrator]\n[narrator]Sáng ra, bà lão gọi hai mẹ con lại.[/narrator]\n[character:Bà Lão Ăn Xin]Sắp có nước lớn. Đây là gói tro, hãy rắc quanh nhà. Còn đây là hai mảnh vỏ trấu, khi cần sẽ dùng đến. Nhớ báo cho dân làng biết.[/character]\n[character:Bà Mẹ]Vâng, mẹ con cháu xin nhớ lời bà.[/character]",
+      "sceneDescription": "Trong đêm, một con rồng vàng hiền hoà cuộn mình phát sáng trong túp lều",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": "night",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Bà lão chống gậy ra đầu làng, cắm cây gậy xuống đất rồi biến mất. Từ chỗ ấy, một dòng nước phun lên, mỗi lúc một mạnh.[/narrator]\n[character:Bà Mẹ]Bà con ơi, nước sắp lên to rồi! Mau mau lên chỗ cao![/character]\n[character:Dân Làng]Nước ở đâu ra mà nhiều thế này? Chạy đi đâu bây giờ?[/character]\n[narrator]Nước dâng cao, tràn khắp đường làng. Mọi người hoảng hốt, bám vào cây, leo lên mái nhà.[/narrator]",
+      "sceneDescription": "Dòng nước phun lên từ cây gậy, tràn khắp đường làng, người mẹ gọi mọi người",
+      "scene": "village",
+      "mood": "tense",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Riêng chỗ nhà hai mẹ con, nhờ có gói tro, nền đất cứ nổi cao lên mãi. Cậu bé nhớ lời bà lão, thả hai mảnh vỏ trấu xuống nước. Vỏ trấu bỗng hoá thành hai chiếc thuyền lớn.[/narrator]\n[character:Con Trai]Mẹ ơi, mình chèo thuyền đi cứu mọi người![/character]\n[character:Bà Mẹ]Đúng rồi con. Cứu được ai thì cứu, không bỏ sót một người nào![/character]\n[narrator]Hai mẹ con mỗi người một thuyền, chèo thẳng ra giữa dòng nước.[/narrator]",
+      "sceneDescription": "Hai mảnh vỏ trấu hoá thành hai chiếc thuyền lớn, hai mẹ con chèo ra giữa nước",
+      "scene": "rain",
+      "mood": "tense",
+      "ambient": "rain",
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[narrator]Hai chiếc thuyền đi khắp nơi, đón từng người, từng em bé, từng cụ già lên thuyền. Đến tối, cả làng đều đã được cứu, không thiếu một ai.[/narrator]\n[character:Dân Làng]Hôm qua chúng tôi xua đuổi bà cụ, chỉ có hai mẹ con chị thương người. Chúng tôi xấu hổ quá.[/character]\n[character:Con Trai]Bác đừng buồn. Mọi người bình an là tốt rồi ạ.[/character]\n[narrator]Mọi người ngồi sát bên nhau trên thuyền, nhìn nước mênh mông.[/narrator]",
+      "sceneDescription": "Thuyền chở đầy dân làng, cậu bé đưa tay đỡ một cụ già lên thuyền",
+      "scene": "rain",
+      "mood": "triumphant",
+      "ambient": "rain",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Sáng hôm sau, nước không rút nữa mà đọng lại thành một cái hồ rộng mênh mông, xanh biếc. Người ta gọi đó là hồ Ba Bể. Nền nhà hai mẹ con nổi lên thành một hòn đảo nhỏ giữa hồ.[/narrator]\n[character:Bà Lão Ăn Xin]Thương người như thể thương thân. Ai biết sẻ chia thì sẽ được bình an.[/character]\n[narrator]Tiếng bà lão vang lên từ mặt hồ. Dân làng dựng làng mới bên hồ, từ đó ai cũng biết giúp đỡ người nghèo khó.[/narrator]",
+      "sceneDescription": "Hồ Ba Bể xanh biếc giữa núi, hòn đảo nhỏ giữa hồ, làng mới bên bờ",
+      "scene": "stream",
+      "mood": "calm",
+      "ambient": "waves",
+      "sfx": []
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "slug": "ngon-nui-lua-nho",
+  "title": "Ngọn núi lửa nhỏ",
+  "category": "educational",
+  "ageMin": 3,
+  "ageMax": 6,
+  "band": "3-5",
+  "length": "medium",
+  "pace": "calm",
+  "summary": "Tháp gỗ của Su bị anh Bo vô tình làm đổ, Su giận đến mức hét to, ném đồ và lăn ra sàn. Mẹ giúp Su gọi tên cơn giận như một ngọn núi lửa nhỏ và chỉ cho Su góc bình tĩnh.",
+  "moral": "Ai cũng có lúc giận; mình thở thật chậm, đếm đến năm rồi nói ra điều mình cảm thấy.",
+  "tags": [
+    "thoi-quen-tot",
+    "ky-nang-song",
+    "bo-va-su",
+    "cam-xuc",
+    "binh-tinh",
+    "an-va"
+  ],
+  "origin": "Truyện sáng tác mới của KểCon (bộ 'Thói quen tốt của Bo và Su'), bám Bộ chuẩn phát triển trẻ em 5 tuổi (TT 23/2010/TT-BGDĐT), chỉ số 36 (bộc lộ cảm xúc) và 41 (kiềm chế cảm xúc tiêu cực khi được an ủi, giải thích).",
+  "adaptation": [
+    "Truyện viết mới hoàn toàn, không phỏng theo tác phẩm có bản quyền.",
+    "Nhân vật là trẻ em thật (không phải con vật biết nói) và kết thúc nhấn vào điều tốt khi làm đúng, theo các nghiên cứu về truyện dạy hành vi cho trẻ mầm non.",
+    "Người lớn bình tĩnh, không quát mắng hay làm bé xấu hổ; nhân vật làm mẫu một cách làm cụ thể để bé bắt chước.",
+    "Mẹ không phạt hay chê Su mà gọi tên cảm xúc, ở bên Su cho đến khi bé dịu lại, sau đó mới cùng giải quyết chuyện tháp đổ.",
+    "Gợi ý cho cha mẹ: khi bé ăn vạ, giữ bình tĩnh và an toàn trước, gọi tên cảm xúc ('con đang rất giận'), tập thở cùng bé; chỉ nói chuyện đúng sai khi bé đã dịu lại."
+  ],
+  "characters": [
+    {
+      "name": "Su",
+      "role": "hero",
+      "voiceType": "girl",
+      "description": "Em gái 4 tuổi của Bo, hay hỏi, thích vẽ",
+      "appearance": "cô bé tóc ngắn kẹp nơ vàng, váy hồng chấm bi",
+      "look": "4-year-old Vietnamese girl, short black bob hair with a yellow bow clip, pink polka-dot dress"
+    },
+    {
+      "name": "Mẹ",
+      "role": "friend",
+      "voiceType": "woman",
+      "description": "Mẹ của Bo và Su, dịu dàng, kiên nhẫn",
+      "appearance": "người mẹ tóc dài buộc thấp, áo len màu kem",
+      "look": "young Vietnamese mother, long black hair tied low, cream knit sweater, jeans, gentle smile"
+    },
+    {
+      "name": "Bo",
+      "role": "friend",
+      "voiceType": "boy",
+      "description": "Cậu bé 5 tuổi hiếu động, tốt bụng, đang tập thói quen tốt",
+      "appearance": "cậu bé tóc xoăn nhẹ, áo phông xanh dương in ngôi sao, quần short",
+      "look": "5-year-old Vietnamese boy, slightly curly short black hair, round face, blue T-shirt with a yellow star, khaki shorts, small sneakers"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "present-day Vietnam: a cozy family living room with wooden blocks and a calm-down corner with soft cushions."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Su xây một toà tháp bằng khối gỗ thật cao. Khối đỏ, khối vàng, khối xanh, chồng lên nhau cao gần bằng Su. Su xếp khối cuối cùng lên đỉnh tháp.[/narrator]\n[character:Su]Xong rồi! Tháp của em cao nhất nhà luôn![/character]\n[narrator]Su đứng ngắm toà tháp, cười tít mắt. Su định gọi mẹ ra xem, rồi chụp ảnh gửi cho bà nữa.[/narrator]",
+      "sceneDescription": "Su đứng cạnh toà tháp khối gỗ nhiều màu cao gần bằng mình, cười tít mắt",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Đúng lúc ấy, anh Bo chạy vào phòng, vấp phải chân bàn. Rầm! Toà tháp đổ sập, khối gỗ lăn khắp sàn.[/narrator]\n[character:Bo]Ối! Anh không cố ý đâu![/character]\n[narrator]Su thấy trong người nóng bừng lên, như có một ngọn núi lửa nhỏ sắp phun trào. Su hét thật to, ném khối gỗ đi, rồi lăn ra sàn đạp chân.[/narrator]\n[character:Su]Anh làm đổ tháp của em! Em ghét anh![/character]",
+      "sceneDescription": "Toà tháp khối gỗ đổ sập, Su lăn ra sàn đạp chân, Bo đứng sững",
+      "scene": "home",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ đi vào, nhẹ nhàng nhặt mấy khối gỗ để không ai bị trúng. Mẹ không mắng, mẹ ngồi xuống bên cạnh Su.[/narrator]\n[character:Mẹ]Mẹ thấy con đang rất giận. Con giống như một ngọn núi lửa nhỏ đang sôi sùng sục phải không?[/character]\n[character:Su]Vâng! Núi lửa to lắm! Em giận lắm![/character]\n[character:Mẹ]Mẹ ở đây với con. Mình cùng làm cho núi lửa nguội đi nhé.[/character]",
+      "sceneDescription": "Mẹ ngồi xuống bên cạnh Su trên sàn, giọng nhẹ nhàng",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Mẹ đưa Su đến góc bình tĩnh. Ở đó có một chiếc gối mềm, một chú gấu bông và một bức tranh ngọn nến.[/narrator]\n[character:Mẹ]Con ôm gối nhé. Hít vào như ngửi hoa, thở ra như thổi nến. Rồi mình đếm cùng nhau: một, hai, ba, bốn, năm.[/character]\n[narrator]Su ôm gối, hít vào, thở ra. Một, hai, ba, bốn, năm. Ngọn núi lửa nhỏ trong người Su nguội dần, nguội dần.[/narrator]",
+      "sceneDescription": "Góc bình tĩnh có gối mềm và tranh ngọn nến, Su ôm gối hít thở cùng mẹ",
+      "scene": "home",
+      "mood": "calm",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Khi Su đã bình tĩnh lại, mẹ hỏi khẽ.[/narrator]\n[character:Mẹ]Bây giờ con nói cho mẹ nghe, con thấy thế nào?[/character]\n[character:Su]Con buồn vì tháp đổ. Con xây lâu lắm. Nhưng con không nên ném khối gỗ đâu ạ.[/character]\n[character:Mẹ]Con nói ra được như thế là giỏi lắm. Giận thì không sao, nhưng mình không ném đồ và không làm đau ai, con nhé.[/character]",
+      "sceneDescription": "Su ngồi trong lòng mẹ ở góc bình tĩnh, mắt còn ươn ướt, nói chuyện với mẹ",
+      "scene": "home",
+      "mood": "sad",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Bo rón rén đi tới, tay cầm mấy khối gỗ.[/narrator]\n[character:Bo]Su ơi, anh xin lỗi. Anh chạy nhanh quá nên vấp. Anh giúp em xây lại tháp nhé?[/character]\n[character:Su]Em cũng xin lỗi anh, vì em đã hét và nói ghét anh. Mình xây tháp cao hơn nữa đi![/character]\n[narrator]Hai anh em ngoắc tay làm lành. Mẹ đứng ở cửa, mỉm cười nhìn hai anh em.[/narrator]",
+      "sceneDescription": "Bo cầm khối gỗ rón rén đến xin lỗi, Su đưa tay nhận",
+      "scene": "home",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Hai anh em cùng xây lại toà tháp. Lần này tháp còn có cửa sổ và một lá cờ nhỏ trên đỉnh. Lúc gần xong, một khối gỗ bị lệch, tháp lung lay rồi đổ mất một góc. Su thấy núi lửa nhỏ lại hơi nóng lên. Su ôm gối, hít vào, thở ra, đếm đến năm.[/narrator]\n[character:Su]Không sao! Mình xây lại góc này thôi anh![/character]",
+      "sceneDescription": "Bo và Su cùng xây tháp mới có lá cờ nhỏ, Su ôm gối hít thở khi tháp đổ một góc",
+      "scene": "home",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Tối hôm ấy, mẹ ôm Su lên giường.[/narrator]\n[character:Mẹ]Hôm nay con đã tự làm nguội ngọn núi lửa nhỏ của mình. Mẹ tự hào về con lắm.[/character]\n[character:Su]Lần sau giận, con sẽ ra góc bình tĩnh và đếm đến năm ạ.[/character]\n[narrator]Bé ơi, khi bé thấy giận như núi lửa, bé sẽ làm gì cho núi lửa nguội đi nhỉ? Mình cùng đếm nào: một, hai, ba, bốn, năm.[/narrator]",
+      "sceneDescription": "Mẹ ôm Su trên giường dưới ánh đèn ngủ dịu nhẹ",
+      "scene": "bedroom",
+      "mood": "sleepy",
+      "ambient": "lullaby",
+      "sfx": []
+    }
+  ]
+}

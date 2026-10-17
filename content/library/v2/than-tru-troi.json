@@ -1,0 +1,120 @@
+{
+  "slug": "than-tru-troi",
+  "title": "Thần Trụ Trời",
+  "category": "folk",
+  "ageMin": 5,
+  "ageMax": 8,
+  "band": "6-8",
+  "length": "short",
+  "pace": "normal",
+  "summary": "Thuở trời đất còn dính liền, tối tăm, Thần Trụ Trời đội trời lên, đắp cột chống trời. Có Chim Én giúp sức và Ông Mặt Trời toả sáng, thần phá cột thành núi non, sông biển.",
+  "moral": "Kiên trì, chăm chỉ góp sức thì làm nên việc lớn; biết yêu quý trời đất quê hương.",
+  "tags": [
+    "than-thoai",
+    "thien-nhien",
+    "nguon-goc"
+  ],
+  "origin": "Thần thoại người Việt về sự hình thành trời đất (thần Trụ Trời), được ghi lại trong các tuyển tập thần thoại Việt Nam.",
+  "adaptation": [
+    "Thêm Chim Én và Ông Mặt Trời có lời thoại để câu chuyện sinh động cho trẻ.",
+    "Giữ các chi tiết gốc: trời như cái vung úp, đất phẳng như cái mâm; thần đắp cột chống trời rồi phá cột thành núi non, sông biển."
+  ],
+  "characters": [
+    {
+      "name": "Thần Trụ Trời",
+      "role": "hero",
+      "voiceType": "man",
+      "description": "Vị thần khổng lồ tách trời khỏi đất",
+      "appearance": "vị thần khổng lồ, râu tóc đen dài, khoác áo lá, cơ bắp cuồn cuộn",
+      "look": "gentle giant god, long black hair and beard, cape made of leaves, very muscular"
+    },
+    {
+      "name": "Chim Én",
+      "role": "friend",
+      "voiceType": "girl",
+      "description": "Cô chim én nhỏ chăm chỉ, báo tin mùa xuân",
+      "appearance": "chim én nhỏ lưng xanh đen, bụng trắng, đuôi chẻ đôi",
+      "look": "little swallow with a dark blue back, white belly and forked tail"
+    },
+    {
+      "name": "Ông Mặt Trời",
+      "role": "friend",
+      "voiceType": "grandpa",
+      "description": "Ông Mặt Trời hiền hậu mang ánh sáng",
+      "appearance": "quả cầu đỏ rực có khuôn mặt hiền từ, râu là những tia nắng vàng",
+      "look": "glowing red sun with a kind face and golden sunbeam whiskers"
+    }
+  ],
+  "art": {
+    "style": "clay",
+    "setting": "a Vietnamese creation myth at the dawn of the world: a dark sky pressed close to the land, then the sky lifted high, mountains, sea and sunrise."
+  },
+  "pages": [
+    {
+      "text": "[narrator]Thuở xa xưa, khi chưa có trời, chưa có đất, mọi thứ chỉ là một vùng hỗn độn tối tăm và lạnh lẽo. Trời và đất dính sát vào nhau, chẳng có ánh sáng, chẳng có cỏ cây.[/narrator]\n[narrator]Bỗng một vị thần khổng lồ xuất hiện. Thần cao lớn đến nỗi ngồi thôi mà đầu đã chạm trời.[/narrator]\n[character:Thần Trụ Trời]Tối quá, chật quá! Ta phải tách trời ra khỏi đất mới được.[/character]",
+      "sceneDescription": "Vùng hỗn độn tối tăm, vị thần khổng lồ ngồi co mình, đầu chạm trời",
+      "scene": "space",
+      "mood": "calm",
+      "ambient": "wind",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thần đứng thẳng dậy, ngẩng đầu đội trời lên. Hai tay thần chống mạnh, đẩy trời lên cao từng chút một. Trời nặng lắm, thần đổ mồ hôi như mưa.[/narrator]\n[character:Thần Trụ Trời]Hây dô! Lên nào! Lên nữa nào![/character]\n[narrator]Một kẽ sáng nhỏ hé ra. Từ kẽ sáng ấy, một cô chim nhỏ chao cánh bay vào.[/narrator]\n[character:Chim Én]Ông thần ơi, ông khoẻ quá! Cháu là Chim Én. Cháu giúp ông một tay nhé![/character]",
+      "sceneDescription": "Thần khổng lồ đội trời bằng hai tay, một kẽ sáng hé ra, chim én bay vào",
+      "scene": "space",
+      "mood": "tense",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thần cúi xuống đào đất, khuân đá, đắp thành một cái cột vừa to vừa cao. Cột cao đến đâu, trời được đẩy lên đến đấy. Chim Én cũng tha từng hòn sỏi nhỏ xíu, đặt lên chân cột.[/narrator]\n[character:Thần Trụ Trời]Cảm ơn cháu. Hòn sỏi nhỏ thôi, nhưng góp lại cũng thành cột lớn.[/character]\n[character:Chim Én]Cháu bé nhưng chăm lắm ông ạ! Cột ơi, cao nữa lên![/character]",
+      "sceneDescription": "Thần đắp cột đá khổng lồ chống trời, chim én tha sỏi đặt lên chân cột",
+      "scene": "space",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Cột đá cao mãi, cao mãi, đẩy trời lên tít trên cao. Ánh sáng tràn xuống khắp nơi. Ở phía đông, một quả cầu đỏ rực từ từ nhô lên. Đó là Ông Mặt Trời.[/narrator]\n[character:Ông Mặt Trời]Chào Thần Trụ Trời! Nhờ thần, bây giờ ta mới có chỗ để toả sáng.[/character]\n[character:Chim Én]Ôi, sáng quá! Ấm quá! Cháu nhìn thấy cả bầu trời rồi![/character]\n[narrator]Trời đất đã tách đôi: trời tròn như cái vung úp, đất phẳng như cái mâm.[/narrator]",
+      "sceneDescription": "Ông Mặt Trời đỏ rực nhô lên, ánh sáng tràn xuống quanh cột đá chống trời",
+      "scene": "sky",
+      "mood": "happy",
+      "ambient": null,
+      "sfx": [
+        "magic-sparkle"
+      ]
+    },
+    {
+      "text": "[character:Ông Mặt Trời]Từ nay, sáng sáng ta sẽ đi từ phía đông sang phía tây, mang ngày đến cho muôn loài. Tối đến, ta về nghỉ, nhường chỗ cho chị Trăng và các vì sao.[/character]\n[character:Thần Trụ Trời]Hay lắm! Có ngày, có đêm, muôn loài sẽ biết lúc làm, lúc nghỉ.[/character]\n[narrator]Chim Én bay lượn quanh cột đá, đếm từng tia nắng.[/narrator]\n[character:Chim Én]Một tia, hai tia, ba tia... nhiều quá, cháu đếm không xuể![/character]",
+      "sceneDescription": "Ông Mặt Trời mỉm cười trên bầu trời xanh, chim én bay lượn đếm tia nắng",
+      "scene": "sky",
+      "mood": "curious",
+      "ambient": null,
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Khi trời đã cao vững, thần phá cột đá đi. Đất đá văng ra khắp nơi, rơi xuống thành núi non, đồi gò, thành những hòn đảo nhỏ. Những chỗ thần đào đất ngày trước trũng xuống, nước đổ về thành sông, thành hồ, thành biển rộng.[/narrator]\n[character:Thần Trụ Trời]Trời đã cao rồi, cột đá không cần nữa. Từ nay, núi để cây mọc, sông để nước chảy.[/character]\n[character:Chim Én]Đẹp quá! Có núi xanh, có biển biếc rồi![/character]",
+      "sceneDescription": "Đất đá văng ra thành núi non, đảo nhỏ, nước đổ về thành biển rộng",
+      "scene": "beach",
+      "mood": "triumphant",
+      "ambient": "waves",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Ông Mặt Trời chiếu nắng, mây đen kéo mưa về. Hạt giống nảy mầm, cỏ cây xanh mướt phủ kín núi đồi. Muông thú từ khắp nơi kéo về, cá tung tăng dưới sông, chim hót líu lo trên cành.[/narrator]\n[character:Ông Mặt Trời]Có nắng, có mưa, mọi thứ đều lớn lên. Thế gian thật là vui![/character]\n[character:Chim Én]Cháu sẽ bay đi báo tin cho muôn loài: mùa xuân đến rồi![/character]",
+      "sceneDescription": "Núi đồi xanh mướt, muông thú kéo về, chim én bay báo mùa xuân",
+      "scene": "forest",
+      "mood": "happy",
+      "ambient": "forest",
+      "sfx": []
+    },
+    {
+      "text": "[narrator]Thần Trụ Trời đi khắp nơi ngắm nhìn thế gian, rồi ngồi nghỉ trên đỉnh núi cao nhất. Thần mỉm cười hài lòng.[/narrator]\n[character:Thần Trụ Trời]Trời cao, đất rộng, muôn loài no ấm. Việc của ta xong rồi.[/character]\n[character:Chim Én]Mùa xuân nào cháu cũng sẽ bay về đây chào ông![/character]\n[narrator]Người xưa kể rằng, những dãy núi cao vời vợi ngày nay chính là dấu tích cột trụ trời năm ấy. Mỗi độ xuân về, chim én lại bay về rợp trời.[/narrator]",
+      "sceneDescription": "Thần khổng lồ ngồi nghỉ trên đỉnh núi cao, chim én bay quanh trong nắng xuân",
+      "scene": "forest",
+      "mood": "calm",
+      "ambient": "wind",
+      "sfx": []
+    }
+  ]
+}

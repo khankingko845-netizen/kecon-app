@@ -1,0 +1,14 @@
+import { describe,expect,it,vi } from "vitest";
+import fs from "node:fs";
+import vm from "node:vm";
+function worker(stored?:Response){
+ const handlers:Record<string,(event:unknown)=>void>={};const cache={match:vi.fn(async()=>stored?.clone())};const storage={keys:vi.fn(async()=>["kecon-shell-v2","kecon-shell-v3","kecon-ambient-v1","unrelated-cache"]),delete:vi.fn(async()=>true),open:vi.fn(async()=>cache)};const net=vi.fn(async()=>new Response("fresh"));
+ const self={location:{origin:"https://kecon.test"},clients:{claim:vi.fn()},addEventListener:(type:string,fn:(e:unknown)=>void)=>handlers[type]=fn};vm.runInNewContext(fs.readFileSync(new URL("../../public/sw.js",import.meta.url),"utf8"),{self,caches:storage,fetch:net,URL,Response,Promise});return {handlers,storage,net,cache};
+}
+describe("ambient SW cache isolation and range playback",()=>{
+ it("shell activation deletes only obsolete owned shell caches, preserving downloaded audio",async()=>{const w=worker();let p!:Promise<unknown>;w.handlers.activate({waitUntil:(v:Promise<unknown>)=>p=v});await p;expect(w.storage.delete).toHaveBeenCalledExactlyOnceWith("kecon-shell-v2");});
+ it("serves full offline cached audio without calling fetch",async()=>{const w=worker(new Response("audio",{headers:{"Content-Type":"audio/mpeg"}}));let p!:Promise<Response>;w.handlers.fetch({request:new Request("https://kecon.test/audio/ambient/v1/rain.mp3"),respondWith:(v:Promise<Response>)=>p=v});expect(await (await p).text()).toBe("audio");expect(w.net).not.toHaveBeenCalled();});
+ it.each([["bytes=1-3",206,"udi"],["bytes=-2",206,"io"],["bytes=5-",416,""],["bytes=",416,""]])("handles cached range %s",async(range,status,text)=>{const w=worker(new Response("audio",{headers:{"Content-Type":"audio/mpeg"}}));let p!:Promise<Response>;w.handlers.fetch({request:new Request("https://kecon.test/audio/ambient/v1/rain.mp3",{headers:{Range:range}}),respondWith:(v:Promise<Response>)=>p=v});const r=await p;expect(r.status).toBe(status);expect(await r.text()).toBe(text);expect(w.net).not.toHaveBeenCalled();});
+ it("uncached audio uses network without unverified cache writes",async()=>{const w=worker();let p!:Promise<Response>;w.handlers.fetch({request:new Request("https://kecon.test/audio/ambient/v1/rain.mp3"),respondWith:(v:Promise<Response>)=>p=v});expect(await (await p).text()).toBe("fresh");expect(w.net).toHaveBeenCalledOnce();});
+ it("does not intercept API, auth, other origin or mutation requests",()=>{const w=worker();for(const url of ["https://kecon.test/api/voice/tts","https://kecon.test/auth/callback","https://other.test/audio/ambient/v1/rain.mp3"]){const respondWith=vi.fn();w.handlers.fetch({request:new Request(url),respondWith});expect(respondWith).not.toHaveBeenCalled();}const r=vi.fn();w.handlers.fetch({request:new Request("https://kecon.test/audio/ambient/v1/rain.mp3",{method:"POST"}),respondWith:r});expect(r).not.toHaveBeenCalled();});
+});
