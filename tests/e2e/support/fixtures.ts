@@ -22,6 +22,12 @@ export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
 export const MOCK_CONSENT_USER_ID = "00000000-0000-4000-8000-00000000e2c1";
 /** Same, with parent PIN {@link MOCK_PIN}. */
 export const MOCK_CONSENT_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2c2";
+/** T12 (mock-voice-consent.mjs): a family that records a spoken voice consent, then clones. */
+export const MOCK_VC_USER_ID = "00000000-0000-4000-8000-00000000e2d1";
+/** Same, with parent PIN {@link MOCK_PIN}. */
+export const MOCK_VC_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2d2";
+/** A consented voice ("Ông của bé", speaker Ông Tư) and a voice made before consents ("Giọng cũ"). */
+export const MOCK_VC_WITHDRAW_USER_ID = "00000000-0000-4000-8000-00000000e2d3";
 
 const MOCK_EMAILS: Record<string, string> = {
   [MOCK_A15_ADMIN_ID]:"e2e-a15-admin@kecon.test",
@@ -37,6 +43,9 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_EDITOR_USER_ID]: "e2e-editor@kecon.test",
   [MOCK_CONSENT_USER_ID]: "e2e-consent@kecon.test",
   [MOCK_CONSENT_PIN_USER_ID]: "e2e-consent-pin@kecon.test",
+  [MOCK_VC_USER_ID]: "e2e-vc@kecon.test",
+  [MOCK_VC_PIN_USER_ID]: "e2e-vc-pin@kecon.test",
+  [MOCK_VC_WITHDRAW_USER_ID]: "e2e-vc-withdraw@kecon.test",
 };
 const CONSENT_FIXTURES = new Set([MOCK_CONSENT_USER_ID, MOCK_CONSENT_PIN_USER_ID]);
 

@@ -686,7 +686,7 @@ export default function StoryPlayer({ storyId, initialPage, onBack, onNavigate }
   const saveKey=pageRow?`${pageRow.id}:${key}`:"";
   if(pageRow && !audioSavesRef.current.has(saveKey)){audioSavesRef.current.add(saveKey);void uploadTtsAudio(pageRow.id,blob).then(async remoteUrl=>{
    if(epoch!==narrationEpochRef.current)return;
-   await savePageAudio(pageRow.id,remoteUrl,0,key);
+   await savePageAudio(pageRow.id,remoteUrl,0,key,segments.map(s=>s.voiceId));
    if(epoch===narrationEpochRef.current)playbackUrlsRef.current.set(pageIdx,remoteUrl);
    if(epoch===narrationEpochRef.current)setPages(prev=>prev.map(p=>p.id===pageRow.id?{...p,audio_url:remoteUrl,audio_key:key}:p));
   }).catch(()=>{audioSavesRef.current.delete(saveKey);});}

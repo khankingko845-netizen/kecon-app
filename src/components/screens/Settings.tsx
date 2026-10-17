@@ -27,13 +27,15 @@ import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import NarrationToggle from "@/components/ui/NarrationToggle";
 import FeedbackSettings from "@/components/parent/FeedbackSettings";
 import PrivacyConsentPanel from "@/components/parent/PrivacyConsentPanel";
+import VoiceConsentPanel from "@/components/parent/VoiceConsentPanel";
+import { kickVoiceDeletions } from "@/lib/voice-consent";
 import { useConsentState } from "@/lib/consent";
 
 interface SettingsProps {
  onNavigate: (screen: Screen) => void;
 }
 
-type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language" | "privacy";
+type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language" | "privacy" | "voice-consent";
 
 /* ── Shared sub-components ── */
 
@@ -410,13 +412,15 @@ export default function Settings({ onNavigate }: SettingsProps) {
  async function handleDelete() {
  if (
  !window.confirm(
- "Xoá toàn bộ truyện, giọng nói và dữ liệu của bạn? Hành động này không thể hoàn tác."
+ "Xoá toàn bộ truyện, giọng nói và dữ liệu của bạn? Giọng gia đình cũng bị xoá ở ElevenLabs trong vòng 24 giờ. Hành động này không thể hoàn tác."
  )
  )
  return;
  setBusy("delete");
  try {
  await deleteUserData();
+ // T12: the deleted voices are queued for deletion at ElevenLabs — start it now.
+ kickVoiceDeletions();
  await refreshAll();
  } catch {
  /* ignore */
@@ -430,6 +434,9 @@ export default function Settings({ onNavigate }: SettingsProps) {
  }
  if (tab === "privacy") {
  return <PrivacyConsentPanel onBack={() => setTab("main")} />;
+ }
+ if (tab === "voice-consent") {
+ return <VoiceConsentPanel onBack={() => setTab("main")} />;
  }
 
  if (tab === "api" && isAdmin) {
@@ -587,6 +594,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  tone="success"
  onClick={() => setTab("privacy")}
  />
+ <SettingsRow icon={Mic} label="Đồng ý giọng nói" onClick={() => setTab("voice-consent")} />
  <SettingsRow
  icon={Download}
  label="Xuất dữ liệu (GDPR)"

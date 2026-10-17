@@ -20,6 +20,7 @@ Trình duyệt ──https──▶ Cloudflare tunnel ──▶ Caddy 127.0.0.1:
 | `kecon-web` | `run-web.sh`: chờ URL tunnel, copy `.next-template` → `.next`, thay placeholder `kecon-public-origin.invalid` / `kecon-anon-key-placeholder`, rồi `next start` |
 | `kecon-urlwatch.timer` | Mỗi phút: tunnel đổi URL (khởi động lại máy) → restart `kecon-web`; Cloudflare đã huỷ quick tunnel (sau khi máy tạm dừng rồi thức, cloudflared lặp `Tunnel not found` ≥ 3 lần/2 phút) → restart `kecon-tunnel` để lấy URL mới |
 | `kecon-backup.timer` | Mỗi 2 phút: `backup/kecon_backup.py --tick --verify-restore` — nhịp tim cho Admin › Sao lưu, nhận "Sao lưu ngay" hoặc lịch hằng ngày (mặc định 03:15 giờ VN; máy tắt đúng giờ thì chạy khi bật lại) → repo GitHub riêng tư `kecon-backup` (xem dưới) |
+| `kecon-voice-deletion.timer` | Mỗi 15 phút (T12, migration 043): `scripts/voice-deletion-tick.sh` → `POST /api/internal/voice-deletions` (bearer = `SUPABASE_SERVICE_ROLE_KEY`) — xoá giọng đã rút đồng ý ở ElevenLabs + bản ghi âm + lời đọc làm bằng giọng đó, hạn 24 giờ (`docs/voice-consent.md`) |
 
 Unit dùng `User=@KECON_USER@`: `install-units.sh` (bootstrap/deploy gọi) thay bằng **chủ sở hữu `/srv/kecon`**
 — tức user đã chạy `setup-server.sh` (vd. `doppel`, `longca`) — nên máy mới với tên user khác không phải sửa unit.

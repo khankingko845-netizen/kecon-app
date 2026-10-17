@@ -11,22 +11,37 @@ export interface CloneVoiceResult {
   name: string;
 }
 
+/** A failed /api/voice/clone call; `code` is e.g. `voice_consent_withdrawn`, `byo_clone_disabled`. */
+export class CloneVoiceError extends Error {
+  constructor(message: string, readonly code: string | null, readonly status: number) {
+    super(message);
+    this.name = "CloneVoiceError";
+  }
+}
+
+// T12: a family voice is always cloned in KểCon's ElevenLabs pool (no personal key) and
+// needs the spoken consent recorded just before (POST /api/voice/consent).
 export async function cloneVoiceApi(
   name: string,
   audio: Blob,
-  apiKey?: string,
-  language: string = "vi"
+  language: string,
+  consentId: string
 ): Promise<CloneVoiceResult> {
   const form = new FormData();
   form.append("name", name);
   form.append("audio", audio, "recording.webm");
-  form.append("language", language);
-  if (apiKey) form.append("apiKey", apiKey);
+  form.append("language", language || "vi");
+  form.append("consentId", consentId);
 
-  const res = await fetch("/api/voice/clone", { method: "POST", body: form });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || "Clone giọng thất bại");
-  return json;
+  let res: Response;
+  try {
+    res = await fetch("/api/voice/clone", { method: "POST", body: form });
+  } catch {
+    throw new CloneVoiceError("Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.", "network", 0);
+  }
+  const json = (await res.json().catch(() => ({}))) as { error?: string; code?: string; voice_id?: string; name?: string };
+  if (!res.ok || !json.voice_id) throw new CloneVoiceError(json.error || "Clone giọng thất bại", json.code ?? null, res.status);
+  return { voice_id: json.voice_id, name: json.name ?? name };
 }
 
 export async function ttsApi(

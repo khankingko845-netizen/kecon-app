@@ -13,12 +13,21 @@ export async function guardDisabledVoice(
     p_voice_id: voiceId,
     p_locale: normalizeVoiceLanguage(language) ?? language,
   });
-  if (error || !["allowed", "disabled", "unavailable"].includes(data))
+  if (error || !["allowed", "disabled", "unavailable", "consent_required"].includes(data))
     return Response.json(
       { error: "Chưa kiểm tra được quyền giọng đọc." },
       { status: 503 },
     );
   if (data === "allowed") return null;
+  // T12 (migration 043): a family voice cloned before spoken consents existed.
+  if (data === "consent_required")
+    return Response.json(
+      {
+        error: "Giọng gia đình này chưa có lời đồng ý của người góp giọng. Hãy ghi lại giọng trong Giọng đọc.",
+        code: "voice_consent_required",
+      },
+      { status: 403 },
+    );
   return Response.json(
     {
       error:

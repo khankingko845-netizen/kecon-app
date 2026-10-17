@@ -37,3 +37,8 @@ it("scope is taken from JWT RPC, not the userId argument; locale is normalized",
     p_locale: "vi",
   });
 });
+it("T12: a legacy family voice without a spoken consent → 403 voice_consent_required", async () => {
+  const r = await guardDisabledVoice(db("consent_required"), "owner", "legacy-voice");
+  expect(r?.status).toBe(403);
+  expect((await r!.json()).code).toBe("voice_consent_required");
+});

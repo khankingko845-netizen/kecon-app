@@ -1,0 +1,10 @@
+[Unit]
+Description=KểCon voice deletions (T12: withdrawn voices at ElevenLabs + recordings + narration, within 24 h)
+After=kecon-web.service
+
+[Service]
+Type=oneshot
+User=@KECON_USER@
+# Same env as kecon-web (run-web.sh): the route compares the bearer with the web's SUPABASE_SERVICE_ROLE_KEY.
+ExecStart=/bin/bash -c 'set -a; source /srv/kecon/shared/app.env; source /srv/kecon/shared/runtime.env; set +a; exec /bin/bash /srv/kecon/current/scripts/voice-deletion-tick.sh'
+TimeoutStartSec=300

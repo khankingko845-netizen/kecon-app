@@ -11,7 +11,11 @@ import Mascot from "@/components/ui/Mascot";
 import { GlowDots } from "@/components/ui/states";
 import { Bubble, Button3D, CARD_SHADOW, ProgressBar } from "@/components/ui/kit";
 import { useData } from "@/lib/data-context";
-import { deleteVoiceProfile, updateVoiceProfile, getVoiceProfiles, type VoiceProfileRow, type DefaultVoiceRow } from "@/lib/db";
+import { updateVoiceProfile, getVoiceProfiles, type VoiceProfileRow, type DefaultVoiceRow } from "@/lib/db";
+import { createClient } from "@/lib/supabase/client";
+import { getParentProof } from "@/lib/parent-proof";
+import { fetchVoiceConsentList, withdrawVoiceConsent } from "@/lib/voice-consent";
+import ParentGate from "@/components/parent/ParentGate";
 import { useSettings } from "@/lib/settings-context";
 import type { Screen } from "@/lib/types";
 
@@ -49,19 +53,38 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  try{await updateVoiceProfile(id,{is_active:active});await Promise.all([refreshVoices(),reloadAll()]);toast("success",active?"Đã bật giọng gia đình.":"Đã tắt giọng gia đình.");}catch{toast("error","Chưa đổi được trạng thái giọng.");setError("Chưa đổi được trạng thái giọng. Hãy thử lại.");}finally{setToggling(null);}
  }
  const [deletingId, setDeletingId] = useState<string | null>(null);
+ // T12: provider voices with an active spoken consent; the others (made before consents) are paused.
+ const [consented,setConsented]=useState<Set<string>|null>(null);
+ const loadConsents=useCallback(()=>{fetchVoiceConsentList(createClient()).then(l=>setConsented(new Set(l.consents.filter(c=>c.state==="active"&&c.provider_voice_id).map(c=>c.provider_voice_id as string))),()=>setConsented(null));},[]);
+ useEffect(loadConsents,[loadConsents]);
+ const [pinFor,setPinFor]=useState<VoiceProfileRow|null>(null);
 
  // Edit name state
  const [editingId, setEditingId] = useState<string | null>(null);
  const [editName, setEditName] = useState("");
  const [savingEdit, setSavingEdit] = useState(false);
 
- const handleDelete = async (id: string) => {
- setDeletingId(id);
+ // T12: deleting a family voice withdraws its consent; KểCon deletes the ElevenLabs voice,
+ // the recordings and the narration made with it within 24 hours.
+ const handleDelete = async (v: VoiceProfileRow, confirmed = false) => {
+ if (!confirmed) {
+ if (v.elevenlabs_voice_id && !window.confirm(`Xoá giọng “${v.name}”? Giọng ngừng được dùng ngay; trong vòng 24 giờ KểCon xoá giọng ở ElevenLabs, bản ghi mẫu, lời đồng ý và audio truyện đọc bằng giọng này.`)) return;
+ // Giọng đọc is a kid tab: a parent confirms (PIN, or the adult question without a PIN).
+ if (!getParentProof()) { setPinFor(v); return; }
+ }
+ setPinFor(null);
+ setDeletingId(v.id);
  try {
- preview.stop();pause();await deleteVoiceProfile(id);
+ preview.stop();pause();
+ const r=await withdrawVoiceConsent({profileId:v.id,proof:getParentProof()});
+ if(!r.ok){
+ if(r.reason==="parent_proof_required"){setPinFor(v);return;}
+ throw new Error(r.message);
+ }
  await Promise.all([refreshVoices(),reloadAll()]);
- toast("success", "Đã xoá hồ sơ giọng khỏi thư viện.");
- } catch {toast("error","Chưa xoá được giọng.");setError("Chưa xoá được giọng. Hãy thử lại.");} finally {
+ loadConsents();
+ toast("success", v.elevenlabs_voice_id?"Đã xoá giọng. Dữ liệu giọng được xoá hẳn trong vòng 24 giờ.":"Đã xoá hồ sơ giọng khỏi thư viện.");
+ } catch (e) {toast("error","Chưa xoá được giọng.");setError(e instanceof Error&&e.message?e.message:"Chưa xoá được giọng. Hãy thử lại.");} finally {
  setDeletingId(null);
  }
  };
@@ -90,6 +113,19 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  }
  };
 
+
+ if (pinFor) {
+ return (
+ <ParentGate
+ title="Xác nhận xoá giọng"
+ bubble="Bố mẹ xác nhận để xoá giọng nhé."
+ cancelLabel="Quay lại"
+ onCancel={() => setPinFor(null)}
+ onUnlock={() => handleDelete(pinFor, true)}
+ onPinReset={() => handleDelete(pinFor, true)}
+ />
+ );
+ }
 
  return (
  <div className="min-h-screen bg-cream pb-32">
@@ -174,6 +210,11 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  {relationLabel(v.relation)}
  {v.elevenlabs_voice_id ? " · Đã clone" : " · Chưa clone"}
  </p>
+ {v.elevenlabs_voice_id && consented && !consented.has(v.elevenlabs_voice_id) && (
+ <p className="mb-2 rounded-xl bg-[#FFF4D6] px-2.5 py-1.5 text-[12.5px] font-bold text-[#8A5A00]" data-testid="voice-needs-consent">
+ Chưa có lời đồng ý · tạm dừng. Ghi lại giọng kèm lời đồng ý để dùng tiếp.
+ </p>
+ )}
  <div className="flex items-center gap-2">
  <ProgressBar value={quality} tone={quality >= 80 ? "brand" : "glow"} label={`Chất lượng giọng ${quality}%`} className="flex-1" />
  <span className="text-[13px] font-extrabold text-ink-2">{quality}%</span>
@@ -183,7 +224,7 @@ export default function VoiceProfiles({ onNavigate }: VoiceProfilesProps) {
  {v.elevenlabs_voice_id && <VoicePreviewButton preview={preview} voiceId={v.elevenlabs_voice_id} name={v.name} compact />}
  <button type="button" role="switch" aria-label={`Bật giọng: ${v.name}`} aria-checked={v.is_active} disabled={!!toggling} onClick={()=>toggleVoice(v.id,!v.is_active)} className="min-h-11 rounded-xl border border-brand/30 px-2 text-[14px] font-bold text-brand-ink dark:text-[#F7EFD8] disabled:opacity-50">{toggling===v.id?"…":v.is_active?"Bật":"Tắt"}</button>
  <button
- onClick={() => handleDelete(v.id)}
+ onClick={() => handleDelete(v)}
  disabled={deletingId === v.id}
  className="w-11 h-11 rounded-[14px] bg-[#FDE7DF] flex items-center justify-center text-cta-press active:scale-95 transition-transform"
  aria-label="Xóa giọng"

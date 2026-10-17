@@ -7,6 +7,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import { MIME_OF, MOCK_VC_PIN_USER_ID, MOCK_VC_USER_ID, MOCK_VC_WITHDRAW_USER_ID, createVoiceConsentMock } from "./mock-voice-consent.mjs";
 
 const PORT = Number(process.env.MOCK_SUPABASE_PORT ?? 54321);
 export const MOCK_USER_ID = "00000000-0000-4000-8000-00000000e2e1";
@@ -29,6 +30,8 @@ const MOCK_A15_ADMIN_ID="00000000-0000-4000-8000-00000000e2a0",MOCK_A15_TARGET_I
 const MOCK_MFA_USER_ID="00000000-0000-4000-8000-00000000e2e9";
 /** T11: families that have not accepted the parent policy yet (no PIN / PIN {@link MOCK_PIN}). */
 const MOCK_CONSENT_USER_ID="00000000-0000-4000-8000-00000000e2c1",MOCK_CONSENT_PIN_USER_ID="00000000-0000-4000-8000-00000000e2c2";
+/** Families whose parent PIN is {@link MOCK_PIN}. */
+const PIN_USERS = new Set([MOCK_PIN_USER_ID, MOCK_CONSENT_PIN_USER_ID, MOCK_VC_PIN_USER_ID]);
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
   id: MOCK_USER_ID,
@@ -76,6 +79,10 @@ const USERS = {
   [MOCK_EDITOR_USER_ID]: editorUser,
   [MOCK_CONSENT_USER_ID]: {...user,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test"},
   [MOCK_CONSENT_PIN_USER_ID]: {...user,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test"},
+  // T12 voice consent (mock-voice-consent.mjs)
+  [MOCK_VC_USER_ID]: {...user,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test"},
+  [MOCK_VC_PIN_USER_ID]: {...user,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test"},
+  [MOCK_VC_WITHDRAW_USER_ID]: {...user,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test"},
 };
 
 const profile = {
@@ -213,13 +220,21 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}],
+  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}, {...profile,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test",family_name:"Gia đình Giọng"}, {...profile,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test",family_name:"Gia đình Giọng PIN"}, {...profile,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test",family_name:"Gia đình Ông Tư"}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
   parental_controls: parentalControls,
   admin_audit_log: adminAuditLog,
 };
+// T12 spoken voice consent (migration 043): consents, deletion jobs, bucket voice-consents.
+const voiceConsent = createVoiceConsentMock({
+  tables: TABLES,
+  policyOk: (sub) => consentActive(sub),
+  hasPin: (sub) => PIN_USERS.has(sub),
+  proofOk: (sub, token) => proofOk(sub, token),
+  rpcError: (status, code, message) => rpcError(status, code, message),
+});
 
 /**
  * A-04 · API keys "in Vault" (migration 021). The browser only gets statuses
@@ -290,7 +305,7 @@ const publicKeyRow = (row) => Object.fromEntries(Object.entries(row).filter(([k]
 
 const SERVICE_RPCS = new Set([
   "get_system_secret", "get_provider_key_pool", "get_provider_key_secret", "report_provider_key",
-  "record_provider_key_usage", "get_provider_voice_key", "bind_provider_voice",
+  "record_provider_key_usage", "get_provider_voice_key", "bind_provider_voice", ...voiceConsent.SERVICE_RPCS,
 ]);
 
 /** Service-role RPCs (the Next server). `undefined` = not a service-role function. */
@@ -329,7 +344,7 @@ function serviceRpc(name, body) {
     case "bind_provider_voice":
       return null;
     default:
-      return undefined;
+      return voiceConsent.serviceRpc(name, body);
   }
 }
 
@@ -584,7 +599,7 @@ function backupRpc(name, sub, body, permissions) {
 }
 
 function rpc(name, sub, body, claims={}) {
-  const hasPin = sub === MOCK_PIN_USER_ID || sub === MOCK_CONSENT_PIN_USER_ID;
+  const hasPin = PIN_USERS.has(sub);
   const rawPermissions = permissionsOf(sub);
   const access=mockAdminAccess(sub,claims);
   const permissions=access.state==="ready"?rawPermissions:[];
@@ -635,10 +650,12 @@ function rpc(name, sub, body, claims={}) {
       return ids.length;
     }
     case "record_measurement_event":return true;
-    case "allowed_catalog_voice_ids":return (body.p_voice_ids??[]).filter(id=>!(TABLES.voice_profiles??[]).some(v=>v.elevenlabs_voice_id===id&&v.user_id!==sub));
+    case "allowed_catalog_voice_ids":return (body.p_voice_ids??[]).filter(id=>!voiceConsent.revoked(id)&&!(TABLES.voice_profiles??[]).some(v=>v.elevenlabs_voice_id===id&&v.user_id!==sub));
     case "authorize_tts_voice": {
+      // T12: a withdrawn / deleted voice never speaks again; an own voice needs an active consent.
+      if(voiceConsent.revoked(body.p_voice_id))return "unavailable";
       const owned=(TABLES.voice_profiles??[]).filter(v=>v.elevenlabs_voice_id===body.p_voice_id&&v.user_id===sub);
-      if(owned.some(v=>v.is_active!==false))return "allowed";
+      if(owned.some(v=>v.is_active!==false))return voiceConsent.hasActiveConsent(sub,body.p_voice_id)?"allowed":"consent_required";
       if((TABLES.voice_profiles??[]).some(v=>v.elevenlabs_voice_id===body.p_voice_id&&v.user_id!==sub))return "unavailable";
       const defs=(TABLES.default_voices??[]).filter(v=>v.voice_id===body.p_voice_id&&v.language===body.p_locale);
       if(defs.some(v=>v.is_active!==false)||permissions.includes("voices.manage"))return "allowed";
@@ -738,6 +755,9 @@ function rpc(name, sub, body, claims={}) {
       return consentActive(sub) ? { allowed: true } : { allowed: false, reason: "consent_required" };
     case "consent_check": case "consent_status": case "consent_accept": case "consent_withdraw":
       return consentRpc(name, sub, body, hasPin);
+    case "voice_consent_document": case "voice_consent_begin": case "voice_consent_ready": case "voice_consent_withdraw":
+    case "voice_consent_list": case "voice_consent_audio_path": case "voice_revoked_audio": case "save_page_audio":
+      return voiceConsent.userRpc(name, sub, body);
     case "list_provider_keys":
     case "add_provider_key":
     case "update_provider_key":
@@ -868,6 +888,17 @@ createServer((req, res) => {
     return;
   }
   if (path === "/__e2e/consent-state" && req.method === "GET") return send(res, 200, consentOf(String(url.searchParams.get("sub") ?? "")));
+  if (path === "/__e2e/voice-consent-reset" && req.method === "POST") {
+    readJson(req).then((b) => {
+      voiceConsent.reset(String(b?.sub ?? ""));
+      send(res, 200, { ok: true });
+    });
+    return;
+  }
+  if (path === "/__e2e/voice-consent-state" && req.method === "GET") {
+    const sub = String(url.searchParams.get("sub") ?? "");
+    return send(res, 200, { ...voiceConsent.snapshot(sub), profiles: (TABLES.voice_profiles ?? []).filter((v) => v.user_id === sub) });
+  }
   if (path === "/__e2e/backup-reset" && req.method === "POST") {
     backupState = freshBackupState();
     return send(res, 200, { ok: true });
@@ -881,6 +912,36 @@ createServer((req, res) => {
     return;
   }
 
+  // T12: the private bucket voice-consents is written / read / emptied only by the server (service role).
+  if (path.startsWith("/storage/v1/object/") && (req.headers.authorization ?? "") === `Bearer ${MOCK_SERVICE_ROLE_KEY}`) {
+    const relative = path.slice("/storage/v1/object/".length).replace(/^authenticated\//, "");
+    const bucket = relative.split("/")[0];
+    if (req.method === "DELETE" && !relative.includes("/")) {
+      readJson(req).then((body) => {
+        const removed = [];
+        for (const name of body?.prefixes ?? []) if (bucket === "voice-consents" && voiceConsent.files.delete(`${bucket}/${name}`)) removed.push({ name, bucket_id: bucket });
+        send(res, 200, removed);
+      });
+      return;
+    }
+    if (bucket !== "voice-consents") return send(res, 404, { statusCode: "404", error: "not_found", message: "Object not found" });
+    if (req.method === "POST") {
+      const chunks = [];
+      req.on("data", (c) => chunks.push(c));
+      req.on("end", () => {
+        if (voiceConsent.files.has(relative)) return send(res, 400, { statusCode: "409", error: "Duplicate", message: "The resource already exists" });
+        voiceConsent.files.set(relative, Buffer.concat(chunks));
+        send(res, 200, { Key: relative, Id: randomUUID() });
+      });
+      return;
+    }
+    if (req.method === "GET" && voiceConsent.files.has(relative)) {
+      res.writeHead(200, { ...CORS, "Content-Type": MIME_OF[relative.split(".").pop()] ?? "application/octet-stream" });
+      res.end(voiceConsent.files.get(relative));
+      return;
+    }
+    return send(res, 404, { statusCode: "404", error: "not_found", message: "Object not found" });
+  }
   if(path.startsWith("/storage/v1/object/")){
     const sub=tokenSub(req.headers.authorization);if(!USERS[sub])return send(res,401,{message:"Unauthorized"});
     const relative=path.slice("/storage/v1/object/".length).replace(/^authenticated\//,"");
@@ -965,6 +1026,18 @@ createServer((req, res) => {
         for (const r of rows) Object.assign(r, body ?? {}, { id: r.id });
         if ((req.headers.prefer ?? "").includes("return=representation")) return send(res, 200, rows);
         send(res, 204);
+      });
+      return;
+    }
+    if (req.method === "POST" && table === "voice_profiles" && [MOCK_VC_USER_ID, MOCK_VC_PIN_USER_ID].includes(sub)) {
+      // T12 families keep the voices they create; a provider voice needs an active consent (guard trigger, 043).
+      readJson(req).then((body) => {
+        const rows = (Array.isArray(body) ? body : [body]).filter(Boolean).map((r) => ({ id: randomUUID(), is_active: true, created_at: new Date().toISOString(), quality_score: 0, sample_audio_url: null, ...r, user_id: sub, household_id: sub }));
+        if (rows.some((r) => r.elevenlabs_voice_id && (voiceConsent.revoked(r.elevenlabs_voice_id) || !voiceConsent.hasActiveConsent(sub, r.elevenlabs_voice_id))))
+          return send(res, 403, { code: "42501", details: null, hint: null, message: "Voice consent required" });
+        TABLES.voice_profiles = [...(TABLES.voice_profiles ?? []), ...rows];
+        if ((req.headers.accept ?? "").includes("vnd.pgrst.object")) return send(res, 201, rows[0]);
+        send(res, 201, rows);
       });
       return;
     }

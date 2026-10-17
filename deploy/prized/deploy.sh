@@ -51,4 +51,6 @@ sudo systemctl restart kecon-backup.timer
 # Giữ 3 bản gần nhất
 ls -1dt "$KECON"/releases/* | tail -n +4 | xargs -r rm -rf
 sudo systemctl restart kecon-web
+# T12 voice deletions (migration 043): every 15 min through the new web release (POST /api/internal/voice-deletions).
+sudo systemctl enable --now kecon-voice-deletion.timer
 echo "DEPLOYED $SHA"
