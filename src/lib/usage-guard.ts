@@ -6,12 +6,13 @@
  * provider key, before calling any paid external API.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { consentRequiredResponse } from "@/lib/consent-guard";
 
 export type UsageKind = "story" | "ai" | "tts" | "voice_clone" | "illustration";
 
 interface UsageResult {
   allowed: boolean;
-  reason?: "rate_limited" | "quota_exceeded" | "unauthenticated" | "invalid_kind";
+  reason?: "rate_limited" | "quota_exceeded" | "unauthenticated" | "invalid_kind" | "consent_required";
   plan?: string | null;
   used?: number;
   limit?: number | null;
@@ -91,6 +92,9 @@ export async function guardUsage(
         },
         { status: 402 }
       );
+    case "consent_required":
+      // T11 (migration 042): no paid processing without the parent's consent to the current policy.
+      return consentRequiredResponse();
     case "unauthenticated":
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     default:

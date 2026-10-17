@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { asAnon, asRole, asUser, createMigratedDb, listMigrations, type Tx } from "./supabase-harness";
+import { asAnon, asRole, asUser, createMigratedDb, grantParentConsent, listMigrations, type Tx } from "./supabase-harness";
 
 type Usage = {
   allowed: boolean;
@@ -30,6 +30,8 @@ async function createUser(opts: { role?: string; plan?: string } = {}): Promise<
   await db.query("INSERT INTO auth.users (id, email) VALUES ($1, $2)", [id, `${id}@test.local`]);
   if (opts.role) await db.query("UPDATE public.profiles SET role = $2 WHERE id = $1", [id, opts.role]);
   if (opts.plan) await db.query("UPDATE public.profiles SET current_plan = $2 WHERE id = $1", [id, opts.plan]);
+  // T11: paid features need the parent's consent (consume_usage → consent_required otherwise).
+  await grantParentConsent(db, id);
   return id;
 }
 

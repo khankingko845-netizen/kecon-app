@@ -7,10 +7,12 @@ const mocks = vi.hoisted(() => ({
   download: vi.fn(),
   remove: vi.fn(),
   single: vi.fn(),
+  rpc: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mocks.getUser },
+    rpc: mocks.rpc,
     storage: {
       from: () => ({
         upload: mocks.upload,
@@ -33,6 +35,7 @@ beforeEach(() => {
   mocks.getUser.mockResolvedValue({ data: { user: { id: user } } });
   mocks.upload.mockResolvedValue({ error: null });
   mocks.single.mockResolvedValue({ data: { avatar_url: null }, error: null });
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
 });
 const imageForm = (data: Buffer) => {
   const form = new FormData();
@@ -113,6 +116,19 @@ describe("avatar endpoint boundary", () => {
     expect((await sharp(mocks.upload.mock.calls[0][1]).metadata()).width).toBe(
       512,
     );
+  });
+  it("refuses to store an avatar without active parent consent", async () => {
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+    const img = await sharp({
+      create: { width: 8, height: 8, channels: 3, background: "#fff" },
+    })
+      .jpeg()
+      .toBuffer();
+    const response = await POST(req({ method: "POST", body: imageForm(img) }));
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe("consent_required");
+    expect(mocks.rpc).toHaveBeenCalledWith("consent_check");
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
   it("does not leak a storage error", async () => {
     mocks.upload.mockResolvedValue({

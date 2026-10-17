@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { guardUsage } from "@/lib/usage-guard";
+import { requireConsent } from "@/lib/consent-guard";
 
 type RpcResult = { data: unknown; error: { code?: string; message: string } | null };
 
@@ -66,6 +67,18 @@ describe("guardUsage", () => {
     expect(body.error).toContain("5/5");
   });
 
+  it("consent_required (T11) → 403, kể cả với BYO, không lộ gói/hạn mức", async () => {
+    const { client } = fakeSupabase({ data: { allowed: false, reason: "consent_required" }, error: null });
+    for (const byo of [false, true]) {
+      const res = await guardUsage(client, "story", { byo });
+      expect(res?.status).toBe(403);
+      expect(res?.headers.get("Cache-Control")).toContain("no-store");
+      const body = await res?.json();
+      expect(body).toMatchObject({ code: "consent_required" });
+      expect(body).not.toHaveProperty("plan");
+    }
+  });
+
   it("unauthenticated → 401", async () => {
     const { client } = fakeSupabase({ data: { allowed: false, reason: "unauthenticated" }, error: null });
     const res = await guardUsage(client, "ai");
@@ -114,5 +127,32 @@ describe("guardUsage", () => {
       const { client } = fakeSupabase({ data: null, error: { code: "PGRST202", message: "function not found" } });
       expect((await guardUsage(client, "tts"))?.status).toBe(503);
     });
+  });
+});
+
+describe("requireConsent (T11)", () => {
+  it("gọi consent_check không tham số; true → null (cho qua)", async () => {
+    const { client, rpc } = fakeSupabase({ data: true, error: null });
+    await expect(requireConsent(client)).resolves.toBeNull();
+    expect(rpc).toHaveBeenCalledWith("consent_check");
+  });
+
+  it("false → 403 consent_required, no-store", async () => {
+    const { client } = fakeSupabase({ data: false, error: null });
+    const res = await requireConsent(client);
+    expect(res?.status).toBe(403);
+    expect(res?.headers.get("Cache-Control")).toContain("no-store");
+    await expect(res?.json()).resolves.toMatchObject({ code: "consent_required" });
+  });
+
+  it.each([
+    ["lỗi RPC", { data: null, error: { code: "PGRST202", message: "function not found" } }],
+    ["dữ liệu rỗng", { data: null, error: null }],
+    ["không phải boolean", { data: "true", error: null }],
+  ])("%s → 503 consent_check_failed (fail-closed)", async (_label, result) => {
+    const { client } = fakeSupabase(result as RpcResult);
+    const res = await requireConsent(client);
+    expect(res?.status).toBe(503);
+    await expect(res?.json()).resolves.toMatchObject({ code: "consent_check_failed" });
   });
 });

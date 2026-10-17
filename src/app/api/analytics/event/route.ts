@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireConsent } from "@/lib/consent-guard";
 export async function POST(request: Request) {
   if (request.headers.get("sec-fetch-site") === "cross-site")
     return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
     .safeParse(await request.json().catch(() => null));
   if (!body.success)
     return Response.json({ error: "Invalid event" }, { status: 400 });
+  // T11: no first-party measurement before the parent's consent.
+  const consentDenied = await requireConsent(db);
+  if (consentDenied) return consentDenied;
   const { error } = await db.rpc("record_measurement_event", {
     p_event: body.data.event,
   });
