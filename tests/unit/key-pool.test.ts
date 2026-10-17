@@ -260,6 +260,29 @@ describe("createKeyPool · giọng nhân bản theo tài khoản", () => {
     expect(deps.recordUsage).toHaveBeenCalledWith("k1", 2, 30);
     expect(deps.recordUsage).toHaveBeenCalledWith("k2", 2, 170);
   });
+
+  it("clone giọng mới → không chọn key đã hết credit (dù đã tới giờ thử lại) khi còn key khác; TTS vẫn thử lại key đó", async () => {
+    // k1 ran out of credit an hour ago (retry time passed) and was used least recently: TTS probes it
+    // first, but a clone there would succeed (no characters) and leave a voice that cannot speak.
+    const exhausted = () => key(1, { status: "exhausted", cooldownUntil: 999_000 });
+    const { pool, deps } = setup([exhausted(), key(2)]);
+    const clone = vi.fn(async (secret: string) => ({ voice_id: `voice-of-${secret.slice(-4)}` }));
+    await pool.run("elevenlabs", clone, { bindVoiceFrom: (r) => r.voice_id });
+    expect(clone).toHaveBeenCalledTimes(1);
+    expect(deps.bindVoice).toHaveBeenCalledWith("elevenlabs", "voice-of-0002", "k2");
+
+    // The exhausted key is still the fallback for a new voice when every other key fails…
+    const other = setup([exhausted(), key(2)]);
+    const fallback = recorder({ k2: el(429, "too_many_concurrent_requests") });
+    await expect(other.pool.run("elevenlabs", fallback.op, { bindVoiceFrom: () => "v" })).resolves.toBe("audio-from-k1");
+    expect(fallback.used).toEqual(["k2", "k1"]);
+
+    // …and ordinary calls keep probing it after its retry time (least recently used first).
+    const tts = setup([exhausted(), key(2)]);
+    const probe = recorder();
+    await tts.pool.run("elevenlabs", probe.op, { chars: 10 });
+    expect(probe.used).toEqual(["k1"]);
+  });
 });
 
 describe("provider-keys helpers", () => {

@@ -7,6 +7,9 @@ import {MeteringUnavailableError} from "@/lib/ai-metering";
  *   1. Chọn key: key "chủ" của giọng nhân bản trước (provider_voice_bindings),
  *      rồi key đang ít request nhất, hoà thì key lâu chưa dùng nhất
  *      (round-robin) → nhiều request song song được rải đều các tài khoản.
+ *      Tạo giọng mới (clone / import — giọng chỉ nằm trong tài khoản đã tạo): key 'exhausted'
+ *      xếp cuối dù đã tới giờ thử lại, vì clone không tốn ký tự nên sẽ "thành công" ở đó rồi
+ *      giọng không đọc được.
  *   2. Lỗi → phân loại (classifyProviderError) rồi thử key kế tiếp:
  *        exhausted     hết credit → DB 'exhausted', thử lại sau 1 giờ
  *        invalid       key sai / bị khoá → DB 'invalid', chờ admin
@@ -128,7 +131,8 @@ export interface RunOptions<T> {
   voiceRef?: string;
   /** Characters billed (usage stats). */
   chars?: number;
-  /** After success: provider voice id to bind to the key that created it (voice cloning). */
+  /** After success: provider voice id to bind to the key that created it (voice cloning). Also makes
+   *  keys that ran out of credit the last choice (the new voice could not speak there). */
   bindVoiceFrom?: (result: T) => string | null | undefined;
 }
 
@@ -169,14 +173,20 @@ export function createKeyPool(deps: KeyPoolDeps, options: Partial<KeyPoolOptions
     return true;
   }
 
-  /** Candidate order for one call (pure w.r.t. the in-memory state). */
-  function order(list: PoolKey[], pinned: string | null, voiceRef: string | undefined, now: number): PoolKey[] {
+  /**
+   * Candidate order for one call (pure w.r.t. the in-memory state). `newVoice`: the call creates a
+   * voice that will only exist in the chosen account (clone / import) → a key that ran out of credit
+   * (status 'exhausted', even once its retry time passed) is the last stored choice: cloning costs no
+   * characters, so it would succeed there and leave a voice that cannot speak.
+   */
+  function order(list: PoolKey[], pinned: string | null, voiceRef: string | undefined, now: number, newVoice = false): PoolKey[] {
     const missing = (k: PoolKey) => Boolean(voiceRef && (missingVoice.get(`${k.id}|${voiceRef}`) ?? 0) > now);
     return list
       .map((k, i) => ({ k, i }))
       .filter(({ k }) => usable(k, now))
       .sort((a, b) => {
-        const rank = (k: PoolKey) => (k.id === pinned ? 0 : 1) + (missing(k) ? 2 : 0) + (k.virtual ? 4 : 0);
+        const rank = (k: PoolKey) =>
+          (k.id === pinned ? 0 : 1) + (missing(k) ? 2 : 0) + (newVoice && k.status === "exhausted" ? 2 : 0) + (k.virtual ? 4 : 0);
         return (
           rank(a.k) - rank(b.k) ||
           (inflight.get(a.k.id) ?? 0) - (inflight.get(b.k.id) ?? 0) ||
@@ -262,7 +272,7 @@ export function createKeyPool(deps: KeyPoolDeps, options: Partial<KeyPoolOptions
     const list = await keys(provider);
     if (!list.length) throw new KeyPoolError(provider, "no_keys");
     const pinned = o.voiceRef ? await deps.voiceOwner(provider, o.voiceRef).catch(() => null) : null;
-    const candidates = order(list, pinned, o.voiceRef, deps.now()).slice(0, opt.maxAttempts);
+    const candidates = order(list, pinned, o.voiceRef, deps.now(), Boolean(o.bindVoiceFrom)).slice(0, opt.maxAttempts);
     if (!candidates.length) throw new KeyPoolError(provider, "all_unavailable");
     const attempts: KeyAttempt[] = [];
     for (const key of candidates) {
