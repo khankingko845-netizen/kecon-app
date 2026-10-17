@@ -95,8 +95,6 @@ const profile = {
   display_name: "Mẹ Gấu",
   avatar_url: null,
   avatar_emoji: null,
-  child_age: 4,
-  child_name: "Bin",
   role: "user",
   locale: "vi",
   email: user.email,
@@ -166,7 +164,7 @@ const pages = stories.flatMap((s) =>
   }))
 );
 
-const pinProfile = { ...profile, id: MOCK_PIN_USER_ID, email: pinUser.email, family_name: "Gia đình Thỏ", child_name: "Na" };
+const pinProfile = { ...profile, id: MOCK_PIN_USER_ID, email: pinUser.email, family_name: "Gia đình Thỏ" };
 const parentalControls = [
   {
     id: "00000000-0000-4000-8000-0000000c0e01",
@@ -182,7 +180,7 @@ const parentalControls = [
   },
 ];
 
-const ageProfile = { ...profile, id: MOCK_AGE_USER_ID, email: ageUser.email, family_name: "Gia đình Mèo", child_name: "Mít" };
+const ageProfile = { ...profile, id: MOCK_AGE_USER_ID, email: ageUser.email, family_name: "Gia đình Mèo" };
 
 const adminProfile = { ...profile, id: MOCK_ADMIN_USER_ID, email: adminUser.email, family_name: "Đội KểCon", display_name: "Admin E2E", role: "admin" };
 
@@ -224,23 +222,31 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}, {...profile,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test",family_name:"Gia đình Giọng"}, {...profile,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test",family_name:"Gia đình Giọng PIN"}, {...profile,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test",family_name:"Gia đình Ông Tư"}, {...profile,id:MOCK_KIDS_USER_ID,email:"e2e-kids@kecon.test",family_name:"Gia đình Sóc",child_name:"Bông",child_age:5}, {...profile,id:MOCK_KIDS_NEW_USER_ID,email:"e2e-kids-new@kecon.test",family_name:"Gia đình Mới",child_name:null,child_age:null}],
+  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}, {...profile,id:MOCK_VC_USER_ID,email:"e2e-vc@kecon.test",family_name:"Gia đình Giọng"}, {...profile,id:MOCK_VC_PIN_USER_ID,email:"e2e-vc-pin@kecon.test",family_name:"Gia đình Giọng PIN"}, {...profile,id:MOCK_VC_WITHDRAW_USER_ID,email:"e2e-vc-withdraw@kecon.test",family_name:"Gia đình Ông Tư"}, {...profile,id:MOCK_KIDS_USER_ID,email:"e2e-kids@kecon.test",family_name:"Gia đình Sóc"}, {...profile,id:MOCK_KIDS_NEW_USER_ID,email:"e2e-kids-new@kecon.test",family_name:"Gia đình Mới"}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
   parental_controls: parentalControls,
   admin_audit_log: adminAuditLog,
 };
-// T10 · Hồ sơ bé (migration 044). The household is the account itself in the mock; every
-// account starts like the backfill did on the real DB: profiles.child_name / child_age → one child.
+// T10 · Hồ sơ bé (migrations 044/045: profiles has no child columns any more). The household is
+// the account itself in the mock; every family starts with one child (Bin, 4 tuổi) like the 044
+// backfill gave existing accounts, except the fixtures listed here (null = no child yet).
 const vnYear = () => Number(new Intl.DateTimeFormat("en", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric" }).format(new Date()));
+const CHILD_SEED = new Map([
+  [MOCK_PIN_USER_ID, { name: "Na", age: 4 }],
+  [MOCK_AGE_USER_ID, { name: "Mít", age: 4 }],
+  [MOCK_KIDS_USER_ID, { name: "Bông", age: 5 }],
+  [MOCK_KIDS_NEW_USER_ID, null],
+]);
 TABLES.child_profiles = TABLES.profiles
-  .filter((p) => p.child_name || p.child_age != null)
-  .map((p, i) => ({
+  .map((p) => ({ p, seed: CHILD_SEED.has(p.id) ? CHILD_SEED.get(p.id) : { name: "Bin", age: 4 } }))
+  .filter(({ seed }) => seed)
+  .map(({ p, seed }, i) => ({
     id: `00000000-0000-4000-8000-0000c41d${String(i).padStart(4, "0")}`,
     household_id: p.id,
-    display_name: p.child_name || "Bé",
-    birth_year: p.child_age != null ? vnYear() - p.child_age : null,
+    display_name: seed.name,
+    birth_year: vnYear() - seed.age,
     interests: [],
     created_by: p.id,
     created_at: now,
@@ -1119,6 +1125,9 @@ createServer((req, res) => {
     if (req.method === "PATCH" && table === "profiles" && [MOCK_AGE_USER_ID, MOCK_AVATAR_USER_ID,MOCK_PHOTO_USER_ID].includes(sub)) {
       // Only the isolated age/avatar families may edit their own rows.
       readJson(req).then((body) => {
+        // T10 (045): the child columns are gone — PostgREST rejects unknown columns.
+        const gone = ["child_name", "child_age"].find((c) => body && c in body);
+        if (gone) return send(res, 400, { code: "PGRST204", details: null, hint: null, message: `Could not find the '${gone}' column of 'profiles' in the schema cache` });
         // Mirror the schema: family_name / display_name are NOT NULL (001_initial_schema.sql).
         const nulled = ["family_name", "display_name"].find((c) => body && c in body && body[c] === null);
         if (nulled) {

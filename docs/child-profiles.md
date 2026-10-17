@@ -1,4 +1,4 @@
-# T10 — Hồ sơ bé (child profiles, migration 044)
+# T10 — Hồ sơ bé (child profiles, migrations 044–045)
 
 Replaces the single child name/age on the parent's account (`profiles.child_name`, `profiles.child_age`) with **1–5 child profiles per household**. A child is **not an account**: profiles belong to the household and only its members can read or change them.
 
@@ -27,7 +27,9 @@ Each profile has a **tên gọi** (display name), a **năm sinh** (birth year; t
 
 **Backfill:** one profile per account that had a child name or age (name-only → no birth year; age-only → name "Bé"; birth year = current VN year − age).
 
-**Signup trigger:** `handle_new_user` no longer copies any child data into `profiles`. The old columns stay readable until the contract migration (T10 PR B drops `profiles.child_name` / `child_age`).
+**Signup trigger:** `handle_new_user` no longer copies any child data into `profiles` (044).
+
+**Contract (045):** `profiles.child_name` and `profiles.child_age` are dropped (no CASCADE — the migration fails if anything still depends on them). Their data lives on in `child_profiles` from the 044 backfill; the pre-045 database backup is the only copy of the raw old values. The app stopped reading and writing them in the same release as 044, so the two migrations can ship together; an old cached client that still sends `child_age` gets a PostgREST error on "Lưu" instead of writing a stale age.
 
 ## App
 
@@ -44,6 +46,7 @@ Each profile has a **tên gọi** (display name), a **năm sinh** (birth year; t
 
 - not found / another household → **404** `child_profile_not_found`; read error → **503** `child_profile_unavailable`;
 - the profile's name replaces `childName`; its interests become one prompt line (`interestsPromptLine` in `src/lib/child-profiles.ts`, used by `buildStoryPrompt` in `src/lib/story-ai.ts`); personalize uses the age from the birth year, from-drawing falls back to the child's age band when the request has no `age`;
+- in `generate`, the "bé là nhân vật chính" card (`characters[].isChild`) also takes the profile's name, in the prompt and in the saved cast (a stale or typed name from the client is ignored);
 - `generate` records `child_profile_id` in `user_behavior.metadata`.
 
 Without `childProfileId` the old behaviour is unchanged (`childName` optional, typed by the parent). Fixed on the way: personalize and from-drawing inserted a non-existent `stories.metadata` column.

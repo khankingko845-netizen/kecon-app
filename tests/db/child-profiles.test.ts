@@ -1,13 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
-import { applyMigrationFile, asAnon, asUser, createMigratedDb, grantParentConsent } from "./supabase-harness";
+import { applyMigrationFile, asAnon, asUser, createMigratedDb, grantParentConsent, listMigrations } from "./supabase-harness";
 
 // T10 (docs/child-profiles.md): 1–5 child profiles per household replace
-// profiles.child_name/child_age. Only household members read/change them; the household and
-// creator are server-derived; age comes from the birth year; adding/changing needs the
-// parent's consent (T11), deleting never does.
+// profiles.child_name/child_age (044 expand + backfill, 045 drops the old columns). Only
+// household members read/change them; the household and creator are server-derived; age comes
+// from the birth year; adding/changing needs the parent's consent (T11), deleting never does.
 let db: PGlite;
+/** State between 044 and 045: the legacy columns after the backfill / after a new signup. */
+let legacyAfter044: unknown[] = [];
+let signupAfter044: unknown[] = [];
 const mom = randomUUID(), // name + age (legacy), consented
   dad = randomUUID(), // another household, age only (legacy), consented
   nameOnly = randomUUID(), // legacy name without age
@@ -34,6 +37,15 @@ beforeAll(async () => {
     [mom, dad, nameOnly, empty, fresh, meta({ child_name: "  Bin  ", child_age: 4 }), meta({ child_age: 7 }), meta({ child_name: "Na" })],
   );
   await applyMigrationFile(db, "044_child_profiles.sql");
+  legacyAfter044 = (await db.query("SELECT child_name,child_age FROM public.profiles WHERE id=$1", [mom])).rows;
+  const between = randomUUID();
+  await db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES($1,'t10-between@test.local',$2)", [
+    between,
+    meta({ family_name: "Nhà Giữa", child_name: "Tí", child_age: 6 }),
+  ]);
+  signupAfter044 = (await db.query("SELECT family_name,child_name,child_age FROM public.profiles WHERE id=$1", [between])).rows;
+  // 045 (contract) and anything after it.
+  for (const file of listMigrations().filter((f) => f > "044_child_profiles.sql")) await applyMigrationFile(db, file);
   for (const uid of [mom, dad, nameOnly, empty]) await grantParentConsent(db, uid);
 });
 afterAll(async () => {
@@ -49,21 +61,30 @@ describe("044 · backfill from profiles.child_name/child_age", () => {
     expect(byHome.get(await hh(nameOnly))).toMatchObject({ display_name: "Na", birth_year: null });
     expect(byHome.has(await hh(empty))).toBe(false);
     expect(byHome.has(await hh(fresh))).toBe(false);
-    // The legacy columns are untouched (contract step drops them later).
-    expect((await db.query("SELECT child_name,child_age FROM public.profiles WHERE id=$1", [mom])).rows).toEqual([{ child_name: "  Bin  ", child_age: 4 }]);
+    // 044 left the legacy columns untouched (045 dropped them afterwards).
+    expect(legacyAfter044).toEqual([{ child_name: "  Bin  ", child_age: 4 }]);
   });
 
-  it("signup no longer copies child data: profile + household are created, no child profile, old columns stay empty", async () => {
+  it("signup no longer copies child data: profile + household are created, no child profile", async () => {
+    // Between 044 and 045 the old columns stayed empty for new accounts.
+    expect(signupAfter044).toEqual([{ family_name: "Nhà Giữa", child_name: null, child_age: null }]);
     const uid = randomUUID();
     await db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES($1,'t10-new@test.local',$2)", [
       uid,
       JSON.stringify({ family_name: "Nhà Mới", child_name: "Mít", child_age: 5 }),
     ]);
-    expect((await db.query("SELECT family_name,child_name,child_age FROM public.profiles WHERE id=$1", [uid])).rows).toEqual([
-      { family_name: "Nhà Mới", child_name: null, child_age: null },
-    ]);
+    expect((await db.query("SELECT family_name FROM public.profiles WHERE id=$1", [uid])).rows).toEqual([{ family_name: "Nhà Mới" }]);
     expect(await hh(uid)).toBeTruthy();
     expect((await db.query<{ n: number }>("SELECT count(*)::int n FROM public.child_profiles WHERE household_id=$1", [await hh(uid)])).rows[0].n).toBe(0);
+  });
+});
+
+describe("045 · contract: profiles.child_name/child_age are gone", () => {
+  it("the columns no longer exist; the backfilled child profiles stay; old writes fail loudly", async () => {
+    const cols = await db.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name IN ('child_name','child_age')");
+    expect(cols.rows).toEqual([]);
+    expect((await all()).filter((r) => r.created_by === null).map((r) => r.display_name).sort()).toEqual(["Bin", "Bé", "Na"]);
+    await expect(asUser(db, mom, (tx) => tx.query("UPDATE public.profiles SET child_age = 5 WHERE id = $1", [mom]))).rejects.toThrow(/child_age/);
   });
 });
 

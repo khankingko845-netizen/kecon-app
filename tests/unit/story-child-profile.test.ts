@@ -126,6 +126,30 @@ describe("story/generate + childProfileId", () => {
     expect(prompt).not.toContain("Bin");
   });
 
+  it("thẻ 'bé là nhân vật chính' lấy tên trong hồ sơ (tên client gửi bị bỏ), nhân vật khác giữ nguyên", async () => {
+    fetchMock.mockImplementation(async () => gemini({ title: "T", summary: "S", pages: [{ text: "a", sceneDescription: "b" }] }));
+    const { POST } = await import("@/app/api/story/generate/route");
+    const res = await POST(
+      post({
+        theme: "dongvat",
+        age: "6-8",
+        persist: false,
+        childName: "Bin",
+        childProfileId: CHILD_ID,
+        characters: [
+          { name: "Bin", role: "hero", isChild: true },
+          { name: "Mèo Mun", role: "friend", description: "chú mèo đen" },
+        ],
+      }),
+    );
+    expect(res.status).toBe(200);
+    await res.text();
+    const prompt = promptOf(0);
+    expect(prompt).toContain('\\"Na\\" — nhân vật chính — chính là bé Na');
+    expect(prompt).toContain('\\"Mèo Mun\\" — bạn đồng hành — chú mèo đen');
+    expect(prompt).not.toContain("Bin");
+  });
+
   it("hồ sơ không thuộc gia đình (RLS trả rỗng) → 404, không trừ hạn mức, không gọi AI", async () => {
     const { POST } = await import("@/app/api/story/generate/route");
     const res = await POST(post({ theme: "dongvat", age: "6-8", childProfileId: OTHER_ID }));
