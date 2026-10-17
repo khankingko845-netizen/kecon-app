@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireConsent } from "@/lib/consent-guard";
 import { normalizeAvatarImage } from "@/lib/avatar-upload";
 import { AVATAR_BUCKET, MAX_AVATAR_BYTES, avatarUrl } from "@/lib/avatar-path";
 export const runtime = "nodejs";
@@ -55,6 +56,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    // T11: a family photo is stored only with the parent's consent.
+    const consentDenied = await requireConsent(supabase);
+    if (consentDenied) return consentDenied;
     const id = randomUUID();
     const { error } = await supabase.storage
       .from(AVATAR_BUCKET)

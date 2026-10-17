@@ -213,3 +213,20 @@ export const asUser = async <T>(db: PGlite, uid: string, fn: (tx: Tx) => Promise
   return asRole(db, "authenticated", uid, fn, {...(staff?{session_id:uid,aal:'aal2',amr:[{method:'totp',timestamp:proof}]}:{}),...extraClaims});
 };
 export const asAnon = <T>(db: PGlite, fn: (tx: Tx) => Promise<T>) => asRole(db, "anon", null, fn);
+
+/**
+ * T11 (migration 042): record that `uid` accepted the current parent policy, as the
+ * app would after the consent gate. Tests of paid features / reminders need it.
+ * No-op before 042 (step-by-step data-migration tests).
+ */
+export async function grantParentConsent(db: PGlite, uid: string): Promise<void> {
+  const present = await db.query<{ ok: boolean }>("SELECT to_regclass('public.consents') IS NOT NULL AS ok");
+  if (!present.rows[0].ok) return;
+  await db.query(
+    `INSERT INTO public.consents(user_id, document_id, kind, version, body_sha256, method)
+     SELECT $1, d.id, d.kind, d.version, d.body_sha256, 'account_holder' FROM public.consent_documents d
+      WHERE d.kind = 'parent_policy' AND d.locale = 'vi' ORDER BY d.version DESC LIMIT 1
+     ON CONFLICT DO NOTHING`,
+    [uid],
+  );
+}

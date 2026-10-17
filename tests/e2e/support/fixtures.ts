@@ -18,6 +18,10 @@ export const MOCK_A15_ADMIN_ID = "00000000-0000-4000-8000-00000000e2a0";
 export const MOCK_A15_TARGET_ID = "00000000-0000-4000-8000-00000000e2a1";
 export const MOCK_MFA_USER_ID = "00000000-0000-4000-8000-00000000e2e9";
 export const MOCK_STORY_ID = "00000000-0000-4000-8000-0000000051a1";
+/** T11: families that have not accepted the parent policy yet (mock-supabase.mjs). */
+export const MOCK_CONSENT_USER_ID = "00000000-0000-4000-8000-00000000e2c1";
+/** Same, with parent PIN {@link MOCK_PIN}. */
+export const MOCK_CONSENT_PIN_USER_ID = "00000000-0000-4000-8000-00000000e2c2";
 
 const MOCK_EMAILS: Record<string, string> = {
   [MOCK_A15_ADMIN_ID]:"e2e-a15-admin@kecon.test",
@@ -31,7 +35,10 @@ const MOCK_EMAILS: Record<string, string> = {
   [MOCK_MFA_USER_ID]: "e2e-mfa@kecon.test",
   [MOCK_ADMIN_USER_ID]: "e2e-admin@kecon.test",
   [MOCK_EDITOR_USER_ID]: "e2e-editor@kecon.test",
+  [MOCK_CONSENT_USER_ID]: "e2e-consent@kecon.test",
+  [MOCK_CONSENT_PIN_USER_ID]: "e2e-consent-pin@kecon.test",
 };
+const CONSENT_FIXTURES = new Set([MOCK_CONSENT_USER_ID, MOCK_CONSENT_PIN_USER_ID]);
 
 const b64url = (v: string) => Buffer.from(v).toString("base64url");
 
@@ -47,7 +54,8 @@ export function mockAccessToken(sub: string = MOCK_USER_ID, email = "e2e@kecon.t
 
 /**
  * Sign in as the mock family: writes the @supabase/ssr session cookie
- * (`sb-127-auth-token`, base64-encoded JSON) and accepts the consent banner.
+ * (`sb-127-auth-token`, base64-encoded JSON) and, for families that already accepted
+ * the parent policy (T11), the consent hint the app keeps after accepting.
  */
 export async function signInAsMockFamily(
   context: BrowserContext,
@@ -80,9 +88,12 @@ export async function signInAsMockFamily(
       sameSite: "Lax",
     },
   ]);
-  await context.addInitScript(() => {
-    localStorage.setItem("kecon-consent-v1", JSON.stringify({ at: Date.now(), accepted: true }));
-  });
+  // T11: accounts that already consented (server state in the mock) open without
+  // waiting for consent_status — the same localStorage hint the app writes.
+  if (!CONSENT_FIXTURES.has(userId))
+    await context.addInitScript((uid) => {
+      localStorage.setItem("kecon-consent-v2", JSON.stringify({ uid, version: 1 }));
+    }, userId);
 }
 
 /**

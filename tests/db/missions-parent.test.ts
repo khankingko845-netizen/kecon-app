@@ -1,7 +1,7 @@
 import { randomUUID, createHash, randomBytes } from "node:crypto";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
-import { createMigratedDb, asUser, asAnon, asRole } from "./supabase-harness";
+import { createMigratedDb, asUser, asAnon, asRole, grantParentConsent } from "./supabase-harness";
 
 // G-06/G-07 (docs/missions-parent.md): habits are confirmed by a parent with a
 // server-verified PIN proof, good deeds are thanked in words only, the family
@@ -57,6 +57,8 @@ const keys = { p256dh: "B" + "x".repeat(86), auth: "a".repeat(22) };
 beforeAll(async () => {
   ({ db } = await createMigratedDb());
   for (const id of [admin, a, b, c, d]) await db.query("INSERT INTO auth.users(id,email) VALUES($1,$2)", [id, id + "@g06.test"]);
+  // T11: reminders go only to families with a valid parent consent.
+  for (const id of [admin, a, b, c, d]) await grantParentConsent(db, id);
   await db.query("UPDATE public.profiles SET role='super_admin' WHERE id=$1", [admin]);
   const story = "INSERT INTO public.stories(id,user_id,title,is_platform_content,is_published,status,category,tags) VALUES($1,$2,$3,true,true,'published',$4,$5)";
   await db.query(story, [S.dongHo, admin, "Su và chiếc đồng hồ cát", "bedtime", ["thoi-quen-tot", "bo-va-su", "kc-lib:su-va-dong-ho-cat"]]);

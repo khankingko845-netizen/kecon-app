@@ -26,12 +26,14 @@ import ParentHeader from "@/components/parent/ParentHeader";
 import FamilyAvatar from "@/components/ui/FamilyAvatar";
 import NarrationToggle from "@/components/ui/NarrationToggle";
 import FeedbackSettings from "@/components/parent/FeedbackSettings";
+import PrivacyConsentPanel from "@/components/parent/PrivacyConsentPanel";
+import { useConsentState } from "@/lib/consent";
 
 interface SettingsProps {
  onNavigate: (screen: Screen) => void;
 }
 
-type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language";
+type SettingsTab = "main" | "api" | "voice" | "story" | "about" | "language" | "privacy";
 
 /* ── Shared sub-components ── */
 
@@ -377,6 +379,8 @@ export default function Settings({ onNavigate }: SettingsProps) {
  const { mode: themeMode, isDark, setMode: setThemeMode, nightPref, setNightPref } = useTheme();
  const [tab, setTab] = useState<SettingsTab>("main");
  const [busy, setBusy] = useState<string | null>(null);
+ const consent = useConsentState();
+ const consentVersion = consent.uid === user?.id ? consent.status?.accepted?.version : undefined;
 
  async function handleSignOut() {
  await signOut();
@@ -423,6 +427,9 @@ export default function Settings({ onNavigate }: SettingsProps) {
 
  if (tab === "language") {
  return <LanguagePanel onBack={() => setTab("main")} />;
+ }
+ if (tab === "privacy") {
+ return <PrivacyConsentPanel onBack={() => setTab("main")} />;
  }
 
  if (tab === "api" && isAdmin) {
@@ -574,6 +581,13 @@ export default function Settings({ onNavigate }: SettingsProps) {
  <SectionHeader title="Quyền riêng tư & dữ liệu" />
  <SettingsCard>
  <SettingsRow
+ icon={Shield}
+ label="Chính sách & đồng ý"
+ value={consentVersion ? `Bản ${consentVersion} · đã đồng ý` : undefined}
+ tone="success"
+ onClick={() => setTab("privacy")}
+ />
+ <SettingsRow
  icon={Download}
  label="Xuất dữ liệu (GDPR)"
  value={busy === "export" ? "Đang xuất..." : "JSON"}
@@ -606,7 +620,7 @@ export default function Settings({ onNavigate }: SettingsProps) {
  {/* Other */}
  <SectionHeader title="Khác" />
  <SettingsCard>
- <SettingsRow icon={Shield} label="Bảo mật & quyền riêng tư" onClick={() => {}} />
+ <SettingsRow icon={Shield} label="Bảo mật & quyền riêng tư" onClick={() => setTab("privacy")} />
  <SettingsRow icon={Info} label="Về KểCon" value="v1.0.0" onClick={() => {}} />
  {user && (
  <SettingsRow icon={LogOut} label="Đăng xuất" tone="danger" onClick={handleSignOut} />

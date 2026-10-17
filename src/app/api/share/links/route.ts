@@ -7,6 +7,7 @@ import {
   SHARE_HEADERS,
 } from "@/lib/story-links";
 import { parseJsonBody } from "@/lib/api-validation";
+import { requireConsent } from "@/lib/consent-guard";
 const reply = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: SHARE_HEADERS });
 const Issue = z
@@ -39,6 +40,12 @@ export async function POST(r: NextRequest) {
       p.response.headers.set(k, v),
     );
     return p.response;
+  }
+  // T11: sharing needs the parent's consent to the current policy.
+  const consentDenied = await requireConsent(db);
+  if (consentDenied) {
+    Object.entries(SHARE_HEADERS).forEach(([k, v]) => consentDenied.headers.set(k, v));
+    return consentDenied;
   }
   const { data, error } = await db.rpc("issue_platform_story_link", {
     p_story: p.data.storyId,

@@ -2,6 +2,7 @@ import { it, expect, vi, beforeEach } from "vitest";
 const state = vi.hoisted(() => ({
   user: true,
   allowed: true,
+  consent: true as boolean | null,
   calls: [] as { name: string; body: unknown }[],
 }));
 vi.mock("@/lib/supabase/server", () => ({
@@ -15,6 +16,10 @@ vi.mock("@/lib/supabase/server", () => ({
       state.calls.push({ name, body });
       if (name === "has_permission")
         return { data: state.allowed, error: null };
+      if (name === "consent_check")
+        return state.consent === null
+          ? { data: null, error: { message: "db down" } }
+          : { data: state.consent, error: null };
       if (name === "admin_access_status")
         return { data: { state: "ready" }, error: null };
       return { data: { ok: true }, error: null };
@@ -32,7 +37,7 @@ const req = (body: unknown, headers = {}) =>
     body: JSON.stringify(body),
   });
 beforeEach(() =>
-  Object.assign(state, { user: true, allowed: true, calls: [] }),
+  Object.assign(state, { user: true, allowed: true, consent: true, calls: [] }),
 );
 it("private event API rejects unauthenticated/cross-site and actor/time/free-text injection", async () => {
   state.user = false;
@@ -57,8 +62,20 @@ it("private event API rejects unauthenticated/cross-site and actor/time/free-tex
 it("event only forwards enum and binds user in Postgres", async () => {
   expect((await eventPost(req({ event: "home_view" }))).status).toBe(200);
   expect(state.calls).toEqual([
+    { name: "consent_check", body: undefined },
     { name: "record_measurement_event", body: { p_event: "home_view" } },
   ]);
+});
+it("event is not recorded without the parent's consent and fails closed when the check fails", async () => {
+  state.consent = false;
+  const denied = await eventPost(req({ event: "home_view" }));
+  expect(denied.status).toBe(403);
+  expect((await denied.json()).code).toBe("consent_required");
+  state.consent = null;
+  const unknown = await eventPost(req({ event: "home_view" }));
+  expect(unknown.status).toBe(503);
+  expect((await unknown.json()).code).toBe("consent_check_failed");
+  expect(state.calls.map((c) => c.name)).toEqual(["consent_check", "consent_check"]);
 });
 it("summary rejects unauthorized and unbounded periods before reading the ledger", async () => {
   state.allowed = false;

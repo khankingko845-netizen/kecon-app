@@ -1,8 +1,18 @@
 import { beforeEach, it, expect, vi } from "vitest";
 import { NextRequest } from "next/server";
-const m = vi.hoisted(() => ({ user: vi.fn(), rpc: vi.fn(), anon: vi.fn() }));
+const m = vi.hoisted(() => ({
+  user: vi.fn(),
+  rpc: vi.fn(),
+  anon: vi.fn(),
+  consent: vi.fn(),
+}));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { getUser: m.user }, rpc: m.rpc }),
+  // T11: the consent check is a separate mock so the share-RPC assertions stay exact.
+  createClient: async () => ({
+    auth: { getUser: m.user },
+    rpc: (name: string, args?: unknown) =>
+      name === "consent_check" ? m.consent() : m.rpc(name, args),
+  }),
 }));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (...a: unknown[]) => {
@@ -38,6 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   m.user.mockResolvedValue({ data: { user: { id: "verified" } } });
   m.rpc.mockResolvedValue({ data: issued, error: null });
+  m.consent.mockResolvedValue({ data: true, error: null });
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.test";
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "public-anon";
 });
@@ -83,6 +94,15 @@ it("issue uses only server actor RPC and returns exact schema/no-store", async (
     p_hours: 24,
   });
   expect(r.headers.get("referrer-policy")).toBe("no-referrer");
+});
+it("issue without the parent's consent is refused before the share RPC", async () => {
+  m.consent.mockResolvedValue({ data: false, error: null });
+  const r = await POST(request({ storyId: id, hours: 24 }));
+  expect(r.status).toBe(403);
+  expect((await r.json()).code).toBe("consent_required");
+  expect(r.headers.get("cache-control")).toContain("no-store");
+  expect(r.headers.get("referrer-policy")).toBe("no-referrer");
+  expect(m.rpc).not.toHaveBeenCalled();
 });
 it.each([
   ["42501", 403],

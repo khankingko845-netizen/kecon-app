@@ -5,7 +5,7 @@
  *
  *   node tests/e2e/support/mock-supabase.mjs   # listens on :54321
  */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.MOCK_SUPABASE_PORT ?? 54321);
@@ -27,6 +27,8 @@ export const MOCK_EDITOR_USER_ID = "00000000-0000-4000-8000-00000000e2e5";
 
 const MOCK_A15_ADMIN_ID="00000000-0000-4000-8000-00000000e2a0",MOCK_A15_TARGET_ID="00000000-0000-4000-8000-00000000e2a1";
 const MOCK_MFA_USER_ID="00000000-0000-4000-8000-00000000e2e9";
+/** T11: families that have not accepted the parent policy yet (no PIN / PIN {@link MOCK_PIN}). */
+const MOCK_CONSENT_USER_ID="00000000-0000-4000-8000-00000000e2c1",MOCK_CONSENT_PIN_USER_ID="00000000-0000-4000-8000-00000000e2c2";
 const now = new Date("2025-01-01T12:00:00Z").toISOString();
 const user = {
   id: MOCK_USER_ID,
@@ -72,6 +74,8 @@ const USERS = {
   [MOCK_MFA_USER_ID]: {...adminUser,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"},
   [MOCK_ADMIN_USER_ID]: adminUser,
   [MOCK_EDITOR_USER_ID]: editorUser,
+  [MOCK_CONSENT_USER_ID]: {...user,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test"},
+  [MOCK_CONSENT_PIN_USER_ID]: {...user,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test"},
 };
 
 const profile = {
@@ -209,7 +213,7 @@ const adminAuditLog = [
 ];
 
 const TABLES = {
-  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}],
+  profiles: [{...adminProfile,id:MOCK_A15_ADMIN_ID,email:"e2e-a15-admin@kecon.test",family_name:"Đội UI",role:"super_admin"},{...profile,id:MOCK_A15_TARGET_ID,family_name:"Gia đình Xác nhận",display_name:"QA Xác nhận"},profile, pinProfile, ageProfile, adminProfile, editorProfile, {...adminProfile,id:MOCK_MFA_USER_ID,email:"e2e-mfa@kecon.test"}, { ...profile, id: MOCK_AVATAR_USER_ID, email: avatarUser.email }, {...profile,id:MOCK_PHOTO_USER_ID}, {...profile,id:MOCK_VOICE_USER_ID}, {...profile,id:MOCK_CONSENT_USER_ID,email:"e2e-consent@kecon.test",family_name:"Gia đình Đồng ý"}, {...profile,id:MOCK_CONSENT_PIN_USER_ID,email:"e2e-consent-pin@kecon.test",family_name:"Gia đình PIN"}],
   voice_profiles: [{id:"00000000-0000-4000-8000-00000000cc01",user_id:MOCK_VOICE_USER_ID,name:"Bà của bé",relation:"grandma",elevenlabs_voice_id:"familyGrandma",is_active:true,created_at:now}],
   stories,
   story_pages: pages,
@@ -437,6 +441,27 @@ const MOCK_HABITS=[
 const MOCK_FAMILY={id:"ca-nha-doc-cung",title:"Cả nhà đọc cùng nhau",label:"Tuần này cả nhà đọc 3 truyện cùng nhau",target:3,praise:"Cả nhà mình đã cùng đọc đủ 3 truyện. Chòm sao của nhà mình sáng lên rồi!"};
 const gateTokens=new Map();
 const proofOk=(sub,token)=>{const g=gateTokens.get(token);return Boolean(g&&g.sub===sub&&g.exp>Date.now());};
+// T11 parent consent (migration 042). Every account has accepted policy v1 except the
+// two consent fixtures; POST /__e2e/consent-reset sets an account's state (current
+// version, accepted version or none) and GET /__e2e/consent-state reads it back.
+const consentDoc=(version)=>{const title="Chính sách quyền riêng tư cho bố mẹ",summary=version===1?"- KểCon lưu những gì bố mẹ nhập và tạo trong app.\n- Không quảng cáo, không bán dữ liệu.":"- Bản "+version+": KểCon cập nhật cách giữ dữ liệu.\n- Không quảng cáo, không bán dữ liệu.",body="## 1. Văn bản này là gì\nĐây là bản "+version+" của chính sách quyền riêng tư dành cho bố mẹ dùng KểCon.\n\n## 5. Nhà cung cấp dịch vụ nhận dữ liệu\n- Tạo chữ và tranh bằng AI: OpenAI, Anthropic, Google (Gemini).\n- Giọng đọc: ElevenLabs hoặc Fish Audio.";return {id:"00000000-0000-4000-8000-0000000c0"+String(version).padStart(3,"0"),version,locale:"vi",title,summary,body,body_sha256:createHash("sha256").update(title+"\n\n"+summary+"\n\n"+body).digest("hex"),published_at:"2026-10-16T00:00:00Z"};};
+const CONSENT_FRESH=new Set([MOCK_CONSENT_USER_ID,MOCK_CONSENT_PIN_USER_ID]);
+const consentState=new Map();
+const consentOf=(sub)=>{if(!consentState.has(sub))consentState.set(sub,{current:1,records:CONSENT_FRESH.has(sub)?[]:[{version:1,accepted_at:now,method:"account_holder",withdrawn_at:null}],calls:[]});return consentState.get(sub);};
+const consentActive=(sub)=>{const c=consentOf(sub);return c.records.some(r=>!r.withdrawn_at&&r.version===c.current);};
+function consentRpc(name,sub,body,hasPin){
+ const c=consentOf(sub),doc=consentDoc(c.current);c.calls.push({name,body});
+ const rec=(r)=>r?{version:r.version,accepted_at:r.accepted_at,method:r.method}:null;
+ switch(name){
+  case "consent_check":return consentActive(sub);
+  case "consent_status":{const acc=c.records.find(r=>!r.withdrawn_at&&r.version===c.current),required=!acc;const prev=required?c.records.filter(r=>!r.withdrawn_at&&r.version<c.current).sort((a,b)=>b.version-a.version)[0]:null;const wd=required?c.records.map(r=>r.withdrawn_at).filter(Boolean).sort().pop()??null:null;const {body:text,...meta}=doc;
+   return {ok:true,kind:"parent_policy",required,has_pin:hasPin,document:required||body?.p_full?{...meta,body:text}:meta,accepted:required?null:rec(acc),previous:prev?{version:prev.version,accepted_at:prev.accepted_at}:null,withdrawn_at:wd,history:body?.p_full?[...c.records].reverse().map(r=>({...rec(r),withdrawn_at:r.withdrawn_at})):null};}
+  case "consent_accept":{if(body?.p_document!==doc.id&&!/^00000000-0000-4000-8000-0000000c0/.test(String(body?.p_document)))return {ok:false,reason:"not_found"};if(body?.p_document!==doc.id||body?.p_body_sha256!==doc.body_sha256)return {ok:false,reason:"stale",current_version:c.current};
+   if(hasPin&&!proofOk(sub,body?.p_proof))return {ok:false,reason:"parent_proof_required"};const open=c.records.find(r=>!r.withdrawn_at&&r.version===c.current);if(open)return {ok:true,already:true,version:open.version,accepted_at:open.accepted_at,method:open.method};
+   const r={version:c.current,accepted_at:new Date().toISOString(),method:hasPin?"parent_pin":"account_holder",withdrawn_at:null};c.records.push(r);return {ok:true,already:false,version:r.version,accepted_at:r.accepted_at,method:r.method};}
+  case "consent_withdraw":{if(body?.p_kind!=="parent_policy")return {ok:false,reason:"invalid_kind"};if(hasPin&&!proofOk(sub,body?.p_proof))return {ok:false,reason:"parent_proof_required"};let n=0;for(const r of c.records)if(!r.withdrawn_at){r.withdrawn_at=new Date().toISOString();r.withdraw_method=hasPin?"parent_pin":"account_holder";n++;}return {ok:true,withdrawn:n};}
+ }
+}
 function familyOf(sub){const m=missionsOf(sub),days=weekDays();const keys=new Set([...m.sessions].filter(([id,x])=>m.together.has(id)&&days.includes(x.date)).map(([,x])=>x.story.id+":"+x.date));const progress=Math.min(MOCK_FAMILY.target,keys.size);return {id:MOCK_FAMILY.id,title:MOCK_FAMILY.title,target:MOCK_FAMILY.target,progress,done:m.constellations.has(days[0])};}
 function missionsSummary(sub){
   const m=missionsOf(sub),day=vnDate(),days=weekDays();
@@ -559,7 +584,7 @@ function backupRpc(name, sub, body, permissions) {
 }
 
 function rpc(name, sub, body, claims={}) {
-  const hasPin = sub === MOCK_PIN_USER_ID;
+  const hasPin = sub === MOCK_PIN_USER_ID || sub === MOCK_CONSENT_PIN_USER_ID;
   const rawPermissions = permissionsOf(sub);
   const access=mockAdminAccess(sub,claims);
   const permissions=access.state==="ready"?rawPermissions:[];
@@ -710,7 +735,9 @@ function rpc(name, sub, body, claims={}) {
       return { key, is_set: true, last4: last4(value), updated_at: entry.updated_at };
     }
     case "consume_usage":
-      return { allowed: true };
+      return consentActive(sub) ? { allowed: true } : { allowed: false, reason: "consent_required" };
+    case "consent_check": case "consent_status": case "consent_accept": case "consent_withdraw":
+      return consentRpc(name, sub, body, hasPin);
     case "list_provider_keys":
     case "add_provider_key":
     case "update_provider_key":
@@ -830,6 +857,17 @@ createServer((req, res) => {
     });
     return;
   }
+  if (path === "/__e2e/consent-reset" && req.method === "POST") {
+    readJson(req).then((b) => {
+      const sub = String(b?.sub ?? "");
+      const current = Number.isInteger(b?.current) && b.current >= 1 ? b.current : 1;
+      const accepted = Number.isInteger(b?.accepted) ? b.accepted : null;
+      consentState.set(sub, { current, records: accepted ? [{ version: accepted, accepted_at: now, method: "account_holder", withdrawn_at: null }] : [], calls: [] });
+      send(res, 200, { ok: true });
+    });
+    return;
+  }
+  if (path === "/__e2e/consent-state" && req.method === "GET") return send(res, 200, consentOf(String(url.searchParams.get("sub") ?? "")));
   if (path === "/__e2e/backup-reset" && req.method === "POST") {
     backupState = freshBackupState();
     return send(res, 200, { ok: true });

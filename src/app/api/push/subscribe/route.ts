@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api-validation";
+import { requireConsent } from "@/lib/consent-guard";
 
 const PushSubscriptionBody = z.object({
   endpoint: z.url().max(2048).refine((u) => u.startsWith("https://"), "Endpoint phải là HTTPS"),
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const subscription = parsed.data;
   const endpoint = subscription.endpoint;
+  // T11: no new device registration without the parent's consent.
+  const consentDenied = await requireConsent(supabase);
+  if (consentDenied) return consentDenied;
 
   // Upsert: if the endpoint already exists, update the keys
   const { error } = await supabase.from("push_subscriptions").upsert(

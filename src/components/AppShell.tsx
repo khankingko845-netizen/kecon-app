@@ -14,6 +14,9 @@ import Login from "@/components/screens/Login";
 import Signup from "@/components/screens/Signup";
 import Home from "@/components/screens/Home";
 import ComplianceLayer from "@/components/ComplianceLayer";
+import ConsentGate from "@/components/parent/ConsentGate";
+import { readConsentHint, useConsentGate } from "@/lib/consent";
+import { useI18n } from "@/lib/i18n";
 import MiniPlayer from "@/components/ui/MiniPlayer";
 import { useAudioControls, useAudioPlaying, useAudioStoryId } from "@/lib/audio-player-context";
 import ParentGate from "@/components/parent/ParentGate";
@@ -88,7 +91,8 @@ const screenTabMap: Partial<Record<Screen, TabId>> = {
 
 function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialScreen?: Screen }) {
  const features = useFeatureFlags();
- const { user, loading } = useAuth();
+ const { user, loading, signOut } = useAuth();
+ const { locale } = useI18n();
  const [history, setHistoryState] = useState<ScreenState[]>([
  { screen: initialScreen ?? "onboarding" },
  ]);
@@ -118,6 +122,15 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  const gateActive = !loading && !!user && inParentArea && !parentUnlocked;
  const screenTime = useScreenTime({ userId: user?.id, paused: inParentArea });
  const kidLocked = !loading && !!user && !inParentArea && screenTime.verdict.blocked;
+ // T11: nothing of the app opens until the server has the parent's consent to the
+ // current policy version. A local hint (this account already consented) opens the
+ // app at once while the server check runs; without it we wait for the answer.
+ const consent = useConsentGate(!loading ? user?.id : undefined, locale);
+ const consentKnown = !!user && consent.uid === user.id;
+ const consentOpen = !!user && (consentKnown ? consent.phase === "ok" : readConsentHint(user.id) !== null);
+ const consentView: "gate" | "loading" | null =
+  loading || !user || consentOpen ? null
+   : consentKnown && (consent.phase === "required" || consent.phase === "error") ? "gate" : "loading";
  // New screen → top of the page; Back (or the gate / time lock closing) → where the kid was.
  useScrollMemory(gateActive ? "parent-gate" : kidLocked ? "screen-time-lock" : rawCurrent, current.screen);
  const lockReason = screenTime.verdict.blocked ? screenTime.verdict.reason : "limit";
@@ -127,6 +140,9 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  useEffect(() => {
  if (kidLocked && isPlaying) audio.pause();
  }, [kidLocked, isPlaying, audio]);
+ useEffect(() => {
+ if (consentView && isPlaying) audio.pause();
+ }, [consentView, isPlaying, audio]);
  // Another family signs in on this device: their story must not keep playing.
  const sessionUserId = user?.id ?? null;
  useEffect(() => () => audio.stop(), [sessionUserId, audio]);
@@ -190,6 +206,27 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  setHistory([{ screen: "home" }]);
  }, [lockParent, setHistory]);
 
+ // Consent withdrawn from Bố mẹ › Quyền riêng tư: after accepting again the family
+ // starts from Home with the parent area locked.
+ const consentGateShown = consentView === "gate";
+ // Adjusted during render (not in an effect) when the gate opens: a parent-area
+ // screen is dropped from the history.
+ const [gateWasShown, setGateWasShown] = useState(false);
+ if (consentGateShown !== gateWasShown) {
+ setGateWasShown(consentGateShown);
+ if (consentGateShown) setHistoryState((prev) => (isParentArea(prev[prev.length - 1].screen) ? [{ screen: "home" }] : prev));
+ }
+ useEffect(() => {
+ if (!consentGateShown) return;
+ lockParent();
+ window.scrollTo(0, 0);
+ }, [consentGateShown, lockParent]);
+
+ const handleConsentSignOut = useCallback(async () => {
+ await signOut();
+ setHistory([{ screen: "login" }]);
+ }, [signOut, setHistory]);
+
  const afterPinReset = useCallback(() => {
  unlockParent();
  setHistory([{ screen: "settings" }, { screen: "parental-controls" }]);
@@ -238,6 +275,21 @@ function AppContent({ signedOut, initialScreen }: { signedOut: boolean; initialS
  <main className="relative w-full max-w-[430px] mx-auto min-h-screen bg-cream">
  <KidLoading fullScreen title="Đóm đang thức dậy…" />
  </main>
+ );
+ }
+
+ if (consentView) {
+ return (
+ <div className="relative w-full max-w-[430px] mx-auto min-h-screen overflow-x-clip bg-parent-bg shadow-2xl shadow-black/10">
+ <main id="main-content" key="consent-gate">
+ {consentView === "gate" ? (
+ <ConsentGate state={consent} onSignOut={handleConsentSignOut} />
+ ) : (
+ <KidLoading fullScreen title="Đóm đang chuẩn bị…" />
+ )}
+ </main>
+ <ComplianceLayer />
+ </div>
  );
  }
 
